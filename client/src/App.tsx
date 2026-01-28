@@ -16,7 +16,7 @@ import Paywall from "@/pages/Paywall";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { hasPaid, isLoading: isPaymentLoading } = usePaymentStatus();
+  const { hasAccess, isLoading: isPaymentLoading } = usePaymentStatus();
   const [location] = useLocation();
   const { toast } = useToast();
 
@@ -60,7 +60,7 @@ function Router() {
     );
   }
 
-  if (!hasPaid) {
+  if (!hasAccess) {
     return <Paywall />;
   }
 

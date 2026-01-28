@@ -178,12 +178,23 @@ export async function registerRoutes(
     }
   });
 
-  // Check user payment status
+  // Check user payment status and trial
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
-      res.json({ hasPaid: user?.hasPaid || false });
+      
+      // Check if trial is still active (24 hours from account creation)
+      const TRIAL_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+      const trialEndTime = user?.createdAt ? new Date(user.createdAt).getTime() + TRIAL_DURATION_MS : 0;
+      const isTrialActive = Date.now() < trialEndTime;
+      const trialEndsAt = user?.createdAt ? new Date(trialEndTime).toISOString() : null;
+      
+      res.json({ 
+        hasPaid: user?.hasPaid || false,
+        isTrialActive,
+        trialEndsAt,
+      });
     } catch (error) {
       console.error("Error checking payment status:", error);
       res.status(500).json({ error: "Failed to check payment status" });
