@@ -3,6 +3,8 @@ import { useHabits } from "@/hooks/use-habits";
 import { HabitCard } from "@/components/HabitCard";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { DailyQuote } from "@/components/DailyQuote";
+import { TrialBanner } from "@/components/TrialBanner";
+import { ProgressSummary } from "@/components/ProgressSummary";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
@@ -57,6 +59,9 @@ export default function Dashboard() {
           </DropdownMenu>
         </header>
 
+        {/* Trial Banner */}
+        <TrialBanner />
+
         {/* Daily Quote Hero Section */}
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
@@ -65,6 +70,17 @@ export default function Dashboard() {
         >
           <DailyQuote />
         </motion.section>
+
+        {/* Progress Summary */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <ProgressSummary habits={habits} />
+          </motion.section>
+        )}
 
         {/* Habits Section */}
         <section className="space-y-6">

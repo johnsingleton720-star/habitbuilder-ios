@@ -100,6 +100,7 @@ export function HabitCard({ habit }: HabitCardProps) {
             <button
               onClick={() => toggleDate.mutate(habit, today)}
               disabled={toggleDate.isPending}
+              data-testid={`button-complete-${habit.id}`}
               className={cn(
                 "mt-2 flex h-12 w-12 items-center justify-center rounded-xl border-2 transition-all duration-300",
                 isCompletedToday
