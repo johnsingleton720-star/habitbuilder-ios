@@ -28,6 +28,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
     defaultValues: {
       title: "",
       description: "",
+      goal: "",
       frequency: "daily",
     },
   });
@@ -38,6 +39,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
       form.reset({
         title: habitToEdit?.title || "",
         description: habitToEdit?.description || "",
+        goal: habitToEdit?.goal || "",
         frequency: habitToEdit?.frequency || "daily",
       });
     }
@@ -99,7 +101,26 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
                       placeholder="Why is this habit important?" 
                       className="resize-none min-h-[80px]" 
                       {...field} 
-                      value={field.value || ""} // Handle null
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="goal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Goal (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g. Meditate 30 mins daily for 30 days" 
+                      {...field} 
+                      value={field.value || ""}
+                      className="h-11"
                     />
                   </FormControl>
                   <FormMessage />

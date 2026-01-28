@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import Paywall from "@/pages/Paywall";
+import HabitDetail from "@/pages/HabitDetail";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -67,6 +68,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/habit/:id" component={HabitDetail} />
       <Route component={NotFound} />
     </Switch>
   );

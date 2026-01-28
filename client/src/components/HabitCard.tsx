@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { format, isSameDay, parseISO } from "date-fns";
-import { Check, Flame, MoreVertical, Trash2, Edit } from "lucide-react";
+import { Check, Flame, MoreVertical, Trash2, Edit, ChevronRight } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useToggleHabitDate, useDeleteHabit } from "@/hooks/use-habits";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { HabitFormDialog } from "./HabitFormDialog";
+import { Link } from "wouter";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -65,6 +66,13 @@ export function HabitCard({ habit }: HabitCardProps) {
                 {habit.frequency}
               </span>
             </div>
+            
+            <Link href={`/habit/${habit.id}`}>
+              <Button variant="ghost" size="sm" className="mt-3 gap-1 text-primary" data-testid={`button-view-plan-${habit.id}`}>
+                View Plan & Progress
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
 
           <div className="flex flex-col items-end gap-2">

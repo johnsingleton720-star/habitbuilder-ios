@@ -178,6 +178,54 @@ export async function registerRoutes(
     }
   });
 
+  // AI-generated habit plan with steps and tips
+  app.post("/api/ai/generate-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const { habitTitle, habitDescription, goal } = req.body;
+
+      const prompt = `Create a detailed action plan for building the habit: "${habitTitle}"
+${habitDescription ? `Description: ${habitDescription}` : ''}
+${goal ? `Goal: ${goal}` : ''}
+
+Return a JSON object with:
+1. "steps": An array of 5-7 actionable steps to build this habit. Each step should have:
+   - "id": A unique string ID (use step-1, step-2, etc.)
+   - "text": A clear, actionable step description
+   - "completed": false (always start uncompleted)
+
+2. "tips": An array of 4 helpful tips/advice. Each tip should have:
+   - "id": A unique string ID (use tip-1, tip-2, etc.)
+   - "text": A helpful tip or piece of advice
+   - "category": One of "motivation", "technique", "science", or "reminder"
+
+Make the steps progressive and the tips varied across categories. Be specific and practical.`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a habit coach. Provide actionable, specific guidance for building new habits. Always return valid JSON.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const planData = JSON.parse(content);
+      res.json(planData);
+    } catch (error) {
+      console.error("Error generating habit plan:", error);
+      res.status(500).json({ error: "Failed to generate habit plan" });
+    }
+  });
+
   // Check user payment status and trial
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
     try {

@@ -1,12 +1,18 @@
-import { habits, users, type Habit, type InsertHabit, type User } from "@shared/schema";
+import { habits, users, type Habit, type InsertHabit, type User, type HabitStep, type HabitTip } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+
+export interface HabitUpdates extends Partial<InsertHabit> {
+  completedDates?: string[];
+  steps?: HabitStep[];
+  aiTips?: HabitTip[];
+}
 
 export interface IStorage {
   getHabits(userId: string): Promise<Habit[]>;
   getHabit(id: number): Promise<Habit | undefined>;
   createHabit(userId: string, habit: InsertHabit): Promise<Habit>;
-  updateHabit(id: number, userId: string, updates: Partial<InsertHabit> & { completedDates?: string[] }): Promise<Habit | undefined>;
+  updateHabit(id: number, userId: string, updates: HabitUpdates): Promise<Habit | undefined>;
   deleteHabit(id: number, userId: string): Promise<void>;
   getUser(userId: string): Promise<User | undefined>;
 }
@@ -29,7 +35,7 @@ export class DatabaseStorage implements IStorage {
     return habit;
   }
 
-  async updateHabit(id: number, userId: string, updates: Partial<InsertHabit> & { completedDates?: string[] }): Promise<Habit | undefined> {
+  async updateHabit(id: number, userId: string, updates: HabitUpdates): Promise<Habit | undefined> {
     const [updated] = await db
       .update(habits)
       .set(updates)

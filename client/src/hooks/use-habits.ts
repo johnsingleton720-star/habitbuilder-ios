@@ -131,3 +131,20 @@ export function useDailyQuote() {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 }
+
+// Generate AI plan for a habit
+export function useGenerateHabitPlan() {
+  return useMutation({
+    mutationFn: async (data: { habitTitle: string; habitDescription?: string; goal?: string }) => {
+      const res = await fetch("/api/ai/generate-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Failed to generate habit plan");
+      return res.json();
+    },
+  });
+}

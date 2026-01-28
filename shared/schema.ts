@@ -8,13 +8,30 @@ export * from "./models/chat";
 
 import { users } from "./models/auth";
 
+// Step type for habit action steps
+export interface HabitStep {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+// AI-generated tip type
+export interface HabitTip {
+  id: string;
+  text: string;
+  category: "motivation" | "technique" | "science" | "reminder";
+}
+
 export const habits = pgTable("habits", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description"),
+  goal: text("goal"), // Target goal for this habit (e.g., "Run 5K", "Read 30 books")
   frequency: text("frequency").notNull().default("daily"), // daily, weekly
   completedDates: jsonb("completed_dates").$type<string[]>().default([]), // Array of ISO date strings
+  steps: jsonb("steps").$type<HabitStep[]>().default([]), // Action steps to achieve the habit
+  aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]), // AI-generated tips and guidance
   createdAt: timestamp("created_at").defaultNow(),
 });
 

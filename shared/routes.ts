@@ -1,5 +1,18 @@
 import { z } from 'zod';
-import { insertHabitSchema, habits } from './schema';
+import { insertHabitSchema, habits, type HabitStep, type HabitTip } from './schema';
+
+// Step and tip schemas for validation
+export const habitStepSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  completed: z.boolean(),
+});
+
+export const habitTipSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  category: z.enum(["motivation", "technique", "science", "reminder"]),
+});
 
 export const errorSchemas = {
   validation: z.object({
@@ -51,6 +64,8 @@ export const api = {
       path: '/api/habits/:id',
       input: insertHabitSchema.partial().extend({
         completedDates: z.array(z.string()).optional(),
+        steps: z.array(habitStepSchema).optional(),
+        aiTips: z.array(habitTipSchema).optional(),
       }),
       responses: {
         200: z.custom<typeof habits.$inferSelect>(),
@@ -78,6 +93,25 @@ export const api = {
           quote: z.string(),
           author: z.string().optional(),
         }),
+      },
+    },
+  },
+  ai: {
+    generatePlan: {
+      method: 'POST' as const,
+      path: '/api/ai/generate-plan',
+      input: z.object({
+        habitTitle: z.string(),
+        habitDescription: z.string().optional(),
+        goal: z.string().optional(),
+      }),
+      responses: {
+        200: z.object({
+          steps: z.array(habitStepSchema),
+          tips: z.array(habitTipSchema),
+        }),
+        401: errorSchemas.unauthorized,
+        500: errorSchemas.internal,
       },
     },
   },
