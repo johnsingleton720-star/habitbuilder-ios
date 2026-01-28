@@ -1,4 +1,4 @@
-import { habits, type Habit, type InsertHabit } from "@shared/schema";
+import { habits, users, type Habit, type InsertHabit, type User } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -8,6 +8,7 @@ export interface IStorage {
   createHabit(userId: string, habit: InsertHabit): Promise<Habit>;
   updateHabit(id: number, userId: string, updates: Partial<InsertHabit> & { completedDates?: string[] }): Promise<Habit | undefined>;
   deleteHabit(id: number, userId: string): Promise<void>;
+  getUser(userId: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -41,6 +42,11 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(habits)
       .where(and(eq(habits.id, id), eq(habits.userId, userId)));
+  }
+
+  async getUser(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
   }
 }
 

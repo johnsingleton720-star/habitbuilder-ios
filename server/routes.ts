@@ -3,14 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { openai } from "./replit_integrations/audio"; // Re-using openai client from audio integration if available, or import from chat
-// Actually, let's use the one from chat integration since we imported that too, or better yet, direct use if simple.
-// The blueprint setup Replit AI Integrations. We can use the openai client from `replit_integrations/chat/routes` or `image/client`.
-// Let's import from a consistent place. `server/replit_integrations/chat/index.ts` doesn't export openai client directly.
-// But `server/replit_integrations/image/client.ts` does. Or `server/replit_integrations/audio/client.ts`.
-// I'll assume we can just use the OpenAI class directly as per blueprint instructions if needed, but let's re-use the one from the audio client since I see it in file copy logs.
 import { openai as openaiClient } from "./replit_integrations/audio";
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { db } from "./db";
+import { users } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -108,11 +106,87 @@ export async function registerRoutes(
       res.json(quoteData);
     } catch (error) {
       console.error("Error fetching quote:", error);
-      // Fallback quote
       res.json({
         quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
         author: "Aristotle"
       });
+    }
+  });
+
+  // Stripe public key endpoint
+  app.get("/api/stripe/config", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting Stripe config:", error);
+      res.status(500).json({ error: "Failed to get Stripe configuration" });
+    }
+  });
+
+  // Get lifetime price from Stripe
+  app.get("/api/stripe/lifetime-price", async (req, res) => {
+    try {
+      const result = await db.execute(
+        sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
+            FROM stripe.prices pr 
+            JOIN stripe.products p ON pr.product = p.id 
+            WHERE p.active = true AND pr.active = true 
+            AND p.metadata->>'type' = 'lifetime_access'
+            LIMIT 1`
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Lifetime product not found" });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error getting lifetime price:", error);
+      res.status(500).json({ error: "Failed to get pricing" });
+    }
+  });
+
+  // Create checkout session for lifetime purchase
+  app.post("/api/checkout", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { priceId } = req.body;
+
+      if (!priceId) {
+        return res.status(400).json({ error: "Price ID required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'payment',
+        success_url: `${baseUrl}/?payment=success`,
+        cancel_url: `${baseUrl}/?payment=cancelled`,
+        metadata: {
+          userId: userId,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // Check user payment status
+  app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json({ hasPaid: user?.hasPaid || false });
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      res.status(500).json({ error: "Failed to check payment status" });
     }
   });
 
