@@ -47,7 +47,7 @@ export default function Landing() {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button onClick={scrollToLogin} size="lg" className="h-14 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all">
-                Get Started Free
+                Start 1-Day Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
@@ -55,11 +55,11 @@ export default function Landing() {
             <div className="flex items-center gap-6 pt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                <span>No credit card required</span>
+                <span>1-day free trial</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>Free forever plan</span>
+                <span>Then $2.99 for lifetime access</span>
               </div>
             </div>
           </motion.div>
