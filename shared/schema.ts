@@ -25,7 +25,7 @@ export const insertHabitSchema = createInsertSchema(habits).omit({
 });
 
 export type Habit = typeof habits.$inferSelect;
-export type InsertHabit = z.infer<typeof insertInsertSchema>;
+export type InsertHabit = z.infer<typeof insertHabitSchema>;
 
 // Custom types for API
 export type CreateHabitRequest = z.infer<typeof insertHabitSchema>;

@@ -44,9 +44,15 @@ Preferred communication style: Simple, everyday language.
 
 ### Payment System
 - Stripe integration for one-time lifetime access purchase ($2.99)
-- Webhook handling for checkout completion
+- Webhook handling for checkout completion via stripe-replit-sync
 - User `hasPaid` flag controls access to main features
 - Paywall page displayed for unpaid authenticated users
+- Stripe product seeded via `server/seed-products.ts`
+
+### Stripe Files
+- `server/stripeClient.ts` - Stripe client with Replit connector credentials
+- `server/webhookHandlers.ts` - Webhook processing for payment completion
+- `server/seed-products.ts` - Script to create the $2.99 lifetime product
 
 ### AI Integrations
 The `server/replit_integrations/` folder contains modular AI capabilities:

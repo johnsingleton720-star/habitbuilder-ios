@@ -6,10 +6,17 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
+interface PriceData {
+  price_id: string;
+  unit_amount: number;
+  name: string;
+  description: string;
+}
+
 export default function Paywall() {
   const { user, logout } = useAuth();
 
-  const { data: priceData, isLoading: isPriceLoading } = useQuery({
+  const { data: priceData, isLoading: isPriceLoading } = useQuery<PriceData>({
     queryKey: ['/api/stripe/lifetime-price'],
   });
 
