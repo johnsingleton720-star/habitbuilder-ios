@@ -1,38 +1,47 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { habits, type Habit, type InsertHabit } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getHabits(userId: string): Promise<Habit[]>;
+  getHabit(id: number): Promise<Habit | undefined>;
+  createHabit(userId: string, habit: InsertHabit): Promise<Habit>;
+  updateHabit(id: number, userId: string, updates: Partial<InsertHabit> & { completedDates?: string[] }): Promise<Habit | undefined>;
+  deleteHabit(id: number, userId: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getHabits(userId: string): Promise<Habit[]> {
+    return await db.select().from(habits).where(eq(habits.userId, userId));
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getHabit(id: number): Promise<Habit | undefined> {
+    const [habit] = await db.select().from(habits).where(eq(habits.id, id));
+    return habit;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createHabit(userId: string, insertHabit: InsertHabit): Promise<Habit> {
+    const [habit] = await db
+      .insert(habits)
+      .values({ ...insertHabit, userId })
+      .returning();
+    return habit;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateHabit(id: number, userId: string, updates: Partial<InsertHabit> & { completedDates?: string[] }): Promise<Habit | undefined> {
+    const [updated] = await db
+      .update(habits)
+      .set(updates)
+      .where(and(eq(habits.id, id), eq(habits.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteHabit(id: number, userId: string): Promise<void> {
+    await db
+      .delete(habits)
+      .where(and(eq(habits.id, id), eq(habits.userId, userId)));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
