@@ -3,12 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
 import { users } from "@shared/schema";
+import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -17,6 +18,57 @@ export async function registerRoutes(
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Object storage routes
+  registerObjectStorageRoutes(app);
+  
+  const objectStorageService = new ObjectStorageService();
+
+  // Profile image upload endpoint
+  app.post("/api/user/profile-image", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Get presigned URL for upload
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      
+      res.json({ 
+        uploadURL, 
+        objectPath,
+        message: "Upload to this URL, then call /api/user/profile-image/confirm" 
+      });
+    } catch (error) {
+      console.error("Error generating profile image upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Confirm profile image upload and update user record
+  app.post("/api/user/profile-image/confirm", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { objectPath } = req.body;
+      
+      if (!objectPath) {
+        return res.status(400).json({ error: "objectPath is required" });
+      }
+
+      // Set the profile image URL - construct the serving URL
+      const profileImageUrl = objectPath;
+      
+      // Update user's profile image in database
+      await db.update(users).set({ 
+        profileImageUrl,
+        updatedAt: new Date(),
+      }).where(eq(users.id, userId));
+      
+      res.json({ profileImageUrl, success: true });
+    } catch (error) {
+      console.error("Error confirming profile image:", error);
+      res.status(500).json({ error: "Failed to update profile image" });
+    }
+  });
 
   // Protected routes
   app.get(api.habits.list.path, isAuthenticated, async (req: any, res) => {
@@ -235,29 +287,28 @@ Make the tips varied across categories. Be specific and practical.`;
     try {
       const { habitTitle, stepText, stepId } = req.body;
 
-      const prompt = `For someone building the habit "${habitTitle}", help them explore this step:
+      const prompt = `You are helping someone build the habit: "${habitTitle}"
+
+They need to complete this specific action step:
 "${stepText}"
 
-Generate 6-8 specific, relatable options that the user can choose from to help them reflect on and answer this step.
-Each option should be a concrete, common answer that many people might identify with.
+Generate 6-8 UNIQUE options that are DIRECTLY RELEVANT to this exact step. Each option must:
+1. Be a specific, actionable answer to this particular step
+2. Be concrete and practical (not vague or generic)
+3. Help the user reflect on and complete THIS step
+
+CRITICAL: Your options must be tailored specifically to "${stepText}" - do NOT generate generic habit options.
 
 Return a JSON object with:
 {
   "options": [
-    { "id": "opt-1", "text": "A specific option the user might select", "selected": false },
+    { "id": "opt-1", "text": "A specific, actionable option for this exact step", "selected": false },
     { "id": "opt-2", "text": "Another specific option", "selected": false },
     ...
   ]
 }
 
-Make the options diverse, practical, and relatable. Include options that cover different aspects of the question.
-For example, if the step is "Identify what makes you anxious", options might include:
-- "Work deadlines and pressure"
-- "Social situations and meeting new people"
-- "Financial concerns and bills"
-- "Health worries"
-- "Family responsibilities"
-- "Fear of failure or judgment"`;
+Be creative and diverse. Cover different angles and approaches to completing "${stepText}".`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",

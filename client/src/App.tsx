@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import Paywall from "@/pages/Paywall";
 import HabitDetail from "@/pages/HabitDetail";
+import Account from "@/pages/Account";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -69,6 +70,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/habit/:id" component={HabitDetail} />
+      <Route path="/account" component={Account} />
       <Route component={NotFound} />
     </Switch>
   );

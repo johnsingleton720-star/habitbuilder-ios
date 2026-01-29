@@ -42,12 +42,14 @@ export function HabitCard({ habit }: HabitCardProps) {
 
   return (
     <>
+      <Link href={`/habit/${habit.id}`}>
       <motion.div
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm border border-border/50 hover:shadow-md hover:border-border transition-all duration-300 dark:bg-card"
+        className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm border border-border/50 hover:shadow-md hover:border-primary/30 transition-all duration-300 dark:bg-card cursor-pointer"
+        data-testid={`card-habit-${habit.id}`}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -67,29 +69,32 @@ export function HabitCard({ habit }: HabitCardProps) {
               </span>
             </div>
             
-            <Link href={`/habit/${habit.id}`}>
-              <Button variant="ghost" size="sm" className="mt-3 gap-1 text-primary" data-testid={`button-view-plan-${habit.id}`}>
-                View Plan & Progress
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <div className="mt-3 flex items-center gap-1 text-primary text-sm font-medium">
+              View Plan & Progress
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2" onClick={(e) => e.preventDefault()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowEditDialog(true); }}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="text-destructive focus:text-destructive"
-                  onClick={() => setShowDeleteAlert(true)}
+                  onClick={(e) => { e.stopPropagation(); setShowDeleteAlert(true); }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -98,7 +103,7 @@ export function HabitCard({ habit }: HabitCardProps) {
             </DropdownMenu>
 
             <button
-              onClick={() => toggleDate.mutate(habit, today)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleDate.mutate(habit, today); }}
               disabled={toggleDate.isPending}
               data-testid={`button-complete-${habit.id}`}
               className={cn(
@@ -124,6 +129,7 @@ export function HabitCard({ habit }: HabitCardProps) {
           style={{ width: `${Math.min((streak / 21) * 100, 100)}%` }}
         />
       </motion.div>
+      </Link>
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>

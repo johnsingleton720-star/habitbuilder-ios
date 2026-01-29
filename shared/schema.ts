@@ -32,6 +32,13 @@ export interface HabitTip {
   category: "motivation" | "technique" | "science" | "reminder";
 }
 
+// Schedule type for habit scheduling
+export interface HabitSchedule {
+  days: string[]; // Array of day names: "monday", "tuesday", etc.
+  time: string; // Time in HH:mm format
+  reminder: boolean; // Whether to show reminders
+}
+
 export const habits = pgTable("habits", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -39,6 +46,7 @@ export const habits = pgTable("habits", {
   description: text("description"),
   goal: text("goal"), // Target goal for this habit (e.g., "Run 5K", "Read 30 books")
   frequency: text("frequency").notNull().default("daily"), // daily, weekly
+  schedule: jsonb("schedule").$type<HabitSchedule>(), // Scheduled days and time
   completedDates: jsonb("completed_dates").$type<string[]>().default([]), // Array of ISO date strings
   steps: jsonb("steps").$type<HabitStep[]>().default([]), // Action steps to achieve the habit
   aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]), // AI-generated tips and guidance

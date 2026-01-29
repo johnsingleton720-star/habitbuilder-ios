@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertHabitSchema } from "@shared/schema";
+import { insertHabitSchema, type HabitSchedule } from "@shared/schema";
 import { type HabitInput, type HabitResponse } from "@shared/routes";
 import { useCreateHabit, useUpdateHabit } from "@/hooks/use-habits";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { SchedulePicker } from "@/components/SchedulePicker";
+import { useEffect, useState } from "react";
+import { Loader2, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface HabitFormDialogProps {
   open: boolean;
@@ -22,6 +24,8 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
   const isEditing = !!habitToEdit;
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
 
   const form = useForm<HabitInput>({
     resolver: zodResolver(insertHabitSchema),
@@ -42,15 +46,29 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
         goal: habitToEdit?.goal || "",
         frequency: habitToEdit?.frequency || "daily",
       });
+      setSchedule(habitToEdit?.schedule as HabitSchedule | undefined);
+      setShowSchedule(!!habitToEdit?.schedule);
     }
   }, [open, habitToEdit, form]);
 
   const onSubmit = async (data: HabitInput) => {
     try {
+      const scheduleData = showSchedule && schedule?.days?.length ? schedule : undefined;
+      
       if (isEditing && habitToEdit) {
-        await updateHabit.mutateAsync({ id: habitToEdit.id, ...data });
+        await updateHabit.mutateAsync({ 
+          id: habitToEdit.id, 
+          title: data.title,
+          description: data.description,
+          goal: data.goal,
+          frequency: data.frequency,
+          schedule: scheduleData,
+        });
       } else {
-        await createHabit.mutateAsync(data);
+        await createHabit.mutateAsync({
+          ...data,
+          schedule: scheduleData,
+        } as HabitInput);
       }
       onOpenChange(false);
     } catch (error) {
@@ -62,7 +80,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
             {isEditing ? "Edit Habit" : "New Habit"}
@@ -75,7 +93,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <FormField
               control={form.control}
               name="title"
@@ -149,6 +167,29 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
                 </FormItem>
               )}
             />
+
+            <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between"
+                  data-testid="button-toggle-schedule"
+                >
+                  <span className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {showSchedule ? "Schedule Settings" : "Add Schedule (Optional)"}
+                  </span>
+                  {showSchedule ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <SchedulePicker
+                  value={schedule}
+                  onChange={setSchedule}
+                />
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

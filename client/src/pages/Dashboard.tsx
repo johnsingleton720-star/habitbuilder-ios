@@ -5,12 +5,14 @@ import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
 import { ProgressSummary } from "@/components/ProgressSummary";
+import { TodaysFocus } from "@/components/TodaysFocus";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -51,6 +53,13 @@ export default function Dashboard() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <Link href="/account">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-account">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Account Settings
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
@@ -71,12 +80,23 @@ export default function Dashboard() {
           <DailyQuote />
         </motion.section>
 
-        {/* Progress Summary */}
+        {/* Today's Focus - What to work on now */}
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <TodaysFocus habits={habits} />
+          </motion.section>
+        )}
+
+        {/* Progress Summary */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
           >
             <ProgressSummary habits={habits} />
           </motion.section>

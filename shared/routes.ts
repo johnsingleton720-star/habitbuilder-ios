@@ -24,6 +24,12 @@ export const habitTipSchema = z.object({
   category: z.enum(["motivation", "technique", "science", "reminder"]),
 });
 
+export const habitScheduleSchema = z.object({
+  days: z.array(z.string()),
+  time: z.string(),
+  reminder: z.boolean(),
+});
+
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -76,6 +82,7 @@ export const api = {
         completedDates: z.array(z.string()).optional(),
         steps: z.array(habitStepSchema).optional(),
         aiTips: z.array(habitTipSchema).optional(),
+        schedule: habitScheduleSchema.optional(),
       }),
       responses: {
         200: z.custom<typeof habits.$inferSelect>(),
