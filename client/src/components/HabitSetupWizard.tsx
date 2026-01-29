@@ -35,6 +35,8 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
   const [selectedDuration, setSelectedDuration] = useState("weekly");
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [questionError, setQuestionError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
 
@@ -46,10 +48,12 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
     onSuccess: (data) => {
       setQuestions(data.questions);
       setIsLoadingQuestions(false);
+      setQuestionError(null);
       setPhase("questions");
     },
-    onError: () => {
+    onError: (error: Error) => {
       setIsLoadingQuestions(false);
+      setQuestionError("Couldn't generate questions. Please try again.");
     },
   });
 
@@ -72,17 +76,21 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
     },
     onSuccess: () => {
       setIsGeneratingPlan(false);
+      setGenerationError(null);
       setPhase("complete");
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
     },
-    onError: () => {
+    onError: (error: Error) => {
       setIsGeneratingPlan(false);
+      setGenerationError("Something went wrong creating your plan. Please try again.");
+      setPhase("duration");
     },
   });
 
   const handleStartInterview = () => {
     setIsLoadingQuestions(true);
+    setQuestionError(null);
     generateQuestionsMutation.mutate();
   };
 
@@ -107,6 +115,7 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
 
   const handleGeneratePlan = () => {
     setIsGeneratingPlan(true);
+    setGenerationError(null);
     setPhase("generating");
     generatePlanMutation.mutate();
   };
@@ -178,6 +187,14 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
                   </div>
                 </CardContent>
               </Card>
+
+              {questionError && (
+                <Card className="border-destructive/50 bg-destructive/10">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-destructive font-medium">{questionError}</p>
+                  </CardContent>
+                </Card>
+              )}
 
               <Button 
                 onClick={handleStartInterview} 
@@ -277,6 +294,14 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
                 </p>
               </div>
 
+              {generationError && (
+                <Card className="border-destructive/50 bg-destructive/10">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-destructive font-medium">{generationError}</p>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="space-y-3">
                 {DURATION_OPTIONS.map((option) => (
                   <Card
@@ -308,6 +333,7 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
               <Button 
                 onClick={handleGeneratePlan} 
                 className="w-full gap-2"
+                disabled={generatePlanMutation.isPending}
                 data-testid="button-generate-plan"
               >
                 <Sparkles className="w-4 h-4" />
