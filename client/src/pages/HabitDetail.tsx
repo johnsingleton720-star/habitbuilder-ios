@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useRoute, Link } from "wouter";
-import { useHabit, useUpdateHabit, useGenerateHabitPlan } from "@/hooks/use-habits";
+import { useHabit, useUpdateHabit, useGenerateHabitPlan, useToggleHabitDate } from "@/hooks/use-habits";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Lightbulb, Brain, Clock, Heart, Search, CheckCircle2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Lightbulb, Brain, Clock, Heart, Search, CheckCircle2, Play, Pencil, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, subDays, eachDayOfInterval } from "date-fns";
 import type { HabitStep, HabitTip } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { api } from "@shared/routes";
 import { StepExplorer } from "@/components/StepExplorer";
+import { GuidedSession } from "@/components/GuidedSession";
 
 const tipIcons = {
   motivation: Heart,
@@ -33,10 +35,14 @@ export default function HabitDetail() {
   const habitId = Number(params?.id);
   const [selectedStep, setSelectedStep] = useState<HabitStep | null>(null);
   const [explorerOpen, setExplorerOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
   
   const { data: habit, isLoading } = useHabit(habitId);
   const updateHabit = useUpdateHabit();
   const generatePlan = useGenerateHabitPlan();
+  const toggleDate = useToggleHabitDate();
 
   if (isLoading) {
     return (
@@ -89,6 +95,44 @@ export default function HabitDetail() {
     setExplorerOpen(true);
   };
 
+  const handleStartSession = () => {
+    setSessionOpen(true);
+  };
+
+  const handleUpdateSteps = (updatedSteps: HabitStep[]) => {
+    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
+      }
+    });
+  };
+
+  const handleSessionComplete = () => {
+    const today = new Date();
+    const todayStr = format(today, "yyyy-MM-dd");
+    if (!completedDates.includes(todayStr)) {
+      toggleDate.mutate(habit, today);
+    }
+  };
+
+  const startEditingNotes = (step: HabitStep) => {
+    setEditingNotes(step.id);
+    setNoteText(step.notes || "");
+  };
+
+  const saveNotes = (stepId: string) => {
+    const updatedSteps = steps.map(step => 
+      step.id === stepId ? { ...step, notes: noteText } : step
+    );
+    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
+        setEditingNotes(null);
+        setNoteText("");
+      }
+    });
+  };
+
   const handleSaveStepExploration = (updatedStep: HabitStep) => {
     const updatedSteps = steps.map(step => 
       step.id === updatedStep.id ? updatedStep : step
@@ -127,13 +171,13 @@ export default function HabitDetail() {
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="flex items-center gap-4">
+        <header className="flex items-center gap-4 flex-wrap">
           <Link href="/">
             <Button variant="ghost" size="icon" data-testid="button-back">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground" data-testid="text-habit-title">
               {habit.title}
             </h1>
@@ -141,10 +185,20 @@ export default function HabitDetail() {
               <p className="text-muted-foreground mt-1" data-testid="text-habit-description">{habit.description}</p>
             )}
           </div>
-          <Badge variant="outline" className="flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-orange-500 fill-current" />
-            <span>{completedDates.length} day streak</span>
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-orange-500 fill-current" />
+              <span>{completedDates.length} day streak</span>
+            </Badge>
+            <Button 
+              onClick={handleStartSession}
+              className="gap-2 shadow-lg shadow-primary/25"
+              data-testid="button-start-session"
+            >
+              <Play className="w-4 h-4" />
+              Start Session
+            </Button>
+          </div>
         </header>
 
         {habit.goal && (
@@ -235,7 +289,7 @@ export default function HabitDetail() {
                           className="mt-0.5"
                           data-testid={`checkbox-step-${step.id}`}
                         />
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 space-y-2">
                           <span
                             className={`text-sm block ${step.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
                             data-testid={`text-step-${step.id}`}
@@ -243,7 +297,7 @@ export default function HabitDetail() {
                             {step.text}
                           </span>
                           {step.explored && step.options && step.options.filter(o => o.selected).length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {step.options.filter(o => o.selected).slice(0, 3).map(opt => (
                                 <Badge key={opt.id} variant="secondary" className="text-xs">
                                   {opt.text.length > 30 ? opt.text.slice(0, 30) + "..." : opt.text}
@@ -255,6 +309,54 @@ export default function HabitDetail() {
                                 </Badge>
                               )}
                             </div>
+                          )}
+                          {editingNotes === step.id ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={noteText}
+                                onChange={(e) => setNoteText(e.target.value)}
+                                placeholder="Add your notes, reflections, or answers..."
+                                className="text-sm min-h-[80px]"
+                                data-testid={`input-notes-${step.id}`}
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => saveNotes(step.id)}
+                                  className="gap-1"
+                                  data-testid={`button-save-notes-${step.id}`}
+                                >
+                                  <Save className="w-3 h-3" />
+                                  Save
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => setEditingNotes(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : step.notes ? (
+                            <div 
+                              className="p-2 rounded bg-muted/50 text-sm text-muted-foreground cursor-pointer hover:bg-muted transition-colors"
+                              onClick={() => startEditingNotes(step)}
+                            >
+                              <p className="italic">{step.notes}</p>
+                              <span className="text-xs text-primary mt-1 inline-flex items-center gap-1">
+                                <Pencil className="w-3 h-3" /> Edit notes
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditingNotes(step)}
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                              data-testid={`button-add-notes-${step.id}`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                              Add notes
+                            </button>
                           )}
                         </div>
                         <Button
@@ -379,6 +481,17 @@ export default function HabitDetail() {
           open={explorerOpen}
           onOpenChange={setExplorerOpen}
           onSave={handleSaveStepExploration}
+        />
+      )}
+
+      {/* Guided Session Dialog */}
+      {habit && (
+        <GuidedSession
+          habit={habit}
+          open={sessionOpen}
+          onOpenChange={setSessionOpen}
+          onUpdateSteps={handleUpdateSteps}
+          onComplete={handleSessionComplete}
         />
       )}
     </div>

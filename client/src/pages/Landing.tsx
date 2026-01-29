@@ -92,12 +92,12 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 bg-white/50">
+      <section className="py-24 bg-white/50 dark:bg-card/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold">Everything you need to grow</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Simple tools that create powerful results. We've stripped away the clutter to help you focus on progress.
+              An interactive coach in your pocket. We guide you through every step of building lasting habits.
             </p>
           </div>
 
@@ -105,28 +105,36 @@ export default function Landing() {
             {[
               {
                 icon: <CheckCircle2 className="w-8 h-8 text-primary" />,
-                title: "Track Progress",
-                desc: "Visual streaks and daily goals keep you motivated to maintain your momentum."
+                title: "Guided Sessions",
+                desc: "Start each habit with a pre-action checklist, then get coached through every step with timers and prompts."
               },
               {
                 icon: <Sparkles className="w-8 h-8 text-accent" />,
-                title: "Daily Inspiration",
-                desc: "Get a fresh dose of motivation every morning with curated quotes."
+                title: "AI Action Plans",
+                desc: "Generate personalized step-by-step plans with AI. Explore each step, add notes, and track your answers."
               },
               {
                 icon: <Leaf className="w-8 h-8 text-emerald-500" />,
-                title: "Build Routines",
-                desc: "Organize habits into daily or weekly schedules that fit your life."
+                title: "Smart Scheduling",
+                desc: "Set specific days and times for each habit. Your dashboard shows exactly what to focus on today."
               }
             ].map((feature, i) => (
               <motion.div 
                 key={i}
-                whileHover={{ y: -5 }}
-                className="bg-white p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-xl hover:border-primary/20 transition-all duration-300"
+                whileHover={{ y: -5, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={scrollToLogin}
+                className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer group"
               >
-                <div className="mb-6 p-3 bg-background rounded-xl w-fit">{feature.icon}</div>
+                <div className="mb-6 p-3 bg-background dark:bg-muted rounded-xl w-fit group-hover:bg-primary/10 transition-colors">
+                  {feature.icon}
+                </div>
                 <h3 className="font-display text-xl font-bold mb-3">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
+                <div className="mt-4 flex items-center gap-1 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  Try it free
+                  <ArrowRight className="w-4 h-4" />
+                </div>
               </motion.div>
             ))}
           </div>

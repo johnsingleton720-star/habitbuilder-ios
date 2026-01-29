@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { format, isSameDay, parseISO } from "date-fns";
-import { Check, Flame, MoreVertical, Trash2, Edit, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
+import { Check, Flame, MoreVertical, Trash2, Edit, ChevronRight, Play } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useToggleHabitDate, useDeleteHabit } from "@/hooks/use-habits";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,12 @@ import {
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { HabitFormDialog } from "./HabitFormDialog";
+import { GuidedSession } from "./GuidedSession";
 import { Link } from "wouter";
+import { useUpdateHabit } from "@/hooks/use-habits";
+import { queryClient } from "@/lib/queryClient";
+import { api } from "@shared/routes";
+import type { HabitStep } from "@shared/schema";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -23,8 +28,10 @@ interface HabitCardProps {
 export function HabitCard({ habit }: HabitCardProps) {
   const toggleDate = useToggleHabitDate();
   const deleteHabit = useDeleteHabit();
+  const updateHabit = useUpdateHabit();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showSession, setShowSession] = useState(false);
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -39,6 +46,20 @@ export function HabitCard({ habit }: HabitCardProps) {
   };
 
   const streak = calculateStreak();
+
+  const handleUpdateSteps = (steps: HabitStep[]) => {
+    updateHabit.mutate({ id: habit.id, steps }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [api.habits.list.path] });
+      }
+    });
+  };
+
+  const handleSessionComplete = () => {
+    if (!isCompletedToday) {
+      toggleDate.mutate(habit, today);
+    }
+  };
 
   return (
     <>
@@ -69,9 +90,20 @@ export function HabitCard({ habit }: HabitCardProps) {
               </span>
             </div>
             
-            <div className="mt-3 flex items-center gap-1 text-primary text-sm font-medium">
-              View Plan & Progress
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-3 flex items-center gap-3">
+              <Button
+                size="sm"
+                className="gap-1.5 shadow-md shadow-primary/20"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSession(true); }}
+                data-testid={`button-start-${habit.id}`}
+              >
+                <Play className="w-3.5 h-3.5" />
+                Start
+              </Button>
+              <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                View Plan
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
           </div>
 
@@ -157,6 +189,15 @@ export function HabitCard({ habit }: HabitCardProps) {
         open={showEditDialog} 
         onOpenChange={setShowEditDialog} 
         habitToEdit={habit} 
+      />
+
+      {/* Guided Session Dialog */}
+      <GuidedSession
+        habit={habit}
+        open={showSession}
+        onOpenChange={setShowSession}
+        onUpdateSteps={handleUpdateSteps}
+        onComplete={handleSessionComplete}
       />
     </>
   );

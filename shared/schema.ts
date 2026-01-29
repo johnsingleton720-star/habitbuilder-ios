@@ -23,6 +23,17 @@ export interface HabitStep {
   explored?: boolean; // Whether user has explored this step
   options?: StepOption[]; // AI-generated options for this step
   customResponse?: string; // User's custom text response
+  notes?: string; // User's personal notes/answers for this step
+}
+
+// Active session state for guided habit flow
+export interface HabitSession {
+  habitId: number;
+  startedAt: string;
+  currentStepIndex: number;
+  checklistCompleted: boolean;
+  timerDuration?: number; // Duration in seconds for timed habits
+  timerStartedAt?: string;
 }
 
 // AI-generated tip type
