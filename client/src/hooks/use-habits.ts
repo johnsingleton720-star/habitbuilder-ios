@@ -1,17 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type HabitInput, type HabitResponse } from "@shared/routes";
-import { format } from "date-fns";
-
-// ============================================
-// HOOKS
-// ============================================
 
 export function useHabits() {
   return useQuery({
     queryKey: [api.habits.list.path],
     queryFn: async () => {
       const res = await fetch(api.habits.list.path, { credentials: "include" });
-      if (res.status === 401) return null; // Handle unauth gracefully in UI
+      if (res.status === 401) return null;
       if (!res.ok) throw new Error("Failed to fetch habits");
       return api.habits.list.responses[200].parse(await res.json());
     },
@@ -20,7 +15,7 @@ export function useHabits() {
 
 export function useHabit(id: number) {
   return useQuery({
-    queryKey: [api.habits.get.path, id],
+    queryKey: ["/api/habits", id],
     queryFn: async () => {
       const url = buildUrl(api.habits.get.path, { id });
       const res = await fetch(url, { credentials: "include" });
@@ -36,7 +31,6 @@ export function useCreateHabit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: HabitInput) => {
-      // Validate first
       const validated = api.habits.create.input.parse(data);
       
       const res = await fetch(api.habits.create.path, {
@@ -64,7 +58,7 @@ export function useCreateHabit() {
 export function useUpdateHabit() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & Partial<HabitInput> & { completedDates?: string[] }) => {
+    mutationFn: async ({ id, ...updates }: { id: number } & Record<string, any>) => {
       const url = buildUrl(api.habits.update.path, { id });
       const res = await fetch(url, {
         method: api.habits.update.method,
@@ -100,26 +94,6 @@ export function useDeleteHabit() {
   });
 }
 
-// Helper to toggle a date for a habit
-export function useToggleHabitDate() {
-  const updateMutation = useUpdateHabit();
-  
-  return {
-    ...updateMutation,
-    mutate: (habit: HabitResponse, date: Date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-      const currentDates = habit.completedDates || [];
-      const isCompleted = currentDates.includes(dateStr);
-      
-      const newDates = isCompleted
-        ? currentDates.filter(d => d !== dateStr)
-        : [...currentDates, dateStr];
-        
-      updateMutation.mutate({ id: habit.id, completedDates: newDates });
-    }
-  };
-}
-
 export function useDailyQuote() {
   return useQuery({
     queryKey: [api.quotes.daily.path],
@@ -128,23 +102,6 @@ export function useDailyQuote() {
       if (!res.ok) throw new Error("Failed to fetch quote");
       return api.quotes.daily.responses[200].parse(await res.json());
     },
-    staleTime: 1000 * 60 * 60, // 1 hour
-  });
-}
-
-// Generate AI plan for a habit
-export function useGenerateHabitPlan() {
-  return useMutation({
-    mutationFn: async (data: { habitTitle: string; habitDescription?: string; goal?: string }) => {
-      const res = await fetch("/api/ai/generate-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("Failed to generate habit plan");
-      return res.json();
-    },
+    staleTime: 1000 * 60 * 60,
   });
 }

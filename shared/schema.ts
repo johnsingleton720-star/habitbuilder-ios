@@ -8,32 +8,40 @@ export * from "./models/chat";
 
 import { users } from "./models/auth";
 
-// Option for step exploration
-export interface StepOption {
+// Question asked during habit setup interview
+export interface HabitQuestion {
   id: string;
-  text: string;
-  selected: boolean;
+  question: string;
+  answer: string;
 }
 
-// Step type for habit action steps
-export interface HabitStep {
+// Daily routine task within an action plan
+export interface RoutineTask {
   id: string;
-  text: string;
+  title: string;
+  description: string;
+  duration: number; // Minutes
   completed: boolean;
-  explored?: boolean; // Whether user has explored this step
-  options?: StepOption[]; // AI-generated options for this step
-  customResponse?: string; // User's custom text response
-  notes?: string; // User's personal notes/answers for this step
+  notes?: string;
 }
 
-// Active session state for guided habit flow
-export interface HabitSession {
-  habitId: number;
-  startedAt: string;
-  currentStepIndex: number;
-  checklistCompleted: boolean;
-  timerDuration?: number; // Duration in seconds for timed habits
-  timerStartedAt?: string;
+// Daily action plan for a specific date
+export interface DailyPlan {
+  date: string; // ISO date string
+  tasks: RoutineTask[];
+  completed: boolean;
+  timeSpent: number; // Total minutes spent
+  sessionNotes?: string;
+}
+
+// Progress log entry for tracking
+export interface ProgressEntry {
+  date: string;
+  tasksCompleted: number;
+  totalTasks: number;
+  timeSpent: number;
+  notes: string;
+  mood?: "great" | "good" | "okay" | "struggling";
 }
 
 // AI-generated tip type
@@ -55,12 +63,33 @@ export const habits = pgTable("habits", {
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description"),
-  goal: text("goal"), // Target goal for this habit (e.g., "Run 5K", "Read 30 books")
-  frequency: text("frequency").notNull().default("daily"), // daily, weekly
-  schedule: jsonb("schedule").$type<HabitSchedule>(), // Scheduled days and time
-  completedDates: jsonb("completed_dates").$type<string[]>().default([]), // Array of ISO date strings
-  steps: jsonb("steps").$type<HabitStep[]>().default([]), // Action steps to achieve the habit
-  aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]), // AI-generated tips and guidance
+  goal: text("goal"),
+  
+  // Setup phase
+  setupComplete: boolean("setup_complete").default(false),
+  questions: jsonb("questions").$type<HabitQuestion[]>().default([]),
+  
+  // Plan configuration
+  planDuration: text("plan_duration").default("weekly"), // daily, weekly, monthly
+  planStartDate: text("plan_start_date"),
+  planEndDate: text("plan_end_date"),
+  
+  // Schedule
+  schedule: jsonb("schedule").$type<HabitSchedule>(),
+  
+  // Action plans and progress
+  dailyPlans: jsonb("daily_plans").$type<DailyPlan[]>().default([]),
+  progress: jsonb("progress").$type<ProgressEntry[]>().default([]),
+  
+  // Stats
+  totalTimeSpent: integer("total_time_spent").default(0), // Minutes
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  
+  // AI guidance
+  aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]),
+  aiContext: text("ai_context"), // Summary of user's goals/context for AI
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 

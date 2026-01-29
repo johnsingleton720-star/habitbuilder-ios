@@ -1,21 +1,40 @@
 import { z } from 'zod';
-import { insertHabitSchema, habits, type HabitStep, type HabitTip } from './schema';
+import { insertHabitSchema, habits, type HabitTip } from './schema';
 
-// Step option schema for exploration
-export const stepOptionSchema = z.object({
+// Habit question schema
+export const habitQuestionSchema = z.object({
   id: z.string(),
-  text: z.string(),
-  selected: z.boolean(),
+  question: z.string(),
+  answer: z.string(),
 });
 
-// Step and tip schemas for validation
-export const habitStepSchema = z.object({
+// Routine task schema
+export const routineTaskSchema = z.object({
   id: z.string(),
-  text: z.string(),
+  title: z.string(),
+  description: z.string(),
+  duration: z.number(),
   completed: z.boolean(),
-  explored: z.boolean().optional(),
-  options: z.array(stepOptionSchema).optional(),
-  customResponse: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+// Daily plan schema
+export const dailyPlanSchema = z.object({
+  date: z.string(),
+  tasks: z.array(routineTaskSchema),
+  completed: z.boolean(),
+  timeSpent: z.number(),
+  sessionNotes: z.string().optional(),
+});
+
+// Progress entry schema
+export const progressEntrySchema = z.object({
+  date: z.string(),
+  tasksCompleted: z.number(),
+  totalTasks: z.number(),
+  timeSpent: z.number(),
+  notes: z.string(),
+  mood: z.enum(["great", "good", "okay", "struggling"]).optional(),
 });
 
 export const habitTipSchema = z.object({
@@ -79,10 +98,19 @@ export const api = {
       method: 'PUT' as const,
       path: '/api/habits/:id',
       input: insertHabitSchema.partial().extend({
-        completedDates: z.array(z.string()).optional(),
-        steps: z.array(habitStepSchema).optional(),
+        questions: z.array(habitQuestionSchema).optional(),
+        dailyPlans: z.array(dailyPlanSchema).optional(),
+        progress: z.array(progressEntrySchema).optional(),
         aiTips: z.array(habitTipSchema).optional(),
         schedule: habitScheduleSchema.optional(),
+        setupComplete: z.boolean().optional(),
+        planDuration: z.string().optional(),
+        planStartDate: z.string().optional(),
+        planEndDate: z.string().optional(),
+        aiContext: z.string().optional(),
+        totalTimeSpent: z.number().optional(),
+        currentStreak: z.number().optional(),
+        longestStreak: z.number().optional(),
       }),
       responses: {
         200: z.custom<typeof habits.$inferSelect>(),
@@ -110,25 +138,6 @@ export const api = {
           quote: z.string(),
           author: z.string().optional(),
         }),
-      },
-    },
-  },
-  ai: {
-    generatePlan: {
-      method: 'POST' as const,
-      path: '/api/ai/generate-plan',
-      input: z.object({
-        habitTitle: z.string(),
-        habitDescription: z.string().optional(),
-        goal: z.string().optional(),
-      }),
-      responses: {
-        200: z.object({
-          steps: z.array(habitStepSchema),
-          tips: z.array(habitTipSchema),
-        }),
-        401: errorSchemas.unauthorized,
-        500: errorSchemas.internal,
       },
     },
   },

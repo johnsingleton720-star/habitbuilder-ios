@@ -1,11 +1,20 @@
-import { habits, users, type Habit, type InsertHabit, type User, type HabitStep, type HabitTip } from "@shared/schema";
+import { habits, users, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
 export interface HabitUpdates extends Partial<InsertHabit> {
-  completedDates?: string[];
-  steps?: HabitStep[];
+  questions?: HabitQuestion[];
+  dailyPlans?: DailyPlan[];
+  progress?: ProgressEntry[];
   aiTips?: HabitTip[];
+  setupComplete?: boolean;
+  planDuration?: string;
+  planStartDate?: string;
+  planEndDate?: string;
+  aiContext?: string;
+  totalTimeSpent?: number;
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 export interface IStorage {

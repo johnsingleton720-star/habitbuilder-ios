@@ -1,18 +1,27 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertHabitSchema, type HabitSchedule } from "@shared/schema";
-import { type HabitInput, type HabitResponse } from "@shared/routes";
+import { z } from "zod";
+import { type HabitSchedule } from "@shared/schema";
+import { type HabitResponse } from "@shared/routes";
 import { useCreateHabit, useUpdateHabit } from "@/hooks/use-habits";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SchedulePicker } from "@/components/SchedulePicker";
 import { useEffect, useState } from "react";
-import { Loader2, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { useLocation } from "wouter";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const habitFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  goal: z.string().optional(),
+});
+
+type HabitFormData = z.infer<typeof habitFormSchema>;
 
 interface HabitFormDialogProps {
   open: boolean;
@@ -23,35 +32,33 @@ interface HabitFormDialogProps {
 export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDialogProps) {
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
+  const [, setLocation] = useLocation();
   const isEditing = !!habitToEdit;
   const [showSchedule, setShowSchedule] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
 
-  const form = useForm<HabitInput>({
-    resolver: zodResolver(insertHabitSchema),
+  const form = useForm<HabitFormData>({
+    resolver: zodResolver(habitFormSchema),
     defaultValues: {
       title: "",
       description: "",
       goal: "",
-      frequency: "daily",
     },
   });
 
-  // Reset form when dialog opens/closes or habitToEdit changes
   useEffect(() => {
     if (open) {
       form.reset({
         title: habitToEdit?.title || "",
         description: habitToEdit?.description || "",
         goal: habitToEdit?.goal || "",
-        frequency: habitToEdit?.frequency || "daily",
       });
       setSchedule(habitToEdit?.schedule as HabitSchedule | undefined);
       setShowSchedule(!!habitToEdit?.schedule);
     }
   }, [open, habitToEdit, form]);
 
-  const onSubmit = async (data: HabitInput) => {
+  const onSubmit = async (data: HabitFormData) => {
     try {
       const scheduleData = showSchedule && schedule?.days?.length ? schedule : undefined;
       
@@ -59,18 +66,23 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
         await updateHabit.mutateAsync({ 
           id: habitToEdit.id, 
           title: data.title,
-          description: data.description,
-          goal: data.goal,
-          frequency: data.frequency,
+          description: data.description || null,
+          goal: data.goal || null,
           schedule: scheduleData,
         });
+        onOpenChange(false);
       } else {
-        await createHabit.mutateAsync({
-          ...data,
+        const newHabit = await createHabit.mutateAsync({
+          title: data.title,
+          description: data.description || null,
+          goal: data.goal || null,
           schedule: scheduleData,
-        } as HabitInput);
+        });
+        onOpenChange(false);
+        if (newHabit?.id) {
+          setLocation(`/habit/${newHabit.id}`);
+        }
       }
-      onOpenChange(false);
     } catch (error) {
       console.error("Failed to submit habit:", error);
     }
@@ -80,28 +92,37 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">
-            {isEditing ? "Edit Habit" : "New Habit"}
+          <DialogTitle className="flex items-center gap-2">
+            {isEditing ? "Edit Habit" : (
+              <>
+                <Sparkles className="w-5 h-5 text-primary" />
+                Create New Habit
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
             {isEditing 
-              ? "Update your habit details below." 
-              : "What positive routine do you want to build?"}
+              ? "Update your habit details below."
+              : "Enter your habit details. After creating, you'll answer a few questions to build a personalized action plan."}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Habit Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Morning Meditation" {...field} className="h-11" />
+                    <Input 
+                      placeholder="e.g., Exercise daily, Read more, Meditate" 
+                      {...field} 
+                      data-testid="input-habit-title"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,10 +137,10 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Why is this habit important?" 
-                      className="resize-none min-h-[80px]" 
-                      {...field} 
-                      value={field.value || ""}
+                      placeholder="Describe your habit in more detail..."
+                      className="resize-none"
+                      {...field}
+                      data-testid="input-habit-description"
                     />
                   </FormControl>
                   <FormMessage />
@@ -135,10 +156,9 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
                   <FormLabel>Goal (Optional)</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="e.g. Meditate 30 mins daily for 30 days" 
-                      {...field} 
-                      value={field.value || ""}
-                      className="h-11"
+                      placeholder="e.g., Run a 5K, Read 20 books this year"
+                      {...field}
+                      data-testid="input-habit-goal"
                     />
                   </FormControl>
                   <FormMessage />
@@ -146,60 +166,56 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="frequency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Frequency</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
               <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
+                <Button 
+                  type="button" 
+                  variant="outline" 
                   className="w-full justify-between"
                   data-testid="button-toggle-schedule"
                 >
                   <span className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    {showSchedule ? "Schedule Settings" : "Add Schedule (Optional)"}
+                    Set Schedule
                   </span>
                   {showSchedule ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-4">
-                <SchedulePicker
-                  value={schedule}
+                <SchedulePicker 
+                  value={schedule} 
                   onChange={setSchedule}
                 />
               </CollapsibleContent>
             </Collapsible>
 
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending} className="min-w-[100px]">
+              <Button 
+                type="submit" 
+                disabled={isPending}
+                className="gap-2"
+                data-testid="button-submit-habit"
+              >
                 {isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isEditing ? "Saving..." : "Creating..."}
+                  </>
+                ) : isEditing ? (
+                  "Save Changes"
                 ) : (
-                  isEditing ? "Save Changes" : "Create Habit"
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Create & Setup
+                  </>
                 )}
               </Button>
             </DialogFooter>

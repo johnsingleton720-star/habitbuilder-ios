@@ -336,6 +336,264 @@ Be creative and diverse. Cover different angles and approaches to completing "${
     }
   });
 
+  // Generate habit-specific interview questions
+  app.post("/api/habits/:id/generate-questions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const habit = await storage.getHabit(habitId);
+      
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const prompt = `You are an expert habit coach conducting an intake interview to create a personalized action plan.
+
+The user wants to build this habit: "${habit.title}"
+${habit.description ? `Additional context: ${habit.description}` : ''}
+${habit.goal ? `Their goal: ${habit.goal}` : ''}
+
+Generate 4-5 thoughtful, open-ended questions to understand:
+1. Their current experience level with this habit
+2. Their specific goals and why this matters to them
+3. Their available time and resources
+4. Any obstacles they've faced before
+5. Their preferred approach or style
+
+Return a JSON object with:
+{
+  "questions": [
+    { "id": "q1", "question": "Your question here", "answer": "" },
+    { "id": "q2", "question": "Your question here", "answer": "" },
+    ...
+  ]
+}
+
+Make questions conversational and specific to "${habit.title}". Avoid generic questions.`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a supportive habit coach. Ask thoughtful questions to understand the user's needs. Always return valid JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const data = JSON.parse(content);
+      res.json(data);
+    } catch (error) {
+      console.error("Error generating questions:", error);
+      res.status(500).json({ error: "Failed to generate questions" });
+    }
+  });
+
+  // Generate personalized action plan based on questionnaire answers
+  app.post("/api/habits/:id/generate-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { duration, questions } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      // Calculate date range
+      const startDate = new Date();
+      const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + daysCount - 1);
+
+      // Build context from questionnaire
+      const contextSummary = questions
+        .filter((q: any) => q.answer)
+        .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
+        .join("\n\n");
+
+      const prompt = `You are creating a personalized ${duration} action plan for someone building this habit: "${habit.title}"
+
+Based on their interview responses:
+${contextSummary}
+
+Create ${daysCount} daily plans, each with 3-5 specific tasks tailored to their answers.
+
+Return a JSON object with:
+{
+  "dailyPlans": [
+    {
+      "date": "${startDate.toISOString().split('T')[0]}",
+      "dayNumber": 1,
+      "focus": "Theme for this day",
+      "tasks": [
+        {
+          "id": "day1-task1",
+          "title": "Specific task title",
+          "description": "Detailed instructions based on their answers",
+          "duration": 15,
+          "completed": false,
+          "notes": ""
+        }
+      ],
+      "completed": false,
+      "timeSpent": 0
+    }
+  ],
+  "aiContext": "A 2-3 sentence summary of their goals and approach for future reference"
+}
+
+IMPORTANT:
+- Tasks must be specific to their answers (e.g., if they said they have 20 minutes, keep daily total under 20 min)
+- Progress difficulty gradually over the ${daysCount} days
+- Reference their specific situation in task descriptions
+- Each day should build on the previous day`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const planData = JSON.parse(content);
+
+      // Update habit with the generated plan
+      await storage.updateHabit(habitId, userId, {
+        questions: questions,
+        planDuration: duration,
+        planStartDate: startDate.toISOString().split('T')[0],
+        planEndDate: endDate.toISOString().split('T')[0],
+        dailyPlans: planData.dailyPlans,
+        aiContext: planData.aiContext,
+        setupComplete: true,
+      });
+
+      res.json({ success: true, ...planData });
+    } catch (error) {
+      console.error("Error generating plan:", error);
+      res.status(500).json({ error: "Failed to generate plan" });
+    }
+  });
+
+  // Update a specific task in a daily plan
+  app.patch("/api/habits/:id/tasks/:taskId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const taskId = req.params.taskId;
+      const { completed, notes, timeSpent } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      // Find and update the task in dailyPlans
+      const dailyPlans = [...(habit.dailyPlans || [])];
+      let taskFound = false;
+      let totalTimeSpent = habit.totalTimeSpent || 0;
+
+      for (const plan of dailyPlans) {
+        const taskIndex = plan.tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+          if (completed !== undefined) {
+            plan.tasks[taskIndex].completed = completed;
+          }
+          if (notes !== undefined) {
+            plan.tasks[taskIndex].notes = notes;
+          }
+          if (timeSpent !== undefined) {
+            const oldTime = plan.tasks[taskIndex].duration || 0;
+            totalTimeSpent += timeSpent;
+            plan.timeSpent = (plan.timeSpent || 0) + timeSpent;
+          }
+          
+          // Check if all tasks in this day are complete
+          plan.completed = plan.tasks.every(t => t.completed);
+          taskFound = true;
+          break;
+        }
+      }
+
+      if (!taskFound) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      // Calculate streak
+      let currentStreak = 0;
+      const today = new Date().toISOString().split('T')[0];
+      for (let i = dailyPlans.length - 1; i >= 0; i--) {
+        if (dailyPlans[i].completed) {
+          currentStreak++;
+        } else if (dailyPlans[i].date <= today) {
+          break;
+        }
+      }
+
+      await storage.updateHabit(habitId, userId, {
+        dailyPlans,
+        totalTimeSpent,
+        currentStreak,
+        longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
+  // Save session notes and progress
+  app.post("/api/habits/:id/session-complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { date, tasksCompleted, totalTasks, timeSpent, notes, mood } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const progress = [...(habit.progress || [])];
+      progress.push({
+        date,
+        tasksCompleted,
+        totalTasks,
+        timeSpent,
+        notes: notes || "",
+        mood,
+      });
+
+      await storage.updateHabit(habitId, userId, {
+        progress,
+        totalTimeSpent: (habit.totalTimeSpent || 0) + timeSpent,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving session:", error);
+      res.status(500).json({ error: "Failed to save session" });
+    }
+  });
+
   // Check user payment status and trial
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
     try {

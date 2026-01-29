@@ -1,21 +1,20 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { Check, ChevronRight, Clock, Sparkles, Target, Zap } from "lucide-react";
+import { Check, ChevronRight, Clock, Sparkles, Target, Zap, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useToggleHabitDate } from "@/hooks/use-habits";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
+import type { DailyPlan } from "@shared/schema";
 
 interface TodaysFocusProps {
   habits: HabitResponse[];
 }
 
 export function TodaysFocus({ habits }: TodaysFocusProps) {
-  const toggleDate = useToggleHabitDate();
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const dayName = format(today, "EEEE").toLowerCase();
@@ -30,8 +29,20 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   };
 
   const scheduledHabits = getScheduledHabits();
-  const completedToday = scheduledHabits.filter((h) => h.completedDates?.includes(todayStr));
-  const remainingHabits = scheduledHabits.filter((h) => !h.completedDates?.includes(todayStr));
+  
+  // Check completion based on daily plans
+  const completedToday = scheduledHabits.filter((h) => {
+    const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
+    const todayPlan = dailyPlans.find(p => p.date === todayStr);
+    return todayPlan?.completed || false;
+  });
+  
+  const remainingHabits = scheduledHabits.filter((h) => {
+    const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
+    const todayPlan = dailyPlans.find(p => p.date === todayStr);
+    return !todayPlan?.completed;
+  });
+  
   const progress = scheduledHabits.length > 0 
     ? Math.round((completedToday.length / scheduledHabits.length) * 100) 
     : 0;
@@ -54,6 +65,16 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   };
 
   const nextHabit = getNextHabit();
+
+  // Get today's tasks for the next habit
+  const getHabitTodayProgress = (habit: HabitResponse) => {
+    const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+    const todayPlan = dailyPlans.find(p => p.date === todayStr);
+    if (!todayPlan) return null;
+    const completed = todayPlan.tasks.filter(t => t.completed).length;
+    const total = todayPlan.tasks.length;
+    return { completed, total };
+  };
 
   return (
     <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -118,7 +139,15 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
                 data-testid={`focus-habit-${nextHabit.id}`}
               >
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium truncate">{nextHabit.title}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium truncate">{nextHabit.title}</h4>
+                    {!nextHabit.setupComplete && (
+                      <Badge variant="outline" className="text-xs">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Setup
+                      </Badge>
+                    )}
+                  </div>
                   {nextHabit.schedule?.time && (
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -129,28 +158,27 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
                       })}
                     </p>
                   )}
-                  {nextHabit.steps && nextHabit.steps.length > 0 && (
-                    <p className="text-xs text-primary mt-1">
-                      {nextHabit.steps.filter((s) => s.completed).length}/{nextHabit.steps.length} steps completed
-                    </p>
-                  )}
+                  {(() => {
+                    const taskProgress = getHabitTodayProgress(nextHabit);
+                    if (taskProgress && taskProgress.total > 0) {
+                      return (
+                        <p className="text-xs text-primary mt-1">
+                          {taskProgress.completed}/{taskProgress.total} tasks completed
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 ml-3">
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className={cn(
-                      "h-10 w-10 rounded-full p-0",
-                      "border-2 border-primary/20 hover:border-primary hover:bg-primary hover:text-primary-foreground"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleDate.mutate(nextHabit, today);
-                    }}
-                    data-testid={`button-complete-focus-${nextHabit.id}`}
+                    className="gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid={`button-start-focus-${nextHabit.id}`}
                   >
-                    <Check className="w-5 h-5" />
+                    <Play className="w-3.5 h-3.5" />
+                    Start
                   </Button>
                   <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>

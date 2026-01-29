@@ -1,48 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
-import { useHabit, useUpdateHabit, useGenerateHabitPlan, useToggleHabitDate } from "@/hooks/use-habits";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Lightbulb, Brain, Clock, Heart, Search, CheckCircle2, Play, Pencil, Save } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, subDays, eachDayOfInterval } from "date-fns";
-import type { HabitStep, HabitTip } from "@shared/schema";
-import { queryClient } from "@/lib/queryClient";
-import { api } from "@shared/routes";
-import { StepExplorer } from "@/components/StepExplorer";
+import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
+import { HabitSetupWizard } from "@/components/HabitSetupWizard";
 import { GuidedSession } from "@/components/GuidedSession";
-
-const tipIcons = {
-  motivation: Heart,
-  technique: Lightbulb,
-  science: Brain,
-  reminder: Clock,
-};
-
-const tipColors = {
-  motivation: "text-pink-500 bg-pink-50 dark:bg-pink-950/30",
-  technique: "text-amber-500 bg-amber-50 dark:bg-amber-950/30",
-  science: "text-blue-500 bg-blue-50 dark:bg-blue-950/30",
-  reminder: "text-purple-500 bg-purple-50 dark:bg-purple-950/30",
-};
 
 export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
-  const [selectedStep, setSelectedStep] = useState<HabitStep | null>(null);
-  const [explorerOpen, setExplorerOpen] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
-  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   
-  const { data: habit, isLoading } = useHabit(habitId);
-  const updateHabit = useUpdateHabit();
-  const generatePlan = useGenerateHabitPlan();
-  const toggleDate = useToggleHabitDate();
+  const { data: habit, isLoading } = useQuery<Habit>({
+    queryKey: ["/api/habits", habitId],
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, completed, notes, timeSpent }: { taskId: string; completed?: boolean; notes?: string; timeSpent?: number }) => {
+      const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, notes, timeSpent });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+    },
+  });
+
+  // Find today's plan or the next upcoming plan
+  useEffect(() => {
+    if (habit?.dailyPlans?.length && !selectedDay) {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const todayPlan = habit.dailyPlans.find(p => p.date === today);
+      if (todayPlan) {
+        setSelectedDay(today);
+      } else {
+        const futurePlan = habit.dailyPlans.find(p => isFuture(parseISO(p.date)));
+        if (futurePlan) {
+          setSelectedDay(futurePlan.date);
+        } else {
+          setSelectedDay(habit.dailyPlans[0]?.date);
+        }
+      }
+    }
+  }, [habit?.dailyPlans, selectedDay]);
+
+  // Auto-open setup wizard for new habits
+  useEffect(() => {
+    if (habit && !habit.setupComplete && !setupWizardOpen) {
+      setSetupWizardOpen(true);
+    }
+  }, [habit?.setupComplete]);
 
   if (isLoading) {
     return (
@@ -63,435 +86,367 @@ export default function HabitDetail() {
     );
   }
 
-  const steps = (habit.steps || []) as HabitStep[];
-  const tips = (habit.aiTips || []) as HabitTip[];
-  const completedSteps = steps.filter(s => s.completed).length;
-  const stepProgress = steps.length > 0 ? (completedSteps / steps.length) * 100 : 0;
+  const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+  const currentPlan = dailyPlans.find(p => p.date === selectedDay);
+  const completedDays = dailyPlans.filter(p => p.completed).length;
+  const totalDays = dailyPlans.length;
+  const overallProgress = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
 
-  const last7Days = eachDayOfInterval({
-    start: subDays(new Date(), 6),
-    end: new Date(),
-  });
-
-  const completedDates = habit.completedDates || [];
-  const weeklyCompletions = last7Days.filter(day => 
-    completedDates.includes(format(day, "yyyy-MM-dd"))
-  ).length;
-  const weeklyProgress = (weeklyCompletions / 7) * 100;
-
-  const handleToggleStep = (stepId: string) => {
-    const updatedSteps = steps.map(step => 
-      step.id === stepId ? { ...step, completed: !step.completed } : step
-    );
-    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
-      }
+  const handleToggleTask = (taskId: string, currentCompleted: boolean) => {
+    updateTaskMutation.mutate({ 
+      taskId, 
+      completed: !currentCompleted,
+      timeSpent: !currentCompleted ? 5 : 0, // Add 5 min when completing
     });
   };
 
-  const handleExploreStep = (step: HabitStep) => {
-    setSelectedStep(step);
-    setExplorerOpen(true);
+  const handleSaveNote = (taskId: string) => {
+    updateTaskMutation.mutate({ taskId, notes: noteText });
+    setEditingTask(null);
+    setNoteText("");
   };
 
   const handleStartSession = () => {
     setSessionOpen(true);
   };
 
-  const handleUpdateSteps = (updatedSteps: HabitStep[]) => {
-    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
-      }
-    });
-  };
-
-  const handleSessionComplete = () => {
-    const today = new Date();
-    const todayStr = format(today, "yyyy-MM-dd");
-    if (!completedDates.includes(todayStr)) {
-      toggleDate.mutate(habit, today);
-    }
-  };
-
-  const startEditingNotes = (step: HabitStep) => {
-    setEditingNotes(step.id);
-    setNoteText(step.notes || "");
-  };
-
-  const saveNotes = (stepId: string) => {
-    const updatedSteps = steps.map(step => 
-      step.id === stepId ? { ...step, notes: noteText } : step
-    );
-    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
-        setEditingNotes(null);
-        setNoteText("");
-      }
-    });
-  };
-
-  const handleSaveStepExploration = (updatedStep: HabitStep) => {
-    const updatedSteps = steps.map(step => 
-      step.id === updatedStep.id ? updatedStep : step
-    );
-    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
-      }
-    });
-  };
-
-  const exploredSteps = steps.filter(s => s.explored).length;
-
-  const handleGeneratePlan = () => {
-    generatePlan.mutate(
-      { 
-        habitTitle: habit.title, 
-        habitDescription: habit.description || undefined,
-        goal: habit.goal || undefined,
-      },
-      {
-        onSuccess: (data) => {
-          updateHabit.mutate(
-            { id: habit.id, steps: data.steps, aiTips: data.tips },
-            {
-              onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
-              }
-            }
-          );
-        },
-      }
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="flex items-center gap-4 flex-wrap">
-          <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground" data-testid="text-habit-title">
-              {habit.title}
-            </h1>
-            {habit.description && (
-              <p className="text-muted-foreground mt-1" data-testid="text-habit-description">{habit.description}</p>
+    <div className="min-h-screen bg-gradient-subtle">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+        <div className="container max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/">
+              <Button variant="ghost" size="icon" data-testid="button-back">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="min-w-0">
+              <h1 className="font-display text-xl font-bold truncate" data-testid="text-habit-title">
+                {habit.title}
+              </h1>
+              {habit.description && (
+                <p className="text-sm text-muted-foreground truncate">{habit.description}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge variant="secondary" className="gap-1">
+              <Flame className="w-3 h-3" />
+              {habit.currentStreak || 0} day streak
+            </Badge>
+            {habit.setupComplete && currentPlan && (
+              <Button onClick={handleStartSession} className="gap-2" data-testid="button-start-session">
+                <Play className="w-4 h-4" />
+                Start Session
+              </Button>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-orange-500 fill-current" />
-              <span>{completedDates.length} day streak</span>
-            </Badge>
-            <Button 
-              onClick={handleStartSession}
-              className="gap-2 shadow-lg shadow-primary/25"
-              data-testid="button-start-session"
-            >
-              <Play className="w-4 h-4" />
-              Start Session
-            </Button>
-          </div>
-        </header>
+        </div>
+      </header>
 
-        {habit.goal && (
+      <main className="container max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Setup Not Complete Message */}
+        {!habit.setupComplete && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="flex items-center gap-3 py-4">
-              <Target className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Your Goal</p>
-                <p className="font-semibold text-foreground" data-testid="text-habit-goal">{habit.goal}</p>
-              </div>
+            <CardContent className="p-6 text-center">
+              <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Let's personalize your journey</h3>
+              <p className="text-muted-foreground mb-4">
+                Answer a few questions to create your personalized action plan.
+              </p>
+              <Button onClick={() => setSetupWizardOpen(true)} className="gap-2" data-testid="button-setup-habit">
+                <Sparkles className="w-4 h-4" />
+                Start Setup
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Progress Overview */}
+        {habit.setupComplete && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{completedDays}/{totalDays}</p>
+                    <p className="text-sm text-muted-foreground">Days completed</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Timer className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{habit.totalTimeSpent || 0} min</p>
+                    <p className="text-sm text-muted-foreground">Total time spent</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Flame className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{habit.longestStreak || 0} days</p>
+                    <p className="text-sm text-muted-foreground">Longest streak</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Daily Plans */}
+        {habit.setupComplete && dailyPlans.length > 0 && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between gap-2">
-                Weekly Progress
-                <span className="text-2xl font-bold text-primary">{weeklyCompletions}/7</span>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Your {habit.planDuration} Plan
               </CardTitle>
-              <CardDescription>Days completed this week</CardDescription>
+              <CardDescription>
+                {habit.planStartDate} to {habit.planEndDate}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Progress value={weeklyProgress} className="h-3" />
-              <div className="flex justify-between gap-1">
-                {last7Days.map((day) => {
-                  const dateStr = format(day, "yyyy-MM-dd");
-                  const isCompleted = completedDates.includes(dateStr);
-                  const isToday = format(new Date(), "yyyy-MM-dd") === dateStr;
+              {/* Day Selector */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {dailyPlans.map((plan, index) => {
+                  const planDate = parseISO(plan.date);
+                  const isSelected = plan.date === selectedDay;
+                  const isPastDay = isPast(planDate) && !isToday(planDate);
+                  
                   return (
-                    <div key={dateStr} className="flex flex-col items-center gap-1">
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
-                          isCompleted
-                            ? "bg-primary text-primary-foreground"
-                            : isToday
-                            ? "bg-muted border-2 border-primary/50"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                        data-testid={`day-${dateStr}`}
-                      >
-                        {format(day, "d")}
+                    <button
+                      key={plan.date}
+                      onClick={() => setSelectedDay(plan.date)}
+                      className={cn(
+                        "flex-shrink-0 px-4 py-2 rounded-lg border transition-all",
+                        isSelected 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "bg-card border-border hover:border-primary/50",
+                        plan.completed && !isSelected && "bg-primary/10 border-primary/30"
+                      )}
+                      data-testid={`day-selector-${index + 1}`}
+                    >
+                      <div className="text-center">
+                        <p className="text-xs opacity-70">Day {index + 1}</p>
+                        <p className="font-medium">{format(planDate, "MMM d")}</p>
+                        {plan.completed && (
+                          <CheckCircle2 className="w-3 h-3 mx-auto mt-1" />
+                        )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {format(day, "EEE")}
-                      </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between gap-2">
-                Action Steps
-                <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-                  <span>{exploredSteps}/{steps.length} explored</span>
-                  <span className="text-muted-foreground/50">|</span>
-                  <span>{completedSteps}/{steps.length} done</span>
-                </div>
-              </CardTitle>
-              <CardDescription>Click each step to explore with AI-powered guidance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {steps.length > 0 ? (
+              {/* Current Day Tasks */}
+              {currentPlan && (
                 <div className="space-y-3">
-                  <Progress value={stepProgress} className="h-2 mb-4" />
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">
+                      {isToday(parseISO(currentPlan.date)) ? "Today's Tasks" : `Tasks for ${format(parseISO(currentPlan.date), "MMMM d")}`}
+                    </h4>
+                    <Badge variant={currentPlan.completed ? "default" : "secondary"}>
+                      {currentPlan.tasks.filter(t => t.completed).length}/{currentPlan.tasks.length} complete
+                    </Badge>
+                  </div>
+
                   <AnimatePresence mode="popLayout">
-                    {steps.map((step, index) => (
+                    {currentPlan.tasks.map((task, index) => (
                       <motion.div
-                        key={step.id}
-                        layout
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        key={task.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                          step.explored 
-                            ? "bg-primary/5 border border-primary/20" 
-                            : "bg-muted/50 hover:bg-muted"
-                        }`}
                       >
-                        <Checkbox
-                          checked={step.completed}
-                          onCheckedChange={() => handleToggleStep(step.id)}
-                          className="mt-0.5"
-                          data-testid={`checkbox-step-${step.id}`}
-                        />
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <span
-                            className={`text-sm block ${step.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
-                            data-testid={`text-step-${step.id}`}
-                          >
-                            {step.text}
-                          </span>
-                          {step.explored && step.options && step.options.filter(o => o.selected).length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {step.options.filter(o => o.selected).slice(0, 3).map(opt => (
-                                <Badge key={opt.id} variant="secondary" className="text-xs">
-                                  {opt.text.length > 30 ? opt.text.slice(0, 30) + "..." : opt.text}
-                                </Badge>
-                              ))}
-                              {step.options.filter(o => o.selected).length > 3 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  +{step.options.filter(o => o.selected).length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                          {editingNotes === step.id ? (
-                            <div className="space-y-2">
-                              <Textarea
-                                value={noteText}
-                                onChange={(e) => setNoteText(e.target.value)}
-                                placeholder="Add your notes, reflections, or answers..."
-                                className="text-sm min-h-[80px]"
-                                data-testid={`input-notes-${step.id}`}
+                        <Card className={cn(
+                          "transition-all",
+                          task.completed && "bg-primary/5 border-primary/30"
+                        )}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={task.completed}
+                                onCheckedChange={() => handleToggleTask(task.id, task.completed)}
+                                className="mt-1"
+                                data-testid={`checkbox-task-${task.id}`}
                               />
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => saveNotes(step.id)}
-                                  className="gap-1"
-                                  data-testid={`button-save-notes-${step.id}`}
-                                >
-                                  <Save className="w-3 h-3" />
-                                  Save
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  onClick={() => setEditingNotes(null)}
-                                >
-                                  Cancel
-                                </Button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className={cn(
+                                      "font-medium",
+                                      task.completed && "line-through text-muted-foreground"
+                                    )}>
+                                      {task.title}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                      {task.description}
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className="flex-shrink-0">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {task.duration} min
+                                  </Badge>
+                                </div>
+
+                                {/* Notes */}
+                                {editingTask === task.id ? (
+                                  <div className="mt-3 space-y-2">
+                                    <Textarea
+                                      value={noteText}
+                                      onChange={(e) => setNoteText(e.target.value)}
+                                      placeholder="Add your notes, reflections, or progress..."
+                                      className="min-h-[80px]"
+                                      data-testid={`input-task-notes-${task.id}`}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveNote(task.id)}
+                                        disabled={updateTaskMutation.isPending}
+                                        data-testid={`button-save-notes-${task.id}`}
+                                      >
+                                        <Save className="w-3 h-3 mr-1" />
+                                        Save
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingTask(null);
+                                          setNoteText("");
+                                        }}
+                                      >
+                                        <X className="w-3 h-3 mr-1" />
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-2">
+                                    {task.notes ? (
+                                      <div 
+                                        className="text-sm bg-muted/50 p-2 rounded cursor-pointer hover:bg-muted"
+                                        onClick={() => {
+                                          setEditingTask(task.id);
+                                          setNoteText(task.notes || "");
+                                        }}
+                                      >
+                                        <MessageSquare className="w-3 h-3 inline mr-1 text-muted-foreground" />
+                                        {task.notes}
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-muted-foreground"
+                                        onClick={() => {
+                                          setEditingTask(task.id);
+                                          setNoteText("");
+                                        }}
+                                        data-testid={`button-add-notes-${task.id}`}
+                                      >
+                                        <Pencil className="w-3 h-3 mr-1" />
+                                        Add notes
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          ) : step.notes ? (
-                            <div 
-                              className="p-2 rounded bg-muted/50 text-sm text-muted-foreground cursor-pointer hover:bg-muted transition-colors"
-                              onClick={() => startEditingNotes(step)}
-                            >
-                              <p className="italic">{step.notes}</p>
-                              <span className="text-xs text-primary mt-1 inline-flex items-center gap-1">
-                                <Pencil className="w-3 h-3" /> Edit notes
-                              </span>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => startEditingNotes(step)}
-                              className="text-xs text-primary hover:underline flex items-center gap-1"
-                              data-testid={`button-add-notes-${step.id}`}
-                            >
-                              <Pencil className="w-3 h-3" />
-                              Add notes
-                            </button>
-                          )}
-                        </div>
-                        <Button
-                          variant={step.explored ? "ghost" : "outline"}
-                          size="sm"
-                          onClick={() => handleExploreStep(step)}
-                          className="flex-shrink-0"
-                          data-testid={`button-explore-${step.id}`}
-                        >
-                          {step.explored ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                              View
-                            </>
-                          ) : (
-                            <>
-                              <Search className="w-3.5 h-3.5 mr-1.5" />
-                              Explore
-                            </>
-                          )}
-                        </Button>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">
-                    No action plan yet. Generate one with AI!
-                  </p>
-                  <Button
-                    onClick={handleGeneratePlan}
-                    disabled={generatePlan.isPending}
-                    data-testid="button-generate-plan"
-                  >
-                    {generatePlan.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Action Plan
-                      </>
-                    )}
-                  </Button>
-                </div>
               )}
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {tips.length > 0 && (
+        {/* AI Context Summary */}
+        {habit.aiContext && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-amber-500" />
-                Tips & Guidance
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="w-4 h-4" />
+                Your Personalized Approach
               </CardTitle>
-              <CardDescription>Personalized advice for your habit journey</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                {tips.map((tip, index) => {
-                  const Icon = tipIcons[tip.category] || Lightbulb;
-                  const colorClass = tipColors[tip.category] || tipColors.technique;
-                  return (
-                    <motion.div
-                      key={tip.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`flex items-start gap-3 p-4 rounded-xl ${colorClass}`}
-                      data-testid={`tip-${tip.id}`}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <Badge variant="outline" className="text-xs mb-2 capitalize">
-                          {tip.category}
-                        </Badge>
-                        <p className="text-sm text-foreground">{tip.text}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+              <p className="text-muted-foreground">{habit.aiContext}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Progress History */}
+        {habit.progress && habit.progress.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Progress History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {habit.progress.slice(-5).reverse().map((entry, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="font-medium">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
+                      {entry.notes && (
+                        <p className="text-sm text-muted-foreground">{entry.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
+                      <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
+      </main>
 
-        {steps.length > 0 && tips.length === 0 && (
-          <div className="text-center py-4">
-            <Button
-              variant="outline"
-              onClick={handleGeneratePlan}
-              disabled={generatePlan.isPending}
-              data-testid="button-regenerate-plan"
-            >
-              {generatePlan.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Regenerating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Regenerate Plan with Tips
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Step Explorer Dialog */}
-      {selectedStep && habit && (
-        <StepExplorer
+      {/* Setup Wizard */}
+      {habit && (
+        <HabitSetupWizard
           habit={habit}
-          step={selectedStep}
-          open={explorerOpen}
-          onOpenChange={setExplorerOpen}
-          onSave={handleSaveStepExploration}
+          open={setupWizardOpen}
+          onOpenChange={setSetupWizardOpen}
+          onComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+          }}
         />
       )}
 
-      {/* Guided Session Dialog */}
-      {habit && (
+      {/* Guided Session */}
+      {habit && currentPlan && (
         <GuidedSession
           habit={habit}
           open={sessionOpen}
           onOpenChange={setSessionOpen}
-          onUpdateSteps={handleUpdateSteps}
-          onComplete={handleSessionComplete}
         />
       )}
     </div>

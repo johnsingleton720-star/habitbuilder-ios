@@ -1,8 +1,15 @@
-# HabitGrow - Habit Tracking Application
+# HabitGrow - AI-Powered Habit Coaching Application
 
 ## Overview
 
-HabitGrow is a habit tracking web application that helps users build positive habits through daily tracking and AI-powered motivation. The app features a React frontend with a modern UI, Express backend, PostgreSQL database, Stripe payment integration for lifetime access, and Replit authentication.
+HabitGrow is an AI-powered habit coaching application that actively guides users through building positive habits. Unlike simple trackers, HabitGrow conducts personalized interviews to understand each user's goals, then generates tailored daily/weekly/monthly action plans. The app features:
+
+- **AI Interview**: When creating a habit, users answer personalized questions generated specifically for that habit type
+- **Personalized Action Plans**: Based on answers, AI creates daily routines with specific tasks
+- **Guided Sessions**: Interactive coaching walks users through each task with notes and timers
+- **Progress Dashboard**: Time spent, completion stats, streaks, and notes summary
+
+Tech stack: React frontend, Express backend, PostgreSQL database, Stripe payments, Replit Auth, OpenAI for AI features.
 
 ## User Preferences
 
@@ -53,6 +60,28 @@ Preferred communication style: Simple, everyday language.
 - `server/stripeClient.ts` - Stripe client with Replit connector credentials
 - `server/webhookHandlers.ts` - Webhook processing for payment completion
 - `server/seed-products.ts` - Script to create the $2.99 lifetime product
+
+### AI-Powered Habit System
+The core feature of HabitGrow is the AI-powered habit coaching system:
+
+**Habit Creation Flow:**
+1. User enters habit title, description, and optional goal
+2. App redirects to habit detail page where setup wizard opens
+3. AI generates 4-5 personalized questions specific to that habit type
+4. User answers questions conversationally
+5. User selects plan duration (daily, weekly, or monthly)
+6. AI generates a complete action plan with daily tasks based on answers
+
+**API Endpoints:**
+- `POST /api/habits/:id/generate-questions` - AI generates habit-specific interview questions
+- `POST /api/habits/:id/generate-plan` - Creates personalized daily plans from questionnaire answers
+- `PATCH /api/habits/:id/tasks/:taskId` - Updates task completion and notes
+- `POST /api/habits/:id/session-complete` - Logs completed sessions for progress tracking
+
+**Key Components:**
+- `HabitSetupWizard.tsx` - Multi-phase wizard: intro → questions → duration → generating → complete
+- `HabitDetail.tsx` - Shows daily plans, task completion, notes, and progress stats
+- `GuidedSession.tsx` - Interactive coaching with pre-session checklist, task walkthrough, and timer
 
 ### AI Integrations
 The `server/replit_integrations/` folder contains modular AI capabilities:
