@@ -61,6 +61,18 @@ The `server/replit_integrations/` folder contains modular AI capabilities:
 - **Image**: Image generation via OpenAI
 - **Batch**: Rate-limited batch processing utilities
 
+### Interactive Guided Sessions
+The GuidedSession component (`client/src/components/GuidedSession.tsx`) provides an immersive coaching experience:
+- **Pre-session checklist**: Users confirm they're ready (quiet space, uninterrupted time, focused)
+- **Step-by-step guidance**: Each action step is presented individually with notes input
+- **Timer functionality**: Optional timed sessions (5-45 minutes) with visual progress, pause/play, and audio completion alert
+- **Completion celebration**: Animated celebration screen with motivational messaging
+- **Framer Motion animations**: Smooth transitions between phases
+
+Launch guided sessions from:
+- "Start" button on habit cards
+- "Start Session" button on habit detail page header
+
 ### PWA Support
 - Service worker for offline caching
 - Web app manifest for installability
