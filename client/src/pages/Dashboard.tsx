@@ -6,22 +6,90 @@ import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
 import { ProgressSummary } from "@/components/ProgressSummary";
 import { TodaysFocus } from "@/components/TodaysFocus";
+import { StreakBrokenModal } from "@/components/StreakBrokenModal";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import type { Habit } from "@shared/schema";
+
+interface BrokenStreakInfo {
+  habitId: number;
+  habitTitle: string;
+  previousStreak: number;
+}
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabits();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
+  const [, navigate] = useLocation();
+
+  // Detect broken streaks when habits load
+  useEffect(() => {
+    if (!habits || habits.length === 0) return;
+
+    // Get stored streaks from localStorage
+    const storedStreaksJson = localStorage.getItem('habitStreaks');
+    const storedStreaks: Record<number, number> = storedStreaksJson ? JSON.parse(storedStreaksJson) : {};
+
+    // Check each habit for broken streaks
+    let brokenFound: BrokenStreakInfo | null = null;
+    const newStreaks: Record<number, number> = {};
+
+    for (const habit of habits) {
+      const currentStreak = habit.currentStreak || 0;
+      const previousStreak = storedStreaks[habit.id];
+
+      // Only check habits that have a setup complete and had a streak before
+      if (habit.setupComplete && previousStreak !== undefined && previousStreak > 0 && currentStreak === 0) {
+        // Check if we've already notified about this break
+        const notifiedKey = `streakBrokenNotified_${habit.id}`;
+        const alreadyNotified = localStorage.getItem(notifiedKey);
+        
+        if (!alreadyNotified) {
+          brokenFound = {
+            habitId: habit.id,
+            habitTitle: habit.title,
+            previousStreak: previousStreak,
+          };
+          // Mark as notified
+          localStorage.setItem(notifiedKey, 'true');
+          break; // Show one at a time
+        }
+      }
+
+      newStreaks[habit.id] = currentStreak;
+    }
+
+    // Update stored streaks
+    localStorage.setItem('habitStreaks', JSON.stringify(newStreaks));
+
+    // Clear notification flags for habits with active streaks (so they can be notified again if broken later)
+    for (const habit of habits) {
+      if ((habit.currentStreak || 0) > 0) {
+        localStorage.removeItem(`streakBrokenNotified_${habit.id}`);
+      }
+    }
+
+    if (brokenFound) {
+      setBrokenStreak(brokenFound);
+    }
+  }, [habits]);
 
   // Get greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const handleStartFresh = () => {
+    if (brokenStreak) {
+      navigate(`/habit/${brokenStreak.habitId}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
@@ -154,6 +222,17 @@ export default function Dashboard() {
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
       />
+
+      {/* Streak Broken Modal */}
+      {brokenStreak && (
+        <StreakBrokenModal
+          habitTitle={brokenStreak.habitTitle}
+          previousStreak={brokenStreak.previousStreak}
+          open={!!brokenStreak}
+          onOpenChange={(open) => !open && setBrokenStreak(null)}
+          onStartFresh={handleStartFresh}
+        />
+      )}
     </div>
   );
 }

@@ -418,26 +418,26 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
         .join("\n\n");
 
-      const prompt = `You are creating a personalized ${duration} action plan for someone building this habit: "${habit.title}"
+      const prompt = `Create a personalized ${duration} action plan for: "${habit.title}"
 
-Based on their interview responses:
+User's interview answers:
 ${contextSummary}
 
-Create ${daysCount} daily plans, each with 3-5 specific tasks tailored to their answers.
+Create ${daysCount} daily plans with 3-4 tasks each.
 
-Return a JSON object with:
+Return JSON:
 {
   "dailyPlans": [
     {
       "date": "${startDate.toISOString().split('T')[0]}",
       "dayNumber": 1,
-      "focus": "Theme for this day",
+      "focus": "Day theme (e.g., 'Getting Started')",
       "tasks": [
         {
           "id": "day1-task1",
-          "title": "Clear, action-oriented title",
-          "description": "Step-by-step instructions with specific examples. Include: what to do, how to do it, and a concrete example. For exercise: 'Do 3 sets of 10 squats with 30 seconds rest between sets. Example: Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then push back up.'",
-          "duration": 15,
+          "title": "Action-oriented title",
+          "description": "Detailed instructions with: 1) What to do, 2) Step-by-step how, 3) A concrete example, 4) One pro tip. Include specific numbers, durations, and measurable targets.",
+          "duration": 10,
           "completed": false,
           "notes": ""
         }
@@ -446,24 +446,15 @@ Return a JSON object with:
       "timeSpent": 0
     }
   ],
-  "aiContext": "A 2-3 sentence summary of their goals and approach for future reference"
+  "aiContext": "2-3 sentence summary of goals and recommended approach"
 }
 
-CRITICAL REQUIREMENTS FOR TASKS:
-1. Each task description MUST include:
-   - Clear step-by-step instructions
-   - At least one specific example (e.g., "Example: Start with 5 push-ups, then...")
-   - Exact numbers, durations, or measurable targets
-   - Practical tips for success
-
-2. BAD example (too vague): "Do some stretching exercises"
-   GOOD example: "Complete a 5-minute morning stretch routine: Touch your toes (hold 30 sec), arm circles (20 each direction), and neck rolls (10 each way). Example: For toe touches, keep legs straight and reach down slowly until you feel a gentle pull in your hamstrings."
-
-3. Tasks must be specific to their answers (e.g., if they said they have 20 minutes, keep daily total under 20 min)
-4. Progress difficulty gradually over the ${daysCount} days
-5. Reference their specific situation in task descriptions
-6. Each day should build on the previous day
-7. Include variety - don't repeat the exact same tasks every day`;
+REQUIREMENTS:
+1. Each task description: 50-100 words with numbered steps and one example
+2. Be specific to their answers (time available, experience level)
+3. Progress difficulty gradually - Day 1 is easy wins
+4. Include concrete numbers (reps, minutes, amounts)
+5. Reference their specific situation in descriptions`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -481,7 +472,19 @@ CRITICAL REQUIREMENTS FOR TASKS:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const planData = JSON.parse(content);
+      let planData;
+      try {
+        planData = JSON.parse(content);
+      } catch (parseError) {
+        console.error("JSON parse error, raw content:", content);
+        throw new Error("Failed to parse AI response");
+      }
+
+      if (!planData.dailyPlans || !Array.isArray(planData.dailyPlans)) {
+        throw new Error("Invalid plan structure from AI");
+      }
+
+      const enhancedContext = planData.aiContext || "";
 
       // Update habit with the generated plan
       await storage.updateHabit(habitId, userId, {
@@ -490,7 +493,7 @@ CRITICAL REQUIREMENTS FOR TASKS:
         planStartDate: startDate.toISOString().split('T')[0],
         planEndDate: endDate.toISOString().split('T')[0],
         dailyPlans: planData.dailyPlans,
-        aiContext: planData.aiContext,
+        aiContext: enhancedContext,
         setupComplete: true,
       });
 
@@ -624,6 +627,116 @@ CRITICAL REQUIREMENTS FOR TASKS:
     } catch (error) {
       console.error("Error saving session:", error);
       res.status(500).json({ error: "Failed to save session" });
+    }
+  });
+
+  // Generate detailed guidance, examples, and resources for a specific task
+  app.post("/api/habits/:id/tasks/:taskId/guidance", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const taskId = req.params.taskId;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      // Find the task
+      const dailyPlans = habit.dailyPlans || [];
+      let task = null;
+      for (const plan of dailyPlans) {
+        task = plan.tasks.find(t => t.id === taskId);
+        if (task) break;
+      }
+
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      const prompt = `You are an expert coach helping someone with the habit: "${habit.title}"
+
+They need detailed guidance for this specific task:
+Title: "${task.title}"
+Description: "${task.description}"
+
+${habit.aiContext ? `Context about this person: ${habit.aiContext}` : ''}
+
+Generate comprehensive, actionable guidance including:
+
+1. EXAMPLES: 3-4 specific, detailed examples of how to complete this task successfully. Be very concrete with exact steps, timings, and measurements.
+
+2. TIPS: 4-5 practical tips for success, including common mistakes to avoid and pro tips from experts.
+
+3. RESOURCES: 5-8 tools, apps, websites, or products that can help with this specific task. Include:
+   - Popular apps (with real app names)
+   - Websites and online tools
+   - Books or guides (with real titles/authors)
+   - Templates or worksheets
+   - Physical tools or products if applicable
+
+4. TEMPLATES: 2-3 ready-to-use templates, checklists, or structured formats they can follow. Write these out fully - don't just describe them.
+
+5. VIDEO SUGGESTIONS: 3-4 YouTube search queries that would find helpful tutorial videos for this exact task. Be specific (e.g., "beginner morning yoga routine 10 minutes" not just "yoga").
+
+Return a JSON object with this structure:
+{
+  "examples": ["Detailed example 1...", "Detailed example 2...", ...],
+  "tips": ["Tip 1...", "Tip 2...", ...],
+  "resources": [
+    { "id": "res-1", "name": "Resource Name", "type": "app|website|tool|book|template", "url": "https://...", "description": "What it does and why it helps" },
+    ...
+  ],
+  "templates": ["Full template 1 with placeholders...", "Full template 2...", ...],
+  "videoSuggestions": [
+    { "title": "Video title description", "searchQuery": "exact youtube search query", "platform": "youtube" },
+    ...
+  ]
+}
+
+IMPORTANT:
+- Be extremely specific and detailed - users should be able to follow your guidance without any additional research
+- Use real product/app/book names that actually exist
+- Make templates actually usable, not just descriptions
+- Video search queries should find real, helpful videos on YouTube`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert habit coach and resource curator. Provide detailed, practical guidance with real tools and resources. Always return valid JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 3000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      let guidance;
+      try {
+        guidance = JSON.parse(content);
+      } catch (parseError) {
+        console.error("Guidance JSON parse error:", content);
+        throw new Error("Failed to parse AI guidance response");
+      }
+
+      // Ensure required fields exist with defaults
+      const safeGuidance = {
+        examples: guidance.examples || [],
+        tips: guidance.tips || [],
+        tools: guidance.tools || [],
+        templates: guidance.templates || [],
+        videos: guidance.videos || [],
+      };
+
+      res.json({ taskId, ...safeGuidance });
+    } catch (error) {
+      console.error("Error generating task guidance:", error);
+      res.status(500).json({ error: "Failed to generate guidance" });
     }
   });
 

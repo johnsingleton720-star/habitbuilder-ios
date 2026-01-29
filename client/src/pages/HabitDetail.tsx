@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { HabitSetupWizard } from "@/components/HabitSetupWizard";
 import { GuidedSession } from "@/components/GuidedSession";
+import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
 
 export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
@@ -27,6 +28,7 @@ export default function HabitDetail() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [guidanceTask, setGuidanceTask] = useState<RoutineTask | null>(null);
   
   const { data: habit, isLoading } = useQuery<Habit>({
     queryKey: ["/api/habits", habitId],
@@ -258,10 +260,18 @@ export default function HabitDetail() {
               {/* Current Day Tasks */}
               {currentPlan && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">
-                      {isToday(parseISO(currentPlan.date)) ? "Today's Tasks" : `Tasks for ${format(parseISO(currentPlan.date), "MMMM d")}`}
-                    </h4>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h4 className="font-medium">
+                        {isToday(parseISO(currentPlan.date)) ? "Today's Tasks" : `Tasks for ${format(parseISO(currentPlan.date), "MMMM d")}`}
+                      </h4>
+                      {currentPlan.focus && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Target className="w-3 h-3" />
+                          Focus: {currentPlan.focus}
+                        </p>
+                      )}
+                    </div>
                     <Badge variant={currentPlan.completed ? "default" : "secondary"}>
                       {currentPlan.tasks.filter(t => t.completed).length}/{currentPlan.tasks.length} complete
                     </Badge>
@@ -305,6 +315,20 @@ export default function HabitDetail() {
                                     <Clock className="w-3 h-3 mr-1" />
                                     {task.duration} min
                                   </Badge>
+                                </div>
+
+                                {/* Guidance Button */}
+                                <div className="mt-3">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2"
+                                    onClick={() => setGuidanceTask(task)}
+                                    data-testid={`button-guidance-${task.id}`}
+                                  >
+                                    <Lightbulb className="w-3 h-3" />
+                                    Get Examples & Resources
+                                  </Button>
                                 </div>
 
                                 {/* Notes */}
@@ -447,6 +471,17 @@ export default function HabitDetail() {
           habit={habit}
           open={sessionOpen}
           onOpenChange={setSessionOpen}
+        />
+      )}
+
+      {/* Task Guidance Modal */}
+      {habit && guidanceTask && (
+        <TaskGuidanceModal
+          habitId={habit.id}
+          task={guidanceTask}
+          habitTitle={habit.title}
+          open={!!guidanceTask}
+          onOpenChange={(open) => !open && setGuidanceTask(null)}
         />
       )}
     </div>

@@ -9,10 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, RotateCcw, Clock, Target, PartyPopper, X, ChevronRight } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, RotateCcw, Clock, Target, PartyPopper, X, ChevronRight, BookOpen, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, parseISO } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
+import { TaskGuidanceModal } from "./TaskGuidanceModal";
 
 interface GuidedSessionProps {
   habit: Habit;
@@ -48,6 +49,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
   const [sessionStartTime] = useState<Date>(new Date());
   const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
   const [accumulatedTime, setAccumulatedTime] = useState(0);
+  const [guidanceModalOpen, setGuidanceModalOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -114,8 +116,14 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
       setSelectedTimer(null);
       setTimerRunning(false);
       setTimeRemaining(0);
+      setGuidanceModalOpen(false);
     }
   }, [open]);
+
+  // Close guidance modal when task changes
+  useEffect(() => {
+    setGuidanceModalOpen(false);
+  }, [currentTaskIndex]);
 
   // Timer logic
   useEffect(() => {
@@ -346,9 +354,19 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               <Progress value={((currentTaskIndex + 1) / tasks.length) * 100} className="h-1.5" />
 
               <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="p-4 space-y-2">
+                <CardContent className="p-4 space-y-3">
                   <h3 className="font-semibold text-lg">{currentTask.title}</h3>
                   <p className="text-muted-foreground">{currentTask.description}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 w-full"
+                    onClick={() => setGuidanceModalOpen(true)}
+                    data-testid="button-get-guidance"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                    Get Examples, Resources & Guidance
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -545,6 +563,16 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
           )}
         </AnimatePresence>
       </DialogContent>
+
+      {currentTask && (
+        <TaskGuidanceModal
+          habitId={habit.id}
+          task={currentTask}
+          habitTitle={habit.title}
+          open={guidanceModalOpen}
+          onOpenChange={setGuidanceModalOpen}
+        />
+      )}
     </Dialog>
   );
 }

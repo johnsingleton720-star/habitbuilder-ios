@@ -15,6 +15,28 @@ export interface HabitQuestion {
   answer: string;
 }
 
+// Resource or tool recommendation for a task
+export interface TaskResource {
+  id: string;
+  name: string;
+  type: "app" | "website" | "tool" | "book" | "template" | "video";
+  url?: string;
+  description: string;
+}
+
+// Detailed guidance for a task
+export interface TaskGuidance {
+  examples: string[];
+  tips: string[];
+  resources: TaskResource[];
+  templates?: string[];
+  videoSuggestions?: {
+    title: string;
+    searchQuery: string;
+    platform: "youtube" | "other";
+  }[];
+}
+
 // Daily routine task within an action plan
 export interface RoutineTask {
   id: string;
@@ -23,11 +45,14 @@ export interface RoutineTask {
   duration: number; // Minutes
   completed: boolean;
   notes?: string;
+  guidance?: TaskGuidance;
 }
 
 // Daily action plan for a specific date
 export interface DailyPlan {
   date: string; // ISO date string
+  dayNumber?: number;
+  focus?: string; // Theme for the day
   tasks: RoutineTask[];
   completed: boolean;
   timeSpent: number; // Total minutes spent
