@@ -46,6 +46,8 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [sessionStartTime] = useState<Date>(new Date());
+  const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
+  const [accumulatedTime, setAccumulatedTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -68,12 +70,28 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
 
   const completeSessionMutation = useMutation({
     mutationFn: async () => {
-      const timeSpent = Math.round((new Date().getTime() - sessionStartTime.getTime()) / 60000);
+      let actualTimeSpent = 0;
+      
+      if (selectedTimer) {
+        if (timerRunning && timerStartTime) {
+          const currentElapsed = Math.round((new Date().getTime() - timerStartTime.getTime()) / 1000);
+          actualTimeSpent = Math.round((accumulatedTime + currentElapsed) / 60);
+        } else {
+          actualTimeSpent = Math.round(accumulatedTime / 60);
+        }
+        if (timeRemaining === 0) {
+          actualTimeSpent = selectedTimer;
+        }
+      } else {
+        actualTimeSpent = Math.round((new Date().getTime() - sessionStartTime.getTime()) / 60000);
+      }
+      
       const res = await apiRequest("POST", `/api/habits/${habit.id}/session-complete`, {
         date: today,
         tasksCompleted: completedTasks.length,
         totalTasks: tasks.length,
-        timeSpent,
+        timeSpent: Math.max(1, actualTimeSpent),
+        goalTime: selectedTimer || 0,
         notes: "",
         mood: "good",
       });
@@ -81,6 +99,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
     },
   });
 
@@ -172,11 +191,26 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     setSelectedTimer(minutes);
     setTimeRemaining(minutes * 60);
     setTimerRunning(true);
+    setTimerStartTime(new Date());
   };
 
   const handleSkipTimer = () => {
+    setTimerRunning(false);
     setPhase("complete");
     completeSessionMutation.mutate();
+  };
+
+  const handlePauseResume = () => {
+    if (timerRunning) {
+      if (timerStartTime) {
+        const elapsed = Math.round((new Date().getTime() - timerStartTime.getTime()) / 1000);
+        setAccumulatedTime(prev => prev + elapsed);
+      }
+      setTimerRunning(false);
+    } else {
+      setTimerStartTime(new Date());
+      setTimerRunning(true);
+    }
   };
 
   const handleFinishSession = () => {
@@ -430,7 +464,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setTimerRunning(!timerRunning)}
+                      onClick={handlePauseResume}
                       data-testid="button-timer-toggle"
                     >
                       {timerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}

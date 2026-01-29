@@ -40,6 +40,7 @@ export interface ProgressEntry {
   tasksCompleted: number;
   totalTasks: number;
   timeSpent: number;
+  goalTime?: number;
   notes: string;
   mood?: "great" | "good" | "okay" | "struggling";
 }

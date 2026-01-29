@@ -435,8 +435,8 @@ Return a JSON object with:
       "tasks": [
         {
           "id": "day1-task1",
-          "title": "Specific task title",
-          "description": "Detailed instructions based on their answers",
+          "title": "Clear, action-oriented title",
+          "description": "Step-by-step instructions with specific examples. Include: what to do, how to do it, and a concrete example. For exercise: 'Do 3 sets of 10 squats with 30 seconds rest between sets. Example: Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then push back up.'",
           "duration": 15,
           "completed": false,
           "notes": ""
@@ -449,11 +449,21 @@ Return a JSON object with:
   "aiContext": "A 2-3 sentence summary of their goals and approach for future reference"
 }
 
-IMPORTANT:
-- Tasks must be specific to their answers (e.g., if they said they have 20 minutes, keep daily total under 20 min)
-- Progress difficulty gradually over the ${daysCount} days
-- Reference their specific situation in task descriptions
-- Each day should build on the previous day`;
+CRITICAL REQUIREMENTS FOR TASKS:
+1. Each task description MUST include:
+   - Clear step-by-step instructions
+   - At least one specific example (e.g., "Example: Start with 5 push-ups, then...")
+   - Exact numbers, durations, or measurable targets
+   - Practical tips for success
+
+2. BAD example (too vague): "Do some stretching exercises"
+   GOOD example: "Complete a 5-minute morning stretch routine: Touch your toes (hold 30 sec), arm circles (20 each direction), and neck rolls (10 each way). Example: For toe touches, keep legs straight and reach down slowly until you feel a gentle pull in your hamstrings."
+
+3. Tasks must be specific to their answers (e.g., if they said they have 20 minutes, keep daily total under 20 min)
+4. Progress difficulty gradually over the ${daysCount} days
+5. Reference their specific situation in task descriptions
+6. Each day should build on the previous day
+7. Include variety - don't repeat the exact same tasks every day`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -565,7 +575,7 @@ IMPORTANT:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { date, tasksCompleted, totalTasks, timeSpent, notes, mood } = req.body;
+      const { date, tasksCompleted, totalTasks, timeSpent, goalTime, notes, mood } = req.body;
       
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
@@ -578,16 +588,39 @@ IMPORTANT:
         tasksCompleted,
         totalTasks,
         timeSpent,
+        goalTime: goalTime || 0,
         notes: notes || "",
         mood,
       });
 
+      // Update streak based on daily plan completion
+      const dailyPlans = [...(habit.dailyPlans || [])];
+      const todayPlan = dailyPlans.find(p => p.date === date);
+      if (todayPlan) {
+        todayPlan.completed = true;
+        todayPlan.timeSpent = (todayPlan.timeSpent || 0) + timeSpent;
+      }
+
+      // Calculate current streak
+      let currentStreak = 0;
+      const sortedPlans = dailyPlans.sort((a, b) => b.date.localeCompare(a.date));
+      for (const plan of sortedPlans) {
+        if (plan.completed) {
+          currentStreak++;
+        } else if (plan.date <= date) {
+          break;
+        }
+      }
+
       await storage.updateHabit(habitId, userId, {
+        dailyPlans,
         progress,
         totalTimeSpent: (habit.totalTimeSpent || 0) + timeSpent,
+        currentStreak,
+        longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
       });
 
-      res.json({ success: true });
+      res.json({ success: true, currentStreak });
     } catch (error) {
       console.error("Error saving session:", error);
       res.status(500).json({ error: "Failed to save session" });

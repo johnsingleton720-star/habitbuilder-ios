@@ -15,6 +15,7 @@ import Landing from "@/pages/Landing";
 import Paywall from "@/pages/Paywall";
 import HabitDetail from "@/pages/HabitDetail";
 import Account from "@/pages/Account";
+import Progress from "@/pages/Progress";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -70,6 +71,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/habit/:id" component={HabitDetail} />
+      <Route path="/progress/:view" component={Progress} />
       <Route path="/account" component={Account} />
       <Route component={NotFound} />
     </Switch>
