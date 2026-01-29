@@ -1,11 +1,21 @@
 import { z } from 'zod';
 import { insertHabitSchema, habits, type HabitStep, type HabitTip } from './schema';
 
+// Step option schema for exploration
+export const stepOptionSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  selected: z.boolean(),
+});
+
 // Step and tip schemas for validation
 export const habitStepSchema = z.object({
   id: z.string(),
   text: z.string(),
   completed: z.boolean(),
+  explored: z.boolean().optional(),
+  options: z.array(stepOptionSchema).optional(),
+  customResponse: z.string().optional(),
 });
 
 export const habitTipSchema = z.object({

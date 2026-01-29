@@ -190,15 +190,19 @@ ${goal ? `Goal: ${goal}` : ''}
 Return a JSON object with:
 1. "steps": An array of 5-7 actionable steps to build this habit. Each step should have:
    - "id": A unique string ID (use step-1, step-2, etc.)
-   - "text": A clear, actionable step description
-   - "completed": false (always start uncompleted)
+   - "text": A clear, actionable step - phrase as a question or exploration prompt the user can reflect on
+   - "completed": false
+   - "explored": false
+   - "options": [] (empty array)
+   - "customResponse": ""
 
 2. "tips": An array of 4 helpful tips/advice. Each tip should have:
    - "id": A unique string ID (use tip-1, tip-2, etc.)
    - "text": A helpful tip or piece of advice
    - "category": One of "motivation", "technique", "science", or "reminder"
 
-Make the steps progressive and the tips varied across categories. Be specific and practical.`;
+IMPORTANT: Make steps interactive and explorable - phrase them as questions or reflective prompts that users can think about deeply (e.g., "Identify what triggers your stress or anxiety" or "Decide on your ideal time and location for this habit").
+Make the tips varied across categories. Be specific and practical.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -223,6 +227,61 @@ Make the steps progressive and the tips varied across categories. Be specific an
     } catch (error) {
       console.error("Error generating habit plan:", error);
       res.status(500).json({ error: "Failed to generate habit plan" });
+    }
+  });
+
+  // AI-generated options for exploring a specific step
+  app.post("/api/ai/generate-step-options", isAuthenticated, async (req: any, res) => {
+    try {
+      const { habitTitle, stepText, stepId } = req.body;
+
+      const prompt = `For someone building the habit "${habitTitle}", help them explore this step:
+"${stepText}"
+
+Generate 6-8 specific, relatable options that the user can choose from to help them reflect on and answer this step.
+Each option should be a concrete, common answer that many people might identify with.
+
+Return a JSON object with:
+{
+  "options": [
+    { "id": "opt-1", "text": "A specific option the user might select", "selected": false },
+    { "id": "opt-2", "text": "Another specific option", "selected": false },
+    ...
+  ]
+}
+
+Make the options diverse, practical, and relatable. Include options that cover different aspects of the question.
+For example, if the step is "Identify what makes you anxious", options might include:
+- "Work deadlines and pressure"
+- "Social situations and meeting new people"
+- "Financial concerns and bills"
+- "Health worries"
+- "Family responsibilities"
+- "Fear of failure or judgment"`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful habit coach. Generate specific, relatable options that help users reflect on their habits. Always return valid JSON.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const optionsData = JSON.parse(content);
+      res.json({ stepId, ...optionsData });
+    } catch (error) {
+      console.error("Error generating step options:", error);
+      res.status(500).json({ error: "Failed to generate step options" });
     }
   });
 

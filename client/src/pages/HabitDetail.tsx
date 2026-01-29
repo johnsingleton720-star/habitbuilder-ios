@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useHabit, useUpdateHabit, useGenerateHabitPlan } from "@/hooks/use-habits";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Lightbulb, Brain, Clock, Heart } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Lightbulb, Brain, Clock, Heart, Search, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, subDays, eachDayOfInterval } from "date-fns";
 import type { HabitStep, HabitTip } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { api } from "@shared/routes";
+import { StepExplorer } from "@/components/StepExplorer";
 
 const tipIcons = {
   motivation: Heart,
@@ -29,6 +31,8 @@ const tipColors = {
 export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
+  const [selectedStep, setSelectedStep] = useState<HabitStep | null>(null);
+  const [explorerOpen, setExplorerOpen] = useState(false);
   
   const { data: habit, isLoading } = useHabit(habitId);
   const updateHabit = useUpdateHabit();
@@ -79,6 +83,24 @@ export default function HabitDetail() {
       }
     });
   };
+
+  const handleExploreStep = (step: HabitStep) => {
+    setSelectedStep(step);
+    setExplorerOpen(true);
+  };
+
+  const handleSaveStepExploration = (updatedStep: HabitStep) => {
+    const updatedSteps = steps.map(step => 
+      step.id === updatedStep.id ? updatedStep : step
+    );
+    updateHabit.mutate({ id: habit.id, steps: updatedSteps }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [api.habits.get.path, habit.id] });
+      }
+    });
+  };
+
+  const exploredSteps = steps.filter(s => s.explored).length;
 
   const handleGeneratePlan = () => {
     generatePlan.mutate(
@@ -181,11 +203,13 @@ export default function HabitDetail() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center justify-between gap-2">
                 Action Steps
-                <span className="text-sm font-normal text-muted-foreground">
-                  {completedSteps}/{steps.length} completed
-                </span>
+                <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                  <span>{exploredSteps}/{steps.length} explored</span>
+                  <span className="text-muted-foreground/50">|</span>
+                  <span>{completedSteps}/{steps.length} done</span>
+                </div>
               </CardTitle>
-              <CardDescription>Your roadmap to success</CardDescription>
+              <CardDescription>Click each step to explore with AI-powered guidance</CardDescription>
             </CardHeader>
             <CardContent>
               {steps.length > 0 ? (
@@ -199,7 +223,11 @@ export default function HabitDetail() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                          step.explored 
+                            ? "bg-primary/5 border border-primary/20" 
+                            : "bg-muted/50 hover:bg-muted"
+                        }`}
                       >
                         <Checkbox
                           checked={step.completed}
@@ -207,12 +235,47 @@ export default function HabitDetail() {
                           className="mt-0.5"
                           data-testid={`checkbox-step-${step.id}`}
                         />
-                        <span
-                          className={`text-sm flex-1 ${step.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
-                          data-testid={`text-step-${step.id}`}
+                        <div className="flex-1 min-w-0">
+                          <span
+                            className={`text-sm block ${step.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                            data-testid={`text-step-${step.id}`}
+                          >
+                            {step.text}
+                          </span>
+                          {step.explored && step.options && step.options.filter(o => o.selected).length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {step.options.filter(o => o.selected).slice(0, 3).map(opt => (
+                                <Badge key={opt.id} variant="secondary" className="text-xs">
+                                  {opt.text.length > 30 ? opt.text.slice(0, 30) + "..." : opt.text}
+                                </Badge>
+                              ))}
+                              {step.options.filter(o => o.selected).length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{step.options.filter(o => o.selected).length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant={step.explored ? "ghost" : "outline"}
+                          size="sm"
+                          onClick={() => handleExploreStep(step)}
+                          className="flex-shrink-0"
+                          data-testid={`button-explore-${step.id}`}
                         >
-                          {step.text}
-                        </span>
+                          {step.explored ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                              View
+                            </>
+                          ) : (
+                            <>
+                              <Search className="w-3.5 h-3.5 mr-1.5" />
+                              Explore
+                            </>
+                          )}
+                        </Button>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -307,6 +370,17 @@ export default function HabitDetail() {
           </div>
         )}
       </div>
+
+      {/* Step Explorer Dialog */}
+      {selectedStep && habit && (
+        <StepExplorer
+          habit={habit}
+          step={selectedStep}
+          open={explorerOpen}
+          onOpenChange={setExplorerOpen}
+          onSave={handleSaveStepExploration}
+        />
+      )}
     </div>
   );
 }

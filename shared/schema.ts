@@ -8,11 +8,21 @@ export * from "./models/chat";
 
 import { users } from "./models/auth";
 
+// Option for step exploration
+export interface StepOption {
+  id: string;
+  text: string;
+  selected: boolean;
+}
+
 // Step type for habit action steps
 export interface HabitStep {
   id: string;
   text: string;
   completed: boolean;
+  explored?: boolean; // Whether user has explored this step
+  options?: StepOption[]; // AI-generated options for this step
+  customResponse?: string; // User's custom text response
 }
 
 // AI-generated tip type
