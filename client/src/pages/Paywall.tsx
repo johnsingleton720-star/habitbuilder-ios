@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2 } from "lucide-react";
+import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface PriceData {
   price_id: string;
@@ -15,26 +17,57 @@ interface PriceData {
 
 export default function Paywall() {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: priceData, isLoading: isPriceLoading } = useQuery<PriceData>({
+  const { data: priceData, isLoading: isPriceLoading, error: priceError } = useQuery<PriceData>({
     queryKey: ['/api/stripe/lifetime-price'],
   });
 
   const checkoutMutation = useMutation({
     mutationFn: async (priceId: string) => {
       const response = await apiRequest('POST', '/api/checkout', { priceId });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          throw new Error('SESSION_EXPIRED');
+        }
+        throw new Error(errorData.error || 'Failed to start checkout');
+      }
       return response.json();
     },
     onSuccess: (data) => {
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        setError("Unable to create checkout session. Please try again.");
+      }
+    },
+    onError: (err: Error) => {
+      if (err.message === 'SESSION_EXPIRED') {
+        setError("Your session has expired. Please sign in again.");
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to continue.",
+          variant: "destructive",
+        });
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+        toast({
+          title: "Checkout failed",
+          description: err.message || "Please try again.",
+          variant: "destructive",
+        });
       }
     },
   });
 
   const handlePurchase = () => {
+    setError(null);
     if (priceData?.price_id) {
       checkoutMutation.mutate(priceData.price_id);
+    } else if (priceError) {
+      setError("Unable to load pricing. Please refresh the page.");
     }
   };
 
@@ -97,21 +130,42 @@ export default function Paywall() {
               ))}
             </ul>
 
-            <Button 
-              onClick={handlePurchase}
-              disabled={isPriceLoading || checkoutMutation.isPending}
-              className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
-              data-testid="button-purchase"
-            >
-              {checkoutMutation.isPending ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Get Lifetime Access"
-              )}
-            </Button>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm"
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </motion.div>
+            )}
+
+            {error?.includes("session") ? (
+              <Button 
+                onClick={() => window.location.href = "/api/login"}
+                className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                data-testid="button-signin-again"
+              >
+                Sign In Again
+              </Button>
+            ) : (
+              <Button 
+                onClick={handlePurchase}
+                disabled={isPriceLoading || checkoutMutation.isPending}
+                className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                data-testid="button-purchase"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Get Lifetime Access"
+                )}
+              </Button>
+            )}
 
             <p className="text-xs text-center text-muted-foreground">
               Secure payment powered by Stripe. Cancel anytime during checkout.
