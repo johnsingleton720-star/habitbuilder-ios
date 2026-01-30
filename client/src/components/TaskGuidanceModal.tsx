@@ -213,7 +213,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
             </Button>
           </div>
         ) : guidance ? (
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="flex-1 -mx-6 px-6 max-h-[60vh]">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5 mb-4">
                 <TabsTrigger value="examples" className="gap-1.5 text-xs sm:text-sm" data-testid="tab-examples">
