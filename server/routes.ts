@@ -180,57 +180,69 @@ export async function registerRoutes(
   app.get("/api/stripe/lifetime-price", async (req, res) => {
     try {
       // Try database first
-      const result = await db.execute(
-        sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
-            FROM stripe.prices pr 
-            JOIN stripe.products p ON pr.product = p.id 
-            WHERE p.active = true AND pr.active = true 
-            AND p.metadata->>'type' = 'lifetime_access'
-            LIMIT 1`
-      );
-      
-      if (result.rows.length > 0) {
-        return res.json(result.rows[0]);
+      try {
+        const result = await db.execute(
+          sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
+              FROM stripe.prices pr 
+              JOIN stripe.products p ON pr.product = p.id 
+              WHERE p.active = true AND pr.active = true 
+              AND p.metadata->>'type' = 'lifetime_access'
+              LIMIT 1`
+        );
+        
+        if (result.rows.length > 0) {
+          console.log("Returning price from database");
+          return res.json(result.rows[0]);
+        }
+      } catch (dbError) {
+        console.log("Database query failed, falling back to Stripe API:", dbError);
       }
       
       // Fallback: Query Stripe API directly
-      console.log("No price in DB, querying Stripe API directly...");
+      console.log("Querying Stripe API directly...");
       const stripe = await getUncachableStripeClient();
       
-      // Search for the lifetime access product
-      const products = await stripe.products.search({
-        query: 'active:"true" AND metadata["type"]:"lifetime_access"',
-        limit: 1,
+      // List all active products and find the lifetime one
+      const products = await stripe.products.list({
+        active: true,
+        limit: 100,
       });
       
-      if (products.data.length === 0) {
+      const lifetimeProduct = products.data.find(
+        p => p.metadata?.type === 'lifetime_access'
+      );
+      
+      if (!lifetimeProduct) {
+        console.error("No lifetime product found in Stripe");
         return res.status(404).json({ error: "Lifetime product not found" });
       }
       
-      const product = products.data[0];
+      console.log("Found product:", lifetimeProduct.id, lifetimeProduct.name);
       
       // Get active price for this product
       const prices = await stripe.prices.list({
-        product: product.id,
+        product: lifetimeProduct.id,
         active: true,
         limit: 1,
       });
       
       if (prices.data.length === 0) {
+        console.error("No active price found for product:", lifetimeProduct.id);
         return res.status(404).json({ error: "No active price found" });
       }
       
       const price = prices.data[0];
+      console.log("Found price:", price.id, price.unit_amount);
       
       res.json({
         price_id: price.id,
         unit_amount: price.unit_amount,
-        name: product.name,
-        description: product.description,
+        name: lifetimeProduct.name,
+        description: lifetimeProduct.description,
       });
-    } catch (error) {
-      console.error("Error getting lifetime price:", error);
-      res.status(500).json({ error: "Failed to get pricing" });
+    } catch (error: any) {
+      console.error("Error getting lifetime price:", error?.message || error);
+      res.status(500).json({ error: "Failed to get pricing. Please try again." });
     }
   });
 
