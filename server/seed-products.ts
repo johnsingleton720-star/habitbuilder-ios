@@ -21,7 +21,7 @@ async function createLifetimeProduct() {
 
   const price = await stripe.prices.create({
     product: product.id,
-    unit_amount: 299,
+    unit_amount: 999,
     currency: 'usd',
   });
 

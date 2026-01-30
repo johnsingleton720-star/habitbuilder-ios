@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Lightbulb, 
   BookOpen, 
@@ -30,6 +32,71 @@ import {
 import { cn } from "@/lib/utils";
 import type { RoutineTask } from "@shared/schema";
 import { jsPDF } from "jspdf";
+
+const LOADING_MESSAGES = [
+  "Searching for expert tips...",
+  "Finding helpful tools & apps...",
+  "Looking up video tutorials...",
+  "Creating downloadable templates...",
+  "Gathering step-by-step examples...",
+  "Curating the best resources...",
+  "Almost ready...",
+];
+
+function LoadingState() {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 2000);
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => Math.min(prev + Math.random() * 10, 90));
+    }, 600);
+
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(progressInterval);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-12 space-y-6">
+      <div className="relative w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+        </div>
+      </div>
+      
+      <div className="text-center space-y-3">
+        <h3 className="font-semibold text-lg">Your AI Coach is Working</h3>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={messageIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="text-sm text-muted-foreground h-5"
+          >
+            {LOADING_MESSAGES[messageIndex]}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+
+      <div className="w-48 space-y-2">
+        <Progress value={progress} className="h-1.5" />
+        <p className="text-xs text-muted-foreground text-center">
+          This may take 10-20 seconds
+        </p>
+      </div>
+    </div>
+  );
+}
 
 interface VideoSuggestion {
   title: string;
@@ -186,17 +253,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
         </DialogHeader>
 
         {(guidanceMutation.isPending || (!guidance && !guidanceMutation.isError)) ? (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            </div>
-            <div className="text-center space-y-2">
-              <h3 className="font-semibold text-lg">Your AI Coach is Working</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Finding real videos, apps, templates, and expert advice for your task...
-              </p>
-            </div>
-          </div>
+          <LoadingState />
         ) : guidanceMutation.isError ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-4">
             <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">

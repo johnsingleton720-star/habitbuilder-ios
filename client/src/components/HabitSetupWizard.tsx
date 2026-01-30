@@ -27,6 +27,79 @@ const DURATION_OPTIONS = [
   { value: "monthly", label: "Monthly", description: "30-day transformation", days: 30 },
 ];
 
+const GENERATING_MESSAGES = [
+  "Analyzing your answers...",
+  "Understanding your goals...",
+  "Finding the best approach for you...",
+  "Creating daily action steps...",
+  "Adding helpful resources...",
+  "Building your personalized routine...",
+  "Finding video tutorials...",
+  "Adding downloadable templates...",
+  "Preparing expert tips...",
+  "Almost there...",
+];
+
+function GeneratingPhase({ selectedDuration }: { selectedDuration: string }) {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % GENERATING_MESSAGES.length);
+    }, 2500);
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => Math.min(prev + Math.random() * 8, 95));
+    }, 800);
+
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(progressInterval);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      key="generating"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="py-8 text-center space-y-6"
+    >
+      <div className="relative w-24 h-24 mx-auto">
+        <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Creating your {selectedDuration} plan</h3>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={messageIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="text-sm text-muted-foreground h-5"
+          >
+            {GENERATING_MESSAGES[messageIndex]}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+
+      <div className="max-w-xs mx-auto space-y-2">
+        <Progress value={progress} className="h-2" />
+        <p className="text-xs text-muted-foreground">
+          This may take 15-30 seconds
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: HabitSetupWizardProps) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [questions, setQuestions] = useState<HabitQuestion[]>([]);
@@ -343,26 +416,7 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
           )}
 
           {phase === "generating" && (
-            <motion.div
-              key="generating"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="py-12 text-center space-y-6"
-            >
-              <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-                <div className="absolute inset-2 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-primary" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">Creating your personalized plan</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Analyzing your answers and building daily routines...
-                </p>
-              </div>
-            </motion.div>
+            <GeneratingPhase selectedDuration={selectedDuration} />
           )}
 
           {phase === "complete" && (
