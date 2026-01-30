@@ -74,7 +74,7 @@ export default function Paywall() {
           <CardHeader className="text-center pb-4">
             <CardTitle className="flex items-center justify-center gap-2">
               <span className="text-4xl font-display font-bold text-primary">
-                ${isPriceLoading ? "..." : formatPrice(priceData?.unit_amount || 299)}
+                ${isPriceLoading ? "..." : formatPrice(priceData?.unit_amount || 999)}
               </span>
             </CardTitle>
             <CardDescription className="text-base">
