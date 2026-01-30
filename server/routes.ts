@@ -656,61 +656,74 @@ REQUIREMENTS:
 
       const prompt = `You are an expert coach helping someone with the habit: "${habit.title}"
 
-They need detailed guidance for this specific task:
+They need comprehensive, actionable guidance for this specific task:
 Title: "${task.title}"
 Description: "${task.description}"
 
 ${habit.aiContext ? `Context about this person: ${habit.aiContext}` : ''}
 
-Generate comprehensive, actionable guidance including:
+Generate detailed, practical guidance that someone can follow immediately:
 
-1. EXAMPLES: 3-4 specific, detailed examples of how to complete this task successfully. Be very concrete with exact steps, timings, and measurements.
+1. EXAMPLES (3-4): Detailed, numbered step-by-step examples. Each example should be 100+ words with exact timings, measurements, and specific actions. Write them like you're walking someone through it.
 
-2. TIPS: 4-5 practical tips for success, including common mistakes to avoid and pro tips from experts.
+2. TIPS (5-6): Expert coaching tips including common mistakes, pro tips, and psychology insights. Each tip should be 2-3 sentences with actionable advice.
 
-3. RESOURCES: 5-8 tools, apps, websites, or products that can help with this specific task. Include:
-   - Popular apps (with real app names)
-   - Websites and online tools
-   - Books or guides (with real titles/authors)
-   - Templates or worksheets
-   - Physical tools or products if applicable
+3. TOOLS (6-8): Real apps, websites, and tools with actual URLs. Include:
+   - Popular mobile apps (with actual App Store/Play Store names)
+   - Websites (use real URLs like https://mint.com, https://headspace.com, etc.)
+   - Online tools and calculators
+   - Books with actual author names
+   Each tool should have features array and pricing info.
 
-4. TEMPLATES: 2-3 ready-to-use templates, checklists, or structured formats they can follow. Write these out fully - don't just describe them.
+4. TEMPLATES (2-3): Complete, ready-to-use templates with a title and full content. Write out the ENTIRE template, not a description. Include placeholders like [Your Name], [Date], etc. These should be print-ready or copy-paste ready.
 
-5. VIDEO SUGGESTIONS: 3-4 YouTube search queries that would find helpful tutorial videos for this exact task. Be specific (e.g., "beginner morning yoga routine 10 minutes" not just "yoga").
+5. VIDEOS (4-5): Specific YouTube search queries. Make them very specific like "10 minute morning meditation for beginners guided" not just "meditation".
 
-Return a JSON object with this structure:
+Return JSON exactly like this:
 {
-  "examples": ["Detailed example 1...", "Detailed example 2...", ...],
-  "tips": ["Tip 1...", "Tip 2...", ...],
-  "resources": [
-    { "id": "res-1", "name": "Resource Name", "type": "app|website|tool|book|template", "url": "https://...", "description": "What it does and why it helps" },
-    ...
+  "examples": ["Step 1: [specific action]... Step 2: ...", "..."],
+  "tips": ["Tip text here", "..."],
+  "tools": [
+    {
+      "id": "tool-1",
+      "name": "Actual App/Site Name",
+      "type": "app",
+      "description": "What it does",
+      "url": "https://actualurl.com",
+      "features": ["Feature 1", "Feature 2"],
+      "pricing": "Free" or "$X/month"
+    }
   ],
-  "templates": ["Full template 1 with placeholders...", "Full template 2...", ...],
-  "videoSuggestions": [
-    { "title": "Video title description", "searchQuery": "exact youtube search query", "platform": "youtube" },
-    ...
+  "templates": [
+    {
+      "title": "Template Name",
+      "content": "Full template text with\\nline breaks and\\n[ ] checkboxes\\n[ ] more items...",
+      "format": "checklist"
+    }
+  ],
+  "videos": [
+    {
+      "title": "Descriptive video title",
+      "searchQuery": "very specific youtube search query",
+      "channel": "Expected channel type",
+      "duration": "~10 min"
+    }
   ]
 }
 
-IMPORTANT:
-- Be extremely specific and detailed - users should be able to follow your guidance without any additional research
-- Use real product/app/book names that actually exist
-- Make templates actually usable, not just descriptions
-- Video search queries should find real, helpful videos on YouTube`;
+CRITICAL: Use REAL app names, REAL website URLs, and REAL book titles. Templates must be complete and usable.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach and resource curator. Provide detailed, practical guidance with real tools and resources. Always return valid JSON.",
+            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance with real tools and resources. Always return valid JSON with complete, usable content.",
           },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 3000,
+        max_tokens: 4000,
       });
 
       const content = response.choices[0].message.content;
@@ -724,19 +737,148 @@ IMPORTANT:
         throw new Error("Failed to parse AI guidance response");
       }
 
+      // Normalize templates to structured format if they're just strings
+      let normalizedTemplates = guidance.templates || [];
+      if (normalizedTemplates.length > 0 && typeof normalizedTemplates[0] === 'string') {
+        normalizedTemplates = normalizedTemplates.map((t: string, i: number) => ({
+          title: `Template ${i + 1}`,
+          content: t,
+          format: 'text'
+        }));
+      }
+
       // Ensure required fields exist with defaults
       const safeGuidance = {
         examples: guidance.examples || [],
         tips: guidance.tips || [],
-        tools: guidance.tools || [],
-        templates: guidance.templates || [],
-        videos: guidance.videos || [],
+        tools: guidance.tools || guidance.resources || [],
+        templates: normalizedTemplates,
+        videos: guidance.videos || guidance.videoSuggestions || [],
       };
 
       res.json({ taskId, ...safeGuidance });
     } catch (error) {
       console.error("Error generating task guidance:", error);
       res.status(500).json({ error: "Failed to generate guidance" });
+    }
+  });
+
+  // Get AI coaching check-in - personalized motivation and feedback
+  app.post("/api/habits/:id/coaching-checkin", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { feedback, mood } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      // Calculate progress stats
+      const dailyPlans = habit.dailyPlans || [];
+      const completedDays = dailyPlans.filter(p => p.completed).length;
+      const totalDays = dailyPlans.length;
+      const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+      const currentStreak = habit.currentStreak || 0;
+
+      const prompt = `You are a supportive, encouraging AI habit coach. The user is working on: "${habit.title}"
+
+Their progress:
+- Completed ${completedDays} of ${totalDays} days (${completionRate}% completion)
+- Current streak: ${currentStreak} days
+- Total time invested: ${habit.totalTimeSpent || 0} minutes
+${habit.aiContext ? `- About them: ${habit.aiContext}` : ''}
+${feedback ? `- Their feedback today: "${feedback}"` : ''}
+${mood ? `- Current mood: ${mood}` : ''}
+
+Generate a personalized coaching check-in that includes:
+1. Acknowledgment of their effort and specific progress
+2. Personalized motivation based on their situation
+3. One specific tip to improve tomorrow
+4. A question to understand how you can help them better
+
+Keep it warm, personal, and under 200 words. Don't be generic - reference their specific habit and progress.
+
+Return JSON:
+{
+  "greeting": "Personalized greeting",
+  "progressAcknowledgment": "Specific recognition of their progress",
+  "motivation": "Personalized motivation message",
+  "tipForTomorrow": "One specific, actionable tip",
+  "questionForUser": "A caring question to get feedback",
+  "encouragingClose": "Warm closing message"
+}`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const checkin = JSON.parse(content);
+      res.json(checkin);
+    } catch (error) {
+      console.error("Error generating coaching check-in:", error);
+      res.status(500).json({ error: "Failed to generate check-in" });
+    }
+  });
+
+  // Get daily motivation message
+  app.get("/api/habits/:id/daily-motivation", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const todayPlan = (habit.dailyPlans || []).find(p => p.date === today);
+      const tasksToday = todayPlan?.tasks || [];
+      const completedToday = tasksToday.filter(t => t.completed).length;
+
+      const prompt = `Generate a brief, personalized daily motivation for someone working on: "${habit.title}"
+
+Today's plan: ${tasksToday.length} tasks, ${completedToday} completed
+Current streak: ${habit.currentStreak || 0} days
+${todayPlan?.focus ? `Today's focus: ${todayPlan.focus}` : ''}
+
+Return JSON with:
+{
+  "morningMotivation": "Brief inspiring message for starting the day (1-2 sentences)",
+  "focusReminder": "What to focus on today specifically",
+  "quickTip": "One quick tip for success today",
+  "streakMessage": "Message about their streak (encouraging if high, supportive if low)"
+}`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 500,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const motivation = JSON.parse(content);
+      res.json(motivation);
+    } catch (error) {
+      console.error("Error generating daily motivation:", error);
+      res.status(500).json({ error: "Failed to generate motivation" });
     }
   });
 

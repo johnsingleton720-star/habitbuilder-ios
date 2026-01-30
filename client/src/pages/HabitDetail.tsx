@@ -17,6 +17,8 @@ import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { HabitSetupWizard } from "@/components/HabitSetupWizard";
 import { GuidedSession } from "@/components/GuidedSession";
 import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
+import { CoachingCheckin } from "@/components/CoachingCheckin";
+import { DailyMotivation } from "@/components/DailyMotivation";
 
 export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
@@ -132,11 +134,14 @@ export default function HabitDetail() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <Badge variant="secondary" className="gap-1">
               <Flame className="w-3 h-3" />
               {habit.currentStreak || 0} day streak
             </Badge>
+            {habit.setupComplete && (
+              <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
+            )}
             {habit.setupComplete && currentPlan && (
               <Button onClick={handleStartSession} className="gap-2" data-testid="button-start-session">
                 <Play className="w-4 h-4" />
@@ -163,6 +168,11 @@ export default function HabitDetail() {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Daily Motivation from AI Coach */}
+        {habit.setupComplete && (
+          <DailyMotivation habitId={habitId} />
         )}
 
         {/* Progress Overview */}
