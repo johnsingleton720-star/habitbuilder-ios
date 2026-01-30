@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -18,10 +18,15 @@ interface PriceData {
 export default function Paywall() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
-  const { data: priceData, isLoading: isPriceLoading, error: priceError } = useQuery<PriceData>({
+  const { data: priceData, isLoading: isPriceLoading, error: priceError, refetch } = useQuery<PriceData>({
     queryKey: ['/api/stripe/lifetime-price'],
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 0,
   });
 
   const checkoutMutation = useMutation({
@@ -62,13 +67,38 @@ export default function Paywall() {
     },
   });
 
-  const handlePurchase = () => {
+  const handleRetry = async () => {
     setError(null);
-    if (priceData?.price_id) {
-      checkoutMutation.mutate(priceData.price_id);
-    } else if (priceError) {
-      setError("Unable to load pricing. Please refresh the page.");
+    setIsRetrying(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRetrying(false);
     }
+  };
+
+  const handlePurchase = async () => {
+    setError(null);
+    
+    // If no price data, try to fetch it first
+    if (!priceData?.price_id) {
+      setIsRetrying(true);
+      try {
+        const result = await refetch();
+        if (result.data?.price_id) {
+          checkoutMutation.mutate(result.data.price_id);
+        } else {
+          setError("Unable to load pricing. Please try again.");
+        }
+      } catch {
+        setError("Unable to load pricing. Please check your connection and try again.");
+      } finally {
+        setIsRetrying(false);
+      }
+      return;
+    }
+    
+    checkoutMutation.mutate(priceData.price_id);
   };
 
   const formatPrice = (amount: number) => {
@@ -152,14 +182,14 @@ export default function Paywall() {
             ) : (
               <Button 
                 onClick={handlePurchase}
-                disabled={isPriceLoading || checkoutMutation.isPending}
+                disabled={isPriceLoading || checkoutMutation.isPending || isRetrying}
                 className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
                 data-testid="button-purchase"
               >
-                {checkoutMutation.isPending ? (
+                {(checkoutMutation.isPending || isRetrying) ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Processing...
+                    {isRetrying ? "Loading..." : "Processing..."}
                   </>
                 ) : (
                   "Get Lifetime Access"
