@@ -73,6 +73,7 @@ function Router() {
       <Route path="/habit/:id" component={HabitDetail} />
       <Route path="/progress/:view" component={Progress} />
       <Route path="/account" component={Account} />
+      <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
     </Switch>
   );
