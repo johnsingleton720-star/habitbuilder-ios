@@ -2,6 +2,9 @@ import { users, type User, type UpsertUser } from "@shared/models/auth";
 import { db } from "../../db";
 import { eq } from "drizzle-orm";
 
+// Owner email - this user gets automatic admin access and paid status
+const OWNER_EMAIL = "johnsingleton720@gmail.com";
+
 // Interface for auth storage operations
 // (IMPORTANT) These user operations are mandatory for Replit Auth.
 export interface IAuthStorage {
@@ -16,13 +19,20 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Check if this is the owner - grant automatic access
+    const isOwner = userData.email === OWNER_EMAIL;
+    
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({
+        ...userData,
+        ...(isOwner && { isAdmin: true, hasPaid: true }),
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: {
           ...userData,
+          ...(isOwner && { isAdmin: true, hasPaid: true }),
           updatedAt: new Date(),
         },
       })
