@@ -19,6 +19,7 @@ import { GuidedSession } from "@/components/GuidedSession";
 import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
 import { CoachingCheckin } from "@/components/CoachingCheckin";
 import { DailyMotivation } from "@/components/DailyMotivation";
+import { StreakProtection } from "@/components/StreakProtection";
 
 export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
@@ -173,6 +174,19 @@ export default function HabitDetail() {
         {/* Daily Motivation from AI Coach */}
         {habit.setupComplete && (
           <DailyMotivation habitId={habitId} />
+        )}
+
+        {/* Streak Protection for Premium Users */}
+        {habit.setupComplete && (habit.currentStreak || 0) > 0 && (
+          <StreakProtection 
+            habit={{
+              id: habit.id,
+              title: habit.title,
+              currentStreak: habit.currentStreak || 0,
+              streakFreezeUsed: habit.streakFreezeUsed,
+              streakFreezeMonth: habit.streakFreezeMonth,
+            }}
+          />
         )}
 
         {/* Progress Overview */}

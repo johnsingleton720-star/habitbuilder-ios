@@ -292,3 +292,25 @@ export const insertUserTemplateSchema = createInsertSchema(userTemplates).omit({
 
 export type UserTemplate = typeof userTemplates.$inferSelect;
 export type InsertUserTemplate = z.infer<typeof insertUserTemplateSchema>;
+
+// Mood tracking entries
+export const moodEntries = pgTable("mood_entries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  date: text("date").notNull(), // ISO date string yyyy-MM-dd
+  mood: text("mood").notNull(), // great, good, okay, bad, terrible
+  energy: integer("energy"), // 1-5 scale
+  stress: integer("stress"), // 1-5 scale
+  sleep: integer("sleep"), // 1-5 scale
+  notes: text("notes"),
+  habitIds: jsonb("habit_ids").$type<number[]>().default([]), // Habits completed that day
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type MoodEntry = typeof moodEntries.$inferSelect;
+export type InsertMoodEntry = z.infer<typeof insertMoodEntrySchema>;

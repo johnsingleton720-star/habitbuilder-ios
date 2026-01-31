@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   subscriptionStatus: varchar("subscription_status"), // active, cancelled, past_due, etc.
   isAdmin: boolean("is_admin").default(false),
   theme: varchar("theme").default("light"), // light, dark, auto
+  colorTheme: varchar("color_theme").default("nature"), // nature, minimal, ocean, sunset, lavender, forest
   darkModeSchedule: jsonb("dark_mode_schedule").$type<{ enabled: boolean; startHour: number; endHour: number }>(), // Auto dark mode
   emailReminders: boolean("email_reminders").default(true),
   trialEndsAt: timestamp("trial_ends_at"), // 2-day trial period end date
@@ -40,9 +41,35 @@ export const users = pgTable("users", {
   publicProfileEnabled: boolean("public_profile_enabled").default(false),
   publicProfileSlug: varchar("public_profile_slug").unique(), // Unique slug for public profile
   
+  // Gamification
+  xpPoints: integer("xp_points").default(0),
+  level: integer("level").default(1),
+  dailyChallengesCompleted: integer("daily_challenges_completed").default(0),
+  weeklyXpGoal: integer("weekly_xp_goal").default(500),
+  lastDailyChallengeDate: varchar("last_daily_challenge_date"), // ISO date string
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Daily Challenges table
+export const dailyChallenges = pgTable("daily_challenges", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  date: varchar("date").notNull(), // ISO date string
+  challengeType: varchar("challenge_type").notNull(), // complete_habit, time_goal, streak_bonus, etc.
+  title: varchar("title").notNull(),
+  description: varchar("description").notNull(),
+  xpReward: integer("xp_reward").notNull().default(50),
+  targetValue: integer("target_value"), // e.g., complete 3 tasks
+  currentValue: integer("current_value").default(0),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type DailyChallenge = typeof dailyChallenges.$inferSelect;
+export type InsertDailyChallenge = typeof dailyChallenges.$inferInsert;
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;

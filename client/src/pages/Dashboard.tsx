@@ -9,6 +9,8 @@ import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
+import { GamificationDisplay } from "@/components/GamificationDisplay";
+import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -209,6 +211,24 @@ export default function Dashboard() {
             <AchievementsDisplay compact />
           </motion.section>
         )}
+
+        {/* Gamification - XP, Levels, Daily Challenges */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+        >
+          <GamificationDisplay />
+        </motion.section>
+
+        {/* Mood Tracker - Premium Feature */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <MoodTracker />
+        </motion.section>
 
         {/* Habits Section */}
         <section className="space-y-6">

@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,7 +28,7 @@ export default function Account() {
   const [isUploading, setIsUploading] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.completedDates?.length || 0), 0) || 0;
+  const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.progress?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
 
   const manageSubscriptionMutation = useMutation({
@@ -303,6 +304,14 @@ export default function Account() {
               )}
             </CardContent>
           </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <ThemeSelector />
         </motion.div>
 
         <motion.div

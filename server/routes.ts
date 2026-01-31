@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -42,6 +42,43 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error generating profile image upload URL:", error);
       res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Zod schema for color theme validation
+  const colorThemeSchema = z.object({
+    colorTheme: z.enum(["nature", "minimal", "ocean", "sunset", "lavender", "forest"]),
+  });
+
+  const premiumThemes = ["ocean", "sunset", "lavender", "forest"];
+
+  // Save user color theme preference
+  app.patch("/api/user/color-theme", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const validatedData = colorThemeSchema.parse(req.body);
+      const { colorTheme } = validatedData;
+      
+      const user = await storage.getUser(userId);
+      const isPremium = user?.subscriptionTier === "premium" || user?.isAdmin;
+      
+      if (premiumThemes.includes(colorTheme) && !isPremium) {
+        return res.status(403).json({ error: "This theme requires a Premium subscription" });
+      }
+      
+      const [updated] = await db.update(users)
+        .set({ colorTheme, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      res.json({ success: true, colorTheme: updated.colorTheme });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid color theme", details: error.errors });
+      }
+      console.error("Error saving color theme:", error);
+      res.status(500).json({ error: "Failed to save color theme" });
     }
   });
 
@@ -2124,6 +2161,430 @@ Return JSON with:
     } catch (error) {
       console.error("Error removing accountability partner:", error);
       res.status(500).json({ error: "Failed to remove partner" });
+    }
+  });
+
+  // ============================================
+  // MOOD TRACKING ENDPOINTS (Premium Feature)
+  // ============================================
+
+  app.get("/api/mood", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await db.select()
+        .from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(moodEntries.date);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching mood entries:", error);
+      res.status(500).json({ error: "Failed to fetch mood entries" });
+    }
+  });
+
+  const moodEntrySchema = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+    mood: z.enum(["great", "good", "okay", "bad", "terrible"]),
+    energy: z.number().min(1).max(5).optional(),
+    stress: z.number().min(1).max(5).optional(),
+    sleep: z.number().min(1).max(5).optional(),
+    notes: z.string().max(500).optional(),
+    habitIds: z.array(z.number()).optional(),
+  });
+
+  app.post("/api/mood", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const validatedData = moodEntrySchema.parse(req.body);
+      const { date, mood, energy, stress, sleep, notes, habitIds } = validatedData;
+      
+      // Check if entry exists for this date
+      const existing = await db.select()
+        .from(moodEntries)
+        .where(and(eq(moodEntries.userId, userId), eq(moodEntries.date, date)))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        // Update existing entry
+        const [updated] = await db.update(moodEntries)
+          .set({ mood, energy, stress, sleep, notes, habitIds })
+          .where(eq(moodEntries.id, existing[0].id))
+          .returning();
+        return res.json(updated);
+      }
+      
+      // Create new entry
+      const [entry] = await db.insert(moodEntries)
+        .values({
+          userId,
+          date,
+          mood,
+          energy,
+          stress,
+          sleep,
+          notes,
+          habitIds: habitIds || [],
+        })
+        .returning();
+      
+      res.json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid mood entry data", details: error.errors });
+      }
+      console.error("Error saving mood entry:", error);
+      res.status(500).json({ error: "Failed to save mood entry" });
+    }
+  });
+
+  app.get("/api/mood/insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Mood insights require Premium subscription" });
+      }
+      
+      const entries = await db.select()
+        .from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(moodEntries.date);
+      
+      const userHabits = await storage.getHabits(userId);
+      
+      if (entries.length < 3) {
+        return res.json({
+          message: "Log at least 3 days of mood data to see insights",
+          insights: [],
+          correlations: [],
+        });
+      }
+      
+      // Calculate basic stats
+      const moodValues: Record<string, number> = { great: 5, good: 4, okay: 3, bad: 2, terrible: 1 };
+      const avgMood = entries.reduce((sum, e) => sum + (moodValues[e.mood] || 3), 0) / entries.length;
+      const avgEnergy = entries.filter(e => e.energy).reduce((sum, e) => sum + (e.energy || 0), 0) / 
+        (entries.filter(e => e.energy).length || 1);
+      const avgStress = entries.filter(e => e.stress).reduce((sum, e) => sum + (e.stress || 0), 0) / 
+        (entries.filter(e => e.stress).length || 1);
+      
+      // Find habit correlations
+      const habitMoodMap = new Map<number, { good: number; bad: number; total: number }>();
+      
+      for (const entry of entries) {
+        const habitIds = (entry.habitIds as number[]) || [];
+        const isGoodMood = moodValues[entry.mood] >= 4;
+        
+        for (const habitId of habitIds) {
+          if (!habitMoodMap.has(habitId)) {
+            habitMoodMap.set(habitId, { good: 0, bad: 0, total: 0 });
+          }
+          const stats = habitMoodMap.get(habitId)!;
+          stats.total++;
+          if (isGoodMood) stats.good++;
+          else stats.bad++;
+        }
+      }
+      
+      const correlations = Array.from(habitMoodMap.entries())
+        .map(([habitId, stats]) => {
+          const habit = userHabits.find(h => h.id === habitId);
+          return {
+            habitId,
+            habitTitle: habit?.title || "Unknown habit",
+            correlation: stats.total > 0 ? ((stats.good / stats.total) * 100).toFixed(0) : 0,
+            timesCompleted: stats.total,
+          };
+        })
+        .sort((a, b) => Number(b.correlation) - Number(a.correlation))
+        .slice(0, 5);
+      
+      const insights = [
+        `Your average mood score is ${avgMood.toFixed(1)}/5`,
+        avgEnergy > 0 ? `Average energy level: ${avgEnergy.toFixed(1)}/5` : null,
+        avgStress > 0 ? `Average stress level: ${avgStress.toFixed(1)}/5` : null,
+        correlations.length > 0 ? 
+          `${correlations[0].habitTitle} is associated with ${correlations[0].correlation}% good mood days` : null,
+      ].filter(Boolean);
+      
+      res.json({
+        insights,
+        correlations,
+        stats: { avgMood, avgEnergy, avgStress, totalEntries: entries.length },
+      });
+    } catch (error) {
+      console.error("Error generating mood insights:", error);
+      res.status(500).json({ error: "Failed to generate insights" });
+    }
+  });
+
+  // ============================================
+  // STREAK PROTECTION ENDPOINTS (Premium Feature)
+  // ============================================
+
+  app.post("/api/habits/:id/freeze-streak", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Streak protection requires Premium subscription" });
+      }
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+      
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const freezesUsedThisMonth = habit.streakFreezeMonth === currentMonth ? (habit.streakFreezeUsed || 0) : 0;
+      const maxFreezes = 2;
+      
+      if (freezesUsedThisMonth >= maxFreezes) {
+        return res.status(400).json({ error: "No streak freezes remaining this month" });
+      }
+      
+      const [updated] = await db.update(habits)
+        .set({
+          streakFreezeUsed: freezesUsedThisMonth + 1,
+          streakFreezeMonth: currentMonth,
+        })
+        .where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+        .returning();
+      
+      res.json({ 
+        success: true, 
+        message: "Streak frozen for today",
+        freezesRemaining: maxFreezes - (freezesUsedThisMonth + 1),
+      });
+    } catch (error) {
+      console.error("Error freezing streak:", error);
+      res.status(500).json({ error: "Failed to freeze streak" });
+    }
+  });
+
+  // ============================================
+  // GAMIFICATION ENDPOINTS (Premium Feature)
+  // ============================================
+
+  // XP level thresholds
+  const XP_LEVELS = [
+    { level: 1, minXp: 0, title: "Beginner" },
+    { level: 2, minXp: 100, title: "Starter" },
+    { level: 3, minXp: 300, title: "Committed" },
+    { level: 4, minXp: 600, title: "Dedicated" },
+    { level: 5, minXp: 1000, title: "Consistent" },
+    { level: 6, minXp: 1500, title: "Focused" },
+    { level: 7, minXp: 2200, title: "Advanced" },
+    { level: 8, minXp: 3000, title: "Expert" },
+    { level: 9, minXp: 4000, title: "Master" },
+    { level: 10, minXp: 5500, title: "Legend" },
+    { level: 11, minXp: 7500, title: "Champion" },
+    { level: 12, minXp: 10000, title: "Habit Hero" },
+  ];
+
+  function calculateLevel(xp: number): { level: number; title: string; xpToNext: number; progress: number } {
+    let currentLevel = XP_LEVELS[0];
+    for (const lvl of XP_LEVELS) {
+      if (xp >= lvl.minXp) {
+        currentLevel = lvl;
+      }
+    }
+    const nextLevel = XP_LEVELS.find(l => l.level === currentLevel.level + 1);
+    const xpToNext = nextLevel ? nextLevel.minXp - xp : 0;
+    const progress = nextLevel 
+      ? ((xp - currentLevel.minXp) / (nextLevel.minXp - currentLevel.minXp)) * 100 
+      : 100;
+    
+    return { level: currentLevel.level, title: currentLevel.title, xpToNext, progress };
+  }
+
+  // Get user's gamification stats
+  app.get("/api/gamification/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const xpPoints = user.xpPoints || 0;
+      const levelInfo = calculateLevel(xpPoints);
+      
+      // Get today's challenges
+      const today = new Date().toISOString().split('T')[0];
+      const todaysChallenges = await db.select().from(dailyChallenges)
+        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
+      
+      res.json({
+        xpPoints,
+        level: levelInfo.level,
+        levelTitle: levelInfo.title,
+        xpToNextLevel: levelInfo.xpToNext,
+        levelProgress: levelInfo.progress,
+        dailyChallengesCompleted: user.dailyChallengesCompleted || 0,
+        weeklyXpGoal: user.weeklyXpGoal || 500,
+        todaysChallenges,
+        xpLevels: XP_LEVELS,
+      });
+    } catch (error) {
+      console.error("Error fetching gamification stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // Generate daily challenges for user
+  app.post("/api/gamification/generate-challenges", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || user?.subscriptionTier === 'pro';
+      if (!isPremium) {
+        return res.status(403).json({ error: "Daily challenges require Pro or Premium subscription" });
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if already generated today
+      const existing = await db.select().from(dailyChallenges)
+        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
+      
+      if (existing.length > 0) {
+        return res.json({ challenges: existing, message: "Challenges already generated for today" });
+      }
+      
+      // Get user's habits for context
+      const userHabits = await storage.getHabits(userId);
+      
+      // Generate 3 daily challenges
+      const challengeTemplates = [
+        { type: "complete_tasks", title: "Task Master", description: "Complete 5 habit tasks today", target: 5, xp: 50 },
+        { type: "time_goal", title: "Time Warrior", description: "Spend 30 minutes on your habits", target: 30, xp: 75 },
+        { type: "all_habits", title: "Full Sweep", description: "Work on all your active habits today", target: Math.min(userHabits.length, 3), xp: 100 },
+        { type: "streak_builder", title: "Streak Builder", description: "Maintain or extend your streak", target: 1, xp: 50 },
+        { type: "early_bird", title: "Early Bird", description: "Start a habit session before noon", target: 1, xp: 60 },
+        { type: "note_taker", title: "Reflector", description: "Add notes to 3 completed tasks", target: 3, xp: 40 },
+      ];
+      
+      // Pick 3 random challenges
+      const shuffled = challengeTemplates.sort(() => Math.random() - 0.5);
+      const selectedChallenges = shuffled.slice(0, 3);
+      
+      const challenges = [];
+      for (const template of selectedChallenges) {
+        const [challenge] = await db.insert(dailyChallenges).values({
+          userId,
+          date: today,
+          challengeType: template.type,
+          title: template.title,
+          description: template.description,
+          xpReward: template.xp,
+          targetValue: template.target,
+          currentValue: 0,
+          completed: false,
+        }).returning();
+        challenges.push(challenge);
+      }
+      
+      res.json({ challenges, message: "Daily challenges generated!" });
+    } catch (error) {
+      console.error("Error generating challenges:", error);
+      res.status(500).json({ error: "Failed to generate challenges" });
+    }
+  });
+
+  // Award XP to user
+  app.post("/api/gamification/award-xp", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { amount, reason } = req.body;
+      
+      if (!amount || typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ error: "Invalid XP amount" });
+      }
+      
+      const user = await storage.getUser(userId);
+      const currentXp = user?.xpPoints || 0;
+      const newXp = currentXp + amount;
+      
+      const oldLevel = calculateLevel(currentXp);
+      const newLevel = calculateLevel(newXp);
+      
+      // Update user's XP
+      await db.update(users)
+        .set({ xpPoints: newXp, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+      
+      const leveledUp = newLevel.level > oldLevel.level;
+      
+      res.json({
+        xpAwarded: amount,
+        totalXp: newXp,
+        reason,
+        leveledUp,
+        newLevel: leveledUp ? newLevel : undefined,
+      });
+    } catch (error) {
+      console.error("Error awarding XP:", error);
+      res.status(500).json({ error: "Failed to award XP" });
+    }
+  });
+
+  // Update challenge progress
+  app.patch("/api/gamification/challenges/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const challengeId = parseInt(req.params.id);
+      const { increment } = req.body;
+      
+      // Verify ownership
+      const [challenge] = await db.select().from(dailyChallenges)
+        .where(and(eq(dailyChallenges.id, challengeId), eq(dailyChallenges.userId, userId)));
+      
+      if (!challenge) {
+        return res.status(404).json({ error: "Challenge not found" });
+      }
+      
+      if (challenge.completed) {
+        return res.json({ challenge, message: "Challenge already completed" });
+      }
+      
+      const newValue = (challenge.currentValue || 0) + (increment || 1);
+      const completed = newValue >= (challenge.targetValue || 1);
+      
+      const [updated] = await db.update(dailyChallenges)
+        .set({ 
+          currentValue: newValue, 
+          completed,
+          completedAt: completed ? new Date() : null,
+        })
+        .where(eq(dailyChallenges.id, challengeId))
+        .returning();
+      
+      // Award XP if just completed
+      if (completed && !challenge.completed) {
+        const user = await storage.getUser(userId);
+        const currentXp = user?.xpPoints || 0;
+        await db.update(users)
+          .set({ 
+            xpPoints: currentXp + challenge.xpReward,
+            dailyChallengesCompleted: (user?.dailyChallengesCompleted || 0) + 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+      }
+      
+      res.json({ challenge: updated, completed, xpAwarded: completed ? challenge.xpReward : 0 });
+    } catch (error) {
+      console.error("Error updating challenge:", error);
+      res.status(500).json({ error: "Failed to update challenge" });
     }
   });
 
