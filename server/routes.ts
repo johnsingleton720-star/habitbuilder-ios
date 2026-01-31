@@ -3,12 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -1423,6 +1423,36 @@ Return JSON with:
     }
   });
 
+  // Text-to-speech endpoint (Premium feature)
+  app.post("/api/text-to-speech", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check if user has Premium subscription
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Text-to-speech requires Premium subscription" });
+      }
+      
+      const { text } = req.body;
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      
+      // Limit text length for TTS
+      const trimmedText = text.slice(0, 2000);
+      
+      const { textToSpeech } = await import('./replit_integrations/audio/client');
+      const audioBuffer = await textToSpeech(trimmedText, "nova", "mp3");
+      
+      res.json({ audio: audioBuffer.toString('base64') });
+    } catch (error: any) {
+      console.error("Error with text-to-speech:", error?.message || error);
+      res.status(500).json({ error: "Text-to-speech service error" });
+    }
+  });
+
   // ===== HABIT TEMPLATES API =====
   
   // Get all habit templates
@@ -1565,6 +1595,109 @@ Return JSON with:
     } catch (error) {
       console.error("Error tracking template usage:", error);
       res.status(500).json({ error: "Failed to track usage" });
+    }
+  });
+
+  // ===== USER SAVED TEMPLATES API =====
+  
+  // Get user's saved templates
+  app.get("/api/user-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = req.query.habitId ? parseInt(req.query.habitId as string) : undefined;
+      
+      let query = db.select().from(userTemplates).where(eq(userTemplates.userId, userId));
+      
+      if (habitId) {
+        query = db.select().from(userTemplates).where(
+          and(eq(userTemplates.userId, userId), eq(userTemplates.habitId, habitId))
+        );
+      }
+      
+      const templates = await query.orderBy(userTemplates.updatedAt);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching user templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  // Save a user template
+  app.post("/api/user-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { habitId, title, content, originalTitle, taskId } = req.body;
+      
+      if (!title || !content) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+      
+      const [template] = await db.insert(userTemplates).values({
+        userId,
+        habitId: habitId || null,
+        title,
+        content,
+        originalTitle: originalTitle || null,
+        taskId: taskId || null,
+      }).returning();
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error saving user template:", error);
+      res.status(500).json({ error: "Failed to save template" });
+    }
+  });
+
+  // Update a user template
+  app.patch("/api/user-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const templateId = parseInt(req.params.id);
+      const { title, content } = req.body;
+      
+      // Verify ownership
+      const [existing] = await db.select().from(userTemplates)
+        .where(and(eq(userTemplates.id, templateId), eq(userTemplates.userId, userId)));
+      
+      if (!existing) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      const [updated] = await db.update(userTemplates)
+        .set({ 
+          title: title || existing.title, 
+          content: content || existing.content,
+          updatedAt: new Date(),
+        })
+        .where(eq(userTemplates.id, templateId))
+        .returning();
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating user template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  // Delete a user template
+  app.delete("/api/user-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const templateId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const [existing] = await db.select().from(userTemplates)
+        .where(and(eq(userTemplates.id, templateId), eq(userTemplates.userId, userId)));
+      
+      if (!existing) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      await db.delete(userTemplates).where(eq(userTemplates.id, templateId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user template:", error);
+      res.status(500).json({ error: "Failed to delete template" });
     }
   });
 

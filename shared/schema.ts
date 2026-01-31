@@ -255,3 +255,25 @@ export const habitReminders = pgTable("habit_reminders", {
 });
 
 export type HabitReminder = typeof habitReminders.$inferSelect;
+
+// User saved templates (editable templates from resources)
+export const userTemplates = pgTable("user_templates", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  habitId: integer("habit_id").references(() => habits.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  originalTitle: text("original_title"), // Original template title for reference
+  taskId: text("task_id"), // Which task this template is for
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserTemplateSchema = createInsertSchema(userTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserTemplate = typeof userTemplates.$inferSelect;
+export type InsertUserTemplate = z.infer<typeof insertUserTemplateSchema>;

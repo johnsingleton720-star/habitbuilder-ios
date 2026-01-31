@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { 
   Lightbulb, 
   BookOpen, 
@@ -27,7 +30,11 @@ import {
   Download,
   Play,
   Star,
-  ArrowRight
+  ArrowRight,
+  Edit2,
+  Save,
+  X,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoutineTask } from "@shared/schema";
@@ -149,9 +156,126 @@ const resourceIcons: Record<string, React.ReactNode> = {
   service: <Star className="w-4 h-4" />,
 };
 
+interface SavedTemplate {
+  id: number;
+  title: string;
+  content: string;
+  originalTitle?: string;
+  taskId?: string;
+}
+
 export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChange }: TaskGuidanceModalProps) {
   const [guidance, setGuidance] = useState<GuidanceData | null>(null);
   const [activeTab, setActiveTab] = useState("examples");
+  const [editingTemplate, setEditingTemplate] = useState<{id?: number; title: string; content: string; originalTitle: string} | null>(null);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedContent, setEditedContent] = useState("");
+  const [showSavedTemplates, setShowSavedTemplates] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch user's saved templates for this habit
+  const { data: savedTemplates = [] } = useQuery<SavedTemplate[]>({
+    queryKey: ['/api/user-templates', habitId],
+    queryFn: async () => {
+      const res = await fetch(`/api/user-templates?habitId=${habitId}`);
+      if (!res.ok) throw new Error('Failed to fetch templates');
+      return res.json();
+    },
+    enabled: open && showSavedTemplates,
+  });
+
+  // Create new template mutation
+  const createTemplateMutation = useMutation({
+    mutationFn: async (data: { title: string; content: string; originalTitle: string }) => {
+      const res = await apiRequest("POST", "/api/user-templates", {
+        habitId,
+        title: data.title,
+        content: data.content,
+        originalTitle: data.originalTitle,
+        taskId: task.id,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Template saved!", description: "Your template has been saved to your account." });
+      setEditingTemplate(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/user-templates', habitId] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save template. Please try again.", variant: "destructive" });
+    },
+  });
+
+  // Update existing template mutation
+  const updateTemplateMutation = useMutation({
+    mutationFn: async (data: { id: number; title: string; content: string }) => {
+      const res = await apiRequest("PATCH", `/api/user-templates/${data.id}`, {
+        title: data.title,
+        content: data.content,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Template updated!", description: "Your changes have been saved." });
+      setEditingTemplate(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/user-templates', habitId] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update template. Please try again.", variant: "destructive" });
+    },
+  });
+
+  // Delete template mutation
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      await apiRequest("DELETE", `/api/user-templates/${templateId}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Template deleted" });
+      queryClient.invalidateQueries({ queryKey: ['/api/user-templates', habitId] });
+    },
+  });
+
+  const startEditing = (template: Template) => {
+    // Editing an AI-generated template (create new)
+    setEditingTemplate({ title: template.title, content: template.content, originalTitle: template.title });
+    setEditedTitle(template.title);
+    setEditedContent(template.content);
+  };
+
+  const startEditingSaved = (saved: SavedTemplate) => {
+    // Editing an existing saved template (update)
+    setEditingTemplate({ id: saved.id, title: saved.title, content: saved.content, originalTitle: saved.originalTitle || saved.title });
+    setEditedTitle(saved.title);
+    setEditedContent(saved.content);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!editedTitle.trim() || !editedContent.trim()) {
+      toast({ title: "Error", description: "Title and content are required", variant: "destructive" });
+      return;
+    }
+    
+    if (editingTemplate?.id) {
+      // Update existing saved template
+      updateTemplateMutation.mutate({
+        id: editingTemplate.id,
+        title: editedTitle,
+        content: editedContent,
+      });
+    } else {
+      // Create new template
+      createTemplateMutation.mutate({
+        title: editedTitle,
+        content: editedContent,
+        originalTitle: editingTemplate?.originalTitle || editedTitle,
+      });
+    }
+  };
+  
+  const isSaving = createTemplateMutation.isPending || updateTemplateMutation.isPending;
 
   const guidanceMutation = useMutation({
     mutationFn: async () => {
@@ -558,21 +682,156 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
               </TabsContent>
 
               <TabsContent value="templates" className="space-y-4 mt-0">
-                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10">
+                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 flex items-center justify-between">
                   <p className="text-sm font-medium flex items-center gap-2">
                     <FileText className="w-4 h-4 text-purple-500" />
-                    Downloadable templates and checklists ready to use
+                    Editable templates and checklists you can customize
                   </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowSavedTemplates(!showSavedTemplates)}
+                    data-testid="button-show-saved-templates"
+                  >
+                    <FolderOpen className="w-4 h-4 mr-1" />
+                    {showSavedTemplates ? "Hide Saved" : "My Saved"}
+                  </Button>
                 </div>
+
+                {/* Saved Templates Section */}
+                {showSavedTemplates && savedTemplates.length === 0 && (
+                  <div className="text-center py-6 bg-muted/30 rounded-lg border border-dashed">
+                    <FolderOpen className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">No saved templates yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Click "Edit & Save" on any template below to save your customized version</p>
+                  </div>
+                )}
+                {showSavedTemplates && savedTemplates.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Your Saved Templates</p>
+                    {savedTemplates.map((saved) => (
+                      <Card key={saved.id} className="overflow-hidden border-primary/20" data-testid={`card-saved-template-${saved.id}`}>
+                        <CardHeader className="pb-2 bg-primary/5">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Save className="w-5 h-5 text-primary" />
+                              {saved.title}
+                            </CardTitle>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => startEditingSaved(saved)}
+                                data-testid={`button-edit-saved-${saved.id}`}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                size="sm"
+                                onClick={() => downloadTemplate({ title: saved.title, content: saved.content, format: "pdf" })}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => deleteTemplateMutation.mutate(saved.id)}
+                                data-testid={`button-delete-saved-${saved.id}`}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          <pre className="text-sm whitespace-pre-wrap font-mono bg-muted/50 p-4 rounded-lg border overflow-x-auto max-h-40">
+                            {saved.content}
+                          </pre>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {/* Template Editor */}
+                {editingTemplate && (
+                  <Card className="overflow-hidden border-2 border-primary" data-testid="card-template-editor">
+                    <CardHeader className="pb-2 bg-primary/10">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Edit2 className="w-5 h-5 text-primary" />
+                          Edit Template
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setEditingTemplate(null)}
+                            data-testid="button-cancel-edit"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Cancel
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={handleSaveTemplate}
+                            disabled={isSaving}
+                            data-testid="button-save-template"
+                          >
+                            {isSaving ? (
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            ) : (
+                              <Save className="w-4 h-4 mr-1" />
+                            )}
+                            {editingTemplate?.id ? "Update Template" : "Save to My Templates"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Template Title</label>
+                        <Input 
+                          value={editedTitle}
+                          onChange={(e) => setEditedTitle(e.target.value)}
+                          placeholder="Enter template title"
+                          data-testid="input-template-title"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Template Content</label>
+                        <Textarea 
+                          value={editedContent}
+                          onChange={(e) => setEditedContent(e.target.value)}
+                          placeholder="Enter template content..."
+                          rows={12}
+                          className="font-mono text-sm"
+                          data-testid="textarea-template-content"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* AI-Generated Templates */}
                 {guidance.templates?.map((template, index) => (
                   <Card key={index} className="overflow-hidden" data-testid={`card-template-${index}`}>
                     <CardHeader className="pb-2 bg-muted/30">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <CardTitle className="text-base flex items-center gap-2" data-testid={`text-template-title-${index}`}>
                           <FileText className="w-5 h-5 text-purple-500" />
                           {template.title}
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing(template)}
+                            data-testid={`button-edit-template-${index}`}
+                          >
+                            <Edit2 className="w-4 h-4 mr-1" />
+                            Edit & Save
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
