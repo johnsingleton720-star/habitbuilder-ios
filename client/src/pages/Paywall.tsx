@@ -1,52 +1,44 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { CheckCircle2, Leaf, Sparkles, Shield, Zap, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
-interface PriceData {
-  price_id: string;
-  unit_amount: number;
+interface PricingTier {
+  tier: string;
   name: string;
+  price: number;
+  priceId: string | null;
   description: string;
+  features: string[];
+  limitations?: string[];
+  popular?: boolean;
+}
+
+interface PricingData {
+  tiers: PricingTier[];
 }
 
 export default function Paywall() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  const [isRetrying, setIsRetrying] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
 
-  const { data: priceData, isLoading: isPriceLoading, error: priceError, refetch } = useQuery<PriceData>({
-    queryKey: ['/api/stripe/lifetime-price'],
-    queryFn: async () => {
-      const response = await fetch('/api/stripe/lifetime-price', { credentials: 'include' });
-      if (!response.ok) {
-        throw new Error(`Failed to load pricing: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("Pricing loaded:", data);
-      return data;
-    },
-    retry: 3,
-    retryDelay: 1000,
-    staleTime: 0,
-    gcTime: 0,
+  const { data: pricingData, isLoading } = useQuery<PricingData>({
+    queryKey: ['/api/stripe/pricing'],
+    staleTime: 60000,
   });
 
   const checkoutMutation = useMutation({
-    mutationFn: async (priceId: string) => {
-      const response = await apiRequest('POST', '/api/checkout', { priceId });
+    mutationFn: async ({ priceId, tier }: { priceId: string; tier: string }) => {
+      const response = await apiRequest('POST', '/api/checkout', { priceId, tier });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-          throw new Error('SESSION_EXPIRED');
-        }
         throw new Error(errorData.error || 'Failed to start checkout');
       }
       return response.json();
@@ -54,202 +46,187 @@ export default function Paywall() {
     onSuccess: (data) => {
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        setError("Unable to create checkout session. Please try again.");
       }
     },
     onError: (err: Error) => {
-      if (err.message === 'SESSION_EXPIRED') {
-        setError("Your session has expired. Please sign in again.");
-        toast({
-          title: "Session expired",
-          description: "Please sign in again to continue.",
-          variant: "destructive",
-        });
-      } else {
-        setError(err.message || "Something went wrong. Please try again.");
-        toast({
-          title: "Checkout failed",
-          description: err.message || "Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Checkout failed",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
-  const handleRetry = async () => {
-    setError(null);
-    setIsRetrying(true);
-    try {
-      await refetch();
-    } finally {
-      setIsRetrying(false);
-    }
-  };
-
-  const handlePurchase = async () => {
-    setError(null);
-    
-    // If no price data, try to fetch it first
-    if (!priceData?.price_id) {
-      setIsRetrying(true);
-      try {
-        // Force fresh fetch from server
-        const result = await refetch();
-        console.log("Refetch result:", result);
-        
-        if (result.data?.price_id) {
-          checkoutMutation.mutate(result.data.price_id);
-        } else if (result.error) {
-          console.error("Pricing fetch error:", result.error);
-          setError("Unable to load pricing. Please refresh and try again.");
-        } else {
-          // Try direct fetch as fallback
-          console.log("No price_id in refetch, trying direct fetch...");
-          const directResponse = await fetch('/api/stripe/lifetime-price', { credentials: 'include' });
-          if (directResponse.ok) {
-            const directData = await directResponse.json();
-            console.log("Direct fetch result:", directData);
-            if (directData.price_id) {
-              checkoutMutation.mutate(directData.price_id);
-              return;
-            }
-          }
-          setError("Unable to load pricing. Please refresh the page and try again.");
-        }
-      } catch (err) {
-        console.error("Pricing fetch exception:", err);
-        setError("Unable to load pricing. Please check your connection and try again.");
-      } finally {
-        setIsRetrying(false);
-      }
+  const handleSelectTier = (tier: PricingTier) => {
+    if (tier.tier === 'free') {
+      window.location.href = '/';
       return;
     }
-    
-    checkoutMutation.mutate(priceData.price_id);
+    if (tier.priceId) {
+      setSelectedTier(tier.tier);
+      checkoutMutation.mutate({ priceId: tier.priceId, tier: tier.tier });
+    }
   };
 
   const formatPrice = (amount: number) => {
-    return (amount / 100).toFixed(2);
+    return (amount / 100).toFixed(0);
   };
 
-  const features = [
-    { icon: CheckCircle2, text: "Unlimited habit tracking" },
-    { icon: Sparkles, text: "Daily AI-powered motivation" },
-    { icon: Zap, text: "Progress visualization" },
-    { icon: Shield, text: "Secure cloud sync" },
-  ];
+  const getTierIcon = (tier: string) => {
+    switch (tier) {
+      case 'free': return Leaf;
+      case 'pro': return Sparkles;
+      case 'premium': return Crown;
+      default: return Zap;
+    }
+  };
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'free': return 'text-muted-foreground';
+      case 'pro': return 'text-primary';
+      case 'premium': return 'text-amber-500';
+      default: return 'text-foreground';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center p-4 font-body">
+    <div className="min-h-screen bg-gradient-subtle flex flex-col items-center py-12 px-4 font-body">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-5xl"
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 mb-4 font-display text-2xl font-bold text-primary">
             <Leaf className="w-8 h-8 fill-primary/20" />
             <span>Habit Builder</span>
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Unlock Full Access
+          <h1 className="font-display text-4xl font-bold text-foreground mb-3">
+            Choose Your Path to Better Habits
           </h1>
-          <p className="text-muted-foreground">
-            Your AI habit coach, just $6/month
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            From casual tracking to AI-powered transformation, pick the plan that fits your journey.
           </p>
         </div>
 
-        <Card className="shadow-xl border-primary/20">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <span className="text-4xl font-display font-bold text-primary">
-                ${isPriceLoading ? "..." : formatPrice(priceData?.unit_amount || 600)}
-              </span>
-              <span className="text-lg font-normal text-muted-foreground">/month</span>
-            </CardTitle>
-            <CardDescription className="text-base">
-              Cancel anytime. No commitment.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <ul className="space-y-3">
-              {features.map((feature, i) => (
-                <motion.li 
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-center gap-3 text-foreground"
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {pricingData?.tiers.map((tier, index) => {
+              const Icon = getTierIcon(tier.tier);
+              const colorClass = getTierColor(tier.tier);
+              const isProcessing = selectedTier === tier.tier && checkoutMutation.isPending;
+              
+              return (
+                <motion.div
+                  key={tier.tier}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  <feature.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                  <span>{feature.text}</span>
-                </motion.li>
-              ))}
-            </ul>
+                  <Card className={`relative h-full flex flex-col ${tier.popular ? 'border-primary shadow-lg shadow-primary/20' : ''}`}>
+                    {tier.popular && (
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                        Most Popular
+                      </Badge>
+                    )}
+                    
+                    <CardHeader className="text-center pb-2">
+                      <div className={`inline-flex justify-center mb-2 ${colorClass}`}>
+                        <Icon className="w-10 h-10" />
+                      </div>
+                      <CardTitle className="text-2xl font-display">
+                        {tier.name}
+                      </CardTitle>
+                      <CardDescription className="text-sm min-h-[40px]">
+                        {tier.description}
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent className="flex-1">
+                      <div className="text-center mb-6">
+                        <span className={`text-5xl font-display font-bold ${colorClass}`}>
+                          ${formatPrice(tier.price)}
+                        </span>
+                        {tier.price > 0 && (
+                          <span className="text-muted-foreground">/month</span>
+                        )}
+                      </div>
+                      
+                      <ul className="space-y-3">
+                        {tier.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                        {tier.limitations?.map((limitation, i) => (
+                          <li key={`limit-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <span>{limitation}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    
+                    <CardFooter>
+                      <Button
+                        onClick={() => handleSelectTier(tier)}
+                        disabled={isProcessing || checkoutMutation.isPending}
+                        variant={tier.popular ? "default" : "outline"}
+                        className={`w-full ${tier.popular ? 'shadow-lg shadow-primary/25' : ''}`}
+                        data-testid={`button-select-${tier.tier}`}
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : tier.tier === 'free' ? (
+                          'Continue Free'
+                        ) : (
+                          `Get ${tier.name}`
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
-            {(error || priceError) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm"
-              >
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{error || "Error loading pricing"}</span>
-                </div>
-                {priceError && (
-                  <div className="text-xs opacity-70">
-                    Details: {priceError instanceof Error ? priceError.message : String(priceError)}
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRetry}
-                  disabled={isRetrying}
-                  className="mt-1"
-                >
-                  {isRetrying ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                  Retry
-                </Button>
-              </motion.div>
-            )}
+        <div className="mt-12 text-center">
+          <div className="bg-card rounded-xl p-6 max-w-2xl mx-auto border">
+            <h3 className="font-display text-xl font-semibold mb-3">
+              Why upgrade to a paid plan?
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <Sparkles className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="font-medium">AI-Powered Coaching</p>
+                <p className="text-muted-foreground">Personalized interviews and custom action plans</p>
+              </div>
+              <div className="text-center">
+                <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="font-medium">Guided Sessions</p>
+                <p className="text-muted-foreground">Step-by-step coaching with timers and notes</p>
+              </div>
+              <div className="text-center">
+                <Crown className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <p className="font-medium">Premium Features</p>
+                <p className="text-muted-foreground">Voice notes, accountability partners, and more</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {error?.includes("session") ? (
-              <Button 
-                onClick={() => window.location.href = "/api/login"}
-                className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
-                data-testid="button-signin-again"
-              >
-                Sign In Again
-              </Button>
-            ) : (
-              <Button 
-                onClick={handlePurchase}
-                disabled={isPriceLoading || checkoutMutation.isPending || isRetrying}
-                className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
-                data-testid="button-purchase"
-              >
-                {(checkoutMutation.isPending || isRetrying) ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {isRetrying ? "Loading..." : "Processing..."}
-                  </>
-                ) : (
-                  "Start Subscription"
-                )}
-              </Button>
-            )}
-
-            <p className="text-xs text-center text-muted-foreground">
-              Secure payment powered by Stripe. Cancel anytime during checkout.
-            </p>
-          </CardContent>
-        </Card>
-
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground mb-2">
             Signed in as {user?.email}
           </p>
@@ -262,6 +239,10 @@ export default function Paywall() {
             Sign out
           </Button>
         </div>
+
+        <p className="text-xs text-center text-muted-foreground mt-6">
+          Secure payment powered by Stripe. Cancel anytime.
+        </p>
       </motion.div>
     </div>
   );

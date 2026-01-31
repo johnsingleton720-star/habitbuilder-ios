@@ -1,78 +1,126 @@
 import { getUncachableStripeClient } from './stripeClient';
 
-const TARGET_PRICE = 600; // $6.00 in cents
-const PRODUCT_NAME = 'Habit Builder Pro';
-const OLD_PRODUCT_NAME = 'Habit Builder Lifetime Access';
+// Pricing tiers configuration
+const PRICING_TIERS = {
+  pro: {
+    name: 'Habit Builder Pro',
+    description: 'Unlimited habits with AI coaching, personalized action plans, and session summaries',
+    price: 600, // $6.00 in cents
+    features: [
+      'Unlimited habits',
+      'AI-powered habit coaching',
+      'Personalized action plans',
+      'Guided sessions with timers',
+      'AI session summaries',
+      'Progress streaks & achievements',
+      'Habit templates library',
+      'Weekly progress reports',
+      'Email reminders',
+    ],
+    metadata: {
+      tier: 'pro',
+      type: 'subscription',
+    }
+  },
+  premium: {
+    name: 'Habit Builder Premium',
+    description: 'Everything in Pro plus advanced AI features, voice notes, and accountability partners',
+    price: 1500, // $15.00 in cents
+    features: [
+      'Everything in Pro',
+      'Voice notes during sessions',
+      'Accountability partner sharing',
+      'Priority AI responses',
+      'Advanced analytics',
+      'Monthly personalized coaching insights',
+      'Priority support',
+    ],
+    metadata: {
+      tier: 'premium',
+      type: 'subscription',
+    }
+  }
+};
 
-async function createSubscriptionProduct() {
+async function createSubscriptionProducts() {
   const stripe = await getUncachableStripeClient();
 
-  // Check for existing subscription product
-  const products = await stripe.products.search({ query: `name:'${PRODUCT_NAME}'` });
-  
-  if (products.data.length > 0) {
-    const product = products.data[0];
-    console.log('Habit Builder Pro subscription already exists:', product.id);
+  for (const [tierKey, tier] of Object.entries(PRICING_TIERS)) {
+    console.log(`\nProcessing ${tier.name}...`);
     
-    const prices = await stripe.prices.list({ product: product.id, active: true });
-    const currentPrice = prices.data.find(p => 
-      p.unit_amount === TARGET_PRICE && 
-      p.recurring?.interval === 'month'
-    );
+    // Check for existing product
+    const products = await stripe.products.search({ query: `name:'${tier.name}'` });
     
-    if (currentPrice) {
-      console.log('Monthly $6 price already exists:', currentPrice.id);
-      return;
-    }
-    
-    // Deactivate old prices and create new $6/month price
-    console.log('Creating new $6/month price...');
-    
-    for (const oldPrice of prices.data) {
-      if (oldPrice.unit_amount !== TARGET_PRICE || oldPrice.recurring?.interval !== 'month') {
-        await stripe.prices.update(oldPrice.id, { active: false });
-        console.log('Deactivated old price:', oldPrice.id);
+    let product;
+    if (products.data.length > 0) {
+      product = products.data[0];
+      console.log(`${tier.name} already exists:`, product.id);
+      
+      // Update product description and metadata
+      await stripe.products.update(product.id, {
+        description: tier.description,
+        metadata: tier.metadata,
+      });
+      
+      // Check if correct price exists
+      const prices = await stripe.prices.list({ product: product.id, active: true });
+      const correctPrice = prices.data.find(p => 
+        p.unit_amount === tier.price && 
+        p.recurring?.interval === 'month'
+      );
+      
+      if (correctPrice) {
+        console.log(`$${tier.price / 100}/month price already exists:`, correctPrice.id);
+        continue;
       }
+      
+      // Deactivate old prices
+      for (const oldPrice of prices.data) {
+        if (oldPrice.unit_amount !== tier.price || oldPrice.recurring?.interval !== 'month') {
+          await stripe.prices.update(oldPrice.id, { active: false });
+          console.log('Deactivated old price:', oldPrice.id);
+        }
+      }
+      
+      // Create new price
+      const newPrice = await stripe.prices.create({
+        product: product.id,
+        unit_amount: tier.price,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+      });
+      console.log(`Created new price:`, newPrice.id, `($${tier.price / 100}/month)`);
+      
+    } else {
+      // Create new product
+      product = await stripe.products.create({
+        name: tier.name,
+        description: tier.description,
+        metadata: tier.metadata,
+      });
+      
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: tier.price,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+      });
+      
+      console.log(`Created ${tier.name}:`, product.id);
+      console.log(`Created price:`, price.id, `($${tier.price / 100}/month)`);
     }
-    
-    const newPrice = await stripe.prices.create({
-      product: product.id,
-      unit_amount: TARGET_PRICE,
-      currency: 'usd',
-      recurring: { interval: 'month' },
-    });
-    
-    console.log('Created new subscription price:', newPrice.id, '($6/month)');
-    return;
   }
-
-  // Deactivate old lifetime product if it exists
-  const oldProducts = await stripe.products.search({ query: `name:'${OLD_PRODUCT_NAME}'` });
+  
+  // Deactivate old single-tier product if exists
+  const oldProducts = await stripe.products.search({ query: `name:'Habit Builder Lifetime Access'` });
   for (const oldProduct of oldProducts.data) {
     if (oldProduct.active) {
       await stripe.products.update(oldProduct.id, { active: false });
       console.log('Deactivated old lifetime product:', oldProduct.id);
     }
   }
-
-  // Create new subscription product
-  const product = await stripe.products.create({
-    name: PRODUCT_NAME,
-    description: 'Monthly subscription for full access to Habit Builder - AI-powered habit coaching',
-    metadata: {
-      type: 'subscription',
-    }
-  });
-
-  const price = await stripe.prices.create({
-    product: product.id,
-    unit_amount: TARGET_PRICE,
-    currency: 'usd',
-    recurring: { interval: 'month' },
-  });
-
-  console.log('Created subscription product:', product.id);
-  console.log('Created subscription price:', price.id, '($6/month)');
+  
+  console.log('\n✓ All subscription products configured successfully!');
 }
 
-createSubscriptionProduct().catch(console.error);
+createSubscriptionProducts().catch(console.error);

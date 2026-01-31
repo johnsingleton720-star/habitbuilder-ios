@@ -159,3 +159,99 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+// Achievement types
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: "streak" | "completion" | "time" | "milestone";
+  requirement: number; // e.g., 7 for 7-day streak
+  unlockedAt?: string; // ISO date when unlocked
+}
+
+// User achievements table
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  achievementId: text("achievement_id").notNull(), // matches Achievement.id
+  unlockedAt: timestamp("unlocked_at").defaultNow(),
+});
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+
+// Habit templates library
+export const habitTemplates = pgTable("habit_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // health, productivity, wellness, learning, etc.
+  icon: text("icon").default("Target"),
+  color: text("color").default("teal-600"),
+  suggestedGoal: text("suggested_goal"),
+  suggestedQuestions: jsonb("suggested_questions").$type<HabitQuestion[]>().default([]),
+  suggestedPlan: jsonb("suggested_plan").$type<RoutineTask[]>().default([]),
+  isPremium: boolean("is_premium").default(false), // Premium-only templates
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertHabitTemplateSchema = createInsertSchema(habitTemplates).omit({
+  id: true,
+  createdAt: true,
+  usageCount: true,
+});
+
+export type HabitTemplate = typeof habitTemplates.$inferSelect;
+export type InsertHabitTemplate = z.infer<typeof insertHabitTemplateSchema>;
+
+// Accountability partners
+export const accountabilityPartners = pgTable("accountability_partners", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  partnerEmail: text("partner_email").notNull(),
+  partnerName: text("partner_name"),
+  status: text("status").default("pending"), // pending, accepted, declined
+  inviteToken: text("invite_token"),
+  habitIds: jsonb("habit_ids").$type<number[]>().default([]), // Which habits to share
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AccountabilityPartner = typeof accountabilityPartners.$inferSelect;
+
+// Weekly progress reports
+export const progressReports = pgTable("progress_reports", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  reportType: text("report_type").notNull(), // weekly, monthly
+  periodStart: text("period_start").notNull(), // ISO date
+  periodEnd: text("period_end").notNull(), // ISO date
+  summary: text("summary"), // AI-generated summary
+  stats: jsonb("stats").$type<{
+    totalSessions: number;
+    totalTimeSpent: number;
+    habitsWorkedOn: number;
+    tasksCompleted: number;
+    averageStreak: number;
+    topHabit?: string;
+  }>(),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ProgressReport = typeof progressReports.$inferSelect;
+
+// Reminder settings per habit
+export const habitReminders = pgTable("habit_reminders", {
+  id: serial("id").primaryKey(),
+  habitId: integer("habit_id").notNull().references(() => habits.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  reminderTime: text("reminder_time").notNull(), // HH:mm format
+  days: jsonb("days").$type<string[]>().default([]), // ["monday", "tuesday", etc.]
+  enabled: boolean("enabled").default(true),
+  lastSent: timestamp("last_sent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type HabitReminder = typeof habitReminders.$inferSelect;

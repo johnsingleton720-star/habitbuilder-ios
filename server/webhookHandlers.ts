@@ -31,10 +31,14 @@ export class WebhookHandlers {
       if (session.metadata?.userId) {
         const updateData: any = { hasPaid: true };
         
-        // If it's a subscription checkout, store the subscription ID
+        // If it's a subscription checkout, store the subscription ID and tier
         if (session.subscription) {
           updateData.subscriptionId = session.subscription;
           updateData.subscriptionStatus = 'active';
+          
+          // Determine tier from product metadata
+          const tier = session.metadata?.tier || 'pro';
+          updateData.subscriptionTier = tier;
         }
         
         await db
@@ -42,7 +46,7 @@ export class WebhookHandlers {
           .set(updateData)
           .where(eq(users.id, session.metadata.userId));
         
-        console.log(`User ${session.metadata.userId} subscription started - access granted`);
+        console.log(`User ${session.metadata.userId} subscription started (${updateData.subscriptionTier}) - access granted`);
       }
     }
 

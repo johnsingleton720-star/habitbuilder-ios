@@ -177,7 +177,102 @@ export async function registerRoutes(
     }
   });
 
-  // Get subscription price from Stripe - with fallback to direct API
+  // Get all tier pricing from Stripe
+  app.get("/api/stripe/pricing", async (req, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      
+      // Get both products
+      const products = await stripe.products.list({
+        active: true,
+        limit: 100,
+      });
+      
+      const proProduct = products.data.find(p => p.name === 'Habit Builder Pro');
+      const premiumProduct = products.data.find(p => p.name === 'Habit Builder Premium');
+      
+      const tiers: any[] = [
+        {
+          tier: 'free',
+          name: 'Free',
+          price: 0,
+          priceId: null,
+          description: 'Get started with basic habit tracking',
+          features: [
+            'Up to 3 habits',
+            'Basic streak tracking',
+            'Simple progress charts',
+            'Community templates',
+          ],
+          limitations: [
+            'No AI coaching',
+            'No personalized plans',
+            'No session summaries',
+          ],
+        },
+      ];
+      
+      if (proProduct) {
+        const proPrices = await stripe.prices.list({
+          product: proProduct.id,
+          active: true,
+        });
+        const proPrice = proPrices.data.find(p => p.recurring?.interval === 'month');
+        
+        tiers.push({
+          tier: 'pro',
+          name: 'Pro',
+          price: proPrice?.unit_amount || 600,
+          priceId: proPrice?.id,
+          description: 'AI-powered habit coaching for serious growth',
+          features: [
+            'Unlimited habits',
+            'AI-powered habit coaching',
+            'Personalized action plans',
+            'Guided sessions with timers',
+            'AI session summaries',
+            'Progress streaks & achievements',
+            'Habit templates library',
+            'Weekly progress reports',
+            'Email reminders',
+          ],
+          popular: true,
+        });
+      }
+      
+      if (premiumProduct) {
+        const premiumPrices = await stripe.prices.list({
+          product: premiumProduct.id,
+          active: true,
+        });
+        const premiumPrice = premiumPrices.data.find(p => p.recurring?.interval === 'month');
+        
+        tiers.push({
+          tier: 'premium',
+          name: 'Premium',
+          price: premiumPrice?.unit_amount || 1500,
+          priceId: premiumPrice?.id,
+          description: 'Maximum support for transformational habits',
+          features: [
+            'Everything in Pro',
+            'Voice notes during sessions',
+            'Accountability partner sharing',
+            'Priority AI responses',
+            'Advanced analytics dashboard',
+            'Monthly personalized insights',
+            'Priority support',
+          ],
+        });
+      }
+      
+      res.json({ tiers });
+    } catch (error: any) {
+      console.error("Error getting tier pricing:", error?.message || error);
+      res.status(500).json({ error: "Failed to get pricing" });
+    }
+  });
+
+  // Get subscription price from Stripe - with fallback to direct API (legacy endpoint)
   app.get("/api/stripe/lifetime-price", async (req, res) => {
     try {
       // Try database first - look for subscription product (prefer Habit Builder Pro)
@@ -271,7 +366,7 @@ export async function registerRoutes(
     try {
       const userId = req.user!.claims.sub;
       const userEmail = req.user!.claims.email;
-      const { priceId } = req.body;
+      const { priceId, tier } = req.body;
 
       if (!priceId) {
         return res.status(400).json({ error: "Price ID required" });
@@ -311,9 +406,10 @@ export async function registerRoutes(
         customer: customerId,
         metadata: {
           userId: userId,
+          tier: tier || 'pro',
         },
         subscription_data: {
-          metadata: { userId },
+          metadata: { userId, tier: tier || 'pro' },
         },
       });
 
