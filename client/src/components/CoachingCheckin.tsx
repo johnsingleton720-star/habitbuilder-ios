@@ -20,10 +20,12 @@ import {
   Frown,
   Mic,
   MicOff,
-  Volume2
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useToast } from "@/hooks/use-toast";
 
 interface CoachingCheckinProps {
   habitId: number;
@@ -55,16 +57,22 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const { isPremium } = useSubscription();
+  const { toast } = useToast();
 
   // Auto-scroll to bottom when checkin data changes
   useEffect(() => {
-    if (checkinData && scrollAreaRef.current) {
-      setTimeout(() => {
-        scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-      }, 100);
+    if (checkinData && scrollContainerRef.current) {
+      // Delay scroll to allow content to render
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [checkinData]);
 
@@ -150,7 +158,15 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
 
   // Text-to-speech for coach response
   const speakResponse = async () => {
-    if (!checkinData || isSpeaking) return;
+    if (!checkinData) return;
+    
+    // If already speaking, stop it
+    if (isSpeaking && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsSpeaking(false);
+      return;
+    }
     
     setIsSpeaking(true);
     try {
@@ -158,6 +174,10 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       
       const response = await apiRequest("POST", "/api/text-to-speech", { text: fullText });
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
       
       if (data.audio) {
         const audioData = atob(data.audio);
@@ -168,15 +188,39 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
         const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+        
         audio.onended = () => {
           setIsSpeaking(false);
+          audioRef.current = null;
           URL.revokeObjectURL(audioUrl);
         };
-        audio.play();
+        
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          audioRef.current = null;
+          URL.revokeObjectURL(audioUrl);
+          toast({
+            title: "Audio playback failed",
+            description: "Could not play the coach's response",
+            variant: "destructive"
+          });
+        };
+        
+        await audio.play();
+      } else {
+        throw new Error("No audio data received");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error with text-to-speech:", error);
       setIsSpeaking(false);
+      toast({
+        title: "Voice playback unavailable",
+        description: error.message === "Text-to-speech requires Premium subscription" 
+          ? "This feature requires a Premium subscription"
+          : "Could not generate voice response. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -188,7 +232,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           Talk to Coach
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-lg flex flex-col" style={{ maxHeight: '85vh', height: 'auto' }}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
@@ -203,18 +247,24 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
                 size="icon" 
                 variant="ghost" 
                 onClick={speakResponse}
-                disabled={isSpeaking}
-                title="Listen to coach response"
+                title={isSpeaking ? "Stop playback" : "Listen to coach response"}
                 data-testid="button-speak-response"
               >
-                <Volume2 className={cn("w-5 h-5", isSpeaking && "text-primary animate-pulse")} />
+                {isSpeaking ? (
+                  <VolumeX className="w-5 h-5 text-destructive" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
               </Button>
             )}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-hidden -mx-6">
-          <div ref={scrollAreaRef} className="h-full overflow-y-auto px-6 py-2">
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto -mx-6 px-6 py-2"
+          style={{ maxHeight: 'calc(85vh - 100px)', minHeight: '200px' }}
+        >
         {checkinMutation.isPending ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/10 flex items-center justify-center">
@@ -350,7 +400,6 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
             </Button>
           </div>
         )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
