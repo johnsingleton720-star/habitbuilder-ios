@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap } from "lucide-react";
+import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -27,12 +28,16 @@ interface PricingData {
 export default function Paywall() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
 
   const { data: pricingData, isLoading } = useQuery<PricingData>({
     queryKey: ['/api/stripe/pricing'],
     staleTime: 60000,
   });
+  
+  // Filter out free tier - only show Pro and Premium
+  const paidTiers = pricingData?.tiers.filter(tier => tier.tier !== 'free') || [];
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ priceId, tier }: { priceId: string; tier: string }) => {
@@ -58,10 +63,6 @@ export default function Paywall() {
   });
 
   const handleSelectTier = (tier: PricingTier) => {
-    if (tier.tier === 'free') {
-      window.location.href = '/';
-      return;
-    }
     if (tier.priceId) {
       setSelectedTier(tier.tier);
       checkoutMutation.mutate({ priceId: tier.priceId, tier: tier.tier });
@@ -103,12 +104,43 @@ export default function Paywall() {
             <Leaf className="w-8 h-8 fill-primary/20" />
             <span>Habit Builder</span>
           </div>
-          <h1 className="font-display text-4xl font-bold text-foreground mb-3">
-            Choose Your Path to Better Habits
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            From casual tracking to AI-powered transformation, pick the plan that fits your journey.
-          </p>
+          
+          {trialExpired ? (
+            <>
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                <Clock className="w-5 h-5 text-amber-500" />
+                <span className="text-amber-600 dark:text-amber-400 font-medium">Your trial has ended</span>
+              </div>
+              <h1 className="font-display text-4xl font-bold text-foreground mb-3">
+                Continue Your Habit Journey
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                Subscribe now to keep building better habits with AI-powered coaching.
+              </p>
+            </>
+          ) : isInTrial ? (
+            <>
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
+                <Clock className="w-5 h-5 text-primary" />
+                <span className="text-primary font-medium">{trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left in your trial</span>
+              </div>
+              <h1 className="font-display text-4xl font-bold text-foreground mb-3">
+                Upgrade to Continue Building Great Habits
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                Subscribe now to unlock unlimited habits and premium features.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display text-4xl font-bold text-foreground mb-3">
+                Choose Your Plan
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                Pick the plan that fits your habit-building journey.
+              </p>
+            </>
+          )}
         </div>
 
         {isLoading ? (
@@ -116,8 +148,8 @@ export default function Paywall() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {pricingData?.tiers.map((tier, index) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {paidTiers.map((tier, index) => {
               const Icon = getTierIcon(tier.tier);
               const colorClass = getTierColor(tier.tier);
               const isProcessing = selectedTier === tier.tier && checkoutMutation.isPending;
@@ -187,10 +219,8 @@ export default function Paywall() {
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Processing...
                           </>
-                        ) : tier.tier === 'free' ? (
-                          'Continue Free'
                         ) : (
-                          `Get ${tier.name}`
+                          `Subscribe to ${tier.name}`
                         )}
                       </Button>
                     </CardFooter>

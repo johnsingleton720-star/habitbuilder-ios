@@ -22,11 +22,20 @@ class AuthStorage implements IAuthStorage {
     // Check if this is the owner - grant automatic access
     const isOwner = userData.email === OWNER_EMAIL;
     
+    // Check if user already exists (for trial logic)
+    const existingUser = await this.getUser(userData.id!);
+    
+    // Set 2-day trial for new users (not owner)
+    const trialEndsAt = !existingUser && !isOwner 
+      ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // 2 days from now
+      : existingUser?.trialEndsAt;
+    
     const [user] = await db
       .insert(users)
       .values({
         ...userData,
         ...(isOwner && { isAdmin: true, hasPaid: true }),
+        ...(!existingUser && !isOwner && { trialEndsAt }),
       })
       .onConflictDoUpdate({
         target: users.id,

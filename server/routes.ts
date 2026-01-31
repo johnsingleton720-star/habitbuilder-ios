@@ -1181,16 +1181,17 @@ Return JSON with:
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      // Check if trial is still active (24 hours from account creation)
-      const TRIAL_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-      const trialEndTime = user?.createdAt ? new Date(user.createdAt).getTime() + TRIAL_DURATION_MS : 0;
-      const isTrialActive = Date.now() < trialEndTime;
-      const trialEndsAt = user?.createdAt ? new Date(trialEndTime).toISOString() : null;
+      // Check if trial is still active using trialEndsAt field
+      const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+      const isTrialActive = trialEndsAt ? Date.now() < trialEndsAt.getTime() : false;
+      
+      // Admin users always have access
+      const isAdmin = user?.isAdmin || false;
       
       res.json({ 
-        hasPaid: user?.hasPaid || false,
+        hasPaid: user?.hasPaid || isAdmin,
         isTrialActive,
-        trialEndsAt,
+        trialEndsAt: trialEndsAt?.toISOString() || null,
       });
     } catch (error) {
       console.error("Error checking payment status:", error);

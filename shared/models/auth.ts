@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   theme: varchar("theme").default("light"), // light, dark
   emailReminders: boolean("email_reminders").default(true),
+  trialEndsAt: timestamp("trial_ends_at"), // 2-day trial period end date
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
