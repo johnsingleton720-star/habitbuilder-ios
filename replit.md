@@ -147,3 +147,17 @@ Launch guided sessions from:
 ### Database Migrations
 - Run `npm run db:push` to sync schema with database
 - Drizzle Kit manages migrations in `./migrations` folder
+
+## Recent Updates
+
+### Smart Icon Matching System (Jan 2026)
+The HabitCard component (`client/src/components/HabitCard.tsx`) includes a smart icon matching system that automatically assigns relevant icons to habits based on keywords in their title and description:
+- 40+ keyword mappings (e.g., "running" → Zap, "reading" → BookOpen, "meditation" → Brain)
+- Icons include custom colors (e.g., green-600 for walking, blue-600 for reading)
+- Fallback icons for habits without keyword matches
+
+### UI/UX Enhancements (Jan 2026)
+- **Landing Page**: Added floating decorative elements with CSS animations (animate-float, animate-pulse-glow)
+- **Hero Visual**: Enhanced with animated habit cards showing progress bars
+- **Coach Chat**: Fixed scroll issue with ScrollArea wrapper (max-h-[85vh])
+- **HabitCard**: Uses forwardRef for AnimatePresence compatibility
