@@ -1,6 +1,6 @@
 {
-  "name": "HabitGrow",
-  "short_name": "HabitGrow",
+  "name": "Habit Builder",
+  "short_name": "Habit Builder",
   "description": "Build positive habits that stick with daily tracking and AI-powered motivation",
   "start_url": "/",
   "display": "standalone",

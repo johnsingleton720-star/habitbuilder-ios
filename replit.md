@@ -1,8 +1,8 @@
-# HabitGrow - AI-Powered Habit Coaching Application
+# Habit Builder - AI-Powered Habit Coaching Application
 
 ## Overview
 
-HabitGrow is an AI-powered habit coaching application that actively guides users through building positive habits. Unlike simple trackers, HabitGrow conducts personalized interviews to understand each user's goals, then generates tailored daily/weekly/monthly action plans. The app features:
+Habit Builder is an AI-powered habit coaching application that actively guides users through building positive habits. Unlike simple trackers, Habit Builder conducts personalized interviews to understand each user's goals, then generates tailored daily/weekly/monthly action plans. The app features:
 
 - **AI Interview**: When creating a habit, users answer personalized questions generated specifically for that habit type
 - **Personalized Action Plans**: Based on answers, AI creates daily routines with specific tasks
@@ -62,7 +62,7 @@ Preferred communication style: Simple, everyday language.
 - `server/seed-products.ts` - Script to create the $6/month subscription product
 
 ### AI-Powered Habit System
-The core feature of HabitGrow is the AI-powered habit coaching system:
+The core feature of Habit Builder is the AI-powered habit coaching system:
 
 **Habit Creation Flow:**
 1. User enters habit title, description, and optional goal

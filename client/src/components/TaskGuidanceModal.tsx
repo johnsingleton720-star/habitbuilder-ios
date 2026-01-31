@@ -385,7 +385,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.setFont("helvetica", "italic");
-    doc.text("Created with HabitGrow - Your AI Habit Coach", margin, currentPageHeight - 10);
+    doc.text("Created with Habit Builder - Your AI Habit Coach", margin, currentPageHeight - 10);
     doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, currentPageHeight - 10);
     
     doc.save(`${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_template.pdf`);

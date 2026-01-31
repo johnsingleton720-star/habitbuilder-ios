@@ -186,7 +186,7 @@ export async function registerRoutes(
               FROM stripe.prices pr 
               JOIN stripe.products p ON pr.product = p.id 
               WHERE p.active = true AND pr.active = true 
-              AND (p.metadata->>'type' = 'subscription' OR p.name = 'HabitGrow Pro')
+              AND (p.metadata->>'type' = 'subscription' OR p.name = 'Habit Builder Pro')
               LIMIT 1`
         );
         

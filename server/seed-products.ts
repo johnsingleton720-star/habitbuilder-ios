@@ -1,8 +1,8 @@
 import { getUncachableStripeClient } from './stripeClient';
 
 const TARGET_PRICE = 600; // $6.00 in cents
-const PRODUCT_NAME = 'HabitGrow Pro';
-const OLD_PRODUCT_NAME = 'HabitGrow Lifetime Access';
+const PRODUCT_NAME = 'Habit Builder Pro';
+const OLD_PRODUCT_NAME = 'Habit Builder Lifetime Access';
 
 async function createSubscriptionProduct() {
   const stripe = await getUncachableStripeClient();
@@ -12,7 +12,7 @@ async function createSubscriptionProduct() {
   
   if (products.data.length > 0) {
     const product = products.data[0];
-    console.log('HabitGrow Pro subscription already exists:', product.id);
+    console.log('Habit Builder Pro subscription already exists:', product.id);
     
     const prices = await stripe.prices.list({ product: product.id, active: true });
     const currentPrice = prices.data.find(p => 
@@ -58,7 +58,7 @@ async function createSubscriptionProduct() {
   // Create new subscription product
   const product = await stripe.products.create({
     name: PRODUCT_NAME,
-    description: 'Monthly subscription for full access to HabitGrow - AI-powered habit coaching',
+    description: 'Monthly subscription for full access to Habit Builder - AI-powered habit coaching',
     metadata: {
       type: 'subscription',
     }

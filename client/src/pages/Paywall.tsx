@@ -123,7 +123,7 @@ export default function Paywall() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4 font-display text-2xl font-bold text-primary">
             <Leaf className="w-8 h-8 fill-primary/20" />
-            <span>HabitGrow</span>
+            <span>Habit Builder</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
             Unlock Full Access

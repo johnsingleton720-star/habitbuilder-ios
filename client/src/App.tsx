@@ -30,7 +30,7 @@ function Router() {
     if (payment === 'success') {
       toast({
         title: "Payment successful!",
-        description: "Welcome to HabitGrow. Start building better habits today!",
+        description: "Welcome to Habit Builder. Start building better habits today!",
       });
       window.history.replaceState({}, '', '/');
     } else if (payment === 'cancelled') {
