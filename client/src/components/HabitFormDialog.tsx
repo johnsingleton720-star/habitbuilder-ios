@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { SchedulePicker } from "@/components/SchedulePicker";
-import { IconColorPicker } from "@/components/IconColorPicker";
+import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Palette } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const habitFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -54,10 +55,13 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const [, setLocation] = useLocation();
   const isEditing = !!habitToEdit;
   const [showSchedule, setShowSchedule] = useState(false);
-  const [showCustomize, setShowCustomize] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
   const [customIcon, setCustomIcon] = useState<string>("Star");
   const [customColor, setCustomColor] = useState<string>("#0d9488");
+  
+  // Get the selected icon component
+  const SelectedIcon = ICON_OPTIONS.find(i => i.name === customIcon)?.icon || Star;
 
   const form = useForm<HabitFormData>({
     resolver: zodResolver(habitFormSchema),
@@ -81,14 +85,13 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setShowSchedule(!!habitToEdit?.schedule);
       setCustomIcon(habitToEdit?.customIcon || "Star");
       setCustomColor(habitToEdit?.customColor || "#0d9488");
-      setShowCustomize(!!habitToEdit?.customIcon || !!habitToEdit?.customColor);
+      setShowIconPicker(false);
     }
   }, [open, habitToEdit, initialValues, form]);
 
   const onSubmit = async (data: HabitFormData) => {
     try {
       const scheduleData = showSchedule && schedule?.days?.length ? schedule : undefined;
-      const customization = showCustomize ? { customIcon, customColor, category: data.category } : { category: data.category };
       
       if (isEditing && habitToEdit) {
         await updateHabit.mutateAsync({ 
@@ -97,7 +100,9 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           description: data.description || null,
           goal: data.goal || null,
           schedule: scheduleData,
-          ...customization,
+          customIcon,
+          customColor,
+          category: data.category || null,
         });
         onOpenChange(false);
       } else {
@@ -106,7 +111,9 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           description: data.description || null,
           goal: data.goal || null,
           schedule: scheduleData,
-          ...customization,
+          customIcon,
+          customColor,
+          category: data.category || null,
         });
         onOpenChange(false);
         if (newHabit?.id) {
@@ -141,23 +148,55 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Habit Title</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g., Exercise daily, Read more, Meditate" 
-                      {...field} 
-                      data-testid="input-habit-title"
+            {/* Icon/Color Picker with Title */}
+            <div className="flex gap-3 items-start">
+              <Popover open={showIconPicker} onOpenChange={setShowIconPicker}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex-shrink-0 w-14 h-14 rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors flex items-center justify-center bg-muted/30 hover:bg-muted/50"
+                    data-testid="button-customize-icon"
+                    title="Click to customize icon and color"
+                  >
+                    <SelectedIcon className="w-7 h-7" style={{ color: customColor }} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-4" align="start">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Customize your habit</p>
+                    <IconColorPicker
+                      selectedIcon={customIcon}
+                      selectedColor={customColor}
+                      onIconChange={(icon) => {
+                        setCustomIcon(icon);
+                      }}
+                      onColorChange={(color) => {
+                        setCustomColor(color);
+                      }}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Habit Title</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Exercise daily, Read more, Meditate" 
+                        {...field} 
+                        data-testid="input-habit-title"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">Click the icon to customize color and style</p>
 
             <FormField
               control={form.control}
@@ -218,34 +257,6 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                 </FormItem>
               )}
             />
-
-            <Collapsible open={showCustomize} onOpenChange={setShowCustomize}>
-              <CollapsibleTrigger asChild>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full justify-between"
-                  data-testid="button-toggle-customize"
-                >
-                  <span className="flex items-center gap-2">
-                    <Palette className="w-4 h-4" />
-                    Customize Icon & Color
-                  </span>
-                  {showCustomize ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Choose an icon and color for your habit</p>
-                  <IconColorPicker
-                    selectedIcon={customIcon}
-                    selectedColor={customColor}
-                    onIconChange={setCustomIcon}
-                    onColorChange={setCustomColor}
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
 
             <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
               <CollapsibleTrigger asChild>
