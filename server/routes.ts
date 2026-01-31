@@ -719,6 +719,17 @@ REQUIREMENTS:
         throw new Error("Invalid plan structure from AI");
       }
 
+      // Fix dates: AI often generates wrong dates, so we override with correct sequential dates
+      const fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
+        const planDate = new Date(startDate);
+        planDate.setDate(planDate.getDate() + index);
+        return {
+          ...plan,
+          date: planDate.toISOString().split('T')[0],
+          dayNumber: index + 1,
+        };
+      });
+
       const enhancedContext = planData.aiContext || "";
 
       // Update habit with the generated plan
@@ -727,7 +738,7 @@ REQUIREMENTS:
         planDuration: duration,
         planStartDate: startDate.toISOString().split('T')[0],
         planEndDate: endDate.toISOString().split('T')[0],
-        dailyPlans: planData.dailyPlans,
+        dailyPlans: fixedDailyPlans,
         aiContext: enhancedContext,
         setupComplete: true,
       });

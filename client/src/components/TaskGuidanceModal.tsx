@@ -1017,6 +1017,13 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                 )}
 
                 {/* AI-Generated Templates */}
+                {(!guidance.templates || guidance.templates.length === 0) && !showSavedTemplates && (
+                  <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
+                    <FileText className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">No templates available for this task</p>
+                    <p className="text-xs text-muted-foreground mt-1">Templates are generated based on the task type. Try the other tabs for helpful resources!</p>
+                  </div>
+                )}
                 {guidance.templates?.map((template, index) => (
                   <Card key={index} className="overflow-hidden" data-testid={`card-template-${index}`}>
                     <CardHeader className="pb-2 bg-muted/30">
@@ -1097,6 +1104,13 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                     Video tutorials to guide you step by step
                   </p>
                 </div>
+                {(!guidance.videos || guidance.videos.length === 0) && (
+                  <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
+                    <Video className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">No video tutorials available for this task</p>
+                    <p className="text-xs text-muted-foreground mt-1">Video recommendations are generated based on the task type. Check the other tabs for more resources!</p>
+                  </div>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   {guidance.videos?.map((video, index) => (
                     <Card 
