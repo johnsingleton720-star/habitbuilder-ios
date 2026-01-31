@@ -414,96 +414,128 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               {!timerRunning && !selectedTimer ? (
                 <>
                   <div className="text-center">
-                    <h3 className="text-lg font-semibold">Add a focus timer?</h3>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-4">
+                      <Timer className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-display font-bold">Focus Timer</h3>
                     <p className="text-muted-foreground text-sm mt-1">
-                      Set a timer to stay focused on your habit practice.
+                      Set a timer to stay focused on your practice
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {TIMER_OPTIONS.map((minutes) => (
-                      <Button
-                        key={minutes}
-                        variant="outline"
-                        onClick={() => handleStartTimer(minutes)}
-                        className="h-14 flex flex-col gap-1"
-                        data-testid={`button-timer-${minutes}`}
-                      >
-                        <span className="font-bold">{minutes}</span>
-                        <span className="text-xs text-muted-foreground">min</span>
-                      </Button>
+                      <motion.div key={minutes} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleStartTimer(minutes)}
+                          className="w-full h-16 flex flex-col gap-1 rounded-2xl border-2 hover:border-primary/50 hover:bg-primary/5"
+                          data-testid={`button-timer-${minutes}`}
+                        >
+                          <span className="text-2xl font-display font-bold text-foreground">{minutes}</span>
+                          <span className="text-xs text-muted-foreground font-medium">min</span>
+                        </Button>
+                      </motion.div>
                     ))}
                   </div>
 
                   <Button
                     variant="ghost"
                     onClick={handleSkipTimer}
-                    className="w-full"
+                    className="w-full text-muted-foreground"
                     data-testid="button-skip-timer"
                   >
                     Skip timer and finish
                   </Button>
                 </>
               ) : (
-                <>
-                  <div className="relative w-48 h-48 mx-auto">
-                    <svg className="w-full h-full transform -rotate-90">
+                <div className="py-4">
+                  <div className="relative w-56 h-56 mx-auto">
+                    {/* Background glow */}
+                    <div className="absolute inset-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 blur-xl" />
+                    
+                    <svg className="w-full h-full transform -rotate-90 relative">
+                      <defs>
+                        <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" />
+                          <stop offset="100%" stopColor="hsl(var(--accent))" />
+                        </linearGradient>
+                      </defs>
                       <circle
-                        cx="96"
-                        cy="96"
-                        r="88"
+                        cx="112"
+                        cy="112"
+                        r="100"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="8"
+                        strokeWidth="10"
                         className="text-muted/20"
                       />
                       <circle
-                        cx="96"
-                        cy="96"
-                        r="88"
+                        cx="112"
+                        cy="112"
+                        r="100"
                         fill="none"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        strokeDasharray={553}
-                        strokeDashoffset={553 - (553 * timerProgress) / 100}
+                        stroke="url(#timerGradient)"
+                        strokeWidth="10"
+                        strokeDasharray={628}
+                        strokeDashoffset={628 - (628 * timerProgress) / 100}
                         strokeLinecap="round"
-                        className="text-primary transition-all duration-1000"
+                        className="transition-all duration-1000 drop-shadow-lg"
                       />
                     </svg>
+                    
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-4xl font-bold font-mono">
+                      <motion.span 
+                        key={timeRemaining}
+                        initial={{ scale: 1.1 }}
+                        animate={{ scale: 1 }}
+                        className="text-5xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+                      >
                         {formatTime(timeRemaining)}
+                      </motion.span>
+                      <span className="text-sm text-muted-foreground font-medium mt-1">
+                        {timerRunning ? "remaining" : "paused"}
                       </span>
-                      <span className="text-sm text-muted-foreground">remaining</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handlePauseResume}
-                      data-testid="button-timer-toggle"
-                    >
-                      {timerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setTimeRemaining(selectedTimer! * 60)}
-                      data-testid="button-timer-reset"
-                    >
-                      <RotateCcw className="w-5 h-5" />
-                    </Button>
+                  <div className="flex justify-center gap-4 mt-6">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant={timerRunning ? "outline" : "default"}
+                        size="lg"
+                        onClick={handlePauseResume}
+                        className="h-14 w-14 rounded-full shadow-lg"
+                        data-testid="button-timer-toggle"
+                      >
+                        {timerRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => setTimeRemaining(selectedTimer! * 60)}
+                        className="h-14 w-14 rounded-full"
+                        data-testid="button-timer-reset"
+                      >
+                        <RotateCcw className="w-5 h-5" />
+                      </Button>
+                    </motion.div>
+                  </div>
+                  
+                  <div className="text-center mt-4">
                     <Button
                       variant="ghost"
+                      size="sm"
                       onClick={handleSkipTimer}
+                      className="text-muted-foreground"
                       data-testid="button-timer-stop"
                     >
-                      End early
+                      End session early
                     </Button>
                   </div>
-                </>
+                </div>
               )}
             </motion.div>
           )}
@@ -516,21 +548,48 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               animate={{ opacity: 1, scale: 1 }}
               className="py-8 text-center space-y-6"
             >
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", duration: 0.8 }}
-                className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto"
-              >
-                <PartyPopper className="w-12 h-12 text-primary" />
-              </motion.div>
+              {/* Celebration animation */}
+              <div className="relative">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", duration: 0.8 }}
+                  className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
+                >
+                  <motion.div
+                    animate={{ 
+                      rotate: [0, 10, -10, 10, 0],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{ repeat: 2, duration: 0.5 }}
+                  >
+                    <PartyPopper className="w-14 h-14 text-primary" />
+                  </motion.div>
+                </motion.div>
+                
+                {/* Confetti-like decorations */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ 
+                      opacity: [0, 1, 0],
+                      scale: [0, 1, 0.5],
+                      x: Math.cos(i * 60 * Math.PI / 180) * 60,
+                      y: Math.sin(i * 60 * Math.PI / 180) * 60,
+                    }}
+                    transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
+                    className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-primary to-accent"
+                  />
+                ))}
+              </div>
 
               <div>
                 <motion.h3
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-2xl font-bold"
+                  className="text-3xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
                 >
                   Amazing work!
                 </motion.h3>
@@ -538,9 +597,16 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-muted-foreground mt-2"
+                  className="text-muted-foreground mt-2 text-lg"
                 >
                   You completed {completedTasks.length} task{completedTasks.length !== 1 ? 's' : ''} today.
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-sm text-muted-foreground/70 mt-1"
+                >
                   Keep up the momentum!
                 </motion.p>
               </div>
@@ -552,10 +618,11 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               >
                 <Button
                   onClick={handleFinishSession}
-                  className="gap-2"
+                  size="lg"
+                  className="gap-2 rounded-xl shadow-lg shadow-primary/20 px-8"
                   data-testid="button-finish-session"
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-5 h-5" />
                   Done
                 </Button>
               </motion.div>

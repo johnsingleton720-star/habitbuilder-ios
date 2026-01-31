@@ -1,6 +1,6 @@
 import { users, type User, type UpsertUser } from "@shared/models/auth";
 import { db } from "../../db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // Interface for auth storage operations
 // (IMPORTANT) These user operations are mandatory for Replit Auth.
@@ -16,9 +16,24 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Check if this is the first user - make them admin
+    let shouldBeAdmin = false;
+    if (userData.id) {
+      const existingUser = await db.select().from(users).where(eq(users.id, userData.id)).limit(1);
+      const isNewUser = existingUser.length === 0;
+      
+      if (isNewUser) {
+        const userCount = await db.select({ count: sql<number>`count(*)::int` }).from(users);
+        shouldBeAdmin = userCount[0].count === 0;
+      }
+    }
+    
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({
+        ...userData,
+        ...(shouldBeAdmin && { isAdmin: true }),
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: {

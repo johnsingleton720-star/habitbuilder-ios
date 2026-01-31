@@ -38,10 +38,11 @@ Preferred communication style: Simple, everyday language.
 - **Primary Database**: PostgreSQL (provisioned via Replit)
 - **Schema Location**: `shared/schema.ts` and `shared/models/`
 - **Tables**:
-  - `users` - User accounts with payment status
+  - `users` - User accounts with payment status and admin flag
   - `sessions` - Session storage for authentication
   - `habits` - User habits with completion tracking (JSONB for dates)
   - `conversations` / `messages` - AI chat support
+  - `feedback` - Customer feedback submissions with admin management
 
 ### Authentication Flow
 - Replit Auth integration via OpenID Connect
@@ -60,6 +61,27 @@ Preferred communication style: Simple, everyday language.
 - `server/stripeClient.ts` - Stripe client with Replit connector credentials
 - `server/webhookHandlers.ts` - Webhook processing for subscription lifecycle events
 - `server/seed-products.ts` - Script to create the $6/month subscription product
+
+### Customer Feedback System
+Users can submit feedback, bug reports, feature requests, and support inquiries. Admins can manage all feedback.
+
+**Features:**
+- Four feedback types: General Feedback, Bug Report, Feature Request, Support
+- Admin dashboard to view, prioritize, and manage all feedback
+- Admin-only access controlled by `isAdmin` flag on user record
+- Zod validation for all feedback submissions and updates
+
+**API Endpoints:**
+- `POST /api/feedback` - Submit feedback (authenticated users)
+- `GET /api/admin/feedback` - Get all feedback (admin only)
+- `PATCH /api/admin/feedback/:id` - Update feedback status/priority/notes (admin only)
+
+**Key Components:**
+- `FeedbackForm.tsx` - Modal dialog for submitting feedback from Account page
+- `AdminFeedback.tsx` - Admin page to view and manage all feedback (route: /admin/feedback)
+
+**Database Schema:**
+- `feedback` table: id, userId, userEmail, userName, type, subject, message, status, priority, adminNotes, createdAt, updatedAt
 
 ### AI-Powered Habit System
 The core feature of Habit Builder is the AI-powered habit coaching system:

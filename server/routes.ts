@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users } from "@shared/schema";
+import { users, feedback } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
@@ -1025,6 +1025,116 @@ Return JSON with:
     } catch (error) {
       console.error("Error checking payment status:", error);
       res.status(500).json({ error: "Failed to check payment status" });
+    }
+  });
+
+  // === FEEDBACK ROUTES ===
+  
+  // Zod schema for feedback submission
+  const feedbackSubmitSchema = z.object({
+    type: z.enum(["feedback", "bug", "feature", "support"]).default("feedback"),
+    subject: z.string().min(1, "Subject is required").max(200),
+    message: z.string().min(1, "Message is required").max(5000),
+  });
+  
+  // Zod schema for admin feedback updates
+  const feedbackUpdateSchema = z.object({
+    status: z.enum(["new", "in_progress", "resolved", "closed"]).optional(),
+    priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+    adminNotes: z.string().max(5000).optional(),
+  });
+  
+  // Submit feedback (authenticated users)
+  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userEmail = req.user!.claims.email;
+      const userName = `${req.user!.claims.first_name || ''} ${req.user!.claims.last_name || ''}`.trim();
+      
+      const parseResult = feedbackSubmitSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+      
+      const { type, subject, message } = parseResult.data;
+      
+      const result = await db.insert(feedback).values({
+        userId,
+        userEmail,
+        userName: userName || undefined,
+        type,
+        subject,
+        message,
+      }).returning();
+      
+      res.json({ success: true, feedback: result[0] });
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      res.status(500).json({ error: "Failed to submit feedback" });
+    }
+  });
+
+  // Get all feedback (admin only)
+  app.get("/api/admin/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Check if user is admin
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user[0]?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const result = await db.select().from(feedback).orderBy(sql`${feedback.createdAt} DESC`);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  // Update feedback status (admin only)
+  app.patch("/api/admin/feedback/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Check if user is admin
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user[0]?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const feedbackId = Number(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+      
+      const parseResult = feedbackUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+      
+      const { status, priority, adminNotes } = parseResult.data;
+      
+      const result = await db.update(feedback)
+        .set({
+          ...(status && { status }),
+          ...(priority && { priority }),
+          ...(adminNotes !== undefined && { adminNotes }),
+          updatedAt: new Date(),
+        })
+        .where(eq(feedback.id, feedbackId))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+      res.status(500).json({ error: "Failed to update feedback" });
     }
   });
 

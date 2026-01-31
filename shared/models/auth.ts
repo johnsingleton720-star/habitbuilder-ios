@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id"),
   subscriptionId: varchar("subscription_id"),
   subscriptionStatus: varchar("subscription_status"), // active, cancelled, past_due, etc.
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

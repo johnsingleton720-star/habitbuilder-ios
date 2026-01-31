@@ -89,6 +89,38 @@
   .bg-gradient-subtle {
     @apply bg-gradient-to-br from-background via-background to-secondary/30;
   }
+
+  /* Pastel habit card color variants - using teal/green palette */
+  .habit-pastel-1 {
+    @apply bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border-teal-200/50 dark:border-teal-800/50;
+  }
+  .habit-pastel-2 {
+    @apply bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/40 dark:to-teal-950/40 border-cyan-200/50 dark:border-cyan-800/50;
+  }
+  .habit-pastel-3 {
+    @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/40 border-emerald-200/50 dark:border-emerald-800/50;
+  }
+  .habit-pastel-4 {
+    @apply bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/40 dark:to-lime-950/40 border-green-200/50 dark:border-green-800/50;
+  }
+  .habit-pastel-5 {
+    @apply bg-gradient-to-br from-teal-100/80 to-cyan-50 dark:from-teal-900/40 dark:to-cyan-950/40 border-teal-300/50 dark:border-teal-700/50;
+  }
+
+  /* Enhanced stat cards */
+  .stat-card {
+    @apply rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;
+  }
+  
+  /* Circular progress ring */
+  .progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease-in-out;
+  }
 }
 
 /* Scrollbar styling */

@@ -131,3 +131,31 @@ export type InsertHabit = z.infer<typeof insertHabitSchema>;
 // Custom types for API
 export type CreateHabitRequest = z.infer<typeof insertHabitSchema>;
 export type UpdateHabitRequest = Partial<CreateHabitRequest>;
+
+// Customer Feedback table
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  userEmail: text("user_email"),
+  userName: text("user_name"),
+  type: text("type").notNull().default("feedback"), // feedback, bug, feature, support
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("new"), // new, in_progress, resolved, closed
+  priority: text("priority").default("normal"), // low, normal, high, urgent
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  priority: true,
+  adminNotes: true,
+});
+
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;

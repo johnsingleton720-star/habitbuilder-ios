@@ -16,6 +16,7 @@ import Paywall from "@/pages/Paywall";
 import HabitDetail from "@/pages/HabitDetail";
 import Account from "@/pages/Account";
 import Progress from "@/pages/Progress";
+import AdminFeedback from "@/pages/AdminFeedback";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/habit/:id" component={HabitDetail} />
       <Route path="/progress/:view" component={Progress} />
       <Route path="/account" component={Account} />
+      <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
     </Switch>

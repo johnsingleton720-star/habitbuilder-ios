@@ -4,8 +4,9 @@ import { usePaymentStatus } from "@/hooks/use-payment";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, User as UserIcon, Calendar, Sparkles, CreditCard, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { FeedbackForm } from "@/components/FeedbackForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +25,7 @@ export default function Account() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.completedDates?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
@@ -271,6 +273,45 @@ export default function Account() {
         >
           <Card>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-500" />
+                Feedback & Support
+              </CardTitle>
+              <CardDescription>Help us improve Habit Builder</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => setFeedbackOpen(true)}
+                data-testid="button-open-feedback"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Share Feedback
+              </Button>
+              {user?.isAdmin && (
+                <Link href="/admin/feedback">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 text-muted-foreground"
+                    data-testid="button-admin-feedback"
+                  >
+                    <Settings className="w-4 h-4" />
+                    View All Feedback (Admin)
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card>
+            <CardHeader>
               <CardTitle>Account Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -286,6 +327,8 @@ export default function Account() {
             </CardContent>
           </Card>
         </motion.div>
+
+        <FeedbackForm open={feedbackOpen} onOpenChange={setFeedbackOpen} />
 
         <p className="text-center text-xs text-muted-foreground pt-4">
           Member since {user?.createdAt ? format(new Date(user.createdAt), "MMMM yyyy") : "recently"}
