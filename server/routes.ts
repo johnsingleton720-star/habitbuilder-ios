@@ -1622,10 +1622,18 @@ Return JSON with:
     }
   });
 
-  // Save a user template
+  // Save a user template (Premium only)
   app.post("/api/user-templates", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check for Premium subscription
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Editable templates require Premium subscription" });
+      }
+      
       const { habitId, title, content, originalTitle, taskId } = req.body;
       
       if (!title || !content) {
@@ -1648,10 +1656,18 @@ Return JSON with:
     }
   });
 
-  // Update a user template
+  // Update a user template (Premium only)
   app.patch("/api/user-templates/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check for Premium subscription
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Editable templates require Premium subscription" });
+      }
+      
       const templateId = parseInt(req.params.id);
       const { title, content } = req.body;
       

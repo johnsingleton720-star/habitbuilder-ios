@@ -21,7 +21,8 @@ import {
   Mic,
   MicOff,
   Volume2,
-  VolumeX
+  VolumeX,
+  Play
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -56,6 +57,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false); // Audio loaded, ready for user tap
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -66,7 +68,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const { isPremium } = useSubscription();
   const { toast } = useToast();
 
-  // Cleanup audio on unmount or dialog close
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -74,10 +76,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
         audioRef.current.src = '';
         audioRef.current = null;
       }
-      if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
-        audioUrlRef.current = null;
-      }
+      audioUrlRef.current = null;
     };
   }, []);
 
@@ -89,12 +88,11 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
         audioRef.current.src = '';
         audioRef.current = null;
       }
-      if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
-        audioUrlRef.current = null;
-      }
+      audioUrlRef.current = null;
       setIsSpeaking(false);
       setIsLoadingAudio(false);
+      setIsAudioReady(false);
+      audioRequestIdRef.current += 1; // Cancel any pending requests
     }
   }, [open]);
 
@@ -198,26 +196,53 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       audioRef.current.src = '';
       audioRef.current = null;
     }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
+    audioUrlRef.current = null;
     setIsSpeaking(false);
     setIsLoadingAudio(false);
+    setIsAudioReady(false);
   };
 
   // Text-to-speech for coach response
   const speakResponse = async () => {
     if (!checkinData) return;
     
-    // If already speaking or loading, stop it
-    if (isSpeaking || isLoadingAudio || audioRef.current) {
+    // If already speaking, stop it
+    if (isSpeaking) {
       stopAudio();
       return;
     }
     
+    // If loading, allow stopping
+    if (isLoadingAudio) {
+      stopAudio();
+      return;
+    }
+    
+    // If audio is already loaded (from previous failed autoplay), try to play it
+    if (isAudioReady && audioRef.current) {
+      setIsAudioReady(false);
+      setIsSpeaking(true);
+      try {
+        await audioRef.current.play();
+        return;
+      } catch (e) {
+        console.error("Retry play failed:", e);
+        setIsSpeaking(false);
+        // Clear and will fetch again
+        audioRef.current = null;
+        audioUrlRef.current = null;
+        toast({
+          title: "Playback failed",
+          description: "Please try again",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     const currentRequestId = ++audioRequestIdRef.current;
     setIsLoadingAudio(true);
+    setIsAudioReady(false);
     
     try {
       const fullText = `${checkinData.greeting} ${checkinData.progressAcknowledgment} ${checkinData.motivation} Here's a tip for tomorrow: ${checkinData.tipForTomorrow}`;
@@ -245,15 +270,13 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
         const audioUrl = `data:audio/mpeg;base64,${data.audio}`;
         audioUrlRef.current = audioUrl;
         
-        const audio = new Audio();
+        const audio = new Audio(audioUrl);
         audioRef.current = audio;
-        
-        // Mobile-friendly settings
-        audio.preload = 'auto';
         
         audio.onended = () => {
           setIsSpeaking(false);
           setIsLoadingAudio(false);
+          setIsAudioReady(false);
           audioRef.current = null;
           audioUrlRef.current = null;
         };
@@ -262,42 +285,44 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           console.error("Audio error event:", e, audio.error);
           setIsSpeaking(false);
           setIsLoadingAudio(false);
+          setIsAudioReady(false);
           audioRef.current = null;
           audioUrlRef.current = null;
           toast({
-            title: "Audio playback failed",
-            description: "Could not play the coach's response. Try again.",
+            title: "Audio error",
+            description: "Could not load audio. Try again.",
             variant: "destructive"
           });
         };
         
-        audio.oncanplaythrough = async () => {
-          // Final check before playing
-          if (currentRequestId !== audioRequestIdRef.current) {
-            return;
-          }
-          
-          setIsLoadingAudio(false);
+        // Set state before attempting play
+        setIsLoadingAudio(false);
+        
+        // Try to play
+        try {
+          await audio.play();
           setIsSpeaking(true);
-          
-          try {
-            await audio.play();
-          } catch (playError) {
-            console.error("Audio play error:", playError);
-            setIsSpeaking(false);
+        } catch (playError: any) {
+          console.error("Audio play error:", playError);
+          // On iOS, if autoplay is blocked, set ready state for user to tap again
+          if (playError.name === 'NotAllowedError') {
+            // Keep the audio loaded and set ready state
+            setIsAudioReady(true);
+            toast({
+              title: "Ready to play",
+              description: "Tap the speaker button to hear the response",
+            });
+          } else {
+            setIsAudioReady(false);
             audioRef.current = null;
             audioUrlRef.current = null;
             toast({
-              title: "Audio playback blocked",
-              description: "Please tap the button again to hear the response",
+              title: "Playback failed",
+              description: "Could not play audio. Please try again.",
               variant: "destructive"
             });
           }
-        };
-        
-        // Set source after adding event listeners
-        audio.src = audioUrl;
-        audio.load();
+        }
       } else {
         throw new Error("No audio data received");
       }
@@ -338,15 +363,18 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
             {isPremium && checkinData && (
               <Button 
                 size="icon" 
-                variant="ghost" 
+                variant={isAudioReady ? "default" : "ghost"} 
                 onClick={speakResponse}
-                title={isSpeaking ? "Stop playback" : isLoadingAudio ? "Cancel loading" : "Listen to coach response"}
+                title={isSpeaking ? "Stop playback" : isLoadingAudio ? "Cancel loading" : isAudioReady ? "Tap to play" : "Listen to coach response"}
+                className={isAudioReady ? "animate-pulse" : ""}
                 data-testid="button-speak-response"
               >
                 {isLoadingAudio ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : isSpeaking ? (
                   <VolumeX className="w-5 h-5 text-destructive" />
+                ) : isAudioReady ? (
+                  <Play className="w-5 h-5" />
                 ) : (
                   <Volume2 className="w-5 h-5" />
                 )}

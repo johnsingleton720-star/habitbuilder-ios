@@ -39,6 +39,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { RoutineTask } from "@shared/schema";
 import { jsPDF } from "jspdf";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Crown, Lock } from "lucide-react";
 
 const LOADING_MESSAGES = [
   "Searching for expert tips...",
@@ -174,6 +176,10 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isPremium, canUseFeature, getUpgradeMessage } = useSubscription();
+  
+  const hasEditableTemplates = canUseFeature('hasEditableTemplates');
+  const hasDownloadablePdf = canUseFeature('hasDownloadablePdf');
 
   // Fetch user's saved templates for this habit
   const { data: savedTemplates = [] } = useQuery<SavedTemplate[]>({
@@ -855,10 +861,16 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
               </TabsContent>
 
               <TabsContent value="templates" className="space-y-4 mt-0">
-                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 flex items-center justify-between">
+                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 flex items-center justify-between flex-wrap gap-2">
                   <p className="text-sm font-medium flex items-center gap-2">
                     <FileText className="w-4 h-4 text-purple-500" />
-                    Editable templates and checklists you can customize
+                    Templates and checklists
+                    {!isPremium && (
+                      <Badge variant="outline" className="ml-2 text-xs gap-1">
+                        <Crown className="w-3 h-3 text-amber-500" />
+                        Edit & Download: Premium
+                      </Badge>
+                    )}
                   </p>
                   <Button 
                     size="sm" 
@@ -894,16 +906,34 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => startEditingSaved(saved)}
+                                onClick={() => {
+                                  if (!hasEditableTemplates) {
+                                    toast({ 
+                                      title: "Premium Feature", 
+                                      description: "Upgrade to Premium to edit saved templates",
+                                    });
+                                    return;
+                                  }
+                                  startEditingSaved(saved);
+                                }}
                                 data-testid={`button-edit-saved-${saved.id}`}
                               >
-                                <Edit2 className="w-4 h-4" />
+                                {hasEditableTemplates ? <Edit2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                               </Button>
                               <Button 
                                 size="sm"
-                                onClick={() => downloadTemplate({ title: saved.title, content: saved.content, format: "pdf" })}
+                                onClick={() => {
+                                  if (!hasDownloadablePdf) {
+                                    toast({ 
+                                      title: "Premium Feature", 
+                                      description: "Upgrade to Premium to download PDF worksheets",
+                                    });
+                                    return;
+                                  }
+                                  downloadTemplate({ title: saved.title, content: saved.content, format: "pdf" });
+                                }}
                               >
-                                <Download className="w-4 h-4" />
+                                {hasDownloadablePdf ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                               </Button>
                               <Button 
                                 size="sm" 
@@ -999,10 +1029,23 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => startEditing(template)}
+                            onClick={() => {
+                              if (!hasEditableTemplates) {
+                                toast({ 
+                                  title: "Premium Feature", 
+                                  description: "Upgrade to Premium to edit and save custom templates",
+                                });
+                                return;
+                              }
+                              startEditing(template);
+                            }}
                             data-testid={`button-edit-template-${index}`}
                           >
-                            <Edit2 className="w-4 h-4 mr-1" />
+                            {hasEditableTemplates ? (
+                              <Edit2 className="w-4 h-4 mr-1" />
+                            ) : (
+                              <Lock className="w-4 h-4 mr-1" />
+                            )}
                             Edit & Save
                           </Button>
                           <Button 
@@ -1016,10 +1059,23 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           </Button>
                           <Button 
                             size="sm"
-                            onClick={() => downloadTemplate(template)}
+                            onClick={() => {
+                              if (!hasDownloadablePdf) {
+                                toast({ 
+                                  title: "Premium Feature", 
+                                  description: "Upgrade to Premium to download editable PDF worksheets",
+                                });
+                                return;
+                              }
+                              downloadTemplate(template);
+                            }}
                             data-testid={`button-download-template-${index}`}
                           >
-                            <Download className="w-4 h-4 mr-1" />
+                            {hasDownloadablePdf ? (
+                              <Download className="w-4 h-4 mr-1" />
+                            ) : (
+                              <Lock className="w-4 h-4 mr-1" />
+                            )}
                             Download PDF
                           </Button>
                         </div>

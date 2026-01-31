@@ -8,6 +8,8 @@ interface SubscriptionFeatures {
   hasSessionSummaries: boolean;
   hasStreaksAchievements: boolean;
   hasTemplates: boolean;
+  hasEditableTemplates: boolean;
+  hasDownloadablePdf: boolean;
   hasWeeklyReports: boolean;
   hasEmailReminders: boolean;
   hasVoiceNotes: boolean;
@@ -24,6 +26,8 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasSessionSummaries: true,
     hasStreaksAchievements: true,
     hasTemplates: true,
+    hasEditableTemplates: false,
+    hasDownloadablePdf: false,
     hasWeeklyReports: false,
     hasEmailReminders: false,
     hasVoiceNotes: false,
@@ -38,6 +42,8 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasSessionSummaries: false,
     hasStreaksAchievements: false,
     hasTemplates: false,
+    hasEditableTemplates: false,
+    hasDownloadablePdf: false,
     hasWeeklyReports: false,
     hasEmailReminders: false,
     hasVoiceNotes: false,
@@ -52,6 +58,8 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasSessionSummaries: true,
     hasStreaksAchievements: true,
     hasTemplates: true,
+    hasEditableTemplates: false,
+    hasDownloadablePdf: false,
     hasWeeklyReports: true,
     hasEmailReminders: true,
     hasVoiceNotes: false,
@@ -66,6 +74,8 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasSessionSummaries: true,
     hasStreaksAchievements: true,
     hasTemplates: true,
+    hasEditableTemplates: true,
+    hasDownloadablePdf: true,
     hasWeeklyReports: true,
     hasEmailReminders: true,
     hasVoiceNotes: true,
