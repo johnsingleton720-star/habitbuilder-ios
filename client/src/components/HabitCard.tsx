@@ -85,20 +85,41 @@ const PASTEL_CLASSES = [
   "habit-pastel-5",
 ];
 
-function getSmartHabitIcon(title: string, description: string | null, habitId: number) {
+// Map icon name strings to actual icon components
+const ICON_NAME_MAP: Record<string, typeof Star> = {
+  Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
+  Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
+  Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
+  TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
+  Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap
+};
+
+function getSmartHabitIcon(title: string, description: string | null, habitId: number, customIcon?: string | null, customColor?: string | null) {
+  // Use custom icon/color if set
+  if (customIcon && ICON_NAME_MAP[customIcon]) {
+    // Check if customColor is a hex value (starts with #) or a tailwind class
+    const isHexColor = customColor?.startsWith('#');
+    return { 
+      icon: ICON_NAME_MAP[customIcon], 
+      color: isHexColor ? undefined : (customColor || "text-primary"),
+      colorStyle: isHexColor ? customColor : undefined
+    };
+  }
+  
   const searchText = `${title} ${description || ""}`.toLowerCase();
   
   for (const mapping of HABIT_ICON_MAPPING) {
     for (const keyword of mapping.keywords) {
       if (searchText.includes(keyword)) {
-        return { icon: mapping.icon, color: mapping.color };
+        return { icon: mapping.icon, color: mapping.color, colorStyle: undefined };
       }
     }
   }
   
   return { 
     icon: FALLBACK_ICONS[habitId % FALLBACK_ICONS.length], 
-    color: "text-primary" 
+    color: "text-primary",
+    colorStyle: undefined
   };
 }
 
@@ -127,7 +148,13 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const totalTasksCount = todaysTasks.length;
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
-  const { icon: HabitIcon, color: iconColor } = getSmartHabitIcon(habit.title, habit.description, habit.id);
+  const { icon: HabitIcon, color: iconColor, colorStyle } = getSmartHabitIcon(
+    habit.title, 
+    habit.description, 
+    habit.id,
+    habit.customIcon,
+    habit.customColor
+  );
   const pastelClass = getPastelClass(habit.id);
 
   const handleStartClick = (e: React.MouseEvent) => {
@@ -165,7 +192,10 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
             {/* Icon & Title Row */}
             <div className="flex items-center gap-3 mb-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 dark:bg-white/10 shadow-sm border border-white/50 dark:border-white/10">
-                <HabitIcon className={cn("w-6 h-6", iconColor)} />
+                <HabitIcon 
+                  className={cn("w-6 h-6", iconColor)} 
+                  style={colorStyle ? { color: colorStyle } : undefined}
+                />
               </div>
               <div className="flex-1">
                 <h3 className="font-display text-lg font-bold text-foreground leading-tight">{habit.title}</h3>

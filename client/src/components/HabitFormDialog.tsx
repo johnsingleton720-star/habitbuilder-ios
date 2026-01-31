@@ -10,16 +10,30 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { SchedulePicker } from "@/components/SchedulePicker";
+import { IconColorPicker } from "@/components/IconColorPicker";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Palette } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const habitFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   goal: z.string().optional(),
+  category: z.string().optional(),
 });
+
+const CATEGORY_OPTIONS = [
+  "Health & Fitness",
+  "Productivity",
+  "Learning",
+  "Wellness",
+  "Finance",
+  "Relationships",
+  "Creativity",
+  "Other",
+];
 
 type HabitFormData = z.infer<typeof habitFormSchema>;
 
@@ -40,7 +54,10 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const [, setLocation] = useLocation();
   const isEditing = !!habitToEdit;
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
+  const [customIcon, setCustomIcon] = useState<string>("Star");
+  const [customColor, setCustomColor] = useState<string>("#0d9488");
 
   const form = useForm<HabitFormData>({
     resolver: zodResolver(habitFormSchema),
@@ -48,6 +65,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       title: "",
       description: "",
       goal: "",
+      category: "",
     },
   });
 
@@ -57,15 +75,20 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
         title: habitToEdit?.title || initialValues?.title || "",
         description: habitToEdit?.description || initialValues?.description || "",
         goal: habitToEdit?.goal || initialValues?.goal || "",
+        category: habitToEdit?.category || "",
       });
       setSchedule(habitToEdit?.schedule as HabitSchedule | undefined);
       setShowSchedule(!!habitToEdit?.schedule);
+      setCustomIcon(habitToEdit?.customIcon || "Star");
+      setCustomColor(habitToEdit?.customColor || "#0d9488");
+      setShowCustomize(!!habitToEdit?.customIcon || !!habitToEdit?.customColor);
     }
   }, [open, habitToEdit, initialValues, form]);
 
   const onSubmit = async (data: HabitFormData) => {
     try {
       const scheduleData = showSchedule && schedule?.days?.length ? schedule : undefined;
+      const customization = showCustomize ? { customIcon, customColor, category: data.category } : { category: data.category };
       
       if (isEditing && habitToEdit) {
         await updateHabit.mutateAsync({ 
@@ -74,6 +97,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           description: data.description || null,
           goal: data.goal || null,
           schedule: scheduleData,
+          ...customization,
         });
         onOpenChange(false);
       } else {
@@ -82,6 +106,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           description: data.description || null,
           goal: data.goal || null,
           schedule: scheduleData,
+          ...customization,
         });
         onOpenChange(false);
         if (newHabit?.id) {
@@ -170,6 +195,57 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Collapsible open={showCustomize} onOpenChange={setShowCustomize}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full justify-between"
+                  data-testid="button-toggle-customize"
+                >
+                  <span className="flex items-center gap-2">
+                    <Palette className="w-4 h-4" />
+                    Customize Icon & Color
+                  </span>
+                  {showCustomize ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Choose an icon and color for your habit</p>
+                  <IconColorPicker
+                    selectedIcon={customIcon}
+                    selectedColor={customColor}
+                    onIconChange={setCustomIcon}
+                    onColorChange={setCustomColor}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
               <CollapsibleTrigger asChild>

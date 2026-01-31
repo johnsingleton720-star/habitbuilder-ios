@@ -30,9 +30,16 @@ export const users = pgTable("users", {
   subscriptionId: varchar("subscription_id"),
   subscriptionStatus: varchar("subscription_status"), // active, cancelled, past_due, etc.
   isAdmin: boolean("is_admin").default(false),
-  theme: varchar("theme").default("light"), // light, dark
+  theme: varchar("theme").default("light"), // light, dark, auto
+  darkModeSchedule: jsonb("dark_mode_schedule").$type<{ enabled: boolean; startHour: number; endHour: number }>(), // Auto dark mode
   emailReminders: boolean("email_reminders").default(true),
   trialEndsAt: timestamp("trial_ends_at"), // 2-day trial period end date
+  
+  // Premium features
+  streakFreezesAllowed: varchar("streak_freezes_allowed").default("2"), // Freezes allowed per month
+  publicProfileEnabled: boolean("public_profile_enabled").default(false),
+  publicProfileSlug: varchar("public_profile_slug").unique(), // Unique slug for public profile
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

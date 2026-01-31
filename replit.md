@@ -236,3 +236,26 @@ Key files:
 - After trial expires: Must subscribe to Pro or Premium
 - Pro ($6/month): Unlimited habits, AI coaching, weekly reports
 - Premium ($15/month): All Pro + voice notes, analytics, accountability partners, editable templates
+
+### Custom Icons & Colors (Jan 2026)
+Personalize habits with custom icons and colors:
+- 40+ icon options from Lucide React (Star, Leaf, Dumbbell, BookOpen, etc.)
+- 12 color options including hex values
+- Smart icon matching automatically suggests icons based on habit keywords
+- Custom settings override smart matching when set
+
+Key files:
+- `client/src/components/IconColorPicker.tsx` - Icon and color selection UI
+- `client/src/components/HabitFormDialog.tsx` - Includes customization section
+- `client/src/components/HabitCard.tsx` - Renders custom icons with color support
+
+Database fields on habits table:
+- `customIcon` - Icon name from lucide-react (e.g., "Star", "Dumbbell")
+- `customColor` - Hex color (e.g., "#0d9488") or Tailwind class
+- `category` - User-defined category for organizing habits
+
+### Habit Categories (Jan 2026)
+Organize habits by category:
+- Pre-defined categories: Health & Fitness, Productivity, Learning, Wellness, Finance, Relationships, Creativity, Other
+- Category selection in habit creation/edit form
+- Future: Filter and group habits by category on dashboard

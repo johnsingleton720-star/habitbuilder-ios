@@ -116,6 +116,15 @@ export const habits = pgTable("habits", {
   aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]),
   aiContext: text("ai_context"), // Summary of user's goals/context for AI
   
+  // Customization
+  customIcon: text("custom_icon"), // Icon name from lucide-react
+  customColor: text("custom_color"), // Hex color or tailwind color class
+  category: text("category"), // User-defined category for organizing habits
+  
+  // Streak protection (Premium feature)
+  streakFreezeUsed: integer("streak_freeze_used").default(0), // Freezes used this month
+  streakFreezeMonth: text("streak_freeze_month"), // Month when freeze count resets (YYYY-MM)
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -194,6 +203,12 @@ export const habitTemplates = pgTable("habit_templates", {
   suggestedPlan: jsonb("suggested_plan").$type<RoutineTask[]>().default([]),
   isPremium: boolean("is_premium").default(false), // Premium-only templates
   usageCount: integer("usage_count").default(0),
+  // Community marketplace fields
+  isPublic: boolean("is_public").default(false), // Shared to marketplace
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  createdByName: text("created_by_name"),
+  rating: integer("rating").default(0), // Average rating out of 5
+  ratingCount: integer("rating_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
