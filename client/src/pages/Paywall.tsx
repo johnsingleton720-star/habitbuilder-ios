@@ -129,7 +129,7 @@ export default function Paywall() {
             Unlock Full Access
           </h1>
           <p className="text-muted-foreground">
-            One payment. Lifetime access. No subscriptions.
+            Your AI habit coach, just $6/month
           </p>
         </div>
 
@@ -137,11 +137,12 @@ export default function Paywall() {
           <CardHeader className="text-center pb-4">
             <CardTitle className="flex items-center justify-center gap-2">
               <span className="text-4xl font-display font-bold text-primary">
-                ${isPriceLoading ? "..." : formatPrice(priceData?.unit_amount || 999)}
+                ${isPriceLoading ? "..." : formatPrice(priceData?.unit_amount || 600)}
               </span>
+              <span className="text-lg font-normal text-muted-foreground">/month</span>
             </CardTitle>
             <CardDescription className="text-base">
-              One-time payment for lifetime access
+              Cancel anytime. No commitment.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -192,7 +193,7 @@ export default function Paywall() {
                     {isRetrying ? "Loading..." : "Processing..."}
                   </>
                 ) : (
-                  "Get Lifetime Access"
+                  "Start Subscription"
                 )}
               </Button>
             )}

@@ -1,31 +1,37 @@
 import { getUncachableStripeClient } from './stripeClient';
 
-const TARGET_PRICE = 999; // $9.99 in cents
+const TARGET_PRICE = 600; // $6.00 in cents
+const PRODUCT_NAME = 'HabitGrow Pro';
+const OLD_PRODUCT_NAME = 'HabitGrow Lifetime Access';
 
-async function createLifetimeProduct() {
+async function createSubscriptionProduct() {
   const stripe = await getUncachableStripeClient();
 
-  const products = await stripe.products.search({ query: "name:'HabitGrow Lifetime Access'" });
+  // Check for existing subscription product
+  const products = await stripe.products.search({ query: `name:'${PRODUCT_NAME}'` });
   
   if (products.data.length > 0) {
     const product = products.data[0];
-    console.log('HabitGrow Lifetime Access already exists:', product.id);
+    console.log('HabitGrow Pro subscription already exists:', product.id);
     
     const prices = await stripe.prices.list({ product: product.id, active: true });
-    const currentPrice = prices.data[0];
+    const currentPrice = prices.data.find(p => 
+      p.unit_amount === TARGET_PRICE && 
+      p.recurring?.interval === 'month'
+    );
     
-    if (currentPrice && currentPrice.unit_amount === TARGET_PRICE) {
-      console.log('Price is already $9.99:', currentPrice.id);
+    if (currentPrice) {
+      console.log('Monthly $6 price already exists:', currentPrice.id);
       return;
     }
     
-    // Deactivate old prices and create new $9.99 price
-    console.log('Updating price to $9.99...');
+    // Deactivate old prices and create new $6/month price
+    console.log('Creating new $6/month price...');
     
     for (const oldPrice of prices.data) {
-      if (oldPrice.unit_amount !== TARGET_PRICE) {
+      if (oldPrice.unit_amount !== TARGET_PRICE || oldPrice.recurring?.interval !== 'month') {
         await stripe.prices.update(oldPrice.id, { active: false });
-        console.log('Deactivated old price:', oldPrice.id, `($${(oldPrice.unit_amount || 0) / 100})`);
+        console.log('Deactivated old price:', oldPrice.id);
       }
     }
     
@@ -33,17 +39,28 @@ async function createLifetimeProduct() {
       product: product.id,
       unit_amount: TARGET_PRICE,
       currency: 'usd',
+      recurring: { interval: 'month' },
     });
     
-    console.log('Created new price:', newPrice.id, '($9.99)');
+    console.log('Created new subscription price:', newPrice.id, '($6/month)');
     return;
   }
 
+  // Deactivate old lifetime product if it exists
+  const oldProducts = await stripe.products.search({ query: `name:'${OLD_PRODUCT_NAME}'` });
+  for (const oldProduct of oldProducts.data) {
+    if (oldProduct.active) {
+      await stripe.products.update(oldProduct.id, { active: false });
+      console.log('Deactivated old lifetime product:', oldProduct.id);
+    }
+  }
+
+  // Create new subscription product
   const product = await stripe.products.create({
-    name: 'HabitGrow Lifetime Access',
-    description: 'One-time payment for lifetime access to HabitGrow - your personal habit tracking companion',
+    name: PRODUCT_NAME,
+    description: 'Monthly subscription for full access to HabitGrow - AI-powered habit coaching',
     metadata: {
-      type: 'lifetime_access',
+      type: 'subscription',
     }
   });
 
@@ -51,10 +68,11 @@ async function createLifetimeProduct() {
     product: product.id,
     unit_amount: TARGET_PRICE,
     currency: 'usd',
+    recurring: { interval: 'month' },
   });
 
-  console.log('Created product:', product.id);
-  console.log('Created price:', price.id, '($9.99)');
+  console.log('Created subscription product:', product.id);
+  console.log('Created subscription price:', price.id, '($6/month)');
 }
 
-createLifetimeProduct().catch(console.error);
+createSubscriptionProduct().catch(console.error);

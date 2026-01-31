@@ -155,7 +155,7 @@ export default function Account() {
                 <div>
                   <p className="font-medium">Current Plan</p>
                   <p className="text-sm text-muted-foreground">
-                    {hasPaid ? "Lifetime Access" : isTrialActive ? "Free Trial" : "No Active Plan"}
+                    {hasPaid ? "Pro ($6/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
                   </p>
                 </div>
                 <Badge 
@@ -186,7 +186,7 @@ export default function Account() {
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
                   <Shield className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-800 dark:text-green-200">
-                    You have lifetime access to all features
+                    You have full access to all features
                   </span>
                 </div>
               )}

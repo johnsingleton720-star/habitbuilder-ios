@@ -176,22 +176,22 @@ export async function registerRoutes(
     }
   });
 
-  // Get lifetime price from Stripe - with fallback to direct API
+  // Get subscription price from Stripe - with fallback to direct API
   app.get("/api/stripe/lifetime-price", async (req, res) => {
     try {
-      // Try database first
+      // Try database first - look for subscription product
       try {
         const result = await db.execute(
           sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
               FROM stripe.prices pr 
               JOIN stripe.products p ON pr.product = p.id 
               WHERE p.active = true AND pr.active = true 
-              AND p.metadata->>'type' = 'lifetime_access'
+              AND (p.metadata->>'type' = 'subscription' OR p.name = 'HabitGrow Pro')
               LIMIT 1`
         );
         
         if (result.rows.length > 0) {
-          console.log("Returning price from database");
+          console.log("Returning subscription price from database");
           return res.json(result.rows[0]);
         }
       } catch (dbError) {
@@ -202,54 +202,58 @@ export async function registerRoutes(
       console.log("Querying Stripe API directly...");
       const stripe = await getUncachableStripeClient();
       
-      // List all active products and find the lifetime one
+      // List all active products and find the subscription one
       const products = await stripe.products.list({
         active: true,
         limit: 100,
       });
       
-      const lifetimeProduct = products.data.find(
-        p => p.metadata?.type === 'lifetime_access'
+      const subscriptionProduct = products.data.find(
+        p => p.metadata?.type === 'subscription' || p.name === 'HabitGrow Pro'
       );
       
-      if (!lifetimeProduct) {
-        console.error("No lifetime product found in Stripe");
-        return res.status(404).json({ error: "Lifetime product not found" });
+      if (!subscriptionProduct) {
+        console.error("No subscription product found in Stripe");
+        return res.status(404).json({ error: "Subscription product not found" });
       }
       
-      console.log("Found product:", lifetimeProduct.id, lifetimeProduct.name);
+      console.log("Found product:", subscriptionProduct.id, subscriptionProduct.name);
       
-      // Get active price for this product
+      // Get active recurring price for this product
       const prices = await stripe.prices.list({
-        product: lifetimeProduct.id,
+        product: subscriptionProduct.id,
         active: true,
-        limit: 1,
+        limit: 10,
       });
       
-      if (prices.data.length === 0) {
-        console.error("No active price found for product:", lifetimeProduct.id);
-        return res.status(404).json({ error: "No active price found" });
+      // Find the monthly recurring price
+      const monthlyPrice = prices.data.find(p => p.recurring?.interval === 'month');
+      
+      if (!monthlyPrice) {
+        console.error("No monthly price found for product:", subscriptionProduct.id);
+        return res.status(404).json({ error: "No active monthly price found" });
       }
       
-      const price = prices.data[0];
-      console.log("Found price:", price.id, price.unit_amount);
+      console.log("Found price:", monthlyPrice.id, monthlyPrice.unit_amount);
       
       res.json({
-        price_id: price.id,
-        unit_amount: price.unit_amount,
-        name: lifetimeProduct.name,
-        description: lifetimeProduct.description,
+        price_id: monthlyPrice.id,
+        unit_amount: monthlyPrice.unit_amount,
+        name: subscriptionProduct.name,
+        description: subscriptionProduct.description,
+        interval: 'month',
       });
     } catch (error: any) {
-      console.error("Error getting lifetime price:", error?.message || error);
+      console.error("Error getting subscription price:", error?.message || error);
       res.status(500).json({ error: "Failed to get pricing. Please try again." });
     }
   });
 
-  // Create checkout session for lifetime purchase
+  // Create checkout session for subscription
   app.post("/api/checkout", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const userEmail = req.user!.claims.email;
       const { priceId } = req.body;
 
       if (!priceId) {
@@ -259,14 +263,40 @@ export async function registerRoutes(
       const stripe = await getUncachableStripeClient();
       const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
 
+      // Find or create Stripe customer
+      let customerId: string | undefined;
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      
+      if (existingUser?.stripeCustomerId) {
+        customerId = existingUser.stripeCustomerId;
+      } else if (userEmail) {
+        // Create new customer
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        
+        // Save customer ID to user
+        await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, userId));
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
-        mode: 'payment',
+        mode: 'subscription',
         success_url: `${baseUrl}/?payment=success`,
         cancel_url: `${baseUrl}/?payment=cancelled`,
+        customer: customerId,
         metadata: {
           userId: userId,
+        },
+        subscription_data: {
+          metadata: { userId },
         },
       });
 

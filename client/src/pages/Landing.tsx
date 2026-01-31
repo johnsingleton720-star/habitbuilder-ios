@@ -59,7 +59,7 @@ export default function Landing() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>Then $9.99 for lifetime access</span>
+                <span>Then just $6/month</span>
               </div>
             </div>
           </motion.div>

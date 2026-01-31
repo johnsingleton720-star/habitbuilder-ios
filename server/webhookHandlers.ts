@@ -24,16 +24,98 @@ export class WebhookHandlers {
       (await sync.getManagedWebhook())?.secret || ''
     );
 
+    // Handle checkout session completed (subscription started)
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as any;
       
-      if (session.payment_status === 'paid' && session.metadata?.userId) {
+      if (session.metadata?.userId) {
+        const updateData: any = { hasPaid: true };
+        
+        // If it's a subscription checkout, store the subscription ID
+        if (session.subscription) {
+          updateData.subscriptionId = session.subscription;
+          updateData.subscriptionStatus = 'active';
+        }
+        
         await db
           .update(users)
-          .set({ hasPaid: true })
+          .set(updateData)
           .where(eq(users.id, session.metadata.userId));
         
-        console.log(`User ${session.metadata.userId} payment completed - access granted`);
+        console.log(`User ${session.metadata.userId} subscription started - access granted`);
+      }
+    }
+
+    // Handle subscription updated (status changes)
+    if (event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as any;
+      const customerId = subscription.customer;
+      
+      // Find user by stripe customer ID
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.stripeCustomerId, customerId))
+        .limit(1);
+      
+      if (user) {
+        const isActive = ['active', 'trialing'].includes(subscription.status);
+        
+        await db
+          .update(users)
+          .set({
+            subscriptionStatus: subscription.status,
+            hasPaid: isActive,
+          })
+          .where(eq(users.id, user.id));
+        
+        console.log(`User ${user.id} subscription updated: ${subscription.status}`);
+      }
+    }
+
+    // Handle subscription cancelled/deleted
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as any;
+      const customerId = subscription.customer;
+      
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.stripeCustomerId, customerId))
+        .limit(1);
+      
+      if (user) {
+        await db
+          .update(users)
+          .set({
+            subscriptionStatus: 'cancelled',
+            hasPaid: false,
+            subscriptionId: null,
+          })
+          .where(eq(users.id, user.id));
+        
+        console.log(`User ${user.id} subscription cancelled - access revoked`);
+      }
+    }
+
+    // Handle payment failed
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as any;
+      const customerId = invoice.customer;
+      
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.stripeCustomerId, customerId))
+        .limit(1);
+      
+      if (user) {
+        await db
+          .update(users)
+          .set({ subscriptionStatus: 'past_due' })
+          .where(eq(users.id, user.id));
+        
+        console.log(`User ${user.id} payment failed - subscription past due`);
       }
     }
   }

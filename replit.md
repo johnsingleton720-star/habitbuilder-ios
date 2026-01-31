@@ -50,16 +50,16 @@ Preferred communication style: Simple, everyday language.
 - User data synced on login via upsert pattern
 
 ### Payment System
-- Stripe integration for one-time lifetime access purchase ($9.99)
-- Webhook handling for checkout completion via stripe-replit-sync
-- User `hasPaid` flag controls access to main features
+- Stripe integration for monthly subscription ($6/month)
+- Webhook handling for subscription events (created, updated, cancelled, payment failed)
+- User `hasPaid` and `subscriptionStatus` flags control access to main features
 - Paywall page displayed for unpaid authenticated users
 - Stripe product seeded via `server/seed-products.ts`
 
 ### Stripe Files
 - `server/stripeClient.ts` - Stripe client with Replit connector credentials
-- `server/webhookHandlers.ts` - Webhook processing for payment completion
-- `server/seed-products.ts` - Script to create the $9.99 lifetime product
+- `server/webhookHandlers.ts` - Webhook processing for subscription lifecycle events
+- `server/seed-products.ts` - Script to create the $6/month subscription product
 
 ### AI-Powered Habit System
 The core feature of HabitGrow is the AI-powered habit coaching system:
