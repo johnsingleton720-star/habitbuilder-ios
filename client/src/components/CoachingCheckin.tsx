@@ -241,68 +241,63 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       }
       
       if (data.audio) {
-        const audioData = atob(data.audio);
-        const audioArray = new Uint8Array(audioData.length);
-        for (let i = 0; i < audioData.length; i++) {
-          audioArray[i] = audioData.charCodeAt(i);
-        }
-        const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
-        const audioUrl = URL.createObjectURL(audioBlob);
+        // Use data URL for better mobile compatibility (especially iOS Safari)
+        const audioUrl = `data:audio/mpeg;base64,${data.audio}`;
         audioUrlRef.current = audioUrl;
         
-        const audio = new Audio(audioUrl);
+        const audio = new Audio();
         audioRef.current = audio;
+        
+        // Mobile-friendly settings
+        audio.preload = 'auto';
         
         audio.onended = () => {
           setIsSpeaking(false);
           setIsLoadingAudio(false);
           audioRef.current = null;
-          if (audioUrlRef.current) {
-            URL.revokeObjectURL(audioUrlRef.current);
-            audioUrlRef.current = null;
-          }
+          audioUrlRef.current = null;
         };
         
-        audio.onerror = () => {
+        audio.onerror = (e) => {
+          console.error("Audio error event:", e, audio.error);
           setIsSpeaking(false);
           setIsLoadingAudio(false);
           audioRef.current = null;
-          if (audioUrlRef.current) {
-            URL.revokeObjectURL(audioUrlRef.current);
-            audioUrlRef.current = null;
-          }
+          audioUrlRef.current = null;
           toast({
             title: "Audio playback failed",
-            description: "Could not play the coach's response",
+            description: "Could not play the coach's response. Try again.",
             variant: "destructive"
           });
         };
         
-        // Final check before playing
-        if (currentRequestId !== audioRequestIdRef.current) {
-          URL.revokeObjectURL(audioUrl);
-          return;
-        }
-        
-        setIsLoadingAudio(false);
-        setIsSpeaking(true);
-        
-        try {
-          await audio.play();
-        } catch (playError) {
-          console.error("Audio play error:", playError);
-          setIsSpeaking(false);
-          audioRef.current = null;
-          if (audioUrlRef.current) {
-            URL.revokeObjectURL(audioUrlRef.current);
-            audioUrlRef.current = null;
+        audio.oncanplaythrough = async () => {
+          // Final check before playing
+          if (currentRequestId !== audioRequestIdRef.current) {
+            return;
           }
-          toast({
-            title: "Audio playback blocked",
-            description: "Please tap the button again to hear the response",
-            variant: "destructive"
-          });
-        }
+          
+          setIsLoadingAudio(false);
+          setIsSpeaking(true);
+          
+          try {
+            await audio.play();
+          } catch (playError) {
+            console.error("Audio play error:", playError);
+            setIsSpeaking(false);
+            audioRef.current = null;
+            audioUrlRef.current = null;
+            toast({
+              title: "Audio playback blocked",
+              description: "Please tap the button again to hear the response",
+              variant: "destructive"
+            });
+          }
+        };
+        
+        // Set source after adding event listeners
+        audio.src = audioUrl;
+        audio.load();
       } else {
         throw new Error("No audio data received");
       }
