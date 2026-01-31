@@ -20,23 +20,23 @@ interface SubscriptionFeatures {
 
 const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = {
   trial: {
-    maxHabits: 3,
-    hasAiCoaching: true,
-    hasPersonalizedPlans: true,
-    hasSessionSummaries: true,
-    hasStreaksAchievements: true,
-    hasTemplates: true,
-    hasEditableTemplates: false,
-    hasDownloadablePdf: false,
-    hasWeeklyReports: false,
-    hasEmailReminders: false,
-    hasVoiceNotes: false,
-    hasAccountabilityPartners: false,
-    hasPrioritySupport: false,
-    hasAdvancedAnalytics: false,
+    maxHabits: 3, // Limited during trial
+    hasAiCoaching: true, // Can try AI coaching
+    hasPersonalizedPlans: true, // Can generate one plan
+    hasSessionSummaries: false, // Premium feature
+    hasStreaksAchievements: true, // Basic tracking
+    hasTemplates: true, // Can view templates
+    hasEditableTemplates: false, // Premium only
+    hasDownloadablePdf: false, // Premium only
+    hasWeeklyReports: false, // Pro+ feature
+    hasEmailReminders: false, // Pro+ feature
+    hasVoiceNotes: false, // Premium only
+    hasAccountabilityPartners: false, // Premium only
+    hasPrioritySupport: false, // Premium only
+    hasAdvancedAnalytics: false, // Premium only
   },
   free: {
-    maxHabits: 0, // No access after trial
+    maxHabits: 0, // No access after trial expires
     hasAiCoaching: false,
     hasPersonalizedPlans: false,
     hasSessionSummaries: false,
@@ -126,6 +126,9 @@ export function useSubscription() {
     return '';
   };
   
+  // Admin has full access to all features
+  const isAdmin = user?.isAdmin === true;
+  
   return {
     tier: effectiveTier,
     baseTier,
@@ -138,7 +141,8 @@ export function useSubscription() {
     canUseFeature,
     canAddMoreHabits,
     getUpgradeMessage,
-    isPro: baseTier === 'pro' || baseTier === 'premium',
-    isPremium: baseTier === 'premium',
+    isPro: baseTier === 'pro' || baseTier === 'premium' || isAdmin,
+    isPremium: baseTier === 'premium' || isAdmin,
+    isAdmin,
   };
 }

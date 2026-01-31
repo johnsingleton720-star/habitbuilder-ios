@@ -10,7 +10,7 @@ import { StreakBrokenModal } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -131,6 +131,18 @@ export default function Dashboard() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <Link href="/analytics">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-analytics">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Advanced Analytics
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/accountability">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-accountability">
+                  <Users className="mr-2 h-4 w-4" />
+                  Accountability Partners
+                </DropdownMenuItem>
+              </Link>
               <Link href="/account">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-account">
                   <Settings className="mr-2 h-4 w-4" />

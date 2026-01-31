@@ -18,6 +18,8 @@ import HabitDetail from "@/pages/HabitDetail";
 import Account from "@/pages/Account";
 import Progress from "@/pages/Progress";
 import AdminFeedback from "@/pages/AdminFeedback";
+import Analytics from "@/pages/Analytics";
+import Accountability from "@/pages/Accountability";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -74,6 +76,8 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/habit/:id" component={HabitDetail} />
       <Route path="/progress/:view" component={Progress} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/accountability" component={Accountability} />
       <Route path="/account" component={Account} />
       <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/paywall" component={Paywall} />

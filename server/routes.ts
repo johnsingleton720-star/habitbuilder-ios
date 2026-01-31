@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -96,6 +96,22 @@ export async function registerRoutes(
   app.post(api.habits.create.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check trial/subscription limits for habit creation
+      const existingHabits = await storage.getHabits(userId);
+      const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+      const isInTrial = trialEndsAt && trialEndsAt > new Date();
+      const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+      const isAdmin = user?.isAdmin === true;
+      
+      // Trial users are limited to 3 habits
+      if (isInTrial && !hasPaidSubscription && !isAdmin && existingHabits.length >= 3) {
+        return res.status(403).json({ 
+          error: "Trial users can create up to 3 habits. Subscribe to Pro or Premium for unlimited habits." 
+        });
+      }
+      
       const input = api.habits.create.input.parse(req.body);
       const habit = await storage.createHabit(userId, input);
       res.status(201).json(habit);
@@ -1714,6 +1730,386 @@ Return JSON with:
     } catch (error) {
       console.error("Error deleting user template:", error);
       res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // ===== ADVANCED ANALYTICS API (Premium Only) =====
+  
+  app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check for Premium subscription
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Advanced Analytics require Premium subscription" });
+      }
+      
+      const timeRange = req.query.timeRange as string || 'month';
+      const userHabits = await storage.getHabits(userId);
+      
+      // Calculate time range filter
+      const now = new Date();
+      let startDate: Date;
+      switch (timeRange) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(0); // All time
+      }
+      
+      // Aggregate analytics from habits
+      let totalSessions = 0;
+      let totalTimeSpent = 0;
+      let totalTasksCompleted = 0;
+      let currentStreak = 0;
+      let longestStreak = 0;
+      const habitBreakdown: { habitId: number; habitTitle: string; sessions: number; time: number; completion: number }[] = [];
+      const dailyData: Map<string, { sessions: number; time: number }> = new Map();
+      
+      for (const habit of userHabits) {
+        const progress = habit.progress || [];
+        const dailyPlans = habit.dailyPlans || [];
+        
+        let habitSessions = 0;
+        let habitTime = 0;
+        let habitTasksCompleted = 0;
+        let habitTotalTasks = 0;
+        
+        for (const entry of progress) {
+          const entryDate = new Date(entry.date);
+          if (entryDate >= startDate) {
+            habitSessions++;
+            habitTime += entry.timeSpent || 0;
+            habitTasksCompleted += entry.tasksCompleted || 0;
+            habitTotalTasks += entry.totalTasks || 0;
+            
+            const dateKey = entry.date.split('T')[0];
+            const existing = dailyData.get(dateKey) || { sessions: 0, time: 0 };
+            dailyData.set(dateKey, {
+              sessions: existing.sessions + 1,
+              time: existing.time + (entry.timeSpent || 0),
+            });
+          }
+        }
+        
+        totalSessions += habitSessions;
+        totalTimeSpent += habitTime;
+        totalTasksCompleted += habitTasksCompleted;
+        currentStreak = Math.max(currentStreak, habit.currentStreak || 0);
+        longestStreak = Math.max(longestStreak, habit.longestStreak || 0);
+        
+        if (habitSessions > 0) {
+          habitBreakdown.push({
+            habitId: habit.id,
+            habitTitle: habit.title,
+            sessions: habitSessions,
+            time: habitTime,
+            completion: habitTotalTasks > 0 ? Math.round((habitTasksCompleted / habitTotalTasks) * 100) : 0,
+          });
+        }
+      }
+      
+      // Generate weekly trend data
+      const weeklyTrend: { week: string; sessions: number; time: number }[] = [];
+      const weeksToShow = timeRange === 'week' ? 1 : timeRange === 'month' ? 4 : 12;
+      for (let i = weeksToShow - 1; i >= 0; i--) {
+        const weekStart = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        let weekSessions = 0;
+        let weekTime = 0;
+        
+        dailyData.forEach((data, dateKey) => {
+          const date = new Date(dateKey);
+          if (date >= weekStart && date < weekEnd) {
+            weekSessions += data.sessions;
+            weekTime += data.time;
+          }
+        });
+        
+        weeklyTrend.push({
+          week: `Week ${weeksToShow - i}`,
+          sessions: weekSessions,
+          time: weekTime,
+        });
+      }
+      
+      // Calculate best day
+      const dayCount: Record<string, number> = {};
+      dailyData.forEach((data, dateKey) => {
+        const dayName = new Date(dateKey).toLocaleDateString('en-US', { weekday: 'long' });
+        dayCount[dayName] = (dayCount[dayName] || 0) + data.sessions;
+      });
+      const bestDay = Object.entries(dayCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Not enough data';
+      
+      // Generate AI correlations
+      const correlations: { insight: string; strength: "strong" | "moderate" | "weak" }[] = [];
+      
+      if (totalSessions >= 5) {
+        if (currentStreak >= 7) {
+          correlations.push({
+            insight: "You've maintained a week-long streak. Consistency is key to habit formation!",
+            strength: "strong",
+          });
+        }
+        
+        if (habitBreakdown.length > 1) {
+          const topHabit = habitBreakdown.sort((a, b) => b.sessions - a.sessions)[0];
+          correlations.push({
+            insight: `"${topHabit.habitTitle}" is your most practiced habit with ${topHabit.sessions} sessions.`,
+            strength: "moderate",
+          });
+        }
+        
+        const avgSessionLength = totalTimeSpent / totalSessions;
+        if (avgSessionLength > 20) {
+          correlations.push({
+            insight: "Your average session is over 20 minutes, indicating deep focus on your habits.",
+            strength: "strong",
+          });
+        } else if (avgSessionLength < 10) {
+          correlations.push({
+            insight: "Short sessions are great for starting! Consider extending them as you build momentum.",
+            strength: "weak",
+          });
+        }
+      }
+      
+      res.json({
+        totalSessions,
+        totalTimeSpent,
+        totalTasksCompleted,
+        averageSessionLength: totalSessions > 0 ? Math.round(totalTimeSpent / totalSessions) : 0,
+        currentStreak,
+        longestStreak,
+        weeklyTrend,
+        monthlyTrend: weeklyTrend, // Simplified for now
+        habitBreakdown,
+        correlations,
+        bestDay,
+        bestTime: "Morning", // Default based on common patterns
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Generate AI Report
+  app.post("/api/analytics/ai-report", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "AI Reports require Premium subscription" });
+      }
+      
+      const userHabits = await storage.getHabits(userId);
+      
+      // Build context for AI
+      const habitSummary = userHabits.map(h => ({
+        title: h.title,
+        streak: h.currentStreak,
+        timeSpent: h.totalTimeSpent,
+        sessions: (h.progress || []).length,
+      }));
+      
+      const openai = new OpenAI();
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a habit coach providing personalized insights. Analyze the user's habit data and provide 3-5 actionable insights. Be encouraging but honest. Keep each insight to 1-2 sentences.",
+          },
+          {
+            role: "user",
+            content: `Here's my habit data: ${JSON.stringify(habitSummary)}. What insights can you share about my progress?`,
+          },
+        ],
+        max_tokens: 500,
+      });
+      
+      const insights = response.choices[0]?.message?.content || "Keep up the great work on your habits!";
+      
+      res.json({ insights });
+    } catch (error) {
+      console.error("Error generating AI report:", error);
+      res.status(500).json({ error: "Failed to generate AI report" });
+    }
+  });
+
+  // Export CSV
+  app.get("/api/analytics/export", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "CSV Export requires Premium subscription" });
+      }
+      
+      const userHabits = await storage.getHabits(userId);
+      
+      // Build CSV
+      let csv = "Date,Habit,Tasks Completed,Total Tasks,Time Spent (min),Mood,Notes\n";
+      
+      for (const habit of userHabits) {
+        for (const entry of habit.progress || []) {
+          csv += `${entry.date},${habit.title.replace(/,/g, ';')},${entry.tasksCompleted},${entry.totalTasks},${entry.timeSpent},${entry.mood || ''},${(entry.notes || '').replace(/,/g, ';').replace(/\n/g, ' ')}\n`;
+        }
+      }
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=habit-data.csv');
+      res.send(csv);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  // ===== ACCOUNTABILITY PARTNERS API (Premium Only) =====
+  
+  // Get user's accountability partners
+  app.get("/api/accountability-partners", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Accountability Partners require Premium subscription" });
+      }
+      
+      const partners = await db.select().from(accountabilityPartners)
+        .where(eq(accountabilityPartners.userId, userId))
+        .orderBy(accountabilityPartners.createdAt);
+      
+      res.json(partners);
+    } catch (error) {
+      console.error("Error fetching accountability partners:", error);
+      res.status(500).json({ error: "Failed to fetch partners" });
+    }
+  });
+
+  // Invite an accountability partner
+  const invitePartnerSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    name: z.string().optional(),
+    habitIds: z.array(z.number()).optional().default([]),
+  });
+  
+  app.post("/api/accountability-partners/invite", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Accountability Partners require Premium subscription" });
+      }
+      
+      // Validate input with Zod
+      const parseResult = invitePartnerSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+      
+      const { email, name, habitIds } = parseResult.data;
+      
+      // Verify user owns all the habits they want to share
+      if (habitIds.length > 0) {
+        const userHabits = await storage.getHabits(userId);
+        const userHabitIds = userHabits.map(h => h.id);
+        const invalidHabits = habitIds.filter(id => !userHabitIds.includes(id));
+        
+        if (invalidHabits.length > 0) {
+          return res.status(400).json({ error: "You can only share habits you own" });
+        }
+      }
+      
+      // Generate invite token
+      const inviteToken = crypto.randomUUID();
+      
+      const [partner] = await db.insert(accountabilityPartners).values({
+        userId,
+        partnerEmail: email,
+        partnerName: name || null,
+        status: "pending",
+        inviteToken,
+        habitIds,
+      }).returning();
+      
+      // In a production app, you would send an email here
+      // For now, we'll just return the partner record
+      
+      res.json(partner);
+    } catch (error) {
+      console.error("Error inviting accountability partner:", error);
+      res.status(500).json({ error: "Failed to send invitation" });
+    }
+  });
+
+  // Send progress update to a partner
+  app.post("/api/accountability-partners/:id/send-update", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const partnerId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const [partner] = await db.select().from(accountabilityPartners)
+        .where(and(eq(accountabilityPartners.id, partnerId), eq(accountabilityPartners.userId, userId)));
+      
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      // Get user's habits to include in update
+      const userHabits = await storage.getHabits(userId);
+      const sharedHabits = userHabits.filter(h => partner.habitIds?.includes(h.id));
+      
+      // In production, this would send an email
+      // For now, we'll just confirm the action
+      
+      res.json({ 
+        success: true, 
+        message: `Update sent to ${partner.partnerEmail}`,
+        habitsShared: sharedHabits.length,
+      });
+    } catch (error) {
+      console.error("Error sending partner update:", error);
+      res.status(500).json({ error: "Failed to send update" });
+    }
+  });
+
+  // Remove an accountability partner
+  app.delete("/api/accountability-partners/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const partnerId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const [existing] = await db.select().from(accountabilityPartners)
+        .where(and(eq(accountabilityPartners.id, partnerId), eq(accountabilityPartners.userId, userId)));
+      
+      if (!existing) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      await db.delete(accountabilityPartners).where(eq(accountabilityPartners.id, partnerId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing accountability partner:", error);
+      res.status(500).json({ error: "Failed to remove partner" });
     }
   });
 

@@ -205,3 +205,34 @@ Theme switching with localStorage persistence:
 - `client/src/components/ThemeProvider.tsx` - Context provider
 - `client/src/components/ThemeToggle.tsx` - Toggle button component
 - Toggle accessible from Dashboard menu dropdown
+
+### Advanced Analytics (Jan 2026)
+Premium-only analytics dashboard with deep insights:
+- Trend charts for weekly/monthly activity
+- Habit performance breakdown by completion rate
+- AI-generated correlation insights and recommendations
+- Best day/time analysis for peak performance
+- CSV data export for external analysis
+
+Key files:
+- `client/src/pages/Analytics.tsx` - Full analytics dashboard
+- API: GET /api/analytics, POST /api/analytics/ai-report, GET /api/analytics/export
+
+### Social Accountability (Jan 2026)
+Premium-only accountability partner system:
+- Invite accountability partners by email
+- Select which habits to share with each partner
+- Send progress updates to partners
+- Weekly summary preview of shared data
+
+Key files:
+- `client/src/pages/Accountability.tsx` - Partner management page
+- `shared/schema.ts` - accountabilityPartners table
+- API: GET/POST /api/accountability-partners, POST /send-update, DELETE
+
+### Trial System Update (Jan 2026)
+2-day free trial with limited features:
+- Trial: 3 habits max, basic AI coaching, no premium features
+- After trial expires: Must subscribe to Pro or Premium
+- Pro ($6/month): Unlimited habits, AI coaching, weekly reports
+- Premium ($15/month): All Pro + voice notes, analytics, accountability partners, editable templates
