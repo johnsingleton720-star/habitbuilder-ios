@@ -423,7 +423,7 @@ export async function registerRoutes(
             'AI-powered insights & correlations',
             'Accountability partner sharing',
             'Progress update notifications',
-            'Editable PDF templates (coming soon)',
+            'Fillable PDF templates (type directly in PDF)',
             'Email reminders (coming soon)',
             'Monthly personalized reports (coming soon)',
             'Priority support',
