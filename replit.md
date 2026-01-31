@@ -156,6 +156,12 @@ The HabitCard component (`client/src/components/HabitCard.tsx`) includes a smart
 - Icons include custom colors (e.g., green-600 for walking, blue-600 for reading)
 - Fallback icons for habits without keyword matches
 
+### Guided Session Enhancements (Jan 2026)
+- **Individual Task Timers**: Each task has its own timer with start/pause controls and +1m/+5m buttons
+- **End Session Early**: Users can end sessions early with confirmation dialog - partial progress is saved
+- **AI Session Summary**: After completing a session, AI analyzes all notes and provides personalized insights and encouragement
+- **Async State Fix**: Session mutations receive computed data directly to ensure last task notes/time are included in summaries
+
 ### UI/UX Enhancements (Jan 2026)
 - **Landing Page**: Added floating decorative elements with CSS animations (animate-float, animate-pulse-glow)
 - **Hero Visual**: Enhanced with animated habit cards showing progress bars
