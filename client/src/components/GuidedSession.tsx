@@ -9,9 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, RotateCcw, Clock, Target, PartyPopper, X, ChevronRight, BookOpen, Lightbulb } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isToday, parseISO } from "date-fns";
+import { format } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
 
@@ -21,12 +21,25 @@ interface GuidedSessionProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Phase = "checklist" | "tasks" | "timer" | "complete";
+type Phase = "checklist" | "tasks" | "complete";
 
 interface ChecklistItem {
   id: number;
   text: string;
   checked: boolean;
+}
+
+interface TaskNote {
+  taskId: string;
+  task: string;
+  note: string;
+  timeSpent: number;
+}
+
+interface SessionSummary {
+  summary: string;
+  insights: string[];
+  encouragement: string;
 }
 
 const INITIAL_CHECKLIST: ChecklistItem[] = [
@@ -35,21 +48,25 @@ const INITIAL_CHECKLIST: ChecklistItem[] = [
   { id: 3, text: "I'm focused and ready to begin", checked: false },
 ];
 
-const TIMER_OPTIONS = [5, 10, 15, 20, 30, 45];
-
 export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps) {
   const [phase, setPhase] = useState<Phase>("checklist");
   const [checklist, setChecklist] = useState(INITIAL_CHECKLIST);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [taskNotes, setTaskNotes] = useState("");
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
-  const [selectedTimer, setSelectedTimer] = useState<number | null>(null);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [allTaskNotes, setAllTaskNotes] = useState<TaskNote[]>([]);
   const [sessionStartTime] = useState<Date>(new Date());
-  const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
-  const [accumulatedTime, setAccumulatedTime] = useState(0);
   const [guidanceModalOpen, setGuidanceModalOpen] = useState(false);
+  
+  // Individual task timer state
+  const [taskTimerRunning, setTaskTimerRunning] = useState(false);
+  const [taskTimeElapsed, setTaskTimeElapsed] = useState(0);
+  const [taskTimerStartTime, setTaskTimerStartTime] = useState<Date | null>(null);
+  
+  // Session summary state
+  const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
+  const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -71,29 +88,16 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
   });
 
   const completeSessionMutation = useMutation({
-    mutationFn: async () => {
-      let actualTimeSpent = 0;
-      
-      if (selectedTimer) {
-        if (timerRunning && timerStartTime) {
-          const currentElapsed = Math.round((new Date().getTime() - timerStartTime.getTime()) / 1000);
-          actualTimeSpent = Math.round((accumulatedTime + currentElapsed) / 60);
-        } else {
-          actualTimeSpent = Math.round(accumulatedTime / 60);
-        }
-        if (timeRemaining === 0) {
-          actualTimeSpent = selectedTimer;
-        }
-      } else {
-        actualTimeSpent = Math.round((new Date().getTime() - sessionStartTime.getTime()) / 60000);
-      }
+    mutationFn: async ({ finalNotes, finalCompletedCount }: { finalNotes: TaskNote[]; finalCompletedCount: number }) => {
+      const totalTimeSpent = finalNotes.reduce((sum, n) => sum + n.timeSpent, 0);
+      const timeInMinutes = Math.max(1, Math.round(totalTimeSpent / 60));
       
       const res = await apiRequest("POST", `/api/habits/${habit.id}/session-complete`, {
         date: today,
-        tasksCompleted: completedTasks.length,
+        tasksCompleted: finalCompletedCount,
         totalTasks: tasks.length,
-        timeSpent: Math.max(1, actualTimeSpent),
-        goalTime: selectedTimer || 0,
+        timeSpent: timeInMinutes,
+        goalTime: 0,
         notes: "",
         mood: "good",
       });
@@ -105,6 +109,29 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     },
   });
 
+  const generateSummaryMutation = useMutation({
+    mutationFn: async ({ finalNotes, finalCompletedCount }: { finalNotes: TaskNote[]; finalCompletedCount: number }) => {
+      const totalTimeSpent = finalNotes.reduce((sum, n) => sum + n.timeSpent, 0);
+      const timeInMinutes = Math.max(1, Math.round(totalTimeSpent / 60));
+      
+      const notesForSummary = finalNotes
+        .filter(n => n.note.trim())
+        .map(n => ({ task: n.task, note: n.note }));
+      
+      const res = await apiRequest("POST", `/api/habits/${habit.id}/session-summary`, {
+        habitTitle: habit.title,
+        tasksCompleted: finalCompletedCount,
+        totalTasks: tasks.length,
+        timeSpent: timeInMinutes,
+        notes: notesForSummary,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSessionSummary(data);
+    },
+  });
+
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
@@ -112,10 +139,13 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
       setChecklist(INITIAL_CHECKLIST);
       setCurrentTaskIndex(0);
       setCompletedTasks([]);
+      setAllTaskNotes([]);
       setTaskNotes("");
-      setSelectedTimer(null);
-      setTimerRunning(false);
-      setTimeRemaining(0);
+      setTaskTimerRunning(false);
+      setTaskTimeElapsed(0);
+      setTaskTimerStartTime(null);
+      setSessionSummary(null);
+      setShowEndEarlyConfirm(false);
       setGuidanceModalOpen(false);
     }
   }, [open]);
@@ -125,28 +155,26 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     setGuidanceModalOpen(false);
   }, [currentTaskIndex]);
 
-  // Timer logic
+  // Reset task timer when moving to next task
   useEffect(() => {
-    if (!timerRunning || timeRemaining <= 0) return;
+    setTaskTimeElapsed(0);
+    setTaskTimerRunning(false);
+    setTaskTimerStartTime(null);
+  }, [currentTaskIndex]);
+
+  // Task timer logic
+  useEffect(() => {
+    if (!taskTimerRunning) return;
     
     const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          setTimerRunning(false);
-          // Play completion sound
-          if (audioRef.current) {
-            audioRef.current.play().catch(() => {});
-          }
-          setPhase("complete");
-          completeSessionMutation.mutate();
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (taskTimerStartTime) {
+        const elapsed = Math.round((new Date().getTime() - taskTimerStartTime.getTime()) / 1000);
+        setTaskTimeElapsed(elapsed);
+      }
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [timerRunning, timeRemaining]);
+  }, [taskTimerRunning, taskTimerStartTime]);
 
   const toggleChecklistItem = (id: number) => {
     setChecklist(prev => 
@@ -162,63 +190,111 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     if (tasks.length > 0) {
       setPhase("tasks");
     } else {
-      setPhase("timer");
+      // No tasks, just finish session
+      finishSession([], 0);
+    }
+  };
+
+  const handleTaskTimerToggle = () => {
+    if (taskTimerRunning) {
+      // Pause: save elapsed time
+      setTaskTimerRunning(false);
+    } else {
+      // Start/Resume
+      setTaskTimerStartTime(new Date(Date.now() - taskTimeElapsed * 1000));
+      setTaskTimerRunning(true);
+    }
+  };
+
+  const handleAddTime = (seconds: number) => {
+    setTaskTimeElapsed(prev => prev + seconds);
+    if (taskTimerStartTime) {
+      setTaskTimerStartTime(new Date(taskTimerStartTime.getTime() - seconds * 1000));
     }
   };
 
   const handleCompleteTask = () => {
     if (!currentTask) return;
     
-    // Save notes and mark complete
+    // Stop timer and save time
+    setTaskTimerRunning(false);
+    
+    // Create current task note entry
+    const currentTaskNote: TaskNote = {
+      taskId: currentTask.id,
+      task: currentTask.title,
+      note: taskNotes,
+      timeSpent: taskTimeElapsed,
+    };
+    
+    // Save notes and time for this task
+    setAllTaskNotes(prev => [...prev, currentTaskNote]);
+    
+    // Mark task complete via API
     updateTaskMutation.mutate({
       taskId: currentTask.id,
       completed: true,
       notes: taskNotes || undefined,
     });
     
+    const newCompletedCount = completedTasks.length + 1;
     setCompletedTasks(prev => [...prev, currentTask.id]);
     setTaskNotes("");
     
     if (currentTaskIndex < tasks.length - 1) {
       setCurrentTaskIndex(prev => prev + 1);
     } else {
-      setPhase("timer");
+      // End session with final data including current task
+      const finalNotes = [...allTaskNotes, currentTaskNote];
+      finishSession(finalNotes, newCompletedCount);
     }
   };
 
   const handleSkipTask = () => {
+    // Build current task note if any time spent
+    let currentTaskNote: TaskNote | null = null;
+    if (currentTask && taskTimeElapsed > 0) {
+      currentTaskNote = {
+        taskId: currentTask.id,
+        task: currentTask.title,
+        note: taskNotes,
+        timeSpent: taskTimeElapsed,
+      };
+      setAllTaskNotes(prev => [...prev, currentTaskNote!]);
+    }
+    
+    setTaskTimerRunning(false);
+    setTaskNotes("");
+    
     if (currentTaskIndex < tasks.length - 1) {
       setCurrentTaskIndex(prev => prev + 1);
-      setTaskNotes("");
     } else {
-      setPhase("timer");
+      // End session with all data including any current task time
+      const finalNotes = currentTaskNote ? [...allTaskNotes, currentTaskNote] : [...allTaskNotes];
+      finishSession(finalNotes, completedTasks.length);
     }
   };
 
-  const handleStartTimer = (minutes: number) => {
-    setSelectedTimer(minutes);
-    setTimeRemaining(minutes * 60);
-    setTimerRunning(true);
-    setTimerStartTime(new Date());
-  };
-
-  const handleSkipTimer = () => {
-    setTimerRunning(false);
+  const finishSession = (finalNotes: TaskNote[], finalCompletedCount: number) => {
+    setTaskTimerRunning(false);
     setPhase("complete");
-    completeSessionMutation.mutate();
+    completeSessionMutation.mutate({ finalNotes, finalCompletedCount });
+    generateSummaryMutation.mutate({ finalNotes, finalCompletedCount });
   };
 
-  const handlePauseResume = () => {
-    if (timerRunning) {
-      if (timerStartTime) {
-        const elapsed = Math.round((new Date().getTime() - timerStartTime.getTime()) / 1000);
-        setAccumulatedTime(prev => prev + elapsed);
-      }
-      setTimerRunning(false);
-    } else {
-      setTimerStartTime(new Date());
-      setTimerRunning(true);
+  const handleEndSessionEarly = () => {
+    // Build final notes including current task if any data
+    let finalNotes = [...allTaskNotes];
+    if (currentTask && (taskTimeElapsed > 0 || taskNotes.trim())) {
+      finalNotes.push({
+        taskId: currentTask.id,
+        task: currentTask.title,
+        note: taskNotes,
+        timeSpent: taskTimeElapsed,
+      });
     }
+    setShowEndEarlyConfirm(false);
+    finishSession(finalNotes, completedTasks.length);
   };
 
   const handleFinishSession = () => {
@@ -231,9 +307,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const timerProgress = selectedTimer 
-    ? ((selectedTimer * 60 - timeRemaining) / (selectedTimer * 60)) * 100 
-    : 0;
+  const totalSessionTime = allTaskNotes.reduce((sum, n) => sum + n.timeSpent, 0) + taskTimeElapsed;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -347,7 +421,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                 </Badge>
                 <Badge variant="outline" className="gap-1">
                   <Clock className="w-3 h-3" />
-                  {currentTask.duration} min
+                  {currentTask.duration} min suggested
                 </Badge>
               </div>
 
@@ -367,6 +441,63 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                     <Lightbulb className="w-4 h-4" />
                     Get Examples, Resources & Guidance
                   </Button>
+                </CardContent>
+              </Card>
+
+              {/* Individual Task Timer */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Timer className="w-4 h-4 text-primary" />
+                      Task Timer
+                    </span>
+                    <span className="text-2xl font-display font-bold text-primary">
+                      {formatTime(taskTimeElapsed)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant={taskTimerRunning ? "outline" : "default"}
+                      size="sm"
+                      onClick={handleTaskTimerToggle}
+                      className="flex-1 gap-2"
+                      data-testid="button-task-timer-toggle"
+                    >
+                      {taskTimerRunning ? (
+                        <>
+                          <Pause className="w-4 h-4" />
+                          Pause
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          {taskTimeElapsed > 0 ? "Resume" : "Start"}
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddTime(60)}
+                      className="gap-1"
+                      data-testid="button-add-1-min"
+                    >
+                      <Plus className="w-3 h-3" />
+                      1m
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddTime(300)}
+                      className="gap-1"
+                      data-testid="button-add-5-min"
+                    >
+                      <Plus className="w-3 h-3" />
+                      5m
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -399,144 +530,52 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                   Complete & Continue
                 </Button>
               </div>
-            </motion.div>
-          )}
 
-          {/* Timer Phase */}
-          {phase === "timer" && (
-            <motion.div
-              key="timer"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
-              {!timerRunning && !selectedTimer ? (
-                <>
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-4">
-                      <Timer className="w-8 h-8 text-primary" />
+              {/* End Session Early */}
+              <div className="pt-2 border-t">
+                {showEndEarlyConfirm ? (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">End session early?</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          You've completed {completedTasks.length} of {tasks.length} tasks. Your progress will be saved.
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-display font-bold">Focus Timer</h3>
-                    <p className="text-muted-foreground text-sm mt-1">
-                      Set a timer to stay focused on your practice
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {TIMER_OPTIONS.map((minutes) => (
-                      <motion.div key={minutes} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleStartTimer(minutes)}
-                          className="w-full h-16 flex flex-col gap-1 rounded-2xl border-2 hover:border-primary/50 hover:bg-primary/5"
-                          data-testid={`button-timer-${minutes}`}
-                        >
-                          <span className="text-2xl font-display font-bold text-foreground">{minutes}</span>
-                          <span className="text-xs text-muted-foreground font-medium">min</span>
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    onClick={handleSkipTimer}
-                    className="w-full text-muted-foreground"
-                    data-testid="button-skip-timer"
-                  >
-                    Skip timer and finish
-                  </Button>
-                </>
-              ) : (
-                <div className="py-4">
-                  <div className="relative w-56 h-56 mx-auto">
-                    {/* Background glow */}
-                    <div className="absolute inset-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 blur-xl" />
-                    
-                    <svg className="w-full h-full transform -rotate-90 relative">
-                      <defs>
-                        <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" />
-                          <stop offset="100%" stopColor="hsl(var(--accent))" />
-                        </linearGradient>
-                      </defs>
-                      <circle
-                        cx="112"
-                        cy="112"
-                        r="100"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="10"
-                        className="text-muted/20"
-                      />
-                      <circle
-                        cx="112"
-                        cy="112"
-                        r="100"
-                        fill="none"
-                        stroke="url(#timerGradient)"
-                        strokeWidth="10"
-                        strokeDasharray={628}
-                        strokeDashoffset={628 - (628 * timerProgress) / 100}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000 drop-shadow-lg"
-                      />
-                    </svg>
-                    
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <motion.span 
-                        key={timeRemaining}
-                        initial={{ scale: 1.1 }}
-                        animate={{ scale: 1 }}
-                        className="text-5xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-                      >
-                        {formatTime(timeRemaining)}
-                      </motion.span>
-                      <span className="text-sm text-muted-foreground font-medium mt-1">
-                        {timerRunning ? "remaining" : "paused"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-center gap-4 mt-6">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        variant={timerRunning ? "outline" : "default"}
-                        size="lg"
-                        onClick={handlePauseResume}
-                        className="h-14 w-14 rounded-full shadow-lg"
-                        data-testid="button-timer-toggle"
-                      >
-                        {timerRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        size="lg"
-                        onClick={() => setTimeRemaining(selectedTimer! * 60)}
-                        className="h-14 w-14 rounded-full"
-                        data-testid="button-timer-reset"
+                        size="sm"
+                        onClick={() => setShowEndEarlyConfirm(false)}
+                        className="flex-1"
                       >
-                        <RotateCcw className="w-5 h-5" />
+                        Continue Session
                       </Button>
-                    </motion.div>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleEndSessionEarly}
+                        className="flex-1"
+                        data-testid="button-confirm-end-early"
+                      >
+                        End Session
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="text-center mt-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSkipTimer}
-                      className="text-muted-foreground"
-                      data-testid="button-timer-stop"
-                    >
-                      End session early
-                    </Button>
-                  </div>
-                </div>
-              )}
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowEndEarlyConfirm(true)}
+                    className="w-full text-muted-foreground"
+                    data-testid="button-end-session-early"
+                  >
+                    End session early
+                  </Button>
+                )}
+              </div>
             </motion.div>
           )}
 
@@ -546,15 +585,15 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               key="complete"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="py-8 text-center space-y-6"
+              className="py-6 space-y-6"
             >
               {/* Celebration animation */}
-              <div className="relative">
+              <div className="relative text-center">
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", duration: 0.8 }}
-                  className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
+                  className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
                 >
                   <motion.div
                     animate={{ 
@@ -563,7 +602,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                     }}
                     transition={{ repeat: 2, duration: 0.5 }}
                   >
-                    <PartyPopper className="w-14 h-14 text-primary" />
+                    <PartyPopper className="w-10 h-10 text-primary" />
                   </motion.div>
                 </motion.div>
                 
@@ -575,51 +614,94 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                     animate={{ 
                       opacity: [0, 1, 0],
                       scale: [0, 1, 0.5],
-                      x: Math.cos(i * 60 * Math.PI / 180) * 60,
-                      y: Math.sin(i * 60 * Math.PI / 180) * 60,
+                      x: Math.cos(i * 60 * Math.PI / 180) * 50,
+                      y: Math.sin(i * 60 * Math.PI / 180) * 50,
                     }}
                     transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
-                    className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-primary to-accent"
+                    className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-r from-primary to-accent"
                   />
                 ))}
               </div>
 
-              <div>
+              <div className="text-center">
                 <motion.h3
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-3xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+                  className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
                 >
-                  Amazing work!
+                  Session Complete!
                 </motion.h3>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-muted-foreground mt-2 text-lg"
+                  className="text-muted-foreground mt-2"
                 >
-                  You completed {completedTasks.length} task{completedTasks.length !== 1 ? 's' : ''} today.
-                </motion.p>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-sm text-muted-foreground/70 mt-1"
-                >
-                  Keep up the momentum!
+                  {completedTasks.length} of {tasks.length} task{tasks.length !== 1 ? 's' : ''} completed
+                  {totalSessionTime > 0 && ` in ${formatTime(totalSessionTime)}`}
                 </motion.p>
               </div>
+
+              {/* AI Summary Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Card className="border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-primary" />
+                      Session Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {generateSummaryMutation.isPending ? (
+                      <div className="flex items-center gap-2 text-muted-foreground py-4 justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Analyzing your session...</span>
+                      </div>
+                    ) : sessionSummary ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-foreground">{sessionSummary.summary}</p>
+                        
+                        {sessionSummary.insights && sessionSummary.insights.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Insights</p>
+                            <ul className="space-y-1">
+                              {sessionSummary.insights.map((insight, i) => (
+                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                  <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
+                                  {insight}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        <div className="pt-2 border-t">
+                          <p className="text-sm italic text-primary">{sessionSummary.encouragement}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Great job completing your session! Keep building on this momentum.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.8 }}
               >
                 <Button
                   onClick={handleFinishSession}
                   size="lg"
-                  className="gap-2 rounded-xl shadow-lg shadow-primary/20 px-8"
+                  className="w-full gap-2 rounded-xl shadow-lg shadow-primary/20"
                   data-testid="button-finish-session"
                 >
                   <Check className="w-5 h-5" />

@@ -10,6 +10,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { db } from "./db";
 import { users, feedback } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
+import OpenAI from "openai";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -750,6 +751,79 @@ REQUIREMENTS:
     } catch (error) {
       console.error("Error saving session:", error);
       res.status(500).json({ error: "Failed to save session" });
+    }
+  });
+
+  // Generate AI session summary from notes
+  app.post("/api/habits/:id/session-summary", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { habitTitle, tasksCompleted, totalTasks, timeSpent, notes } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      // If no notes provided, return a simple summary
+      if (!notes || notes.length === 0) {
+        return res.json({
+          summary: `You completed ${tasksCompleted} of ${totalTasks} tasks in ${timeSpent} minutes. Great work on your ${habitTitle} practice today!`,
+          insights: [],
+          encouragement: "Keep building on this momentum!"
+        });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const notesText = notes.map((n: { task: string; note: string }, i: number) => 
+        `Task ${i + 1} (${n.task}): ${n.note}`
+      ).join('\n');
+
+      const prompt = `You are a supportive habit coach. The user just completed a habit session for "${habitTitle}". 
+
+Session stats:
+- Completed ${tasksCompleted} of ${totalTasks} tasks
+- Time spent: ${timeSpent} minutes
+
+Their notes from this session:
+${notesText}
+
+Please provide:
+1. A brief, warm summary (2-3 sentences) of their session based on their notes
+2. 1-2 specific insights or patterns you notice from their notes
+3. An encouraging message to keep them motivated
+
+Respond in JSON format:
+{
+  "summary": "...",
+  "insights": ["insight 1", "insight 2"],
+  "encouragement": "..."
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 500,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || '{}';
+      const result = JSON.parse(content);
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating session summary:", error);
+      // Return a fallback summary on error
+      res.json({
+        summary: "Great job completing your session! Every step counts toward building your habit.",
+        insights: [],
+        encouragement: "Keep up the excellent work!"
+      });
     }
   });
 
