@@ -12,6 +12,107 @@ import { users, feedback, userAchievements, habitTemplates, userTemplates, accou
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
+// Auto-seed templates on startup
+async function autoSeedTemplates() {
+  try {
+    const existing = await db.select().from(habitTemplates).limit(1);
+    if (existing.length > 0) {
+      return; // Templates already exist
+    }
+    
+    console.log("Seeding default habit templates...");
+    const defaultTemplates = [
+      {
+        name: "Morning Routine",
+        description: "Start your day with energy and focus",
+        category: "wellness",
+        icon: "Sunrise",
+        color: "amber-500",
+        suggestedGoal: "Complete a 30-minute morning routine every day",
+      },
+      {
+        name: "Daily Exercise",
+        description: "Build consistent physical activity habits",
+        category: "health",
+        icon: "Dumbbell",
+        color: "green-500",
+        suggestedGoal: "Exercise for 30 minutes at least 5 days a week",
+      },
+      {
+        name: "Reading Habit",
+        description: "Expand your mind through daily reading",
+        category: "learning",
+        icon: "BookOpen",
+        color: "blue-500",
+        suggestedGoal: "Read for 20 minutes every day",
+      },
+      {
+        name: "Meditation Practice",
+        description: "Cultivate mindfulness and inner peace",
+        category: "wellness",
+        icon: "Brain",
+        color: "purple-500",
+        suggestedGoal: "Meditate for 10 minutes daily",
+      },
+      {
+        name: "Healthy Eating",
+        description: "Make better food choices every day",
+        category: "health",
+        icon: "Apple",
+        color: "red-500",
+        suggestedGoal: "Eat at least 3 servings of vegetables daily",
+      },
+      {
+        name: "Journaling",
+        description: "Reflect on your day and process emotions",
+        category: "wellness",
+        icon: "PenTool",
+        color: "teal-500",
+        suggestedGoal: "Write in your journal every evening",
+      },
+      {
+        name: "Learning New Skills",
+        description: "Dedicate time to learning something new",
+        category: "learning",
+        icon: "GraduationCap",
+        color: "indigo-500",
+        suggestedGoal: "Spend 30 minutes learning a new skill daily",
+      },
+      {
+        name: "Digital Detox",
+        description: "Reduce screen time and be more present",
+        category: "wellness",
+        icon: "Smartphone",
+        color: "gray-500",
+        suggestedGoal: "Limit recreational screen time to 2 hours daily",
+      },
+      {
+        name: "Sleep Hygiene",
+        description: "Improve your sleep quality and consistency",
+        category: "health",
+        icon: "Moon",
+        color: "slate-600",
+        suggestedGoal: "Get 7-8 hours of sleep every night",
+      },
+      {
+        name: "Gratitude Practice",
+        description: "Cultivate appreciation and positivity",
+        category: "wellness",
+        icon: "Heart",
+        color: "pink-500",
+        suggestedGoal: "Write 3 things you're grateful for each day",
+      },
+    ];
+    
+    for (const template of defaultTemplates) {
+      await db.insert(habitTemplates).values(template);
+    }
+    console.log(`Seeded ${defaultTemplates.length} default habit templates`);
+  } catch (error) {
+    console.error("Error auto-seeding templates:", error);
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -22,6 +123,9 @@ export async function registerRoutes(
   
   // Object storage routes
   registerObjectStorageRoutes(app);
+  
+  // Auto-seed templates on startup
+  await autoSeedTemplates();
   
   const objectStorageService = new ObjectStorageService();
 
@@ -1020,7 +1124,7 @@ ${habit.aiContext ? `Context about this person: ${habit.aiContext}` : ''}
 
 Generate detailed, practical guidance that someone can follow immediately:
 
-1. EXAMPLES (3-4): Detailed, numbered step-by-step examples. Each example should be 100+ words with exact timings, measurements, and specific actions. Write them like you're walking someone through it.
+1. EXAMPLES (3-4): Detailed, numbered step-by-step examples. Each example should be 100+ words with exact timings, measurements, and specific actions. Write them like you're walking someone through it. IMPORTANT: Use \\n newlines between each step for proper formatting (e.g., "Step 1: Do this...\\n\\nStep 2: Then do this...").
 
 2. TIPS (5-6): Expert coaching tips including common mistakes, pro tips, and psychology insights. Each tip should be 2-3 sentences with actionable advice.
 
@@ -1037,7 +1141,7 @@ Generate detailed, practical guidance that someone can follow immediately:
 
 Return JSON exactly like this:
 {
-  "examples": ["Step 1: [specific action]... Step 2: ...", "..."],
+  "examples": ["Step 1: [specific action]...\\n\\nStep 2: [next action]...\\n\\nStep 3: [final step]...", "..."],
   "tips": ["Tip text here", "..."],
   "tools": [
     {

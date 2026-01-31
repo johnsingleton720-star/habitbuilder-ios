@@ -90,7 +90,7 @@ export function MoodTracker() {
   
   const saveMoodMutation = useMutation({
     mutationFn: async (data: Partial<MoodEntry>) => {
-      return await apiRequest("/api/mood", "POST", data);
+      return await apiRequest("POST", "/api/mood", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });

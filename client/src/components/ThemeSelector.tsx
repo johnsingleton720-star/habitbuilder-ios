@@ -191,7 +191,7 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps) {
 
   const saveThemeMutation = useMutation({
     mutationFn: async (themeId: string) => {
-      return await apiRequest("/api/user/color-theme", "PATCH", { colorTheme: themeId });
+      return await apiRequest("PATCH", "/api/user/color-theme", { colorTheme: themeId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

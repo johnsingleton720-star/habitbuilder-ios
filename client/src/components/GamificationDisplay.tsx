@@ -86,7 +86,7 @@ export function GamificationDisplay() {
   
   const generateChallengesMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/gamification/generate-challenges", "POST");
+      return await apiRequest("POST", "/api/gamification/generate-challenges");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });

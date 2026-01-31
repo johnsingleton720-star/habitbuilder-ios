@@ -94,6 +94,30 @@ const ICON_NAME_MAP: Record<string, typeof Star> = {
   Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap
 };
 
+// Map hex color to a light pastel version for card backgrounds
+function getCardBackgroundFromColor(hexColor: string | null | undefined): { bgStyle?: React.CSSProperties; useCustomBg: boolean } {
+  if (!hexColor || !hexColor.startsWith('#')) {
+    return { useCustomBg: false };
+  }
+  
+  // Convert hex to RGB and create a very light pastel version (10% opacity equivalent)
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  
+  // Create light pastel gradient
+  const lightBg = `linear-gradient(to bottom right, rgba(${r}, ${g}, ${b}, 0.15), rgba(${r}, ${g}, ${b}, 0.08))`;
+  const borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+  
+  return { 
+    bgStyle: { 
+      background: lightBg,
+      borderColor: borderColor 
+    },
+    useCustomBg: true 
+  };
+}
+
 function getSmartHabitIcon(title: string, description: string | null, habitId: number, customIcon?: string | null, customColor?: string | null) {
   // Use custom icon/color if set
   if (customIcon && ICON_NAME_MAP[customIcon]) {
@@ -156,6 +180,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
     habit.customColor
   );
   const pastelClass = getPastelClass(habit.id);
+  const { bgStyle: customCardBg, useCustomBg } = getCardBackgroundFromColor(habit.customColor);
 
   const handleStartClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -180,8 +205,9 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         className={cn(
           "group relative overflow-hidden rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer",
-          pastelClass
+          !useCustomBg && pastelClass
         )}
+        style={useCustomBg ? customCardBg : undefined}
         data-testid={`card-habit-${habit.id}`}
       >
         {/* Decorative blob */}
