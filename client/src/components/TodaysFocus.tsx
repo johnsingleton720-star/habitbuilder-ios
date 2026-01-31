@@ -82,7 +82,7 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   };
 
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 shadow-lg">
+    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/15 dark:from-primary/25 dark:via-primary/15 dark:to-accent/20 shadow-lg dark:border dark:border-primary/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -94,8 +94,8 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
               <Target className="w-6 h-6" />
             </motion.div>
             <div>
-              <CardTitle className="text-xl font-display">Today's Focus</CardTitle>
-              <CardDescription className="flex items-center gap-1.5 mt-0.5">
+              <CardTitle className="text-xl font-display text-foreground">Today's Focus</CardTitle>
+              <CardDescription className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
                 <TimeIcon className="w-3.5 h-3.5" />
                 {format(today, "EEEE, MMMM d")}
               </CardDescription>
@@ -142,13 +142,13 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
 
       <CardContent className="space-y-4">
         {/* Progress Bar */}
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-black/20">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-black/40 backdrop-blur-sm">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-muted-foreground font-medium">Daily Progress</span>
-              <span className="font-bold text-foreground">{completedToday.length}/{scheduledHabits.length}</span>
+              <span className="text-gray-600 dark:text-gray-300 font-medium">Daily Progress</span>
+              <span className="font-bold text-gray-900 dark:text-white">{completedToday.length}/{scheduledHabits.length}</span>
             </div>
-            <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden">
+            <div className="h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -184,7 +184,7 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-500" />
               Up next
             </p>
@@ -192,12 +192,12 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
               <motion.div
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-card border-2 border-transparent hover:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-gray-100 dark:border-gray-700 hover:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
                 data-testid={`focus-habit-${nextHabit.id}`}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-display font-bold text-lg truncate">{nextHabit.title}</h4>
+                    <h4 className="font-display font-bold text-lg truncate text-gray-900 dark:text-white">{nextHabit.title}</h4>
                     {!nextHabit.setupComplete && (
                       <Badge variant="outline" className="text-xs bg-primary/10 border-primary/20">
                         <Sparkles className="w-3 h-3 mr-1" />

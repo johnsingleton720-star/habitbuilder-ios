@@ -28,6 +28,7 @@ import { HabitSetupWizard } from "./HabitSetupWizard";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import type { DailyPlan } from "@shared/schema";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -95,7 +96,7 @@ const ICON_NAME_MAP: Record<string, typeof Star> = {
 };
 
 // Map hex color to a light pastel version for card backgrounds
-function getCardBackgroundFromColor(hexColor: string | null | undefined): { bgStyle?: React.CSSProperties; useCustomBg: boolean } {
+function getCardBackgroundFromColor(hexColor: string | null | undefined, isDarkMode: boolean = false): { bgStyle?: React.CSSProperties; useCustomBg: boolean } {
   if (!hexColor || !hexColor.startsWith('#')) {
     return { useCustomBg: false };
   }
@@ -105,9 +106,11 @@ function getCardBackgroundFromColor(hexColor: string | null | undefined): { bgSt
   const g = parseInt(hexColor.slice(3, 5), 16);
   const b = parseInt(hexColor.slice(5, 7), 16);
   
-  // Create light pastel gradient
-  const lightBg = `linear-gradient(to bottom right, rgba(${r}, ${g}, ${b}, 0.15), rgba(${r}, ${g}, ${b}, 0.08))`;
-  const borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+  // Create light pastel gradient - darker for dark mode
+  const lightOpacity1 = isDarkMode ? 0.25 : 0.15;
+  const lightOpacity2 = isDarkMode ? 0.15 : 0.08;
+  const lightBg = `linear-gradient(to bottom right, rgba(${r}, ${g}, ${b}, ${lightOpacity1}), rgba(${r}, ${g}, ${b}, ${lightOpacity2}))`;
+  const borderColor = `rgba(${r}, ${g}, ${b}, ${isDarkMode ? 0.4 : 0.3})`;
   
   return { 
     bgStyle: { 
@@ -159,6 +162,8 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSession, setShowSession] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
   const today = format(new Date(), "yyyy-MM-dd");
@@ -180,7 +185,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
     habit.customColor
   );
   const pastelClass = getPastelClass(habit.id);
-  const { bgStyle: customCardBg, useCustomBg } = getCardBackgroundFromColor(habit.customColor);
+  const { bgStyle: customCardBg, useCustomBg } = getCardBackgroundFromColor(habit.customColor, isDarkMode);
 
   const handleStartClick = (e: React.MouseEvent) => {
     e.preventDefault();
