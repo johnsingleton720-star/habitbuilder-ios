@@ -210,13 +210,18 @@ export async function registerRoutes(
         limit: 100,
       });
       
-      const subscriptionProduct = products.data.find(
+      let subscriptionProduct = products.data.find(
         p => p.name === 'Habit Builder Pro'
       );
       
+      // Auto-create the product and price if it doesn't exist (for production)
       if (!subscriptionProduct) {
-        console.error("No subscription product found in Stripe");
-        return res.status(404).json({ error: "Subscription product not found" });
+        console.log("Creating subscription product in Stripe...");
+        subscriptionProduct = await stripe.products.create({
+          name: 'Habit Builder Pro',
+          description: 'AI-powered habit coaching with personalized action plans - Monthly subscription',
+        });
+        console.log("Created product:", subscriptionProduct.id);
       }
       
       console.log("Found product:", subscriptionProduct.id, subscriptionProduct.name);
@@ -229,11 +234,20 @@ export async function registerRoutes(
       });
       
       // Find the monthly recurring price
-      const monthlyPrice = prices.data.find(p => p.recurring?.interval === 'month');
+      let monthlyPrice = prices.data.find(p => p.recurring?.interval === 'month');
       
+      // Auto-create the price if it doesn't exist
       if (!monthlyPrice) {
-        console.error("No monthly price found for product:", subscriptionProduct.id);
-        return res.status(404).json({ error: "No active monthly price found" });
+        console.log("Creating monthly price in Stripe...");
+        monthlyPrice = await stripe.prices.create({
+          product: subscriptionProduct.id,
+          unit_amount: 600, // $6.00
+          currency: 'usd',
+          recurring: {
+            interval: 'month',
+          },
+        });
+        console.log("Created price:", monthlyPrice.id);
       }
       
       console.log("Found price:", monthlyPrice.id, monthlyPrice.unit_amount);
