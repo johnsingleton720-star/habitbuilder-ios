@@ -24,9 +24,19 @@ export default function Paywall() {
 
   const { data: priceData, isLoading: isPriceLoading, error: priceError, refetch } = useQuery<PriceData>({
     queryKey: ['/api/stripe/lifetime-price'],
+    queryFn: async () => {
+      const response = await fetch('/api/stripe/lifetime-price', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error(`Failed to load pricing: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Pricing loaded:", data);
+      return data;
+    },
     retry: 3,
     retryDelay: 1000,
     staleTime: 0,
+    gcTime: 0,
   });
 
   const checkoutMutation = useMutation({
@@ -84,13 +94,31 @@ export default function Paywall() {
     if (!priceData?.price_id) {
       setIsRetrying(true);
       try {
+        // Force fresh fetch from server
         const result = await refetch();
+        console.log("Refetch result:", result);
+        
         if (result.data?.price_id) {
           checkoutMutation.mutate(result.data.price_id);
+        } else if (result.error) {
+          console.error("Pricing fetch error:", result.error);
+          setError("Unable to load pricing. Please refresh and try again.");
         } else {
-          setError("Unable to load pricing. Please try again.");
+          // Try direct fetch as fallback
+          console.log("No price_id in refetch, trying direct fetch...");
+          const directResponse = await fetch('/api/stripe/lifetime-price', { credentials: 'include' });
+          if (directResponse.ok) {
+            const directData = await directResponse.json();
+            console.log("Direct fetch result:", directData);
+            if (directData.price_id) {
+              checkoutMutation.mutate(directData.price_id);
+              return;
+            }
+          }
+          setError("Unable to load pricing. Please refresh the page and try again.");
         }
-      } catch {
+      } catch (err) {
+        console.error("Pricing fetch exception:", err);
         setError("Unable to load pricing. Please check your connection and try again.");
       } finally {
         setIsRetrying(false);
