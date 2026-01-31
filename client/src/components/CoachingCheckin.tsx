@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   MessageCircle, 
   Loader2, 
@@ -78,8 +79,8 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           Talk to Coach
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -91,6 +92,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           </DialogTitle>
         </DialogHeader>
 
+        <ScrollArea className="flex-1 -mx-6 px-6">
         {checkinMutation.isPending ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/10 flex items-center justify-center">
@@ -198,6 +200,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
             </Button>
           </div>
         )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

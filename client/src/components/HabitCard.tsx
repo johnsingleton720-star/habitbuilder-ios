@@ -2,7 +2,12 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { 
   Check, Flame, MoreVertical, Trash2, Edit, ChevronRight, Play, Sparkles,
-  Droplets, Heart, BookOpen, Dumbbell, Moon, Coffee, Leaf, Star
+  Droplets, Heart, BookOpen, Dumbbell, Moon, Coffee, Leaf, Star,
+  Footprints, Brain, Smile, Apple, Salad, Timer, Bed, Sun,
+  Music, Palette, Camera, Pencil, Target, Trophy, Zap, Compass,
+  Mountain, Bike, Waves, Wind, TreePine, Flower2, Cookie, GlassWater,
+  Pill, Stethoscope, Scale, Shirt, Home, Users, MessageCircle, Phone,
+  Wallet, PiggyBank, GraduationCap, Languages, Code, Laptop, Gamepad2
 } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useDeleteHabit } from "@/hooks/use-habits";
@@ -15,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { HabitFormDialog } from "./HabitFormDialog";
 import { GuidedSession } from "./GuidedSession";
@@ -28,7 +33,50 @@ interface HabitCardProps {
   habit: HabitResponse;
 }
 
-const HABIT_ICONS = [Droplets, Heart, BookOpen, Dumbbell, Moon, Coffee, Leaf, Star];
+// Wrapper component that forwards ref for AnimatePresence compatibility
+const MotionCard = motion.div;
+
+const HABIT_ICON_MAPPING: { keywords: string[]; icon: typeof Star; color: string }[] = [
+  { keywords: ["walk", "walking", "steps", "hike", "hiking"], icon: Footprints, color: "text-green-600" },
+  { keywords: ["run", "running", "jog", "jogging", "sprint"], icon: Zap, color: "text-orange-500" },
+  { keywords: ["read", "reading", "book", "books", "study", "learn"], icon: BookOpen, color: "text-blue-600" },
+  { keywords: ["exercise", "workout", "gym", "fitness", "train", "weight", "lift", "weightlift"], icon: Dumbbell, color: "text-red-500" },
+  { keywords: ["meditat", "mindful", "calm", "relax", "zen", "peace"], icon: Brain, color: "text-purple-500" },
+  { keywords: ["sleep", "rest", "nap", "bedtime"], icon: Bed, color: "text-indigo-500" },
+  { keywords: ["wake", "morning", "early", "sunrise"], icon: Sun, color: "text-amber-500" },
+  { keywords: ["water", "hydrat", "drink", "fluid"], icon: GlassWater, color: "text-cyan-500" },
+  { keywords: ["eat", "diet", "nutrition", "healthy", "vegetable", "salad"], icon: Salad, color: "text-green-500" },
+  { keywords: ["fruit", "apple", "snack"], icon: Apple, color: "text-red-400" },
+  { keywords: ["coffee", "tea", "caffeine"], icon: Coffee, color: "text-amber-700" },
+  { keywords: ["journal", "write", "writing", "diary", "log", "note"], icon: Pencil, color: "text-violet-500" },
+  { keywords: ["music", "instrument", "piano", "guitar", "sing", "practice"], icon: Music, color: "text-pink-500" },
+  { keywords: ["art", "draw", "paint", "creative", "sketch"], icon: Palette, color: "text-fuchsia-500" },
+  { keywords: ["photo", "photography", "camera"], icon: Camera, color: "text-slate-600" },
+  { keywords: ["yoga", "stretch", "flexibility"], icon: Wind, color: "text-teal-500" },
+  { keywords: ["swim", "swimming", "pool"], icon: Waves, color: "text-blue-500" },
+  { keywords: ["bike", "cycling", "bicycle"], icon: Bike, color: "text-lime-600" },
+  { keywords: ["climb", "mountain", "outdoor"], icon: Mountain, color: "text-stone-600" },
+  { keywords: ["nature", "garden", "plant", "tree"], icon: TreePine, color: "text-emerald-600" },
+  { keywords: ["flower", "bloom"], icon: Flower2, color: "text-pink-400" },
+  { keywords: ["medicine", "vitamin", "supplement", "pill"], icon: Pill, color: "text-rose-500" },
+  { keywords: ["doctor", "health", "checkup", "medical"], icon: Stethoscope, color: "text-sky-500" },
+  { keywords: ["weight", "scale", "measure"], icon: Scale, color: "text-gray-600" },
+  { keywords: ["clean", "organize", "tidy", "declutter", "home", "house"], icon: Home, color: "text-amber-600" },
+  { keywords: ["social", "friend", "family", "connect", "call", "relationship"], icon: Users, color: "text-blue-400" },
+  { keywords: ["talk", "speak", "communicate", "conversation"], icon: MessageCircle, color: "text-green-400" },
+  { keywords: ["save", "money", "budget", "finance", "spend"], icon: PiggyBank, color: "text-pink-600" },
+  { keywords: ["language", "spanish", "french", "learn", "speak"], icon: Languages, color: "text-indigo-400" },
+  { keywords: ["code", "program", "develop", "software"], icon: Code, color: "text-emerald-500" },
+  { keywords: ["work", "productivity", "task", "project", "computer"], icon: Laptop, color: "text-slate-500" },
+  { keywords: ["game", "gaming", "play"], icon: Gamepad2, color: "text-violet-400" },
+  { keywords: ["goal", "target", "achieve", "focus"], icon: Target, color: "text-red-600" },
+  { keywords: ["grateful", "gratitude", "thankful", "appreciate"], icon: Heart, color: "text-rose-400" },
+  { keywords: ["happy", "smile", "positive", "joy", "mood"], icon: Smile, color: "text-yellow-500" },
+  { keywords: ["timer", "pomodoro", "time", "schedule"], icon: Timer, color: "text-orange-400" },
+];
+
+const FALLBACK_ICONS = [Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee];
+
 const PASTEL_CLASSES = [
   "habit-pastel-1",
   "habit-pastel-2", 
@@ -37,15 +85,28 @@ const PASTEL_CLASSES = [
   "habit-pastel-5",
 ];
 
-function getHabitIcon(habitId: number) {
-  return HABIT_ICONS[habitId % HABIT_ICONS.length];
+function getSmartHabitIcon(title: string, description: string | null, habitId: number) {
+  const searchText = `${title} ${description || ""}`.toLowerCase();
+  
+  for (const mapping of HABIT_ICON_MAPPING) {
+    for (const keyword of mapping.keywords) {
+      if (searchText.includes(keyword)) {
+        return { icon: mapping.icon, color: mapping.color };
+      }
+    }
+  }
+  
+  return { 
+    icon: FALLBACK_ICONS[habitId % FALLBACK_ICONS.length], 
+    color: "text-primary" 
+  };
 }
 
 function getPastelClass(habitId: number) {
   return PASTEL_CLASSES[habitId % PASTEL_CLASSES.length];
 }
 
-export function HabitCard({ habit }: HabitCardProps) {
+export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function HabitCard({ habit }, ref) {
   const deleteHabit = useDeleteHabit();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -66,7 +127,7 @@ export function HabitCard({ habit }: HabitCardProps) {
   const totalTasksCount = todaysTasks.length;
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
-  const HabitIcon = getHabitIcon(habit.id);
+  const { icon: HabitIcon, color: iconColor } = getSmartHabitIcon(habit.title, habit.description, habit.id);
   const pastelClass = getPastelClass(habit.id);
 
   const handleStartClick = (e: React.MouseEvent) => {
@@ -83,7 +144,8 @@ export function HabitCard({ habit }: HabitCardProps) {
   return (
     <>
       <Link href={`/habit/${habit.id}`}>
-      <motion.div
+      <MotionCard
+        ref={ref}
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -103,7 +165,7 @@ export function HabitCard({ habit }: HabitCardProps) {
             {/* Icon & Title Row */}
             <div className="flex items-center gap-3 mb-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 dark:bg-white/10 shadow-sm border border-white/50 dark:border-white/10">
-                <HabitIcon className="w-6 h-6 text-primary" />
+                <HabitIcon className={cn("w-6 h-6", iconColor)} />
               </div>
               <div className="flex-1">
                 <h3 className="font-display text-lg font-bold text-foreground leading-tight">{habit.title}</h3>
@@ -238,7 +300,7 @@ export function HabitCard({ habit }: HabitCardProps) {
             )}
           </div>
         </div>
-      </motion.div>
+      </MotionCard>
       </Link>
 
       {/* Delete Confirmation */}
@@ -292,4 +354,4 @@ export function HabitCard({ habit }: HabitCardProps) {
       )}
     </>
   );
-}
+});

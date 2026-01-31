@@ -23,8 +23,13 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
+        {/* Floating decorative elements */}
+        <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
+        
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -70,20 +75,42 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="relative hidden lg:block"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6 animate-pulse-glow" />
             {/* Abstract visual representation of the app */}
             <div className="relative glass-panel rounded-2xl p-6 shadow-2xl transform -rotate-2 border border-white/40">
               <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4 p-4 bg-white/80 rounded-xl shadow-sm">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${i === 1 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {i === 1 && <CheckCircle2 className="w-6 h-6" />}
+                {[
+                  { title: "Morning Meditation", progress: 100, icon: "complete" },
+                  { title: "Daily Reading", progress: 60, icon: "active" },
+                  { title: "Evening Walk", progress: 0, icon: "pending" }
+                ].map((item, i) => (
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.4 + i * 0.15 }}
+                    className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      item.icon === 'complete' ? 'bg-primary/20 text-primary' : 
+                      item.icon === 'active' ? 'bg-accent/20 text-accent' : 
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {item.icon === 'complete' && <CheckCircle2 className="w-6 h-6" />}
+                      {item.icon === 'active' && <Sparkles className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-foreground/10 rounded w-2/3" />
-                      <div className="h-3 bg-foreground/5 rounded w-1/2" />
+                      <div className="text-sm font-medium text-foreground/80">{item.title}</div>
+                      <div className="h-2 bg-foreground/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-primary rounded-full" 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${item.progress}%` }}
+                          transition={{ duration: 0.8, delay: 0.6 + i * 0.15 }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
