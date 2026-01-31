@@ -309,6 +309,36 @@ export async function registerRoutes(
     }
   });
 
+  // Create customer portal session for subscription management
+  app.post("/api/stripe/customer-portal", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stripe = await getUncachableStripeClient();
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+
+      // Get user's Stripe customer ID
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${baseUrl}/account`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Customer portal error:", error);
+      res.status(500).json({ error: "Failed to open subscription management" });
+    }
+  });
+
   // AI-generated habit plan with steps and tips
   app.post("/api/ai/generate-plan", isAuthenticated, async (req: any, res) => {
     try {

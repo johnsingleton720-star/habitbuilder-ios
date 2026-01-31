@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, User as UserIcon, Calendar, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, User as UserIcon, Calendar, Sparkles, CreditCard, Loader2, ExternalLink } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +27,25 @@ export default function Account() {
 
   const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.completedDates?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
+
+  const manageSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/stripe/customer-portal");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Unable to open subscription management",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -189,6 +209,24 @@ export default function Account() {
                     You have full access to all features
                   </span>
                 </div>
+              )}
+
+              {hasPaid && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => manageSubscriptionMutation.mutate()}
+                  disabled={manageSubscriptionMutation.isPending}
+                  data-testid="button-manage-subscription"
+                >
+                  {manageSubscriptionMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4" />
+                  )}
+                  Manage Subscription
+                  <ExternalLink className="w-3 h-3 ml-auto" />
+                </Button>
               )}
             </CardContent>
           </Card>
