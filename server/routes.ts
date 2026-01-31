@@ -1394,14 +1394,31 @@ Return JSON with:
       
       // Convert base64 to buffer and ensure compatible format
       const audioBuffer = Buffer.from(audio, 'base64');
-      const { buffer: compatibleBuffer, format } = await ensureCompatibleFormat(audioBuffer);
+      console.log("Audio buffer size:", audioBuffer.length, "bytes");
+      
+      let compatibleBuffer: Buffer;
+      let format: "wav" | "mp3";
+      
+      try {
+        const result = await ensureCompatibleFormat(audioBuffer);
+        compatibleBuffer = result.buffer;
+        format = result.format;
+        console.log("Converted audio to format:", format, "size:", compatibleBuffer.length);
+      } catch (conversionError: any) {
+        console.error("Audio conversion error:", conversionError?.message || conversionError);
+        return res.status(400).json({ error: "Failed to process audio format. Please try again." });
+      }
       
       // Transcribe using OpenAI
-      const transcript = await speechToText(compatibleBuffer, format);
-      
-      res.json({ transcript });
-    } catch (error) {
-      console.error("Error transcribing audio:", error);
+      try {
+        const transcript = await speechToText(compatibleBuffer, format);
+        res.json({ transcript });
+      } catch (transcriptionError: any) {
+        console.error("OpenAI transcription error:", transcriptionError?.message || transcriptionError);
+        return res.status(500).json({ error: "Transcription service error. Please try again." });
+      }
+    } catch (error: any) {
+      console.error("Error transcribing audio:", error?.message || error);
       res.status(500).json({ error: "Failed to transcribe audio" });
     }
   });
