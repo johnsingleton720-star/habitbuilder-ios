@@ -186,16 +186,21 @@ export async function voiceChatStream(
  */
 export async function textToSpeech(
   text: string,
-  voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "alloy",
-  format: "wav" | "mp3" | "flac" | "opus" | "pcm16" = "wav"
+  voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "shimmer",
+  format: "wav" | "mp3" | "flac" | "opus" | "pcm16" = "wav",
+  style: "coaching" | "neutral" = "coaching"
 ): Promise<Buffer> {
+  const systemPrompt = style === "coaching" 
+    ? "You are a warm, empathetic life coach speaking to someone you genuinely care about. Speak with gentle encouragement, natural pauses, and emotional warmth. Your tone should be soft, supportive, and conversational - like a caring friend giving heartfelt advice. Add subtle emotional inflection to emphasize important points."
+    : "You are an assistant that performs text-to-speech.";
+  
   const response = await openai.chat.completions.create({
     model: "gpt-audio",
     modalities: ["text", "audio"],
     audio: { voice, format },
     messages: [
-      { role: "system", content: "You are an assistant that performs text-to-speech." },
-      { role: "user", content: `Repeat the following text verbatim: ${text}` },
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Please speak this message with warmth and emotional care: ${text}` },
     ],
   });
   const audioData = (response.choices[0]?.message as any)?.audio?.data ?? "";

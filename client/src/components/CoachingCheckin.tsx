@@ -55,18 +55,51 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const { isPremium } = useSubscription();
   const { toast } = useToast();
 
+  // Cleanup audio on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  // Stop audio when dialog closes
+  useEffect(() => {
+    if (!open) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+      setIsSpeaking(false);
+      setIsLoadingAudio(false);
+    }
+  }, [open]);
+
   // Auto-scroll to bottom when checkin data changes
   useEffect(() => {
     if (checkinData && scrollContainerRef.current) {
-      // Delay scroll to allow content to render
       const timer = setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
@@ -156,19 +189,36 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     }
   };
 
+  // Stop any currently playing audio
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    setIsSpeaking(false);
+  };
+
   // Text-to-speech for coach response
   const speakResponse = async () => {
     if (!checkinData) return;
     
-    // If already speaking, stop it
-    if (isSpeaking && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setIsSpeaking(false);
+    // If currently loading, ignore the click
+    if (isLoadingAudio) return;
+    
+    // If already speaking or playing, stop it
+    if (isSpeaking || audioRef.current) {
+      stopAudio();
       return;
     }
     
+    setIsLoadingAudio(true);
     setIsSpeaking(true);
+    
     try {
       const fullText = `${checkinData.greeting} ${checkinData.progressAcknowledgment} ${checkinData.motivation} Here's a tip for tomorrow: ${checkinData.tipForTomorrow}`;
       
@@ -180,6 +230,9 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       }
       
       if (data.audio) {
+        // Stop any existing audio first
+        stopAudio();
+        
         const audioData = atob(data.audio);
         const audioArray = new Uint8Array(audioData.length);
         for (let i = 0; i < audioData.length; i++) {
@@ -187,19 +240,29 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
         }
         const audioBlob = new Blob([audioArray], { type: 'audio/mp3' });
         const audioUrl = URL.createObjectURL(audioBlob);
+        audioUrlRef.current = audioUrl;
+        
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
         
         audio.onended = () => {
           setIsSpeaking(false);
+          setIsLoadingAudio(false);
           audioRef.current = null;
-          URL.revokeObjectURL(audioUrl);
+          if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
+          }
         };
         
         audio.onerror = () => {
           setIsSpeaking(false);
+          setIsLoadingAudio(false);
           audioRef.current = null;
-          URL.revokeObjectURL(audioUrl);
+          if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
+          }
           toast({
             title: "Audio playback failed",
             description: "Could not play the coach's response",
@@ -207,6 +270,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           });
         };
         
+        setIsLoadingAudio(false);
         await audio.play();
       } else {
         throw new Error("No audio data received");
@@ -214,6 +278,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     } catch (error: any) {
       console.error("Error with text-to-speech:", error);
       setIsSpeaking(false);
+      setIsLoadingAudio(false);
       toast({
         title: "Voice playback unavailable",
         description: error.message === "Text-to-speech requires Premium subscription" 
@@ -247,10 +312,13 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
                 size="icon" 
                 variant="ghost" 
                 onClick={speakResponse}
-                title={isSpeaking ? "Stop playback" : "Listen to coach response"}
+                disabled={isLoadingAudio && !isSpeaking}
+                title={isSpeaking ? "Stop playback" : isLoadingAudio ? "Loading audio..." : "Listen to coach response"}
                 data-testid="button-speak-response"
               >
-                {isSpeaking ? (
+                {isLoadingAudio && !isSpeaking ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isSpeaking ? (
                   <VolumeX className="w-5 h-5 text-destructive" />
                 ) : (
                   <Volume2 className="w-5 h-5" />
