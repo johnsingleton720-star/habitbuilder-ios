@@ -182,12 +182,13 @@ export async function registerRoutes(
       // Try database first - look for subscription product (prefer Habit Builder Pro)
       try {
         const result = await db.execute(
-          sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
+          sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description,
+                     pr.recurring->>'interval' as interval
               FROM stripe.prices pr 
               JOIN stripe.products p ON pr.product = p.id 
               WHERE p.active = true AND pr.active = true 
               AND p.name = 'Habit Builder Pro'
-              AND pr.recurring_interval = 'month'
+              AND pr.recurring->>'interval' = 'month'
               LIMIT 1`
         );
         
