@@ -189,14 +189,31 @@ export default function Paywall() {
               ))}
             </ul>
 
-            {error && (
+            {(error || priceError) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm"
+                className="flex flex-col gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm"
               >
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{error}</span>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{error || "Error loading pricing"}</span>
+                </div>
+                {priceError && (
+                  <div className="text-xs opacity-70">
+                    Details: {priceError instanceof Error ? priceError.message : String(priceError)}
+                  </div>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  className="mt-1"
+                >
+                  {isRetrying ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                  Retry
+                </Button>
               </motion.div>
             )}
 
