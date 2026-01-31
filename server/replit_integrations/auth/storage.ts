@@ -34,14 +34,14 @@ class AuthStorage implements IAuthStorage {
       .insert(users)
       .values({
         ...userData,
-        ...(isOwner && { isAdmin: true, hasPaid: true }),
+        ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
         ...(!existingUser && !isOwner && { trialEndsAt }),
       })
       .onConflictDoUpdate({
         target: users.id,
         set: {
           ...userData,
-          ...(isOwner && { isAdmin: true, hasPaid: true }),
+          ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
           updatedAt: new Date(),
         },
       })
