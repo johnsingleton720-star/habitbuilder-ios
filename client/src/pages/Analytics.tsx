@@ -49,6 +49,13 @@ export default function Analytics() {
 
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics", timeRange],
+    queryFn: async () => {
+      const res = await fetch(`/api/analytics?timeRange=${timeRange}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
     enabled: isPremium,
   });
 
