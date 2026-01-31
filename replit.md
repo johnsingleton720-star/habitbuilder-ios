@@ -167,3 +167,41 @@ The HabitCard component (`client/src/components/HabitCard.tsx`) includes a smart
 - **Hero Visual**: Enhanced with animated habit cards showing progress bars
 - **Coach Chat**: Fixed scroll issue with ScrollArea wrapper (max-h-[85vh])
 - **HabitCard**: Uses forwardRef for AnimatePresence compatibility
+
+### Tiered Subscription System (Jan 2026)
+Three subscription tiers with Stripe integration:
+- **Free**: 3 habits max, basic progress tracking
+- **Pro** ($6/month): Unlimited habits, AI coaching, progress reports
+- **Premium** ($15/month): All Pro features + voice notes, social accountability, priority support
+
+Key files:
+- `client/src/hooks/use-subscription.ts` - Hook for tier-based feature gating
+- `server/seed-products.ts` - Seeds Stripe products for Pro and Premium tiers
+- `server/webhookHandlers.ts` - Updates user `subscriptionTier` on checkout
+
+### Achievements System (Jan 2026)
+15 achievement badges across 4 categories (streak, completion, time, milestone):
+- Streak achievements: 3, 7, 14, 30, 100 day streaks
+- Session completions: 5, 25, 100 sessions
+- Time invested: 1hr, 5hr, 20hr total
+- Milestones: First plan, habit counts
+
+Key files:
+- `client/src/lib/achievements.ts` - Achievement definitions
+- `client/src/components/AchievementsDisplay.tsx` - Badges display component
+- API: GET /api/achievements, POST /api/achievements/unlock (with ID validation)
+
+### Habit Templates Library (Jan 2026)
+10 pre-built habit templates across wellness, health, and learning categories:
+- Morning Routine, Daily Exercise, Mindfulness, Healthy Eating, Reading
+- Gratitude Journal, Better Sleep, Learn Language, Digital Detox, Water Intake
+
+Key files:
+- `client/src/components/TemplateGallery.tsx` - Template browser with category filtering
+- API: GET /api/templates, POST /api/templates/seed (admin-only after initial setup)
+
+### Dark Mode (Jan 2026)
+Theme switching with localStorage persistence:
+- `client/src/components/ThemeProvider.tsx` - Context provider
+- `client/src/components/ThemeToggle.tsx` - Toggle button component
+- Toggle accessible from Dashboard menu dropdown

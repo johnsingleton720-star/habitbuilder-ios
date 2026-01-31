@@ -7,14 +7,17 @@ import { TrialBanner } from "@/components/TrialBanner";
 import { ProgressSummary } from "@/components/ProgressSummary";
 import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal } from "@/components/StreakBrokenModal";
+import { AchievementsDisplay } from "@/components/AchievementsDisplay";
+import { TemplateGallery } from "@/components/TemplateGallery";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "wouter";
-import type { Habit } from "@shared/schema";
+import { useTheme } from "@/components/ThemeProvider";
+import type { Habit, HabitTemplate } from "@shared/schema";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -26,8 +29,15 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabits();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [, navigate] = useLocation();
+  const { theme, toggleTheme } = useTheme();
+  
+  const handleSelectTemplate = (template: HabitTemplate) => {
+    setSelectedTemplate(template);
+    setIsDialogOpen(true);
+  };
 
   // Detect broken streaks when habits load
   useEffect(() => {
@@ -127,6 +137,13 @@ export default function Dashboard() {
                   Account Settings
                 </DropdownMenuItem>
               </Link>
+              <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme} data-testid="menu-theme-toggle">
+                {theme === "light" ? (
+                  <><Moon className="mr-2 h-4 w-4" /> Dark Mode</>
+                ) : (
+                  <><Sun className="mr-2 h-4 w-4" /> Light Mode</>
+                )}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -170,19 +187,33 @@ export default function Dashboard() {
           </motion.section>
         )}
 
+        {/* Achievements (compact) */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <AchievementsDisplay compact />
+          </motion.section>
+        )}
+
         {/* Habits Section */}
         <section className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
               Your Habits 
               <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
                 {habits?.length || 0}
               </span>
             </h2>
-            <Button onClick={() => setIsDialogOpen(true)} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-              <Plus className="w-4 h-4" />
-              New Habit
-            </Button>
+            <div className="flex gap-2">
+              <TemplateGallery onSelectTemplate={handleSelectTemplate} />
+              <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                <Plus className="w-4 h-4" />
+                New Habit
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -220,7 +251,12 @@ export default function Dashboard() {
 
       <HabitFormDialog 
         open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
+        onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setSelectedTemplate(null); }}
+        initialValues={selectedTemplate ? {
+          title: selectedTemplate.name,
+          description: selectedTemplate.description || '',
+          goal: selectedTemplate.suggestedGoal || '',
+        } : undefined}
       />
 
       {/* Streak Broken Modal */}

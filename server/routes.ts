@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates } from "@shared/schema";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -1305,6 +1305,213 @@ Return JSON with:
     } catch (error) {
       console.error("Error updating feedback:", error);
       res.status(500).json({ error: "Failed to update feedback" });
+    }
+  });
+
+  // ===== ACHIEVEMENTS API =====
+  
+  // Get user achievements
+  app.get("/api/achievements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const achievements = await db.select()
+        .from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+      res.json(achievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      res.status(500).json({ error: "Failed to fetch achievements" });
+    }
+  });
+
+  // Valid achievement IDs
+  const VALID_ACHIEVEMENT_IDS = [
+    "streak_3", "streak_7", "streak_14", "streak_30", "streak_100",
+    "sessions_5", "sessions_25", "sessions_100",
+    "time_60", "time_300", "time_1200",
+    "habits_3", "habits_5", "first_plan"
+  ];
+
+  // Unlock an achievement (internal use, called when conditions are met)
+  app.post("/api/achievements/unlock", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { achievementId } = req.body;
+      
+      if (!achievementId || typeof achievementId !== 'string') {
+        return res.status(400).json({ error: "Achievement ID required" });
+      }
+      
+      // Validate achievement ID exists in our definitions
+      if (!VALID_ACHIEVEMENT_IDS.includes(achievementId)) {
+        return res.status(400).json({ error: "Invalid achievement ID" });
+      }
+      
+      // Check if already unlocked
+      const existing = await db.select()
+        .from(userAchievements)
+        .where(sql`${userAchievements.userId} = ${userId} AND ${userAchievements.achievementId} = ${achievementId}`)
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.json({ alreadyUnlocked: true, achievement: existing[0] });
+      }
+      
+      // Unlock achievement
+      const result = await db.insert(userAchievements).values({
+        userId,
+        achievementId,
+      }).returning();
+      
+      res.json({ unlocked: true, achievement: result[0] });
+    } catch (error) {
+      console.error("Error unlocking achievement:", error);
+      res.status(500).json({ error: "Failed to unlock achievement" });
+    }
+  });
+
+  // ===== HABIT TEMPLATES API =====
+  
+  // Get all habit templates
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const templates = await db.select()
+        .from(habitTemplates)
+        .orderBy(sql`${habitTemplates.usageCount} DESC`);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  // Seed default templates if none exist (admin only or first-time setup)
+  app.post("/api/templates/seed", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Check if user is admin
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user[0]?.isAdmin) {
+        // Allow seeding only if no templates exist (first-time setup)
+        const existing = await db.select().from(habitTemplates).limit(1);
+        if (existing.length > 0) {
+          return res.status(403).json({ error: "Admin access required to re-seed templates" });
+        }
+      }
+      
+      const existing = await db.select().from(habitTemplates).limit(1);
+      if (existing.length > 0) {
+        return res.json({ message: "Templates already seeded" });
+      }
+      
+      const defaultTemplates = [
+        {
+          name: "Morning Routine",
+          description: "Start your day with energy and focus",
+          category: "wellness",
+          icon: "Sunrise",
+          color: "amber-500",
+          suggestedGoal: "Complete a 30-minute morning routine every day",
+        },
+        {
+          name: "Daily Exercise",
+          description: "Build consistent physical activity habits",
+          category: "health",
+          icon: "Dumbbell",
+          color: "green-500",
+          suggestedGoal: "Exercise for 30 minutes at least 5 days a week",
+        },
+        {
+          name: "Reading Habit",
+          description: "Expand your mind through daily reading",
+          category: "learning",
+          icon: "BookOpen",
+          color: "blue-500",
+          suggestedGoal: "Read for 20 minutes every day",
+        },
+        {
+          name: "Meditation Practice",
+          description: "Cultivate mindfulness and inner peace",
+          category: "wellness",
+          icon: "Brain",
+          color: "purple-500",
+          suggestedGoal: "Meditate for 10 minutes daily",
+        },
+        {
+          name: "Healthy Eating",
+          description: "Make better food choices every day",
+          category: "health",
+          icon: "Apple",
+          color: "red-500",
+          suggestedGoal: "Eat at least 3 servings of vegetables daily",
+        },
+        {
+          name: "Journaling",
+          description: "Reflect on your day and process emotions",
+          category: "wellness",
+          icon: "PenTool",
+          color: "teal-500",
+          suggestedGoal: "Write in your journal every evening",
+        },
+        {
+          name: "Learning New Skills",
+          description: "Dedicate time to learning something new",
+          category: "learning",
+          icon: "GraduationCap",
+          color: "indigo-500",
+          suggestedGoal: "Spend 30 minutes learning a new skill daily",
+        },
+        {
+          name: "Digital Detox",
+          description: "Reduce screen time and be more present",
+          category: "wellness",
+          icon: "Smartphone",
+          color: "gray-500",
+          suggestedGoal: "Limit recreational screen time to 2 hours daily",
+        },
+        {
+          name: "Sleep Hygiene",
+          description: "Improve your sleep quality and consistency",
+          category: "health",
+          icon: "Moon",
+          color: "slate-600",
+          suggestedGoal: "Get 7-8 hours of sleep every night",
+        },
+        {
+          name: "Gratitude Practice",
+          description: "Cultivate appreciation and positivity",
+          category: "wellness",
+          icon: "Heart",
+          color: "pink-500",
+          suggestedGoal: "Write 3 things you're grateful for each day",
+        },
+      ];
+      
+      for (const template of defaultTemplates) {
+        await db.insert(habitTemplates).values(template);
+      }
+      
+      res.json({ message: "Templates seeded successfully", count: defaultTemplates.length });
+    } catch (error) {
+      console.error("Error seeding templates:", error);
+      res.status(500).json({ error: "Failed to seed templates" });
+    }
+  });
+
+  // Track template usage
+  app.post("/api/templates/:id/use", isAuthenticated, async (req: any, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      await db.update(habitTemplates)
+        .set({ usageCount: sql`${habitTemplates.usageCount} + 1` })
+        .where(eq(habitTemplates.id, templateId));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking template usage:", error);
+      res.status(500).json({ error: "Failed to track usage" });
     }
   });
 

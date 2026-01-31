@@ -27,9 +27,14 @@ interface HabitFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   habitToEdit?: HabitResponse;
+  initialValues?: {
+    title: string;
+    description: string;
+    goal: string;
+  };
 }
 
-export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDialogProps) {
+export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues }: HabitFormDialogProps) {
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
   const [, setLocation] = useLocation();
@@ -49,14 +54,14 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit }: HabitFormDi
   useEffect(() => {
     if (open) {
       form.reset({
-        title: habitToEdit?.title || "",
-        description: habitToEdit?.description || "",
-        goal: habitToEdit?.goal || "",
+        title: habitToEdit?.title || initialValues?.title || "",
+        description: habitToEdit?.description || initialValues?.description || "",
+        goal: habitToEdit?.goal || initialValues?.goal || "",
       });
       setSchedule(habitToEdit?.schedule as HabitSchedule | undefined);
       setShowSchedule(!!habitToEdit?.schedule);
     }
-  }, [open, habitToEdit, form]);
+  }, [open, habitToEdit, initialValues, form]);
 
   const onSubmit = async (data: HabitFormData) => {
     try {
