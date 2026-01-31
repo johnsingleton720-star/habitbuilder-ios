@@ -314,152 +314,241 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
+    const margin = 15;
     const maxWidth = pageWidth - (margin * 2);
-    const lineHeight = 7;
-    const sectionGap = 12;
+    const lineHeight = 6;
+    const sectionGap = 10;
     
-    // Header with colored background
-    doc.setFillColor(34, 139, 34);
-    doc.rect(0, 0, pageWidth, 45, 'F');
+    let yPos = 0;
     
-    // Title on header
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text(template.title, margin, 25);
-    
-    // Subtitle on header
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${habitTitle} - ${task.title}`, margin, 35);
-    
-    // Date field
-    doc.setTextColor(0);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Date: ", margin, 55);
-    doc.setFont("helvetica", "normal");
-    doc.setDrawColor(180);
-    doc.line(margin + 15, 55, margin + 80, 55);
-    
-    // Name field
-    doc.setFont("helvetica", "bold");
-    doc.text("Name: ", margin + 95, 55);
-    doc.setFont("helvetica", "normal");
-    doc.line(margin + 110, 55, pageWidth - margin, 55);
-    
-    let yPos = 70;
-    
-    // Helper to check page break and return new yPos
     const ensureSpace = (neededSpace: number): number => {
-      if (yPos + neededSpace > pageHeight - 30) {
+      if (yPos + neededSpace > pageHeight - 25) {
         doc.addPage();
-        return 25;
+        return 20;
       }
       return yPos;
     };
     
-    // Parse content and render with formatting
+    const drawEditableField = (label: string, width: number, xOffset: number = 0) => {
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(100);
+      doc.text(label, margin + xOffset, yPos);
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.3);
+      doc.line(margin + xOffset, yPos + 2, margin + xOffset + width, yPos + 2);
+    };
+    
+    const drawCheckbox = (text: string, checked: boolean = false) => {
+      doc.setDrawColor(100);
+      doc.setLineWidth(0.4);
+      doc.rect(margin, yPos - 3.5, 4, 4);
+      if (checked) {
+        doc.setLineWidth(0.6);
+        doc.line(margin + 0.8, yPos - 1.5, margin + 1.8, yPos - 0.5);
+        doc.line(margin + 1.8, yPos - 0.5, margin + 3.2, yPos - 2.8);
+      }
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0);
+      const wrappedText = doc.splitTextToSize(text, maxWidth - 10);
+      wrappedText.forEach((line: string, i: number) => {
+        if (i > 0) {
+          yPos += lineHeight;
+          yPos = ensureSpace(lineHeight);
+        }
+        doc.text(line, margin + 7, yPos);
+      });
+      yPos += lineHeight + 1;
+    };
+    
+    const drawRatingScale = (label: string, min: string, max: string) => {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0);
+      doc.text(label, margin, yPos);
+      yPos += lineHeight;
+      yPos = ensureSpace(lineHeight + 5);
+      
+      const scaleWidth = maxWidth - 20;
+      const circleSpacing = scaleWidth / 9;
+      doc.setFontSize(7);
+      doc.setTextColor(120);
+      doc.text(min, margin, yPos + 1);
+      doc.text(max, margin + scaleWidth + 5, yPos + 1);
+      
+      for (let i = 1; i <= 10; i++) {
+        const x = margin + 15 + (i - 1) * circleSpacing;
+        doc.setDrawColor(100);
+        doc.setLineWidth(0.3);
+        doc.circle(x, yPos, 3);
+        doc.setFontSize(6);
+        doc.setTextColor(100);
+        doc.text(String(i), x - 1.5, yPos + 1);
+      }
+      yPos += 8;
+    };
+    
+    const drawWritingLines = (numLines: number, label?: string) => {
+      if (label) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(80);
+        doc.text(label, margin, yPos);
+        yPos += lineHeight;
+      }
+      for (let i = 0; i < numLines; i++) {
+        yPos = ensureSpace(lineHeight + 2);
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.2);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += lineHeight + 1;
+      }
+    };
+    
+    // ============ PAGE 1: HEADER & INFO ============
+    doc.setFillColor(34, 139, 34);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    const titleLines = doc.splitTextToSize(template.title, maxWidth - 20);
+    doc.text(titleLines[0], margin, 18);
+    if (titleLines[1]) doc.text(titleLines[1], margin, 26);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${habitTitle} - ${task.title}`, margin, titleLines.length > 1 ? 34 : 30);
+    
+    yPos = 50;
+    
+    // Info fields row
+    drawEditableField("Date:", 35);
+    drawEditableField("Week #:", 20, 55);
+    drawEditableField("Name:", 60, 90);
+    yPos += 12;
+    
+    // Goal & Motivation Section
+    yPos = ensureSpace(40);
+    doc.setFillColor(245, 250, 245);
+    doc.roundedRect(margin, yPos, maxWidth, 35, 2, 2, 'F');
+    doc.setDrawColor(180, 210, 180);
+    doc.roundedRect(margin, yPos, maxWidth, 35, 2, 2, 'S');
+    yPos += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(34, 100, 34);
+    doc.text("My Goal for This Session:", margin + 5, yPos);
+    yPos += 6;
+    doc.setDrawColor(200);
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 7;
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 10;
+    
+    // Pre-Session Check-in
+    yPos = ensureSpace(25);
+    doc.setFillColor(250, 248, 240);
+    doc.roundedRect(margin, yPos, maxWidth, 22, 2, 2, 'F');
+    yPos += 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(150, 120, 50);
+    doc.text("Pre-Session Check-in:", margin + 5, yPos);
+    yPos += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.setFontSize(8);
+    const checkItems = ["Quiet space ready", "Phone on silent", "Water nearby", "Timer set"];
+    let checkX = margin + 5;
+    checkItems.forEach((item) => {
+      doc.setDrawColor(150);
+      doc.rect(checkX, yPos - 3, 3.5, 3.5);
+      doc.text(item, checkX + 5, yPos);
+      checkX += 42;
+    });
+    yPos += 12;
+    
+    // Parse and render template content
     const lines = template.content.split('\n');
     
     lines.forEach((line) => {
       const trimmedLine = line.trim();
       if (!trimmedLine) {
-        yPos += 4;
+        yPos += 3;
         return;
       }
       
       yPos = ensureSpace(lineHeight * 2);
       
-      // Section headers (lines ending with :)
+      // Section headers
       if (trimmedLine.endsWith(':') && trimmedLine.length < 60 && !trimmedLine.startsWith('[')) {
         yPos += sectionGap / 2;
-        yPos = ensureSpace(lineHeight + 8);
+        yPos = ensureSpace(lineHeight + 6);
         doc.setFillColor(240, 248, 240);
-        doc.roundedRect(margin - 2, yPos - 5, maxWidth + 4, 10, 2, 2, 'F');
-        doc.setFontSize(12);
+        doc.roundedRect(margin - 2, yPos - 4, maxWidth + 4, 8, 1, 1, 'F');
+        doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(34, 100, 34);
         doc.text(trimmedLine, margin, yPos);
-        yPos += lineHeight + 4;
+        yPos += lineHeight + 3;
         doc.setTextColor(0);
         return;
       }
       
-      // Checkbox items
       const checkboxMatch = trimmedLine.match(/^(\[ \]|☐|\[\]|□)\s*(.+)/);
       const bulletMatch = trimmedLine.match(/^[-•]\s*(.+)/);
       const numberedMatch = trimmedLine.match(/^(\d+[.)]\s*)(.+)/);
       
       if (checkboxMatch) {
-        doc.setDrawColor(100);
-        doc.setLineWidth(0.5);
-        doc.rect(margin, yPos - 4, 4, 4);
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const checkboxText = doc.splitTextToSize(checkboxMatch[2], maxWidth - 10);
-        for (const textLine of checkboxText) {
-          yPos = ensureSpace(lineHeight);
-          doc.text(textLine, margin + 8, yPos);
-          yPos += lineHeight;
-        }
-        yPos += 2;
+        drawCheckbox(checkboxMatch[2]);
       } else if (bulletMatch) {
         doc.setFillColor(34, 139, 34);
-        doc.circle(margin + 2, yPos - 1.5, 1.5, 'F');
-        
-        doc.setFontSize(10);
+        doc.circle(margin + 2, yPos - 1, 1.2, 'F');
+        doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
-        const bulletText = doc.splitTextToSize(bulletMatch[1], maxWidth - 10);
-        for (const textLine of bulletText) {
+        const bulletText = doc.splitTextToSize(bulletMatch[1], maxWidth - 8);
+        bulletText.forEach((textLine: string) => {
           yPos = ensureSpace(lineHeight);
-          doc.text(textLine, margin + 8, yPos);
+          doc.text(textLine, margin + 6, yPos);
           yPos += lineHeight;
-        }
-        yPos += 2;
+        });
+        yPos += 1;
       } else if (numberedMatch) {
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(34, 139, 34);
         doc.text(numberedMatch[1], margin, yPos);
-        
         doc.setFont("helvetica", "normal");
         doc.setTextColor(0);
-        const numText = doc.splitTextToSize(numberedMatch[2], maxWidth - 15);
-        for (const textLine of numText) {
+        const numText = doc.splitTextToSize(numberedMatch[2], maxWidth - 12);
+        numText.forEach((textLine: string) => {
           yPos = ensureSpace(lineHeight);
-          doc.text(textLine, margin + 10, yPos);
+          doc.text(textLine, margin + 8, yPos);
           yPos += lineHeight;
-        }
-        yPos += 2;
+        });
+        yPos += 1;
       } else if (trimmedLine.includes('[') && trimmedLine.includes(']')) {
-        // Fill-in-the-blank fields - wrap long lines
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
-        
-        // Split long lines first
         const wrappedLines = doc.splitTextToSize(trimmedLine, maxWidth);
-        
-        for (const wrappedLine of wrappedLines) {
+        wrappedLines.forEach((wrappedLine: string) => {
           yPos = ensureSpace(lineHeight);
-          
           if (wrappedLine.includes('[') && wrappedLine.includes(']')) {
             const parts = wrappedLine.split(/(\[[^\]]+\])/);
             let xPos = margin;
-            
-            for (const part of parts) {
+            parts.forEach((part: string) => {
               if (part.match(/^\[[^\]]+\]$/)) {
-                const placeholderWidth = Math.min(Math.max(30, part.length * 2.5), maxWidth - (xPos - margin) - 5);
+                const placeholderWidth = Math.min(Math.max(25, part.length * 2), maxWidth - (xPos - margin) - 5);
                 doc.setDrawColor(150);
                 doc.setLineWidth(0.3);
                 doc.line(xPos, yPos + 1, xPos + placeholderWidth, yPos + 1);
-                doc.setFontSize(7);
+                doc.setFontSize(6);
                 doc.setTextColor(150);
-                doc.text(part.slice(1, -1), xPos + 2, yPos - 1);
+                doc.text(part.slice(1, -1), xPos + 1, yPos - 1);
                 doc.setTextColor(0);
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 xPos += placeholderWidth + 2;
               } else if (part) {
                 const partWidth = doc.getTextWidth(part);
@@ -471,48 +560,132 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                 doc.text(part, xPos, yPos);
                 xPos += partWidth;
               }
-            }
+            });
           } else {
             doc.text(wrappedLine, margin, yPos);
           }
           yPos += lineHeight;
-        }
-        yPos += 2;
+        });
+        yPos += 1;
       } else {
-        // Regular text
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         const textLines = doc.splitTextToSize(trimmedLine, maxWidth);
-        for (const textLine of textLines) {
+        textLines.forEach((textLine: string) => {
           yPos = ensureSpace(lineHeight);
           doc.text(textLine, margin, yPos);
           yPos += lineHeight;
-        }
-        yPos += 1;
+        });
       }
     });
     
-    // Notes section at the bottom
-    yPos = ensureSpace(60);
-    yPos += 10;
-    doc.setFillColor(250, 250, 250);
-    doc.roundedRect(margin, yPos, maxWidth, 40, 3, 3, 'F');
-    doc.setDrawColor(200);
-    doc.roundedRect(margin, yPos, maxWidth, 40, 3, 3, 'S');
+    // ============ SESSION TRACKING SECTION ============
+    yPos = ensureSpace(50);
+    yPos += 8;
+    doc.setFillColor(240, 245, 255);
+    doc.roundedRect(margin, yPos, maxWidth, 42, 2, 2, 'F');
+    doc.setDrawColor(180, 190, 220);
+    doc.roundedRect(margin, yPos, maxWidth, 42, 2, 2, 'S');
+    yPos += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(100);
-    doc.text("Notes:", margin + 5, yPos + 8);
+    doc.setTextColor(50, 70, 120);
+    doc.text("Session Tracking", margin + 5, yPos);
+    yPos += 8;
     
-    // Footer on last page
-    const currentPageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80);
+    doc.text("Start Time: ___________", margin + 5, yPos);
+    doc.text("End Time: ___________", margin + 60, yPos);
+    doc.text("Duration: _____ min", margin + 115, yPos);
+    yPos += 8;
+    doc.text("Focus Level (1-10): _____", margin + 5, yPos);
+    doc.text("Energy Level (1-10): _____", margin + 60, yPos);
+    doc.text("Distractions: _____", margin + 120, yPos);
+    yPos += 12;
+    
+    // ============ REFLECTION SECTION ============
+    yPos = ensureSpace(70);
+    yPos += 5;
+    doc.setFillColor(255, 250, 245);
+    doc.roundedRect(margin, yPos, maxWidth, 60, 2, 2, 'F');
+    doc.setDrawColor(220, 200, 180);
+    doc.roundedRect(margin, yPos, maxWidth, 60, 2, 2, 'S');
+    yPos += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(150, 100, 50);
+    doc.text("Post-Session Reflection", margin + 5, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80);
+    doc.text("What went well?", margin + 5, yPos);
+    yPos += 5;
+    doc.setDrawColor(200);
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 7;
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 9;
+    
+    doc.text("What could be improved?", margin + 5, yPos);
+    yPos += 5;
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 7;
+    doc.line(margin + 5, yPos, pageWidth - margin - 5, yPos);
+    yPos += 12;
+    
+    // ============ NEXT STEPS & NOTES ============
+    yPos = ensureSpace(55);
+    yPos += 5;
+    
+    const halfWidth = (maxWidth - 5) / 2;
+    
+    // Next Steps box
+    doc.setFillColor(245, 255, 245);
+    doc.roundedRect(margin, yPos, halfWidth, 45, 2, 2, 'F');
+    doc.setDrawColor(180, 210, 180);
+    doc.roundedRect(margin, yPos, halfWidth, 45, 2, 2, 'S');
+    
+    // Notes box
+    doc.setFillColor(250, 250, 250);
+    doc.roundedRect(margin + halfWidth + 5, yPos, halfWidth, 45, 2, 2, 'F');
+    doc.setDrawColor(200);
+    doc.roundedRect(margin + halfWidth + 5, yPos, halfWidth, 45, 2, 2, 'S');
+    
+    const boxY = yPos + 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(34, 100, 34);
+    doc.text("Next Steps / Action Items:", margin + 3, boxY);
+    doc.setTextColor(100);
+    doc.text("Additional Notes:", margin + halfWidth + 8, boxY);
+    
+    // Checkbox lines in Next Steps
+    doc.setDrawColor(180);
+    for (let i = 0; i < 4; i++) {
+      const lineY = boxY + 8 + (i * 8);
+      doc.rect(margin + 3, lineY - 3, 3.5, 3.5);
+      doc.line(margin + 9, lineY, margin + halfWidth - 5, lineY);
+    }
+    
+    // Lines in Notes
+    for (let i = 0; i < 4; i++) {
+      const lineY = boxY + 8 + (i * 8);
+      doc.line(margin + halfWidth + 8, lineY, pageWidth - margin - 5, lineY);
+    }
+    
+    // Footer
+    const lastPageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(7);
     doc.setTextColor(150);
     doc.setFont("helvetica", "italic");
-    doc.text("Created with Habit Builder - Your AI Habit Coach", margin, currentPageHeight - 10);
-    doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, currentPageHeight - 10);
+    doc.text("Created with Habit Builder - Your Personal Habit Coach", margin, lastPageHeight - 8);
+    doc.text(new Date().toLocaleDateString(), pageWidth - margin - 25, lastPageHeight - 8);
     
-    doc.save(`${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_template.pdf`);
+    doc.save(`${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`);
   };
 
   const copyTemplate = (template: Template) => {
