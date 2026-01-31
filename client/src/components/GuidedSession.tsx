@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
+import { VoiceNote } from "./VoiceNote";
 
 interface GuidedSessionProps {
   habit: Habit;
@@ -502,7 +503,13 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               </Card>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Notes (optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <VoiceNote 
+                    onTranscript={(text) => setTaskNotes(prev => prev ? `${prev}\n${text}` : text)}
+                    disabled={completeSessionMutation.isPending}
+                  />
+                </div>
                 <Textarea
                   value={taskNotes}
                   onChange={(e) => setTaskNotes(e.target.value)}

@@ -1371,6 +1371,42 @@ Return JSON with:
     }
   });
 
+  // ===== VOICE NOTES API (Premium feature) =====
+  
+  // Transcribe audio to text (for voice notes in guided sessions)
+  app.post("/api/transcribe", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check if user has Premium subscription
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Voice notes require Premium subscription" });
+      }
+      
+      const { audio } = req.body; // base64 encoded audio
+      if (!audio) {
+        return res.status(400).json({ error: "Audio data required" });
+      }
+      
+      // Import transcription utilities
+      const { ensureCompatibleFormat, speechToText } = await import('./replit_integrations/audio/client');
+      
+      // Convert base64 to buffer and ensure compatible format
+      const audioBuffer = Buffer.from(audio, 'base64');
+      const { buffer: compatibleBuffer, format } = await ensureCompatibleFormat(audioBuffer);
+      
+      // Transcribe using OpenAI
+      const transcript = await speechToText(compatibleBuffer, format);
+      
+      res.json({ transcript });
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
+    }
+  });
+
   // ===== HABIT TEMPLATES API =====
   
   // Get all habit templates

@@ -80,6 +80,7 @@ app.post(
 
 app.use(
   express.json({
+    limit: '50mb', // Increased for audio uploads
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
