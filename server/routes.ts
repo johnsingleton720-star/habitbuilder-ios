@@ -179,14 +179,15 @@ export async function registerRoutes(
   // Get subscription price from Stripe - with fallback to direct API
   app.get("/api/stripe/lifetime-price", async (req, res) => {
     try {
-      // Try database first - look for subscription product
+      // Try database first - look for subscription product (prefer Habit Builder Pro)
       try {
         const result = await db.execute(
           sql`SELECT pr.id as price_id, pr.unit_amount, p.name, p.description 
               FROM stripe.prices pr 
               JOIN stripe.products p ON pr.product = p.id 
               WHERE p.active = true AND pr.active = true 
-              AND (p.metadata->>'type' = 'subscription' OR p.name = 'Habit Builder Pro')
+              AND p.name = 'Habit Builder Pro'
+              AND pr.recurring_interval = 'month'
               LIMIT 1`
         );
         
@@ -209,7 +210,7 @@ export async function registerRoutes(
       });
       
       const subscriptionProduct = products.data.find(
-        p => p.metadata?.type === 'subscription' || p.name === 'HabitGrow Pro'
+        p => p.name === 'Habit Builder Pro'
       );
       
       if (!subscriptionProduct) {
