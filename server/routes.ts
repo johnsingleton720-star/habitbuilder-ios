@@ -233,8 +233,6 @@ export async function registerRoutes(
             'AI session summaries',
             'Progress streaks & achievements',
             'Habit templates library',
-            'Weekly progress reports',
-            'Email reminders',
           ],
           popular: true,
         });
@@ -256,8 +254,9 @@ export async function registerRoutes(
           features: [
             'Everything in Pro',
             'Voice notes during sessions',
+            'Weekly progress reports',
+            'Email reminders',
             'Accountability partner sharing',
-            'Priority AI responses',
             'Advanced analytics dashboard',
             'Monthly personalized insights',
             'Priority support',

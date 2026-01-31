@@ -14,8 +14,6 @@ const PRICING_TIERS = {
       'AI session summaries',
       'Progress streaks & achievements',
       'Habit templates library',
-      'Weekly progress reports',
-      'Email reminders',
     ],
     metadata: {
       tier: 'pro',
@@ -24,15 +22,16 @@ const PRICING_TIERS = {
   },
   premium: {
     name: 'Habit Builder Premium',
-    description: 'Everything in Pro plus advanced AI features, voice notes, and accountability partners',
+    description: 'Everything in Pro plus voice notes, weekly reports, email reminders, and more',
     price: 1500, // $15.00 in cents
     features: [
       'Everything in Pro',
       'Voice notes during sessions',
+      'Weekly progress reports',
+      'Email reminders',
       'Accountability partner sharing',
-      'Priority AI responses',
-      'Advanced analytics',
-      'Monthly personalized coaching insights',
+      'Advanced analytics dashboard',
+      'Monthly personalized insights',
       'Priority support',
     ],
     metadata: {
