@@ -1444,7 +1444,7 @@ Return JSON with:
       const trimmedText = text.slice(0, 2000);
       
       const { textToSpeech } = await import('./replit_integrations/audio/client');
-      const audioBuffer = await textToSpeech(trimmedText, "shimmer", "mp3", "coaching");
+      const audioBuffer = await textToSpeech(trimmedText, "shimmer", "mp3");
       
       res.json({ audio: audioBuffer.toString('base64') });
     } catch (error: any) {

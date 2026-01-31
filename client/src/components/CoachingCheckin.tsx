@@ -61,6 +61,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const audioRequestIdRef = useRef<number>(0);
   
   const { isPremium } = useSubscription();
   const { toast } = useToast();
@@ -189,8 +190,9 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     }
   };
 
-  // Stop any currently playing audio
+  // Stop any currently playing audio and cancel pending requests
   const stopAudio = () => {
+    audioRequestIdRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
@@ -201,38 +203,44 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       audioUrlRef.current = null;
     }
     setIsSpeaking(false);
+    setIsLoadingAudio(false);
   };
 
   // Text-to-speech for coach response
   const speakResponse = async () => {
     if (!checkinData) return;
     
-    // If currently loading, ignore the click
-    if (isLoadingAudio) return;
-    
-    // If already speaking or playing, stop it
-    if (isSpeaking || audioRef.current) {
+    // If already speaking or loading, stop it
+    if (isSpeaking || isLoadingAudio || audioRef.current) {
       stopAudio();
       return;
     }
     
+    const currentRequestId = ++audioRequestIdRef.current;
     setIsLoadingAudio(true);
-    setIsSpeaking(true);
     
     try {
       const fullText = `${checkinData.greeting} ${checkinData.progressAcknowledgment} ${checkinData.motivation} Here's a tip for tomorrow: ${checkinData.tipForTomorrow}`;
       
       const response = await apiRequest("POST", "/api/text-to-speech", { text: fullText });
+      
+      // Check if request was cancelled while waiting
+      if (currentRequestId !== audioRequestIdRef.current) {
+        return;
+      }
+      
       const data = await response.json();
+      
+      // Check again after parsing
+      if (currentRequestId !== audioRequestIdRef.current) {
+        return;
+      }
       
       if (data.error) {
         throw new Error(data.error);
       }
       
       if (data.audio) {
-        // Stop any existing audio first
-        stopAudio();
-        
         const audioData = atob(data.audio);
         const audioArray = new Uint8Array(audioData.length);
         for (let i = 0; i < audioData.length; i++) {
@@ -270,22 +278,47 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           });
         };
         
+        // Final check before playing
+        if (currentRequestId !== audioRequestIdRef.current) {
+          URL.revokeObjectURL(audioUrl);
+          return;
+        }
+        
         setIsLoadingAudio(false);
-        await audio.play();
+        setIsSpeaking(true);
+        
+        try {
+          await audio.play();
+        } catch (playError) {
+          console.error("Audio play error:", playError);
+          setIsSpeaking(false);
+          audioRef.current = null;
+          if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
+          }
+          toast({
+            title: "Audio playback blocked",
+            description: "Please tap the button again to hear the response",
+            variant: "destructive"
+          });
+        }
       } else {
         throw new Error("No audio data received");
       }
     } catch (error: any) {
       console.error("Error with text-to-speech:", error);
-      setIsSpeaking(false);
-      setIsLoadingAudio(false);
-      toast({
-        title: "Voice playback unavailable",
-        description: error.message === "Text-to-speech requires Premium subscription" 
-          ? "This feature requires a Premium subscription"
-          : "Could not generate voice response. Please try again.",
-        variant: "destructive"
-      });
+      if (currentRequestId === audioRequestIdRef.current) {
+        setIsSpeaking(false);
+        setIsLoadingAudio(false);
+        toast({
+          title: "Voice playback unavailable",
+          description: error.message === "Text-to-speech requires Premium subscription" 
+            ? "This feature requires a Premium subscription"
+            : "Could not generate voice response. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -312,11 +345,10 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
                 size="icon" 
                 variant="ghost" 
                 onClick={speakResponse}
-                disabled={isLoadingAudio && !isSpeaking}
-                title={isSpeaking ? "Stop playback" : isLoadingAudio ? "Loading audio..." : "Listen to coach response"}
+                title={isSpeaking ? "Stop playback" : isLoadingAudio ? "Cancel loading" : "Listen to coach response"}
                 data-testid="button-speak-response"
               >
-                {isLoadingAudio && !isSpeaking ? (
+                {isLoadingAudio ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : isSpeaking ? (
                   <VolumeX className="w-5 h-5 text-destructive" />

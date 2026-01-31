@@ -183,27 +183,26 @@ export async function voiceChatStream(
 /**
  * Text-to-Speech: Converts text to speech verbatim.
  * Uses gpt-audio model via Replit AI Integrations.
+ * Uses 'shimmer' voice by default for a warm, friendly tone.
  */
 export async function textToSpeech(
   text: string,
   voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "shimmer",
-  format: "wav" | "mp3" | "flac" | "opus" | "pcm16" = "wav",
-  style: "coaching" | "neutral" = "coaching"
+  format: "wav" | "mp3" | "flac" | "opus" | "pcm16" = "mp3"
 ): Promise<Buffer> {
-  const systemPrompt = style === "coaching" 
-    ? "You are a warm, empathetic life coach speaking to someone you genuinely care about. Speak with gentle encouragement, natural pauses, and emotional warmth. Your tone should be soft, supportive, and conversational - like a caring friend giving heartfelt advice. Add subtle emotional inflection to emphasize important points."
-    : "You are an assistant that performs text-to-speech.";
-  
   const response = await openai.chat.completions.create({
     model: "gpt-audio",
     modalities: ["text", "audio"],
     audio: { voice, format },
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `Please speak this message with warmth and emotional care: ${text}` },
+      { role: "system", content: "You are a warm, supportive life coach. Speak naturally with gentle, caring encouragement." },
+      { role: "user", content: `Say this warmly: ${text}` },
     ],
   });
   const audioData = (response.choices[0]?.message as any)?.audio?.data ?? "";
+  if (!audioData) {
+    throw new Error("No audio data in response");
+  }
   return Buffer.from(audioData, "base64");
 }
 
