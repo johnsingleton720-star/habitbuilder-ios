@@ -616,6 +616,110 @@ export async function registerRoutes(
     }
   });
 
+  // Sync subscription status from Stripe - called when user accesses account
+  app.post("/api/sync-subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userEmail = req.user!.claims.email;
+
+      const stripe = await getUncachableStripeClient();
+
+      // Get user from database
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // If already showing paid, no need to sync
+      if (user.hasPaid && user.subscriptionTier && user.subscriptionTier !== 'free') {
+        return res.json({ synced: false, message: "Already synced", tier: user.subscriptionTier });
+      }
+
+      // Find customer by email or stripeCustomerId
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId && userEmail) {
+        // Search for customer by email
+        const customers = await stripe.customers.list({
+          email: userEmail,
+          limit: 1,
+        });
+        
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+          // Save customer ID to user
+          await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, userId));
+        }
+      }
+
+      if (!customerId) {
+        return res.json({ synced: false, message: "No Stripe customer found" });
+      }
+
+      // Get active subscriptions for this customer
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 10,
+      });
+
+      if (subscriptions.data.length === 0) {
+        // Check for trialing subscriptions too
+        const trialingSubscriptions = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'trialing',
+          limit: 10,
+        });
+        
+        if (trialingSubscriptions.data.length === 0) {
+          return res.json({ synced: false, message: "No active subscription found" });
+        }
+        
+        subscriptions.data.push(...trialingSubscriptions.data);
+      }
+
+      // Determine tier from subscription
+      const subscription = subscriptions.data[0];
+      let tier = 'pro'; // default
+      
+      // Check subscription metadata or price to determine tier
+      if (subscription.metadata?.tier) {
+        tier = subscription.metadata.tier;
+      } else if (subscription.items?.data[0]?.price) {
+        const priceAmount = subscription.items.data[0].price.unit_amount || 0;
+        // Premium is $15/month = 1500 cents, Pro is $6/month = 600 cents
+        if (priceAmount >= 1500) {
+          tier = 'premium';
+        }
+      }
+
+      // Update user with subscription status
+      await db.update(users).set({
+        hasPaid: true,
+        subscriptionTier: tier as 'free' | 'pro' | 'premium',
+        subscriptionStatus: subscription.status,
+        subscriptionId: subscription.id,
+      }).where(eq(users.id, userId));
+
+      console.log(`Synced subscription for user ${userEmail}: tier=${tier}, status=${subscription.status}`);
+      
+      res.json({ 
+        synced: true, 
+        tier, 
+        status: subscription.status,
+        message: "Subscription synced from Stripe" 
+      });
+    } catch (error: any) {
+      console.error("Subscription sync error:", error?.message || error);
+      res.status(500).json({ error: "Failed to sync subscription" });
+    }
+  });
+
   // AI-generated habit plan with steps and tips
   app.post("/api/ai/generate-plan", isAuthenticated, async (req: any, res) => {
     try {
@@ -1620,6 +1724,49 @@ Return JSON with:
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Fix habit dates for the current user
+  app.post("/api/fix-my-habits", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Get all habits for this user
+      const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
+      
+      let fixed = 0;
+      for (const habit of userHabits) {
+        if (!habit.dailyPlans || !Array.isArray(habit.dailyPlans) || habit.dailyPlans.length < 2) {
+          continue;
+        }
+        
+        const plans = habit.dailyPlans as any[];
+        const firstDate = new Date(plans[0].date);
+        const lastDate = new Date(plans[plans.length - 1].date);
+        
+        // Check if dates are reversed (first date is later than last date)
+        if (firstDate > lastDate) {
+          // Sort by dayNumber ascending
+          const sortedPlans = [...plans].sort((a, b) => a.dayNumber - b.dayNumber);
+          
+          await db.update(habits)
+            .set({ dailyPlans: sortedPlans as any })
+            .where(eq(habits.id, habit.id));
+          
+          fixed++;
+          console.log(`Fixed reversed dates for habit: ${habit.title} (user: ${userId})`);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        fixed,
+        message: fixed > 0 ? `Fixed ${fixed} habit(s) with reversed dates` : "All habits already have correct date ordering"
+      });
+    } catch (error) {
+      console.error("Error fixing habits:", error);
+      res.status(500).json({ error: "Failed to fix habits" });
     }
   });
 
