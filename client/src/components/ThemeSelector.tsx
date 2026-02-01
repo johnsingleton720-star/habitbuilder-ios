@@ -119,11 +119,18 @@ export const APP_THEMES: AppTheme[] = [
 ];
 
 // Apply theme to document by setting CSS variables
+// Only applies primary/accent colors - background colors are controlled by light/dark mode
 export function applyThemeToDocument(theme: AppTheme) {
   const root = document.documentElement;
+  // Only set primary and accent colors from theme
+  // Background, card, muted colors are handled by light/dark mode CSS
+  const colorKeysToApply = ['primary', 'primaryForeground', 'accent', 'accentForeground'];
+  
   Object.entries(theme.colors).forEach(([key, value]) => {
-    const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-    root.style.setProperty(cssVar, value);
+    if (colorKeysToApply.includes(key)) {
+      const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      root.style.setProperty(cssVar, value);
+    }
   });
 }
 
