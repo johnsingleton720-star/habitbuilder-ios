@@ -20,7 +20,7 @@
   --secondary-foreground: 164 45% 15%;
 
   --muted: 162 20% 94%;
-  --muted-foreground: 164 20% 45%;
+  --muted-foreground: 164 25% 35%;
 
   --accent: 172 60% 45%;          /* Teal Accent */
   --accent-foreground: 0 0% 100%;
@@ -53,7 +53,7 @@
   --secondary-foreground: 160 20% 94%;
 
   --muted: 164 40% 15%;
-  --muted-foreground: 162 20% 65%;
+  --muted-foreground: 162 25% 72%;
 
   --accent: 172 60% 45%;          /* Teal Accent */
   --accent-foreground: 0 0% 100%;
