@@ -433,7 +433,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-4 space-y-3">
                   <h3 className="font-semibold text-lg">{currentTask.title}</h3>
-                  <p className="text-muted-foreground">{currentTask.description}</p>
+                  <p className="text-muted-foreground whitespace-pre-line">{currentTask.description}</p>
                   <Button
                     variant="outline"
                     size="sm"

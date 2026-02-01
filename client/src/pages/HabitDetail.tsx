@@ -43,7 +43,9 @@ export default function HabitDetail() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate both specific habit and full list so dashboard updates immediately
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
     },
   });
 
@@ -122,8 +124,9 @@ export default function HabitDetail() {
         <div className="container max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="w-5 h-5" />
+              <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
               </Button>
             </Link>
             <div className="min-w-0">
@@ -331,7 +334,7 @@ export default function HabitDetail() {
                                     )}>
                                       {task.title}
                                     </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
                                       {task.description}
                                     </p>
                                   </div>

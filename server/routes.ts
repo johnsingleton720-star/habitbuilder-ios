@@ -988,7 +988,7 @@ Return JSON:
         {
           "id": "day1-task1",
           "title": "Action-oriented title",
-          "description": "Detailed instructions with: 1) What to do, 2) Step-by-step how, 3) A concrete example, 4) One pro tip. Include specific numbers, durations, and measurable targets.",
+          "description": "Detailed instructions formatted with line breaks between steps:\\n1) What to do\\n2) Step-by-step how\\n3) A concrete example\\nPro Tip: One helpful tip. Include specific numbers, durations, and measurable targets.",
           "duration": 10,
           "completed": false,
           "notes": ""
@@ -1002,11 +1002,12 @@ Return JSON:
 }
 
 REQUIREMENTS:
-1. Each task description: 50-100 words with numbered steps and one example
+1. Each task description: 50-100 words with numbered steps separated by newlines (use \\n in the JSON)
 2. Be specific to their answers (time available, experience level)
 3. Progress difficulty gradually - Day 1 is easy wins
 4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation in descriptions`;
+5. Reference their specific situation in descriptions
+6. Format descriptions as: "1) First step\\n2) Second step\\n3) Third step\\nPro Tip: helpful advice"`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
