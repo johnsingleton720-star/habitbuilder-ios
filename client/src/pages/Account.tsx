@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -21,6 +22,7 @@ import { format } from "date-fns";
 export default function Account() {
   const { user, logout } = useAuth();
   const { hasPaid, isTrialActive, trialEndsAt } = usePaymentStatus();
+  const { tier, isPro, isPremium } = useSubscription();
   const { data: habits } = useHabits();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -178,7 +180,7 @@ export default function Account() {
                 <div>
                   <p className="font-medium">Current Plan</p>
                   <p className="text-sm text-muted-foreground">
-                    {hasPaid ? "Pro ($6/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
+                    {isPremium ? "Premium ($15/month)" : isPro ? "Pro ($6/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
                   </p>
                 </div>
                 <Badge 
@@ -186,8 +188,10 @@ export default function Account() {
                   className="gap-1"
                   data-testid="badge-subscription-status"
                 >
-                  {hasPaid ? (
-                    <><Check className="w-3 h-3" /> Active</>
+                  {isPremium ? (
+                    <><Crown className="w-3 h-3" /> Premium</>
+                  ) : isPro ? (
+                    <><Check className="w-3 h-3" /> Pro</>
                   ) : isTrialActive ? (
                     <><Sparkles className="w-3 h-3" /> Trial</>
                   ) : (

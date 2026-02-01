@@ -28,17 +28,25 @@ export class WebhookHandlers {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as any;
       
+      console.log('Checkout session completed:', {
+        hasUserId: !!session.metadata?.userId,
+        userId: session.metadata?.userId,
+        tier: session.metadata?.tier,
+        subscription: session.subscription,
+      });
+      
       if (session.metadata?.userId) {
-        const updateData: any = { hasPaid: true };
+        // Always set tier from metadata (default to 'pro' if not specified)
+        const tier = session.metadata?.tier || 'pro';
+        const updateData: any = { 
+          hasPaid: true,
+          subscriptionTier: tier, // Always set tier for paid users
+          subscriptionStatus: 'active',
+        };
         
-        // If it's a subscription checkout, store the subscription ID and tier
+        // If it's a subscription checkout, store the subscription ID
         if (session.subscription) {
           updateData.subscriptionId = session.subscription;
-          updateData.subscriptionStatus = 'active';
-          
-          // Determine tier from product metadata
-          const tier = session.metadata?.tier || 'pro';
-          updateData.subscriptionTier = tier;
         }
         
         await db
@@ -46,7 +54,9 @@ export class WebhookHandlers {
           .set(updateData)
           .where(eq(users.id, session.metadata.userId));
         
-        console.log(`User ${session.metadata.userId} subscription started (${updateData.subscriptionTier}) - access granted`);
+        console.log(`User ${session.metadata.userId} subscription started (${tier}) - access granted`);
+      } else {
+        console.warn('Checkout completed but no userId in metadata:', session.id);
       }
     }
 

@@ -95,8 +95,10 @@ export function useSubscription() {
   const trialDaysRemaining = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
   
   // Determine effective tier
-  const baseTier: SubscriptionTier = (user?.subscriptionTier as SubscriptionTier) || 'free';
-  const hasPaidSubscription = user?.hasPaid && (baseTier === 'pro' || baseTier === 'premium');
+  // If hasPaid is true but tier is still 'free', treat them as 'pro' (fallback for webhook edge cases)
+  const storedTier: SubscriptionTier = (user?.subscriptionTier as SubscriptionTier) || 'free';
+  const baseTier: SubscriptionTier = user?.hasPaid && storedTier === 'free' ? 'pro' : storedTier;
+  const hasPaidSubscription = user?.hasPaid === true;
   
   // Effective tier: paid subscription > trial > expired free
   const effectiveTier: SubscriptionTier | 'trial' = hasPaidSubscription 

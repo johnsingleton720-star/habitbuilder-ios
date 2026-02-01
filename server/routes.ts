@@ -1001,9 +1001,9 @@ REQUIREMENTS:
         todayPlan.timeSpent = (todayPlan.timeSpent || 0) + timeSpent;
       }
 
-      // Calculate current streak
+      // Calculate current streak (use spread to avoid mutating original array)
       let currentStreak = 0;
-      const sortedPlans = dailyPlans.sort((a, b) => b.date.localeCompare(a.date));
+      const sortedPlans = [...dailyPlans].sort((a, b) => b.date.localeCompare(a.date));
       for (const plan of sortedPlans) {
         if (plan.completed) {
           currentStreak++;
@@ -1483,6 +1483,143 @@ Return JSON with:
     } catch (error) {
       console.error("Error updating feedback:", error);
       res.status(500).json({ error: "Failed to update feedback" });
+    }
+  });
+
+  // Admin: Fix all habits with reversed daily plan dates
+  app.post("/api/admin/fix-habit-dates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // Get all habits from all users
+      const allHabits = await db.select().from(habits);
+      let fixedCount = 0;
+      
+      for (const habit of allHabits) {
+        const dailyPlans = habit.dailyPlans as any[] || [];
+        
+        if (dailyPlans.length > 1) {
+          // Check if dates are in wrong order (descending instead of ascending)
+          const firstDate = dailyPlans[0]?.date;
+          const lastDate = dailyPlans[dailyPlans.length - 1]?.date;
+          
+          // If first date is after last date, the array is reversed
+          if (firstDate && lastDate && firstDate > lastDate) {
+            // Sort by dayNumber if available, otherwise by date ascending
+            const sortedPlans = [...dailyPlans].sort((a, b) => {
+              if (a.dayNumber && b.dayNumber) {
+                return a.dayNumber - b.dayNumber;
+              }
+              return a.date.localeCompare(b.date);
+            });
+            
+            // Update the habit with correctly sorted plans
+            await db.update(habits)
+              .set({ dailyPlans: sortedPlans })
+              .where(eq(habits.id, habit.id));
+            
+            fixedCount++;
+          }
+        }
+      }
+      
+      res.json({ success: true, fixedCount, message: `Fixed ${fixedCount} habits with reversed dates` });
+    } catch (error) {
+      console.error("Error fixing habit dates:", error);
+      res.status(500).json({ error: "Failed to fix habit dates" });
+    }
+  });
+
+  // Admin: Fix user subscription status by email
+  app.post("/api/admin/fix-subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const adminUser = await storage.getUser(userId);
+      
+      if (!adminUser?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { email, tier, hasPaid } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      // Find user by email (case-insensitive)
+      const [user] = await db.select()
+        .from(users)
+        .where(sql`LOWER(email) = LOWER(${email})`)
+        .limit(1);
+      
+      if (!user) {
+        return res.status(404).json({ error: `User not found with email: ${email}` });
+      }
+      
+      // Update subscription status
+      const updateData: any = {};
+      if (tier !== undefined) updateData.subscriptionTier = tier;
+      if (hasPaid !== undefined) updateData.hasPaid = hasPaid;
+      if (tier === 'pro' || tier === 'premium') {
+        updateData.hasPaid = true;
+        updateData.subscriptionStatus = 'active';
+      }
+      
+      await db.update(users)
+        .set(updateData)
+        .where(eq(users.id, user.id));
+      
+      const [updatedUser] = await db.select().from(users).where(eq(users.id, user.id));
+      
+      res.json({ 
+        success: true, 
+        message: `Updated subscription for ${email}`,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          subscriptionTier: updatedUser.subscriptionTier,
+          hasPaid: updatedUser.hasPaid,
+          subscriptionStatus: updatedUser.subscriptionStatus,
+        }
+      });
+    } catch (error) {
+      console.error("Error fixing subscription:", error);
+      res.status(500).json({ error: "Failed to fix subscription" });
+    }
+  });
+
+  // Admin: List all users with subscription status
+  app.get("/api/admin/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const allUsers = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        subscriptionTier: users.subscriptionTier,
+        hasPaid: users.hasPaid,
+        subscriptionStatus: users.subscriptionStatus,
+        stripeCustomerId: users.stripeCustomerId,
+        trialEndsAt: users.trialEndsAt,
+        createdAt: users.createdAt,
+      }).from(users);
+      
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 
