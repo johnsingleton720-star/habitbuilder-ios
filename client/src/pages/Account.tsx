@@ -111,8 +111,8 @@ export default function Account() {
           animate={{ opacity: 1, y: 0 }}
         >
           <Link href="/">
-            <Button variant="ghost" className="gap-2 mb-4" data-testid="button-back-dashboard">
-              <ArrowLeft className="w-4 h-4" />
+            <Button variant="ghost" className="gap-2 mb-4" data-testid="button-back-home">
+              <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
             </Button>
           </Link>

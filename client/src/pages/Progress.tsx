@@ -27,7 +27,9 @@ export default function ProgressPage() {
     const plan = dailyPlans.find(p => p.date === dateStr);
     if (!plan) return { completed: 0, total: 0, isComplete: false };
     const completed = plan.tasks.filter(t => t.completed).length;
-    return { completed, total: plan.tasks.length, isComplete: plan.completed };
+    // Consider complete if plan is marked complete OR all tasks are done
+    const isComplete = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
+    return { completed, total: plan.tasks.length, isComplete };
   };
 
   const getTodayStats = () => {
@@ -156,10 +158,11 @@ export default function ProgressPage() {
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
       <div className="mx-auto max-w-3xl space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="button-back">
+            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
               <ArrowLeft className="w-5 h-5" />
+              Back to Dashboard
             </Button>
           </Link>
           <div className="flex items-center gap-3">

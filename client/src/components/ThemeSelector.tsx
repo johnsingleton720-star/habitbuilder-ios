@@ -118,6 +118,15 @@ export const APP_THEMES: AppTheme[] = [
   },
 ];
 
+// Apply theme to document by setting CSS variables
+export function applyThemeToDocument(theme: AppTheme) {
+  const root = document.documentElement;
+  Object.entries(theme.colors).forEach(([key, value]) => {
+    const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+    root.style.setProperty(cssVar, value);
+  });
+}
+
 export function useAppTheme() {
   const { user } = useAuth();
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
@@ -127,6 +136,7 @@ export function useAppTheme() {
     return savedTheme;
   });
 
+  // Sync with server theme when user data loads
   useEffect(() => {
     if (user?.colorTheme) {
       const serverTheme = APP_THEMES.find(t => t.id === user.colorTheme);
@@ -134,36 +144,31 @@ export function useAppTheme() {
         if (!serverTheme.isPremium || isPremium) {
           setCurrentTheme(user.colorTheme);
           localStorage.setItem("appColorTheme", user.colorTheme);
+          applyThemeToDocument(serverTheme);
         } else {
           setCurrentTheme("nature");
           localStorage.setItem("appColorTheme", "nature");
+          applyThemeToDocument(APP_THEMES.find(t => t.id === "nature")!);
         }
       }
     }
   }, [user?.colorTheme, isPremium]);
 
+  // Apply theme when currentTheme changes
   useEffect(() => {
     const theme = APP_THEMES.find(t => t.id === currentTheme);
     if (theme) {
       if (theme.isPremium && !isPremium) {
         const defaultTheme = APP_THEMES.find(t => t.id === "nature")!;
-        applyTheme(defaultTheme);
+        applyThemeToDocument(defaultTheme);
         setCurrentTheme("nature");
         localStorage.setItem("appColorTheme", "nature");
       } else {
-        applyTheme(theme);
+        applyThemeToDocument(theme);
+        localStorage.setItem("appColorTheme", theme.id);
       }
     }
   }, [currentTheme, isPremium]);
-
-  const applyTheme = (theme: AppTheme) => {
-    const root = document.documentElement;
-    Object.entries(theme.colors).forEach(([key, value]) => {
-      const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-      root.style.setProperty(cssVar, value);
-    });
-    localStorage.setItem("appColorTheme", theme.id);
-  };
 
   const setTheme = (themeId: string) => {
     const theme = APP_THEMES.find(t => t.id === themeId);

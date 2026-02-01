@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { APP_THEMES, applyThemeToDocument } from "./ThemeSelector";
 
 type Theme = "light" | "dark";
 
@@ -28,6 +29,17 @@ export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProvide
     }
     return defaultTheme;
   });
+
+  // Apply color theme immediately on mount (before paint)
+  useLayoutEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedColorThemeId = localStorage.getItem("appColorTheme") || "nature";
+      const savedColorTheme = APP_THEMES.find(t => t.id === savedColorThemeId);
+      if (savedColorTheme) {
+        applyThemeToDocument(savedColorTheme);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;

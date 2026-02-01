@@ -40,13 +40,25 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   const completedToday = scheduledHabits.filter((h) => {
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     const todayPlan = dailyPlans.find(p => p.date === todayStr);
-    return todayPlan?.completed || false;
+    if (!todayPlan) return false;
+    // Consider complete if plan is marked complete OR if all tasks are done
+    if (todayPlan.completed) return true;
+    if (todayPlan.tasks && todayPlan.tasks.length > 0) {
+      return todayPlan.tasks.every(t => t.completed);
+    }
+    return false;
   });
   
   const remainingHabits = scheduledHabits.filter((h) => {
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     const todayPlan = dailyPlans.find(p => p.date === todayStr);
-    return !todayPlan?.completed;
+    if (!todayPlan) return true; // No plan = not completed
+    // Check if plan is marked complete OR if all tasks are done
+    if (todayPlan.completed) return false;
+    if (todayPlan.tasks && todayPlan.tasks.length > 0) {
+      return !todayPlan.tasks.every(t => t.completed);
+    }
+    return true;
   });
   
   const progress = scheduledHabits.length > 0 
