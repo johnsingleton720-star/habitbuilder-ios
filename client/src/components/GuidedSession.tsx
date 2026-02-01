@@ -84,7 +84,9 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate both specific habit and full list so dashboard updates immediately
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
     },
   });
 

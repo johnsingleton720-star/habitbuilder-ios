@@ -168,12 +168,14 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
   const today = format(new Date(), "yyyy-MM-dd");
   const todaysPlan = dailyPlans.find(p => p.date === today);
-  const isCompletedToday = todaysPlan?.completed || false;
   const streak = habit.currentStreak || 0;
   const longestStreak = habit.longestStreak || 0;
 
   const todaysTasks = todaysPlan?.tasks || [];
   const completedTasksCount = todaysTasks.filter(t => t.completed).length;
+  // Consider complete if plan is marked complete OR all tasks are done
+  const allTasksCompleted = todaysTasks.length > 0 && todaysTasks.every(t => t.completed);
+  const isCompletedToday = todaysPlan?.completed || allTasksCompleted;
   const totalTasksCount = todaysTasks.length;
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
