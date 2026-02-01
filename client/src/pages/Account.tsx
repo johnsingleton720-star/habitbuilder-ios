@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, RefreshCw } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -29,38 +29,6 @@ export default function Account() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  // Sync subscription from Stripe when page loads if not already paid
-  const syncSubscription = async () => {
-    if (hasPaid && (isPro || isPremium)) return; // Already synced
-    
-    setIsSyncing(true);
-    try {
-      const res = await apiRequest("POST", "/api/sync-subscription");
-      const data = await res.json();
-      
-      if (data.synced) {
-        toast({
-          title: "Subscription synced!",
-          description: `Your ${data.tier} subscription is now active.`,
-        });
-        // Refresh user data
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      }
-    } catch (error) {
-      console.error("Failed to sync subscription:", error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Auto-sync on page load if user appears to not have paid
-  useEffect(() => {
-    if (user && !hasPaid && !isPro && !isPremium) {
-      syncSubscription();
-    }
-  }, [user, hasPaid, isPro, isPremium]);
 
   const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.progress?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
@@ -267,25 +235,6 @@ export default function Account() {
                   <ExternalLink className="w-3 h-3 ml-auto" />
                 </Button>
               )}
-
-              {/* Sync buttons for troubleshooting */}
-              {!hasPaid && !isPro && !isPremium && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full gap-2 text-muted-foreground"
-                  onClick={syncSubscription}
-                  disabled={isSyncing}
-                  data-testid="button-sync-subscription"
-                >
-                  {isSyncing ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-3 h-3" />
-                  )}
-                  {isSyncing ? "Syncing..." : "Sync subscription status"}
-                </Button>
-              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -379,32 +328,6 @@ export default function Account() {
               <CardTitle>Account Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-muted-foreground"
-                onClick={async () => {
-                  try {
-                    const res = await apiRequest("POST", "/api/fix-my-habits");
-                    const data = await res.json();
-                    toast({
-                      title: data.fixed > 0 ? "Habits Fixed!" : "All Good",
-                      description: data.message,
-                    });
-                    queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-                  } catch (error) {
-                    toast({
-                      title: "Error",
-                      description: "Failed to fix habits",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                data-testid="button-fix-habits"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Fix Calendar Dates
-              </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"

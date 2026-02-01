@@ -212,16 +212,75 @@ export async function registerRoutes(
     }
   });
 
+  // Track which habits have been fixed to avoid repeated DB writes
+  const fixedHabitIds = new Set<number>();
+
+  // Helper function to auto-fix reversed habit dates
+  async function autoFixHabitDates(habit: any): Promise<any> {
+    // Skip if already fixed this session or no plans
+    if (fixedHabitIds.has(habit.id) || !habit.dailyPlans || !Array.isArray(habit.dailyPlans) || habit.dailyPlans.length < 2) {
+      return habit;
+    }
+    
+    const plans = habit.dailyPlans as any[];
+    
+    // Validate that all plans have dayNumber and date
+    const hasValidDayNumbers = plans.every(p => typeof p.dayNumber === 'number' && p.date);
+    if (!hasValidDayNumbers) {
+      fixedHabitIds.add(habit.id);
+      return habit;
+    }
+    
+    const firstDate = new Date(plans[0].date);
+    const lastDate = new Date(plans[plans.length - 1].date);
+    
+    // Check if dates are reversed (first date is later than last date)
+    // AND verify dayNumber ordering is also inconsistent (dayNumber 1 should have earliest date)
+    const firstDayNum = plans[0].dayNumber;
+    const lastDayNum = plans[plans.length - 1].dayNumber;
+    const isDateReversed = firstDate > lastDate;
+    const isDayNumberReversed = firstDayNum > lastDayNum;
+    
+    // Only fix if dates are reversed but dayNumbers suggest correct order exists
+    if (isDateReversed && isDayNumberReversed) {
+      // Sort by dayNumber ascending to restore correct order
+      const sortedPlans = [...plans].sort((a, b) => a.dayNumber - b.dayNumber);
+      
+      // Verify fix makes sense: after sorting, first date should be earliest
+      const newFirstDate = new Date(sortedPlans[0].date);
+      const newLastDate = new Date(sortedPlans[sortedPlans.length - 1].date);
+      
+      if (newFirstDate <= newLastDate) {
+        await db.update(habits)
+          .set({ dailyPlans: sortedPlans as any })
+          .where(eq(habits.id, habit.id));
+        
+        console.log(`Auto-fixed reversed dates for habit: ${habit.title} (id: ${habit.id})`);
+        fixedHabitIds.add(habit.id);
+        
+        return { ...habit, dailyPlans: sortedPlans };
+      }
+    }
+    
+    // Mark as processed even if no fix needed
+    fixedHabitIds.add(habit.id);
+    return habit;
+  }
+
   // Protected routes
   app.get(api.habits.list.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
     const habits = await storage.getHabits(userId);
-    res.json(habits);
+    
+    // Auto-fix any habits with reversed dates
+    const fixedHabits = await Promise.all(habits.map(autoFixHabitDates));
+    
+    res.json(fixedHabits);
   });
 
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
-    const habit = await storage.getHabit(Number(req.params.id));
+    let habit = await storage.getHabit(Number(req.params.id));
     
     if (!habit) {
       return res.status(404).json({ message: 'Habit not found' });
@@ -230,6 +289,9 @@ export async function registerRoutes(
     if (habit.userId !== userId) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
+
+    // Auto-fix if dates are reversed
+    habit = await autoFixHabitDates(habit);
 
     res.json(habit);
   });
@@ -1456,11 +1518,108 @@ Return JSON with:
     }
   });
 
-  // Check user payment status and trial
+  // Track last sync time per user to avoid excessive Stripe API calls
+  const lastSyncTimes = new Map<string, number>();
+  const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes between syncs per user
+
+  // Check user payment status and trial - AUTO-SYNC from Stripe if needed
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-      const user = await storage.getUser(userId);
+      const userEmail = req.user!.claims.email;
+      let user = await storage.getUser(userId);
+      
+      // Check if we should sync (rate limit: once per 5 minutes per user)
+      const lastSync = lastSyncTimes.get(userId) || 0;
+      const shouldSync = Date.now() - lastSync > SYNC_INTERVAL_MS;
+      
+      // AUTO-SYNC: Check Stripe if user doesn't have paid status, OR if enough time has passed
+      // This handles: new payments, tier corrections, cancellations
+      if (user && userEmail && shouldSync) {
+        try {
+          const stripe = await getUncachableStripeClient();
+          
+          // Find customer by email or stripeCustomerId
+          let customerId = user.stripeCustomerId;
+          
+          if (!customerId) {
+            const customers = await stripe.customers.list({
+              email: userEmail,
+              limit: 1,
+            });
+            
+            if (customers.data.length > 0) {
+              customerId = customers.data[0].id;
+              await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, userId));
+            }
+          }
+
+          if (customerId) {
+            // Check for active/trialing subscriptions
+            const subscriptions = await stripe.subscriptions.list({
+              customer: customerId,
+              status: 'active',
+              limit: 5,
+            });
+            
+            let activeSubscription = subscriptions.data[0];
+            
+            if (!activeSubscription) {
+              const trialingSubs = await stripe.subscriptions.list({
+                customer: customerId,
+                status: 'trialing',
+                limit: 5,
+              });
+              activeSubscription = trialingSubs.data[0];
+            }
+
+            if (activeSubscription) {
+              // Determine tier from subscription
+              let tier: 'pro' | 'premium' = 'pro';
+              if (activeSubscription.metadata?.tier) {
+                tier = activeSubscription.metadata.tier as 'pro' | 'premium';
+              } else if (activeSubscription.items?.data[0]?.price) {
+                const priceAmount = activeSubscription.items.data[0].price.unit_amount || 0;
+                if (priceAmount >= 1500) {
+                  tier = 'premium';
+                }
+              }
+
+              // Only update if something changed
+              if (!user.hasPaid || user.subscriptionTier !== tier || user.subscriptionStatus !== activeSubscription.status) {
+                await db.update(users).set({
+                  hasPaid: true,
+                  subscriptionTier: tier,
+                  subscriptionStatus: activeSubscription.status,
+                  subscriptionId: activeSubscription.id,
+                }).where(eq(users.id, userId));
+                
+                console.log(`Auto-synced subscription for ${userEmail}: tier=${tier}, status=${activeSubscription.status}`);
+                
+                // Refresh user data
+                user = await storage.getUser(userId);
+              }
+            } else if (user.hasPaid) {
+              // User was marked as paid but has no active subscription - handle cancellation
+              // Only downgrade if no active/trialing subscription exists
+              await db.update(users).set({
+                hasPaid: false,
+                subscriptionTier: 'free',
+                subscriptionStatus: 'canceled',
+              }).where(eq(users.id, userId));
+              
+              console.log(`Subscription canceled/expired for ${userEmail} - downgraded to free`);
+              user = await storage.getUser(userId);
+            }
+          }
+          
+          // Mark sync time
+          lastSyncTimes.set(userId, Date.now());
+        } catch (stripeError: any) {
+          console.error("Stripe auto-sync error (non-fatal):", stripeError?.message);
+          // Continue with existing user data
+        }
+      }
       
       // Check if trial is still active using trialEndsAt field
       const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
