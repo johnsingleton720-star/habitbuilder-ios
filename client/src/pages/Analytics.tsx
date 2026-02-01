@@ -22,8 +22,10 @@ import {
   Sparkles,
   ChevronUp,
   ChevronDown,
-  Minus
+  Minus,
+  ArrowLeft
 } from "lucide-react";
+import { Link } from "wouter";
 import { motion } from "framer-motion";
 import type { Habit, ProgressEntry } from "@shared/schema";
 
@@ -115,6 +117,14 @@ export default function Analytics() {
   if (!isPremium) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
         <Card className="text-center py-12">
           <CardContent className="space-y-4">
             <Lock className="w-16 h-16 mx-auto text-muted-foreground" />
@@ -139,6 +149,14 @@ export default function Analytics() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl space-y-6">
+      <div className="mb-2">
+        <Link href="/">
+          <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">

@@ -519,22 +519,25 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                 />
               </div>
 
+              {/* Primary Finish Task Button */}
+              <Button
+                onClick={handleCompleteTask}
+                className="w-full gap-2 h-12 text-base font-semibold"
+                data-testid="button-finish-task"
+              >
+                <Check className="w-5 h-5" />
+                Finish Task
+              </Button>
+
               <div className="flex gap-3">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleSkipTask}
-                  className="flex-1"
+                  className="flex-1 text-muted-foreground"
                   data-testid="button-skip-task"
                 >
-                  Skip
-                </Button>
-                <Button
-                  onClick={handleCompleteTask}
-                  className="flex-1 gap-2"
-                  data-testid="button-complete-task"
-                >
-                  <Check className="w-4 h-4" />
-                  Complete & Continue
+                  Skip (don't complete)
                 </Button>
               </div>
 

@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock } from "lucide-react";
+import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
@@ -99,6 +100,14 @@ export default function Paywall() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-5xl"
       >
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 mb-4 font-display text-2xl font-bold text-primary">
             <Leaf className="w-8 h-8 fill-primary/20" />

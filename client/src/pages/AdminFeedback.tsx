@@ -207,9 +207,10 @@ export default function AdminFeedback() {
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center gap-4">
-          <Link href="/account">
-            <Button variant="ghost" size="icon" className="rounded-xl">
+          <Link href="/">
+            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
               <ArrowLeft className="w-5 h-5" />
+              Back to Dashboard
             </Button>
           </Link>
           <div>
