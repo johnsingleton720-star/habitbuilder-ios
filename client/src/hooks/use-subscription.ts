@@ -107,14 +107,18 @@ export function useSubscription() {
       ? 'trial' 
       : 'free';
   
-  const isActive = hasPaidSubscription || isInTrial || user?.isAdmin;
+  const isAdmin = user?.isAdmin === true;
+  const isActive = hasPaidSubscription || isInTrial || isAdmin;
   const features = TIER_FEATURES[effectiveTier];
   
+  // Admin users get access to ALL features regardless of tier
   const canUseFeature = (feature: keyof SubscriptionFeatures): boolean => {
+    if (isAdmin) return true;
     return features[feature] === true || (typeof features[feature] === 'number' && features[feature] > 0);
   };
   
   const canAddMoreHabits = (currentCount: number): boolean => {
+    if (isAdmin) return true;
     return currentCount < features.maxHabits;
   };
   
@@ -127,9 +131,6 @@ export function useSubscription() {
     }
     return '';
   };
-  
-  // Admin has full access to all features
-  const isAdmin = user?.isAdmin === true;
   
   return {
     tier: effectiveTier,
