@@ -9,6 +9,7 @@ import { usePaymentStatus } from "@/hooks/use-payment";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTracking } from "@/hooks/use-tracking";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -26,6 +27,8 @@ function Router() {
   const { hasAccess, isLoading: isPaymentLoading } = usePaymentStatus();
   const [location] = useLocation();
   const { toast } = useToast();
+  
+  useTracking();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

@@ -2,10 +2,10 @@ import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useHabits } from "@/hooks/use-habits";
@@ -29,6 +30,29 @@ export default function Account() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "90d">("7d");
+
+  interface AdminAnalytics {
+    totalPageViews: number;
+    uniqueVisitors: number;
+    loggedInUsers: number;
+    totalRegisteredUsers: number;
+    newRegistrations: number;
+    pagesByPath: { path: string; count: number }[];
+    viewsByDay: { date: string; count: number }[];
+    topReferrers: { referrer: string; count: number }[];
+    timeRange: string;
+  }
+
+  const { data: adminAnalytics, isLoading: isLoadingAnalytics } = useQuery<AdminAnalytics>({
+    queryKey: ["/api/admin/analytics", analyticsRange],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/analytics?range=${analyticsRange}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
+    enabled: user?.isAdmin === true,
+  });
 
   const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.progress?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
@@ -310,10 +334,111 @@ export default function Account() {
           </Card>
         </motion.div>
 
+        {user?.isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-indigo-500" />
+                    Site Analytics (Admin)
+                  </CardTitle>
+                  <Select value={analyticsRange} onValueChange={(v) => setAnalyticsRange(v as "7d" | "30d" | "90d")}>
+                    <SelectTrigger className="w-[120px]" data-testid="select-analytics-range">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7d">Last 7 days</SelectItem>
+                      <SelectItem value="30d">Last 30 days</SelectItem>
+                      <SelectItem value="90d">Last 90 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <CardDescription>Visitor tracking and site statistics</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingAnalytics ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : adminAnalytics ? (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-3 rounded-lg bg-muted/50 border">
+                        <Eye className="w-4 h-4 mx-auto mb-1 text-blue-500" />
+                        <p className="text-2xl font-bold" data-testid="text-total-page-views">{adminAnalytics.totalPageViews}</p>
+                        <p className="text-xs text-muted-foreground">Page Views</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/50 border">
+                        <Users className="w-4 h-4 mx-auto mb-1 text-green-500" />
+                        <p className="text-2xl font-bold" data-testid="text-unique-visitors">{adminAnalytics.uniqueVisitors}</p>
+                        <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/50 border">
+                        <TrendingUp className="w-4 h-4 mx-auto mb-1 text-purple-500" />
+                        <p className="text-2xl font-bold" data-testid="text-logged-in-users">{adminAnalytics.loggedInUsers}</p>
+                        <p className="text-xs text-muted-foreground">Logged In Users</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/50 border">
+                        <Users className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+                        <p className="text-2xl font-bold" data-testid="text-total-registered">{adminAnalytics.totalRegisteredUsers}</p>
+                        <p className="text-xs text-muted-foreground">Total Users</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <p className="text-sm font-medium mb-2">New Registrations</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" data-testid="badge-new-registrations">
+                          +{adminAnalytics.newRegistrations} in {analyticsRange === '7d' ? 'last 7 days' : analyticsRange === '30d' ? 'last 30 days' : 'last 90 days'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {adminAnalytics.pagesByPath && adminAnalytics.pagesByPath.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2">Top Pages</p>
+                        <div className="space-y-1">
+                          {adminAnalytics.pagesByPath.slice(0, 5).map((page, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
+                              <span className="text-muted-foreground truncate max-w-[200px]">{page.path || "/"}</span>
+                              <Badge variant="outline">{page.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {adminAnalytics.topReferrers && adminAnalytics.topReferrers.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2">Top Referrers</p>
+                        <div className="space-y-1">
+                          {adminAnalytics.topReferrers.slice(0, 3).map((ref, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
+                              <span className="text-muted-foreground truncate max-w-[200px]">{ref.referrer}</span>
+                              <Badge variant="outline">{ref.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No analytics data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.4 }}
         >
           <ThemeSelector />
         </motion.div>
