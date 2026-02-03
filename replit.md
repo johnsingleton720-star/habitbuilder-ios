@@ -150,6 +150,21 @@ Launch guided sessions from:
 
 ## Recent Updates
 
+### Admin Site Analytics (Feb 2026)
+Admin-only visitor tracking and analytics dashboard:
+- **Automatic Page Tracking**: Frontend hook tracks all page visits with session IDs
+- **Privacy-First**: IP addresses are hashed (SHA256) before storage
+- **Admin Dashboard**: Available in Account page for admin users only
+- **Metrics Tracked**: Page views, unique visitors, logged-in users, total registrations, new registrations
+- **Time Range Filters**: View data for last 7, 30, or 90 days
+- **Top Pages & Referrers**: See most visited pages and traffic sources
+
+Key files:
+- `shared/schema.ts` - pageViews table definition
+- `client/src/hooks/use-tracking.ts` - Frontend tracking hook
+- `client/src/pages/Account.tsx` - Admin analytics UI section
+- `server/routes.ts` - POST /api/track and GET /api/admin/analytics endpoints
+
 ### Smart Icon Matching System (Jan 2026)
 The HabitCard component (`client/src/components/HabitCard.tsx`) includes a smart icon matching system that automatically assigns relevant icons to habits based on keywords in their title and description:
 - 40+ keyword mappings (e.g., "running" → Zap, "reading" → BookOpen, "meditation" → Brain)
