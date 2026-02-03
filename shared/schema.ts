@@ -314,3 +314,18 @@ export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({
 
 export type MoodEntry = typeof moodEntries.$inferSelect;
 export type InsertMoodEntry = z.infer<typeof insertMoodEntrySchema>;
+
+// Page views for visitor tracking (admin analytics)
+export const pageViews = pgTable("page_views", {
+  id: serial("id").primaryKey(),
+  path: text("path").notNull(),
+  userId: varchar("user_id").references(() => users.id), // null for anonymous visitors
+  userAgent: text("user_agent"),
+  ipHash: text("ip_hash"), // Hashed IP for privacy
+  referrer: text("referrer"),
+  sessionId: text("session_id"), // To track unique sessions
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = typeof pageViews.$inferInsert;
