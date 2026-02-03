@@ -8,7 +8,8 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews } from "@shared/schema";
+import crypto from "crypto";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -3143,6 +3144,129 @@ Return JSON with:
     } catch (error) {
       console.error("Error updating challenge:", error);
       res.status(500).json({ error: "Failed to update challenge" });
+    }
+  });
+
+  // ===== VISITOR TRACKING & ADMIN ANALYTICS =====
+
+  // Track page view (called from frontend)
+  app.post("/api/track", async (req: any, res) => {
+    try {
+      const { path, referrer, sessionId } = req.body;
+      const userId = req.user?.claims?.sub || null;
+      const userAgent = req.get('User-Agent') || null;
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const ipHash = ip ? crypto.createHash('sha256').update(ip).digest('hex').substring(0, 16) : null;
+
+      await db.insert(pageViews).values({
+        path: path || '/',
+        userId,
+        userAgent,
+        ipHash,
+        referrer: referrer || null,
+        sessionId: sessionId || null,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking page view:", error);
+      res.status(500).json({ error: "Failed to track" });
+    }
+  });
+
+  // Admin: Get visitor analytics
+  app.get("/api/admin/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const timeRange = req.query.range || '7d';
+      let daysBack = 7;
+      if (timeRange === '30d') daysBack = 30;
+      if (timeRange === '90d') daysBack = 90;
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+
+      // Get total page views
+      const totalViews = await db.select({ count: sql<number>`count(*)` })
+        .from(pageViews)
+        .where(sql`${pageViews.createdAt} >= ${startDate}`);
+
+      // Get unique visitors (by session_id or ip_hash)
+      const uniqueVisitors = await db.select({ count: sql<number>`count(distinct coalesce(${pageViews.sessionId}, ${pageViews.ipHash}))` })
+        .from(pageViews)
+        .where(sql`${pageViews.createdAt} >= ${startDate}`);
+
+      // Get logged-in users
+      const loggedInUsers = await db.select({ count: sql<number>`count(distinct ${pageViews.userId})` })
+        .from(pageViews)
+        .where(and(
+          sql`${pageViews.createdAt} >= ${startDate}`,
+          sql`${pageViews.userId} is not null`
+        ));
+
+      // Get page views by path
+      const pagesByPath = await db.select({
+        path: pageViews.path,
+        count: sql<number>`count(*)`,
+      })
+        .from(pageViews)
+        .where(sql`${pageViews.createdAt} >= ${startDate}`)
+        .groupBy(pageViews.path)
+        .orderBy(sql`count(*) desc`)
+        .limit(10);
+
+      // Get views by day
+      const viewsByDay = await db.select({
+        date: sql<string>`date(${pageViews.createdAt})`,
+        count: sql<number>`count(*)`,
+      })
+        .from(pageViews)
+        .where(sql`${pageViews.createdAt} >= ${startDate}`)
+        .groupBy(sql`date(${pageViews.createdAt})`)
+        .orderBy(sql`date(${pageViews.createdAt})`);
+
+      // Get top referrers
+      const topReferrers = await db.select({
+        referrer: pageViews.referrer,
+        count: sql<number>`count(*)`,
+      })
+        .from(pageViews)
+        .where(and(
+          sql`${pageViews.createdAt} >= ${startDate}`,
+          sql`${pageViews.referrer} is not null and ${pageViews.referrer} != ''`
+        ))
+        .groupBy(pageViews.referrer)
+        .orderBy(sql`count(*) desc`)
+        .limit(5);
+
+      // Get total registered users
+      const totalUsers = await db.select({ count: sql<number>`count(*)` }).from(users);
+
+      // Get new registrations in time period
+      const newRegistrations = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`${users.createdAt} >= ${startDate}`);
+
+      res.json({
+        totalPageViews: totalViews[0]?.count || 0,
+        uniqueVisitors: uniqueVisitors[0]?.count || 0,
+        loggedInUsers: loggedInUsers[0]?.count || 0,
+        totalRegisteredUsers: totalUsers[0]?.count || 0,
+        newRegistrations: newRegistrations[0]?.count || 0,
+        pagesByPath,
+        viewsByDay,
+        topReferrers,
+        timeRange,
+      });
+    } catch (error) {
+      console.error("Error fetching admin analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
     }
   });
 
