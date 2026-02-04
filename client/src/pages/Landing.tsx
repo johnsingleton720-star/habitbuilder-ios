@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
+import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 
 export default function Landing() {
   const scrollToLogin = () => {
@@ -58,7 +59,7 @@ export default function Landing() {
               </Button>
             </div>
             
-            <div className="flex items-center gap-6 pt-8 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
                 <span>2-day free trial</span>
@@ -67,6 +68,7 @@ export default function Landing() {
                 <CheckCircle2 className="w-4 h-4 text-primary" />
                 <span>Then just $6/month</span>
               </div>
+              <LoginTroubleshootDialog />
             </div>
           </motion.div>
 
