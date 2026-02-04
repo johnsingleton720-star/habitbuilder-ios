@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
+import { SocialShare } from "@/components/SocialShare";
 
 export default function Landing() {
   const scrollToLogin = () => {
@@ -269,17 +270,22 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-8 border-t border-border">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitGrow. All rights reserved.</p>
-          <InstallAppDialog 
-            trigger={
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" data-testid="button-get-app-landing">
-                <Smartphone className="w-4 h-4" />
-                Want this site as an app?
-              </Button>
-            }
-          />
+      <footer className="py-12 border-t border-border">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitGrow. All rights reserved.</p>
+              <InstallAppDialog 
+                trigger={
+                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" data-testid="button-get-app-landing">
+                    <Smartphone className="w-4 h-4" />
+                    Want this site as an app?
+                  </Button>
+                }
+              />
+            </div>
+            <SocialShare variant="compact" />
+          </div>
         </div>
       </footer>
     </div>
