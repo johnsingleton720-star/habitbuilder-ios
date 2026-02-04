@@ -48,7 +48,7 @@ export function SocialShare({
       <div className="flex items-center gap-2">
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           onClick={() => openShareWindow(shareLinks.twitter)}
           data-testid="button-share-twitter"
           title="Share on X (Twitter)"
@@ -57,7 +57,7 @@ export function SocialShare({
         </Button>
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           onClick={() => openShareWindow(shareLinks.facebook)}
           data-testid="button-share-facebook"
           title="Share on Facebook"
@@ -66,7 +66,7 @@ export function SocialShare({
         </Button>
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           onClick={() => openShareWindow(shareLinks.linkedin)}
           data-testid="button-share-linkedin"
           title="Share on LinkedIn"
@@ -75,7 +75,7 @@ export function SocialShare({
         </Button>
         <Button
           size="icon"
-          variant="ghost"
+          variant="outline"
           onClick={copyToClipboard}
           data-testid="button-copy-link"
           title="Copy link"

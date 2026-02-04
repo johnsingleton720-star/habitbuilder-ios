@@ -284,7 +284,10 @@ export default function Landing() {
                 }
               />
             </div>
-            <SocialShare variant="compact" />
+            <div className="flex flex-col items-start md:items-end gap-2">
+              <p className="text-sm text-muted-foreground">Share the love:</p>
+              <SocialShare variant="compact" />
+            </div>
           </div>
         </div>
       </footer>
