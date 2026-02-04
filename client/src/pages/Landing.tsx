@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone } from "lucide-react";
+import { InstallAppDialog } from "@/components/InstallAppDialog";
 
 export default function Landing() {
   const scrollToLogin = () => {
@@ -168,8 +169,18 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border">
-        <p>&copy; {new Date().getFullYear()} HabitGrow. All rights reserved.</p>
+      <footer className="py-8 border-t border-border">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitGrow. All rights reserved.</p>
+          <InstallAppDialog 
+            trigger={
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" data-testid="button-get-app-landing">
+                <Smartphone className="w-4 h-4" />
+                Want this site as an app?
+              </Button>
+            }
+          />
+        </div>
       </footer>
     </div>
   );

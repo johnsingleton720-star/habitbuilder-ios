@@ -12,7 +12,8 @@ import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone } from "lucide-react";
+import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -158,6 +159,14 @@ export default function Dashboard() {
                   <><Sun className="mr-2 h-4 w-4" /> Light Mode</>
                 )}
               </DropdownMenuItem>
+              <InstallAppDialog 
+                trigger={
+                  <DropdownMenuItem className="cursor-pointer" data-testid="menu-install-app" onSelect={(e) => e.preventDefault()}>
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    Get the App
+                  </DropdownMenuItem>
+                }
+              />
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" />
