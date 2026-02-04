@@ -38,6 +38,8 @@ export default function Account() {
     loggedInUsers: number;
     totalRegisteredUsers: number;
     newRegistrations: number;
+    freeTrialUsers: number;
+    newFreeTrialSignups: number;
     pagesByPath: { path: string; count: number }[];
     viewsByDay: { date: string; count: number }[];
     topReferrers: { referrer: string; count: number }[];
@@ -391,12 +393,21 @@ export default function Account() {
                     </div>
 
                     <div className="pt-2">
-                      <p className="text-sm font-medium mb-2">New Registrations</p>
-                      <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium mb-2">Signups & Trials</p>
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" data-testid="badge-new-registrations">
-                          +{adminAnalytics.newRegistrations} in {analyticsRange === '7d' ? 'last 7 days' : analyticsRange === '30d' ? 'last 30 days' : 'last 90 days'}
+                          +{adminAnalytics.newRegistrations} registrations
+                        </Badge>
+                        <Badge variant="default" data-testid="badge-new-free-trials">
+                          +{adminAnalytics.newFreeTrialSignups} free trial signups
+                        </Badge>
+                        <Badge variant="outline" data-testid="badge-active-trials">
+                          {adminAnalytics.freeTrialUsers} active trials
                         </Badge>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {analyticsRange === '7d' ? 'Last 7 days' : analyticsRange === '30d' ? 'Last 30 days' : 'Last 90 days'}
+                      </p>
                     </div>
 
                     {adminAnalytics.pagesByPath && adminAnalytics.pagesByPath.length > 0 && (

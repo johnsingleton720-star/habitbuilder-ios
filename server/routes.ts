@@ -358,31 +358,50 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // Motivational Quote Endpoint
+  // Motivational Quote Endpoint - Real quotes from famous people
+  const realQuotes = [
+    { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+    { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { quote: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+    { quote: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Rohn" },
+    { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { quote: "Small daily improvements are the key to staggering long-term results.", author: "Robin Sharma" },
+    { quote: "You will never change your life until you change something you do daily.", author: "John C. Maxwell" },
+    { quote: "First forget inspiration. Habit is more dependable.", author: "Octavia Butler" },
+    { quote: "Chains of habit are too light to be felt until they are too heavy to be broken.", author: "Warren Buffett" },
+    { quote: "The successful person makes a habit of doing what the failing person doesn't like to do.", author: "Thomas Edison" },
+    { quote: "Your net worth to the world is usually determined by what remains after your bad habits are subtracted from your good ones.", author: "Benjamin Franklin" },
+    { quote: "Good habits formed at youth make all the difference.", author: "Aristotle" },
+    { quote: "Depending on what they are, our habits will either make us or break us.", author: "Sean Covey" },
+    { quote: "The chains of habit are generally too small to be felt until they are too strong to be broken.", author: "Samuel Johnson" },
+    { quote: "Habit is the intersection of knowledge, skill, and desire.", author: "Stephen Covey" },
+    { quote: "Quality is not an act, it is a habit.", author: "Aristotle" },
+    { quote: "A nail is driven out by another nail; habit is overcome by habit.", author: "Erasmus" },
+    { quote: "The hard must become habit. The habit must become easy. The easy must become beautiful.", author: "Doug Henning" },
+    { quote: "Habits change into character.", author: "Ovid" },
+    { quote: "In essence, if we want to direct our lives, we must take control of our consistent actions.", author: "Tony Robbins" },
+    { quote: "Watch your thoughts, they become your words; watch your words, they become your actions.", author: "Lao Tzu" },
+    { quote: "The more you sweat in training, the less you bleed in combat.", author: "Richard Marcinko" },
+    { quote: "People do not decide their futures, they decide their habits and their habits decide their futures.", author: "F.M. Alexander" },
+    { quote: "Make each day your masterpiece.", author: "John Wooden" },
+    { quote: "Be the change you wish to see in the world.", author: "Mahatma Gandhi" },
+    { quote: "What you do every day matters more than what you do once in a while.", author: "Gretchen Rubin" },
+    { quote: "Discipline is the bridge between goals and accomplishment.", author: "Jim Rohn" },
+    { quote: "The difference between who you are and who you want to be is what you do.", author: "Bill Phillips" },
+    { quote: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+  ];
+
   app.get(api.quotes.daily.path, async (req, res) => {
     try {
-      const response = await openaiClient.chat.completions.create({
-        model: "gpt-5.1",
-        messages: [
-          {
-            role: "system",
-            content: "You are a motivational speaker. Provide a short, inspiring quote for someone building positive habits. Return JSON with 'quote' and 'author'.",
-          },
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const content = response.choices[0].message.content;
-      if (!content) throw new Error("No content from AI");
-      
-      const quoteData = JSON.parse(content);
-      res.json(quoteData);
+      // Use date-based selection for consistent daily quote
+      const today = new Date();
+      const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+      const quoteIndex = dayOfYear % realQuotes.length;
+      res.json(realQuotes[quoteIndex]);
     } catch (error) {
       console.error("Error fetching quote:", error);
-      res.json({
-        quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
-        author: "Aristotle"
-      });
+      res.json(realQuotes[0]);
     }
   });
 
@@ -3253,12 +3272,31 @@ Return JSON with:
         .from(users)
         .where(sql`${users.createdAt} >= ${startDate}`);
 
+      // Get users currently on free trial (trialEndsAt is in the future)
+      const now = new Date();
+      const freeTrialUsers = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(and(
+          sql`${users.trialEndsAt} is not null`,
+          sql`${users.trialEndsAt} > ${now}`
+        ));
+
+      // Get new free trial signups in time period (users created in period who have trialEndsAt set)
+      const newFreeTrialSignups = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(and(
+          sql`${users.createdAt} >= ${startDate}`,
+          sql`${users.trialEndsAt} is not null`
+        ));
+
       res.json({
         totalPageViews: totalViews[0]?.count || 0,
         uniqueVisitors: uniqueVisitors[0]?.count || 0,
         loggedInUsers: loggedInUsers[0]?.count || 0,
         totalRegisteredUsers: totalUsers[0]?.count || 0,
         newRegistrations: newRegistrations[0]?.count || 0,
+        freeTrialUsers: freeTrialUsers[0]?.count || 0,
+        newFreeTrialSignups: newFreeTrialSignups[0]?.count || 0,
         pagesByPath,
         viewsByDay,
         topReferrers,
