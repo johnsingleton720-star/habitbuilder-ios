@@ -168,6 +168,104 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
+
+          {/* Additional CTA after features */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-16 text-center"
+          >
+            <Button onClick={scrollToLogin} size="lg" className="h-14 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all" data-testid="button-cta-features">
+              Start Your Free Trial
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold">Loved by habit builders</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              See what our members are saying about their transformation.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                quote: "I've tried so many habit apps, but this one finally made it click. The guided sessions keep me accountable, and I've maintained my morning routine for 3 months straight!",
+                name: "Sarah M.",
+                role: "Marketing Manager",
+                streak: "90-day streak"
+              },
+              {
+                quote: "The AI action plans are a game-changer. It broke down my goal of reading more into simple daily steps. Now I read 30 minutes every day without even thinking about it.",
+                name: "James K.",
+                role: "Software Developer",
+                streak: "45-day streak"
+              }
+            ].map((testimonial, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/50"
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, j) => (
+                    <Sparkles key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-foreground/80 leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                  <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {testimonial.streak}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Urgency CTA Section */}
+      <section className="py-20 px-6 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5">
+        <div className="max-w-3xl mx-auto text-center space-y-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+          >
+            <h2 className="font-display text-3xl lg:text-4xl font-bold">
+              Every day you wait is a day without progress
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              The best time to start was yesterday. The second best time is right now. Your future self will thank you for taking action today.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button onClick={scrollToLogin} size="lg" className="h-14 px-10 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all" data-testid="button-cta-urgency">
+                Start Building Today
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Join thousands who started their journey this week
+            </p>
+          </motion.div>
         </div>
       </section>
 
