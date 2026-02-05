@@ -329,3 +329,175 @@ export const pageViews = pgTable("page_views", {
 
 export type PageView = typeof pageViews.$inferSelect;
 export type InsertPageView = typeof pageViews.$inferInsert;
+
+// ==========================================
+// COMMUNITY FEATURES (Premium Only)
+// ==========================================
+
+// User profiles for community features
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  displayName: text("display_name"),
+  bio: text("bio"),
+  avatarUrl: text("avatar_url"),
+  
+  // Privacy settings
+  profileVisible: boolean("profile_visible").default(true),
+  showHabitProgress: boolean("show_habit_progress").default(false),
+  allowMessages: boolean("allow_messages").default(true),
+  allowProfileLikes: boolean("allow_profile_likes").default(true),
+  
+  // Stats (public-facing)
+  totalLikes: integer("total_likes").default(0),
+  postsCount: integer("posts_count").default(0),
+  commentsCount: integer("comments_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalLikes: true,
+  postsCount: true,
+  commentsCount: true,
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+
+// Forum categories
+export const forumCategories = pgTable("forum_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  icon: text("icon").default("MessageCircle"),
+  color: text("color").default("primary"),
+  sortOrder: integer("sort_order").default(0),
+  postsCount: integer("posts_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ForumCategory = typeof forumCategories.$inferSelect;
+
+// Forum posts
+export const forumPosts = pgTable("forum_posts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  categoryId: integer("category_id").notNull().references(() => forumCategories.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
+  commentsCount: integer("comments_count").default(0),
+  isPinned: boolean("is_pinned").default(false),
+  isLocked: boolean("is_locked").default(false),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertForumPostSchema = createInsertSchema(forumPosts).omit({
+  id: true,
+  userId: true,
+  likesCount: true,
+  commentsCount: true,
+  isPinned: true,
+  isLocked: true,
+  lastActivityAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = z.infer<typeof insertForumPostSchema>;
+
+// Forum comments
+export const forumComments = pgTable("forum_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => forumPosts.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
+  parentCommentId: integer("parent_comment_id"), // For nested replies
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertForumCommentSchema = createInsertSchema(forumComments).omit({
+  id: true,
+  userId: true,
+  likesCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ForumComment = typeof forumComments.$inferSelect;
+export type InsertForumComment = z.infer<typeof insertForumCommentSchema>;
+
+// Post likes
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => forumPosts.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PostLike = typeof postLikes.$inferSelect;
+
+// Comment likes
+export const commentLikes = pgTable("comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => forumComments.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CommentLike = typeof commentLikes.$inferSelect;
+
+// Profile likes
+export const profileLikes = pgTable("profile_likes", {
+  id: serial("id").primaryKey(),
+  profileUserId: varchar("profile_user_id").notNull().references(() => users.id),
+  likedByUserId: varchar("liked_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ProfileLike = typeof profileLikes.$inferSelect;
+
+// Conversations (for messaging)
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  participant1Id: varchar("participant1_id").notNull().references(() => users.id),
+  participant2Id: varchar("participant2_id").notNull().references(() => users.id),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  lastMessagePreview: text("last_message_preview"),
+  unreadCount1: integer("unread_count_1").default(0), // Unread for participant1
+  unreadCount2: integer("unread_count_2").default(0), // Unread for participant2
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Conversation = typeof conversations.$inferSelect;
+
+// Messages
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  senderId: true,
+  isRead: true,
+  createdAt: true,
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
