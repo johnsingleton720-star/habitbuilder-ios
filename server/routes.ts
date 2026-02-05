@@ -870,6 +870,219 @@ export async function registerRoutes(
     }
   });
 
+  // Get detailed subscription info from Stripe
+  app.get("/api/subscription/details", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stripe = await getUncachableStripeClient();
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.json({ hasSubscription: false });
+      }
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        limit: 5,
+        expand: ['data.items.data.price.product'],
+      });
+
+      const activeSub = subscriptions.data.find(
+        (s: any) => s.status === 'active' || s.status === 'trialing'
+      );
+
+      if (!activeSub) {
+        return res.json({ hasSubscription: false });
+      }
+
+      const item = activeSub.items.data[0];
+      const price = item?.price;
+      const product = price?.product as any;
+      const amount = price?.unit_amount || 0;
+
+      let currentTier = 'pro';
+      if (amount >= 1500) currentTier = 'premium';
+      if (product?.name?.toLowerCase().includes('premium')) currentTier = 'premium';
+
+      res.json({
+        hasSubscription: true,
+        subscriptionId: activeSub.id,
+        status: activeSub.status,
+        cancelAtPeriodEnd: activeSub.cancel_at_period_end,
+        currentPeriodEnd: (activeSub as any).current_period_end,
+        currentTier,
+        priceId: price?.id,
+        amount,
+        productName: product?.name || (currentTier === 'premium' ? 'Premium' : 'Pro'),
+      });
+    } catch (error: any) {
+      console.error("Subscription details error:", error?.message || error);
+      res.status(500).json({ error: "Failed to fetch subscription details" });
+    }
+  });
+
+  // Helper to find user's active subscription from Stripe
+  const findUserSubscription = async (stripe: any, stripeCustomerId: string) => {
+    const activeSubscriptions = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'active',
+      limit: 5,
+    });
+    if (activeSubscriptions.data.length > 0) return activeSubscriptions.data[0];
+
+    const trialingSubscriptions = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'trialing',
+      limit: 5,
+    });
+    if (trialingSubscriptions.data.length > 0) return trialingSubscriptions.data[0];
+
+    return null;
+  };
+
+  // Cancel subscription at period end
+  app.post("/api/subscription/cancel", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stripe = await getUncachableStripeClient();
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      if (!subscription) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true,
+      });
+
+      await db.update(users).set({
+        subscriptionStatus: 'cancelling',
+      }).where(eq(users.id, userId));
+
+      res.json({ success: true, message: "Subscription will be cancelled at the end of the billing period" });
+    } catch (error: any) {
+      console.error("Cancel subscription error:", error?.message || error);
+      res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
+  // Reactivate a subscription that was set to cancel at period end
+  app.post("/api/subscription/reactivate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stripe = await getUncachableStripeClient();
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      if (!subscription) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: false,
+      });
+
+      await db.update(users).set({
+        subscriptionStatus: 'active',
+      }).where(eq(users.id, userId));
+
+      res.json({ success: true, message: "Subscription reactivated" });
+    } catch (error: any) {
+      console.error("Reactivate subscription error:", error?.message || error);
+      res.status(500).json({ error: "Failed to reactivate subscription" });
+    }
+  });
+
+  // Change subscription plan (switch between Pro and Premium)
+  app.post("/api/subscription/change-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { targetTier } = req.body;
+
+      if (!targetTier || !['pro', 'premium'].includes(targetTier)) {
+        return res.status(400).json({ error: "Invalid target plan" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      if (!subscription) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      const currentItem = subscription.items.data[0];
+
+      const targetProductName = targetTier === 'premium' ? 'Habit Builder Premium' : 'Habit Builder Pro';
+      const products = await stripe.products.list({ active: true, limit: 20 });
+      const targetProduct = products.data.find((p: any) => p.name === targetProductName);
+
+      if (!targetProduct) {
+        return res.status(400).json({ error: `${targetProductName} plan not found` });
+      }
+
+      const prices = await stripe.prices.list({ product: targetProduct.id, active: true });
+      const monthlyPrice = prices.data.find((p: any) => p.recurring?.interval === 'month');
+
+      if (!monthlyPrice) {
+        return res.status(400).json({ error: "Monthly price not found for target plan" });
+      }
+
+      await stripe.subscriptions.update(subscription.id, {
+        items: [{
+          id: currentItem.id,
+          price: monthlyPrice.id,
+        }],
+        proration_behavior: 'create_prorations',
+        cancel_at_period_end: false,
+      });
+
+      const newTier = targetTier as 'pro' | 'premium';
+      await db.update(users).set({
+        subscriptionTier: newTier,
+        subscriptionStatus: 'active',
+      }).where(eq(users.id, userId));
+
+      res.json({ success: true, message: `Plan changed to ${targetTier}`, newTier });
+    } catch (error: any) {
+      console.error("Change plan error:", error?.message || error);
+      res.status(500).json({ error: "Failed to change plan" });
+    }
+  });
+
   // AI-generated habit plan with steps and tips
   app.post("/api/ai/generate-plan", isAuthenticated, async (req: any, res) => {
     try {

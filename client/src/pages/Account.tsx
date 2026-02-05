@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -86,6 +86,71 @@ export default function Account() {
     },
   });
 
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showChangePlan, setShowChangePlan] = useState(false);
+
+  interface SubscriptionDetails {
+    hasSubscription: boolean;
+    subscriptionId?: string;
+    status?: string;
+    cancelAtPeriodEnd?: boolean;
+    currentPeriodEnd?: number;
+    currentTier?: string;
+    priceId?: string;
+    amount?: number;
+    productName?: string;
+  }
+
+  const { data: subDetails, isLoading: isLoadingSubDetails } = useQuery<SubscriptionDetails>({
+    queryKey: ["/api/subscription/details"],
+    enabled: hasPaid || isPro || isPremium,
+  });
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/subscription/cancel");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+      setShowCancelConfirm(false);
+      toast({ title: "Subscription cancelled", description: "You'll keep access until the end of your billing period." });
+    },
+    onError: () => {
+      toast({ title: "Failed to cancel subscription", variant: "destructive" });
+    },
+  });
+
+  const reactivateSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/subscription/reactivate");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+      toast({ title: "Subscription reactivated", description: "Your subscription will continue as normal." });
+    },
+    onError: () => {
+      toast({ title: "Failed to reactivate subscription", variant: "destructive" });
+    },
+  });
+
+  const changePlanMutation = useMutation({
+    mutationFn: async (targetTier: string) => {
+      const res = await apiRequest("POST", "/api/subscription/change-plan", { targetTier });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-status"] });
+      setShowChangePlan(false);
+      toast({ title: "Plan changed", description: `You're now on the ${data.newTier} plan.` });
+    },
+    onError: () => {
+      toast({ title: "Failed to change plan", variant: "destructive" });
+    },
+  });
+
   const manageSubscriptionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/stripe/customer-portal");
@@ -98,7 +163,7 @@ export default function Account() {
     },
     onError: () => {
       toast({
-        title: "Unable to open subscription management",
+        title: "Unable to open billing portal",
         description: "Please try again or contact support",
         variant: "destructive",
       });
@@ -263,7 +328,7 @@ export default function Account() {
                 </div>
               )}
 
-              {hasPaid && (
+              {(hasPaid || subDetails?.hasSubscription) && !subDetails?.cancelAtPeriodEnd && (
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
                   <Shield className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-800 dark:text-green-200">
@@ -272,22 +337,157 @@ export default function Account() {
                 </div>
               )}
 
-              {hasPaid && (
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={() => manageSubscriptionMutation.mutate()}
-                  disabled={manageSubscriptionMutation.isPending}
-                  data-testid="button-manage-subscription"
-                >
-                  {manageSubscriptionMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+              {subDetails?.cancelAtPeriodEnd && subDetails.currentPeriodEnd && (
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm text-amber-800 dark:text-amber-200">
+                    Cancellation scheduled - access until {format(new Date(subDetails.currentPeriodEnd * 1000), "MMM d, yyyy")}
+                  </span>
+                </div>
+              )}
+
+              {subDetails?.currentPeriodEnd && !subDetails.cancelAtPeriodEnd && (
+                <div className="flex items-center gap-2 p-3 rounded-lg border">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Next billing date: {format(new Date(subDetails.currentPeriodEnd * 1000), "MMM d, yyyy")}
+                  </span>
+                </div>
+              )}
+
+              {isLoadingSubDetails && (hasPaid || isPro || isPremium) && (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {subDetails?.hasSubscription && (
+                <div className="space-y-2 pt-2">
+                  {subDetails.cancelAtPeriodEnd ? (
+                    <Button
+                      variant="default"
+                      className="w-full gap-2"
+                      onClick={() => reactivateSubscriptionMutation.mutate()}
+                      disabled={reactivateSubscriptionMutation.isPending}
+                      data-testid="button-reactivate-subscription"
+                    >
+                      {reactivateSubscriptionMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Reactivate Subscription
+                    </Button>
                   ) : (
-                    <CreditCard className="w-4 h-4" />
+                    <>
+                      {!showChangePlan && !showCancelConfirm && (
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2"
+                            onClick={() => setShowChangePlan(true)}
+                            data-testid="button-change-plan"
+                          >
+                            <ArrowUpDown className="w-4 h-4" />
+                            {isPro ? "Upgrade to Premium" : "Switch to Pro"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2 text-destructive hover:text-destructive"
+                            onClick={() => setShowCancelConfirm(true)}
+                            data-testid="button-cancel-subscription"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Cancel Subscription
+                          </Button>
+                        </div>
+                      )}
+
+                      {showChangePlan && (
+                        <div className="p-4 rounded-lg border space-y-3">
+                          <p className="font-medium text-sm">
+                            {isPro ? "Upgrade to Premium ($15/month)" : "Switch to Pro ($6/month)"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {isPro
+                              ? "Get full forum access, advanced analytics, direct messaging, and more."
+                              : "Switch to Pro for essential features at a lower price."}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1 gap-2"
+                              onClick={() => changePlanMutation.mutate(isPro ? 'premium' : 'pro')}
+                              disabled={changePlanMutation.isPending}
+                              data-testid="button-confirm-change-plan"
+                            >
+                              {changePlanMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4" />
+                              )}
+                              Confirm Change
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowChangePlan(false)}
+                              data-testid="button-cancel-change-plan"
+                            >
+                              Back
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {showCancelConfirm && (
+                        <div className="p-4 rounded-lg border border-destructive/30 space-y-3">
+                          <p className="font-medium text-sm text-destructive">Cancel your subscription?</p>
+                          <p className="text-sm text-muted-foreground">
+                            You'll keep access until the end of your current billing period. You can reactivate anytime before then.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              className="flex-1 gap-2"
+                              onClick={() => cancelSubscriptionMutation.mutate()}
+                              disabled={cancelSubscriptionMutation.isPending}
+                              data-testid="button-confirm-cancel"
+                            >
+                              {cancelSubscriptionMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4" />
+                              )}
+                              Yes, Cancel
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowCancelConfirm(false)}
+                              data-testid="button-keep-subscription"
+                            >
+                              Keep Plan
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-                  Manage Subscription
-                  <ExternalLink className="w-3 h-3 ml-auto" />
-                </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full gap-2 text-muted-foreground"
+                    onClick={() => manageSubscriptionMutation.mutate()}
+                    disabled={manageSubscriptionMutation.isPending}
+                    data-testid="button-billing-portal"
+                  >
+                    {manageSubscriptionMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-3 h-3" />
+                    )}
+                    View Billing & Invoices
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
