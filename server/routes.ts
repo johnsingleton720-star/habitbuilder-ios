@@ -1877,6 +1877,98 @@ Return JSON with:
     }
   });
 
+  // Admin: Seed forum categories and starter posts
+  app.post("/api/admin/seed-forum", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const adminUser = await storage.getUser(userId);
+      
+      if (!adminUser?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // Check if categories already exist
+      const existingCategories = await db.select().from(forumCategories);
+      if (existingCategories.length > 0) {
+        return res.json({ message: "Forum already seeded", categoriesCount: existingCategories.length });
+      }
+      
+      // Create system user for seed posts if not exists
+      const systemUserId = "habit-builder-team";
+      const existingSystemUser = await db.select().from(users).where(eq(users.id, systemUserId));
+      if (!existingSystemUser.length) {
+        await db.insert(users).values({
+          id: systemUserId,
+          email: "team@habitbuilder.app",
+          firstName: "Habit Builder",
+          lastName: "Team",
+          subscriptionTier: "premium",
+        });
+        await db.insert(userProfiles).values({
+          userId: systemUserId,
+          displayName: "Habit Builder Team",
+          bio: "The official Habit Builder team account. We share tips, updates, and community guidelines.",
+          profileVisible: true,
+        });
+      }
+      
+      // Insert categories
+      const categoriesData = [
+        { name: "Progress Updates", slug: "progress-updates", description: "Share your habit journey milestones and celebrate wins", icon: "TrendingUp", color: "green", sortOrder: 1 },
+        { name: "Tips & Motivation", slug: "tips-motivation", description: "Share advice, tips, and inspiring content", icon: "Lightbulb", color: "yellow", sortOrder: 2 },
+        { name: "Accountability Partners", slug: "accountability-partners", description: "Find partners to keep you on track", icon: "Users", color: "blue", sortOrder: 3 },
+        { name: "Questions & Help", slug: "questions-help", description: "Ask questions and get support from the community", icon: "HelpCircle", color: "purple", sortOrder: 4 },
+        { name: "General Discussion", slug: "general-discussion", description: "Chat about anything habit-related", icon: "MessageCircle", color: "primary", sortOrder: 5 },
+      ];
+      
+      for (const cat of categoriesData) {
+        await db.insert(forumCategories).values(cat);
+      }
+      
+      // Get inserted categories for their IDs
+      const insertedCategories = await db.select().from(forumCategories);
+      const catMap: Record<string, number> = {};
+      for (const c of insertedCategories) {
+        catMap[c.slug] = c.id;
+      }
+      
+      // Seed posts
+      const now = new Date();
+      const posts = [
+        { categoryId: catMap["progress-updates"], title: "Welcome to Progress Updates!", content: "This is the place to share your habit journey milestones! Whether you've completed your first week of morning workouts, hit a 30-day meditation streak, or finally established that reading habit you've been working on – we want to hear about it!\n\nCelebrating wins, big and small, helps reinforce positive behaviors and inspires others in the community. Don't be shy – your progress might be exactly the motivation someone else needs today!", isPinned: true, createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["progress-updates"], title: "My First Week Building a Morning Routine", content: "Just completed my first full week of waking up at 6 AM! It was tough at first, but having a clear action plan made all the difference.\n\nWhat helped me:\n- Setting my alarm across the room\n- Preparing my workout clothes the night before\n- Having a reward (coffee!) waiting for me\n\nAnyone else working on their morning routine? Would love to hear your strategies!", isPinned: false, createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["tips-motivation"], title: "The 2-Minute Rule: Start Small, Win Big", content: "One of the most powerful habit-building strategies I've discovered is the 2-Minute Rule from James Clear's Atomic Habits.\n\nThe idea is simple: when you start a new habit, it should take less than two minutes to do.\n\nExamples:\n- \"Read before bed\" becomes \"Read one page\"\n- \"Do yoga\" becomes \"Roll out my yoga mat\"\n- \"Study\" becomes \"Open my notes\"\n\nThe point isn't to do the full habit at first – it's to master the art of showing up. Once you're consistent with the 2-minute version, you can gradually expand.\n\nWhat 2-minute versions of your habits have worked for you?", isPinned: true, createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["tips-motivation"], title: "Habit Stacking: Connect New Habits to Existing Ones", content: "Here's a technique that's been a game-changer for me: habit stacking!\n\nThe formula is: \"After [CURRENT HABIT], I will [NEW HABIT].\"\n\nMy stacks:\n- After I pour my morning coffee, I will write in my gratitude journal\n- After I sit down at my desk, I will meditate for 5 minutes\n- After I finish dinner, I will take a 10-minute walk\n\nThe key is to link your new habit to something you already do automatically. Your existing habits become triggers for new ones!\n\nShare your habit stacks below!", isPinned: false, createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["accountability-partners"], title: "Welcome! How Accountability Partners Work", content: "Welcome to the Accountability Partners category! This is where you can find someone to help keep you on track with your habits.\n\nHow it works:\n1. Post what habit you're working on and what kind of support you need\n2. Connect with someone who has similar goals or schedules\n3. Check in regularly (daily, weekly – whatever works for you both)\n4. Celebrate wins together and support each other through challenges\n\nResearch shows that having an accountability partner can increase your chances of success by up to 95%! So don't be shy – put yourself out there and find your habit buddy.", isPinned: true, createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["accountability-partners"], title: "Looking for a Reading Habit Partner!", content: "Hi everyone! I'm trying to build a daily reading habit – aiming for 30 minutes each day.\n\nI'm reading a mix of non-fiction (currently on Atomic Habits) and fiction. Would love to find someone who:\n- Is also working on a reading habit\n- Wants to do daily or weekly check-ins\n- Maybe even wants to read the same books and discuss!\n\nI'm in the EST timezone and usually read in the evenings. Drop a comment if you're interested!", isPinned: false, createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["questions-help"], title: "New Here? Start with These Common Questions", content: "Welcome to the Questions & Help section! Here are answers to some frequently asked questions:\n\n**Q: How many habits should I track at once?**\nA: Start with just 1-2 habits. It's tempting to overhaul your entire life, but focusing on fewer habits leads to better success rates.\n\n**Q: What if I miss a day?**\nA: Don't break the chain twice! Missing one day won't ruin your progress, but missing two starts a new pattern. Get back on track immediately.\n\n**Q: How long does it take to form a habit?**\nA: Research suggests 18-254 days, with an average of 66 days. It varies by person and habit complexity.\n\n**Q: Should I track habits daily or weekly?**\nA: Daily habits are easier to maintain because they become automatic. Weekly habits require more conscious effort.\n\nHave more questions? Post them here and the community will help!", isPinned: true, createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["questions-help"], title: "How do you handle weekends?", content: "I've been doing great with my habits Monday through Friday, but weekends completely derail me. Different schedule, social events, sleeping in...\n\nHow do you all maintain consistency on weekends? Do you:\n- Keep the exact same routine?\n- Have a modified weekend version?\n- Give yourself permission to take weekends off?\n\nWould love to hear what works for you!", isPinned: false, createdAt: new Date(now.getTime() - 12 * 60 * 60 * 1000) },
+        { categoryId: catMap["general-discussion"], title: "Welcome to the Habit Builder Community!", content: "Hey everyone! Welcome to our community forum. This is a space for all of us who are on the journey of building better habits.\n\nA few guidelines:\n- Be supportive and encouraging\n- Share what's working for you\n- Ask questions freely\n- Celebrate others' wins\n- Remember we're all at different stages of our journey\n\nThis community is what we make it together. Looking forward to growing with all of you!", isPinned: true, createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) },
+        { categoryId: catMap["general-discussion"], title: "Books That Changed How I Think About Habits", content: "Sharing some books that have been game-changers for my habit journey:\n\n1. **Atomic Habits** by James Clear - The modern bible of habit formation. Clear, practical, and actionable.\n\n2. **The Power of Habit** by Charles Duhigg - Great for understanding the science behind why habits work.\n\n3. **Tiny Habits** by BJ Fogg - Perfect if you struggle with motivation. All about starting incredibly small.\n\n4. **Deep Work** by Cal Newport - Not strictly about habits, but changed how I think about focus and productivity habits.\n\n5. **The Compound Effect** by Darren Hardy - Shows how small consistent actions lead to massive results over time.\n\nWhat books have influenced your habit journey? Always looking for recommendations!", isPinned: false, createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) },
+      ];
+      
+      for (const post of posts) {
+        await db.insert(forumPosts).values({
+          ...post,
+          userId: systemUserId,
+        });
+      }
+      
+      // Update category post counts
+      for (const slug of Object.keys(catMap)) {
+        const count = posts.filter(p => p.categoryId === catMap[slug]).length;
+        await db.update(forumCategories)
+          .set({ postsCount: count })
+          .where(eq(forumCategories.id, catMap[slug]));
+      }
+      
+      res.json({ success: true, message: "Forum seeded successfully", categoriesCount: 5, postsCount: 10 });
+    } catch (error) {
+      console.error("Error seeding forum:", error);
+      res.status(500).json({ error: "Failed to seed forum" });
+    }
+  });
+
   // Admin: List all users with subscription status
   app.get("/api/admin/users", isAuthenticated, async (req: any, res) => {
     try {

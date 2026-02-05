@@ -473,6 +473,61 @@ export default function Account() {
           </motion.div>
         )}
 
+        {user?.isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.37 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-orange-500" />
+                  Admin Tools
+                </CardTitle>
+                <CardDescription>Quick actions for app management</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/admin/seed-forum", {
+                        method: "POST",
+                        credentials: "include",
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        toast({
+                          title: "Forum Seeded",
+                          description: data.message || "Forum content has been added.",
+                        });
+                      } else {
+                        toast({
+                          title: "Error",
+                          description: data.error || "Failed to seed forum",
+                          variant: "destructive",
+                        });
+                      }
+                    } catch (err) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to seed forum",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  data-testid="button-seed-forum"
+                >
+                  <Users className="w-4 h-4" />
+                  Seed Forum Content
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
