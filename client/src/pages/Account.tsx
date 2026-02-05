@@ -69,7 +69,7 @@ export default function Account() {
 
   const { data: communityProfile } = useQuery<CommunityProfile>({
     queryKey: ["/api/community/profile"],
-    enabled: isPro || isPremium,
+    enabled: isPremium,
     retry: false,
   });
 
@@ -481,7 +481,7 @@ export default function Account() {
           <ThemeSelector />
         </motion.div>
 
-        {(isPro || isPremium) && communityProfile && (
+        {isPremium && communityProfile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

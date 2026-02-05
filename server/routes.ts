@@ -3309,32 +3309,47 @@ Return JSON with:
   });
 
   // ==========================================
-  // COMMUNITY FEATURES (Premium Only)
+  // COMMUNITY FEATURES
+  // Pro users: Read-only access (view forums, read posts)
+  // Premium users: Full access (post, comment, like, message)
   // ==========================================
 
-  // Helper to check premium status
-  const isPremiumUser = async (userId: string): Promise<boolean> => {
+  // Helper to check subscription tier
+  const getUserTier = async (userId: string): Promise<string | null> => {
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    if (!user.length) return false;
-    const tier = user[0].subscriptionTier;
-    return tier === "pro" || tier === "premium";
+    if (!user.length) return null;
+    return user[0].subscriptionTier;
   };
 
-  // Premium check middleware
-  const requirePremium = async (req: any, res: any, next: any) => {
+  // Pro or Premium check middleware (read-only access)
+  const requireProOrPremium = async (req: any, res: any, next: any) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    const isPremium = await isPremiumUser(userId);
-    if (!isPremium) {
-      return res.status(403).json({ error: "Premium subscription required", code: "PREMIUM_REQUIRED" });
+    const tier = await getUserTier(userId);
+    if (tier !== "pro" && tier !== "premium") {
+      return res.status(403).json({ error: "Pro or Premium subscription required", code: "PREMIUM_REQUIRED" });
+    }
+    (req as any).userTier = tier;
+    next();
+  };
+
+  // Premium only check middleware (full engagement access)
+  const requirePremiumOnly = async (req: any, res: any, next: any) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const tier = await getUserTier(userId);
+    if (tier !== "premium") {
+      return res.status(403).json({ error: "Premium subscription required for this action", code: "ENGAGEMENT_PREMIUM_ONLY" });
     }
     next();
   };
 
-  // Get or create user profile
-  app.get("/api/community/profile", isAuthenticated, requirePremium, async (req: any, res) => {
+  // Get or create user profile (Pro can view, Premium can edit)
+  app.get("/api/community/profile", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       let profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
@@ -3358,7 +3373,7 @@ Return JSON with:
   });
 
   // Update user profile
-  app.patch("/api/community/profile", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.patch("/api/community/profile", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       const { displayName, bio, avatarUrl, profileVisible, showHabitProgress, allowMessages, allowProfileLikes } = req.body;
@@ -3381,7 +3396,7 @@ Return JSON with:
   });
 
   // Get public profile by user ID
-  app.get("/api/community/profile/:userId", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/profile/:userId", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const targetUserId = req.params.userId;
       const currentUserId = req.user!.claims.sub;
@@ -3410,7 +3425,7 @@ Return JSON with:
   });
 
   // Like/unlike a profile
-  app.post("/api/community/profile/:userId/like", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/profile/:userId/like", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const targetUserId = req.params.userId;
       const currentUserId = req.user!.claims.sub;
@@ -3448,7 +3463,7 @@ Return JSON with:
   });
 
   // Get forum categories
-  app.get("/api/community/categories", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/categories", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const categories = await db.select().from(forumCategories).orderBy(forumCategories.sortOrder);
       res.json(categories);
@@ -3459,7 +3474,7 @@ Return JSON with:
   });
 
   // Get posts by category
-  app.get("/api/community/categories/:slug/posts", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/categories/:slug/posts", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const { slug } = req.params;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -3495,7 +3510,7 @@ Return JSON with:
   });
 
   // Create a new post
-  app.post("/api/community/posts", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/posts", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       const { categoryId, title, content } = req.body;
@@ -3527,7 +3542,7 @@ Return JSON with:
   });
 
   // Get a single post with comments
-  app.get("/api/community/posts/:id", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/posts/:id", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const postId = parseInt(req.params.id);
       const currentUserId = req.user!.claims.sub;
@@ -3595,7 +3610,7 @@ Return JSON with:
   });
 
   // Like/unlike a post
-  app.post("/api/community/posts/:id/like", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/posts/:id/like", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const postId = parseInt(req.params.id);
       const userId = req.user!.claims.sub;
@@ -3624,7 +3639,7 @@ Return JSON with:
   });
 
   // Add comment to a post
-  app.post("/api/community/posts/:id/comments", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/posts/:id/comments", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const postId = parseInt(req.params.id);
       const userId = req.user!.claims.sub;
@@ -3675,7 +3690,7 @@ Return JSON with:
   });
 
   // Like/unlike a comment
-  app.post("/api/community/comments/:id/like", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/comments/:id/like", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const commentId = parseInt(req.params.id);
       const userId = req.user!.claims.sub;
@@ -3704,7 +3719,7 @@ Return JSON with:
   });
 
   // Get conversations
-  app.get("/api/community/messages", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/messages", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       
@@ -3742,7 +3757,7 @@ Return JSON with:
   });
 
   // Get messages in a conversation
-  app.get("/api/community/messages/:conversationId", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/messages/:conversationId", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       const conversationId = parseInt(req.params.conversationId);
@@ -3785,7 +3800,7 @@ Return JSON with:
   });
 
   // Send a message
-  app.post("/api/community/messages", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.post("/api/community/messages", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const senderId = req.user!.claims.sub;
       const { recipientId, content, conversationId } = req.body;
@@ -3856,7 +3871,7 @@ Return JSON with:
   });
 
   // Get unread message count
-  app.get("/api/community/messages/unread-count", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/messages/unread-count", isAuthenticated, requirePremiumOnly, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       
@@ -3877,7 +3892,7 @@ Return JSON with:
   });
 
   // Get recent posts for community home
-  app.get("/api/community/recent-posts", isAuthenticated, requirePremium, async (req: any, res) => {
+  app.get("/api/community/recent-posts", isAuthenticated, requireProOrPremium, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       

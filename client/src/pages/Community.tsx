@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const categoryIcons: Record<string, any> = {
   TrendingUp,
@@ -73,6 +74,26 @@ function PremiumRequired() {
         Upgrade to Pro
       </Button>
     </div>
+  );
+}
+
+function ProReadOnlyBanner({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <Card className="bg-primary/5 border-primary/20 mb-6">
+      <CardContent className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3">
+          <Crown className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-medium">You're viewing in read-only mode</p>
+            <p className="text-sm text-muted-foreground">Upgrade to Premium to post, comment, like, and message</p>
+          </div>
+        </div>
+        <Button onClick={onUpgrade} size="sm" className="gap-2" data-testid="button-upgrade-to-premium">
+          <Crown className="w-4 h-4" />
+          Upgrade to Premium
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -190,7 +211,7 @@ function RecentPosts() {
   );
 }
 
-function CategoryPosts({ slug, onBack }: { slug: string; onBack: () => void }) {
+function CategoryPosts({ slug, onBack, isReadOnly = false }: { slug: string; onBack: () => void; isReadOnly?: boolean }) {
   const [, navigate] = useLocation();
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -245,13 +266,14 @@ function CategoryPosts({ slug, onBack }: { slug: string; onBack: () => void }) {
         </div>
       </div>
 
-      <Dialog open={showNewPost} onOpenChange={setShowNewPost}>
-        <DialogTrigger asChild>
-          <Button className="gap-2" data-testid="button-new-post">
-            <Plus className="w-4 h-4" />
-            New Post
-          </Button>
-        </DialogTrigger>
+      {!isReadOnly && (
+        <Dialog open={showNewPost} onOpenChange={setShowNewPost}>
+          <DialogTrigger asChild>
+            <Button className="gap-2" data-testid="button-new-post">
+              <Plus className="w-4 h-4" />
+              New Post
+            </Button>
+          </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Post</DialogTitle>
@@ -281,6 +303,7 @@ function CategoryPosts({ slug, onBack }: { slug: string; onBack: () => void }) {
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {!data?.posts.length ? (
         <Card className="p-8 text-center">
@@ -326,7 +349,7 @@ function CategoryPosts({ slug, onBack }: { slug: string; onBack: () => void }) {
   );
 }
 
-function PostDetail({ postId, onBack }: { postId: number; onBack: () => void }) {
+function PostDetail({ postId, onBack, isReadOnly = false }: { postId: number; onBack: () => void; isReadOnly?: boolean }) {
   const [newComment, setNewComment] = useState("");
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -401,16 +424,23 @@ function PostDetail({ postId, onBack }: { postId: number; onBack: () => void }) 
               </div>
               <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
               <div className="flex items-center gap-4 mt-6 pt-4 border-t">
-                <Button 
-                  variant={post.hasLiked ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => likePost.mutate()}
-                  className="gap-2"
-                  data-testid="button-like-post"
-                >
-                  <Heart className={`w-4 h-4 ${post.hasLiked ? "fill-current" : ""}`} />
-                  {post.likesCount}
-                </Button>
+                {isReadOnly ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Heart className="w-4 h-4" />
+                    <span>{post.likesCount}</span>
+                  </div>
+                ) : (
+                  <Button 
+                    variant={post.hasLiked ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => likePost.mutate()}
+                    className="gap-2"
+                    data-testid="button-like-post"
+                  >
+                    <Heart className={`w-4 h-4 ${post.hasLiked ? "fill-current" : ""}`} />
+                    {post.likesCount}
+                  </Button>
+                )}
                 <span className="text-sm text-muted-foreground">
                   {post.commentsCount} {post.commentsCount === 1 ? "comment" : "comments"}
                 </span>
@@ -423,27 +453,29 @@ function PostDetail({ postId, onBack }: { postId: number; onBack: () => void }) 
       <div className="space-y-4">
         <h3 className="font-semibold">Comments</h3>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-3">
-              <Textarea
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-                data-testid="textarea-comment"
-              />
-              <Button 
-                size="icon"
-                onClick={() => addComment.mutate()}
-                disabled={!newComment.trim() || addComment.isPending}
-                data-testid="button-submit-comment"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {!isReadOnly && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={3}
+                  data-testid="textarea-comment"
+                />
+                <Button 
+                  size="icon"
+                  onClick={() => addComment.mutate()}
+                  disabled={!newComment.trim() || addComment.isPending}
+                  data-testid="button-submit-comment"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {post.comments?.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No comments yet. Be the first to comment!</p>
@@ -468,16 +500,23 @@ function PostDetail({ postId, onBack }: { postId: number; onBack: () => void }) 
                         </span>
                       </div>
                       <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => likeComment.mutate(comment.id)}
-                        className="gap-1 h-7 px-2 mt-2"
-                        data-testid={`button-like-comment-${comment.id}`}
-                      >
-                        <Heart className={`w-3 h-3 ${comment.hasLiked ? "fill-current text-red-500" : ""}`} />
-                        <span className="text-xs">{comment.likesCount}</span>
-                      </Button>
+                      {isReadOnly ? (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                          <Heart className="w-3 h-3" />
+                          <span>{comment.likesCount}</span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => likeComment.mutate(comment.id)}
+                          className="gap-1 h-7 px-2 mt-2"
+                          data-testid={`button-like-comment-${comment.id}`}
+                        >
+                          <Heart className={`w-3 h-3 ${comment.hasLiked ? "fill-current text-red-500" : ""}`} />
+                          <span className="text-xs">{comment.likesCount}</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -491,11 +530,12 @@ function PostDetail({ postId, onBack }: { postId: number; onBack: () => void }) 
 }
 
 export default function Community() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { isPro, isPremium } = useSubscription();
 
-  const { data: profile, isLoading, error } = useQuery({
-    queryKey: ["/api/community/profile"],
+  const { data: categories, isLoading, error } = useQuery<ForumCategory[]>({
+    queryKey: ["/api/community/categories"],
     retry: false,
   });
 
@@ -515,42 +555,48 @@ export default function Community() {
     return <PremiumRequired />;
   }
 
+  const isProOnly = isPro && !isPremium;
+
   const pathParts = location.split("/");
   const postId = pathParts[2] === "post" ? parseInt(pathParts[3]) : null;
-  const profileId = pathParts[2] === "profile" ? pathParts[3] : null;
 
   if (postId) {
     return (
       <div className="container max-w-4xl mx-auto p-6">
-        <PostDetail postId={postId} onBack={() => window.history.back()} />
+        {isProOnly && <ProReadOnlyBanner onUpgrade={() => navigate("/paywall")} />}
+        <PostDetail postId={postId} onBack={() => window.history.back()} isReadOnly={isProOnly} />
       </div>
     );
   }
 
   return (
     <div className="container max-w-4xl mx-auto p-6">
+      {isProOnly && <ProReadOnlyBanner onUpgrade={() => navigate("/paywall")} />}
+      
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Community</h1>
           <p className="text-muted-foreground">Connect with fellow habit builders</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/community/messages">
-            <Button variant="outline" className="gap-2" data-testid="button-messages">
-              <MessageCircle className="w-4 h-4" />
-              Messages
-            </Button>
-          </Link>
-          <Link href="/community/profile">
-            <Button variant="outline" className="gap-2" data-testid="button-my-profile">
-              My Profile
-            </Button>
-          </Link>
-        </div>
+        {isPremium && (
+          <div className="flex items-center gap-2">
+            <Link href="/community/messages">
+              <Button variant="outline" className="gap-2" data-testid="button-messages">
+                <MessageCircle className="w-4 h-4" />
+                Messages
+              </Button>
+            </Link>
+            <Link href="/community/profile">
+              <Button variant="outline" className="gap-2" data-testid="button-my-profile">
+                My Profile
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {selectedCategory ? (
-        <CategoryPosts slug={selectedCategory} onBack={() => setSelectedCategory(null)} />
+        <CategoryPosts slug={selectedCategory} onBack={() => setSelectedCategory(null)} isReadOnly={isProOnly} />
       ) : (
         <div className="space-y-8">
           <section>
