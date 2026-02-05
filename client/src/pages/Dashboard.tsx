@@ -316,6 +316,13 @@ export default function Dashboard() {
           onStartFresh={handleStartFresh}
         />
       )}
+
+      {/* Footer */}
+      <footer className="mt-12 py-6 border-t border-border">
+        <div className="text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

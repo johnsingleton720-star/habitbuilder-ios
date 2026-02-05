@@ -274,7 +274,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitGrow. All rights reserved.</p>
+              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
               <InstallAppDialog 
                 trigger={
                   <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" data-testid="button-get-app-landing">
