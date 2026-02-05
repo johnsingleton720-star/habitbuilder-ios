@@ -668,119 +668,6 @@ export async function registerRoutes(
     }
   });
 
-  // Create or get portal configuration with cancellation and plan switching enabled
-  let portalConfigurationId: string | null = null;
-  
-  const getOrCreatePortalConfiguration = async (stripe: any): Promise<string> => {
-    if (portalConfigurationId) return portalConfigurationId;
-    
-    try {
-      // Check for existing configurations
-      const existingConfigs = await stripe.billingPortal.configurations.list({ limit: 10 });
-      
-      // Look for one that has subscriptions enabled
-      const activeConfig = existingConfigs.data.find((c: any) => c.is_default || c.active);
-      
-      if (activeConfig) {
-        // Update existing config to ensure cancellation and switching are enabled
-        const products = await stripe.products.list({ active: true, limit: 10 });
-        const proProduct = products.data.find((p: any) => p.name === 'Habit Builder Pro');
-        const premiumProduct = products.data.find((p: any) => p.name === 'Habit Builder Premium');
-        
-        const switchProducts: any[] = [];
-        if (proProduct) {
-          const proPrices = await stripe.prices.list({ product: proProduct.id, active: true });
-          const proMonthly = proPrices.data.find((p: any) => p.recurring?.interval === 'month');
-          if (proMonthly) switchProducts.push({ product: proProduct.id, prices: [proMonthly.id] });
-        }
-        if (premiumProduct) {
-          const premiumPrices = await stripe.prices.list({ product: premiumProduct.id, active: true });
-          const premiumMonthly = premiumPrices.data.find((p: any) => p.recurring?.interval === 'month');
-          if (premiumMonthly) switchProducts.push({ product: premiumProduct.id, prices: [premiumMonthly.id] });
-        }
-        
-        const updateConfig: any = {
-          features: {
-            subscription_cancel: {
-              enabled: true,
-              mode: 'at_period_end',
-              cancellation_reason: {
-                enabled: true,
-                options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'other'],
-              },
-            },
-            payment_method_update: { enabled: true },
-            invoice_history: { list: true },
-          },
-        };
-        
-        if (switchProducts.length > 1) {
-          updateConfig.features.subscription_update = {
-            enabled: true,
-            default_allowed_updates: ['price'],
-            proration_behavior: 'create_prorations',
-            products: switchProducts,
-          };
-        }
-        
-        const updated = await stripe.billingPortal.configurations.update(activeConfig.id, updateConfig);
-        portalConfigurationId = updated.id;
-        return updated.id;
-      }
-      
-      // Create new configuration if none exists
-      const products = await stripe.products.list({ active: true, limit: 10 });
-      const proProduct = products.data.find((p: any) => p.name === 'Habit Builder Pro');
-      const premiumProduct = products.data.find((p: any) => p.name === 'Habit Builder Premium');
-      
-      const switchProducts: any[] = [];
-      if (proProduct) {
-        const proPrices = await stripe.prices.list({ product: proProduct.id, active: true });
-        const proMonthly = proPrices.data.find((p: any) => p.recurring?.interval === 'month');
-        if (proMonthly) switchProducts.push({ product: proProduct.id, prices: [proMonthly.id] });
-      }
-      if (premiumProduct) {
-        const premiumPrices = await stripe.prices.list({ product: premiumProduct.id, active: true });
-        const premiumMonthly = premiumPrices.data.find((p: any) => p.recurring?.interval === 'month');
-        if (premiumMonthly) switchProducts.push({ product: premiumProduct.id, prices: [premiumMonthly.id] });
-      }
-      
-      const createConfig: any = {
-        business_profile: {
-          headline: 'Manage your Habit Builder subscription',
-        },
-        features: {
-          subscription_cancel: {
-            enabled: true,
-            mode: 'at_period_end',
-            cancellation_reason: {
-              enabled: true,
-              options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'other'],
-            },
-          },
-          payment_method_update: { enabled: true },
-          invoice_history: { list: true },
-        },
-      };
-      
-      if (switchProducts.length > 1) {
-        createConfig.features.subscription_update = {
-          enabled: true,
-          default_allowed_updates: ['price'],
-          proration_behavior: 'create_prorations',
-          products: switchProducts,
-        };
-      }
-      
-      const config = await stripe.billingPortal.configurations.create(createConfig);
-      portalConfigurationId = config.id;
-      return config.id;
-    } catch (error) {
-      console.error("Portal config error:", error);
-      throw error;
-    }
-  };
-
   // Create customer portal session for subscription management
   app.post("/api/stripe/customer-portal", isAuthenticated, async (req: any, res) => {
     try {
@@ -799,18 +686,82 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      // Get or create portal configuration with cancellation/switching enabled
-      const configId = await getOrCreatePortalConfiguration(stripe);
+      // Try to configure portal with cancellation/switching, fall back to default
+      let configId: string | undefined;
+      try {
+        const products = await stripe.products.list({ active: true, limit: 10 });
+        const proProduct = products.data.find((p: any) => p.name === 'Habit Builder Pro');
+        const premiumProduct = products.data.find((p: any) => p.name === 'Habit Builder Premium');
+        
+        const switchProducts: any[] = [];
+        if (proProduct) {
+          const proPrices = await stripe.prices.list({ product: proProduct.id, active: true });
+          const proMonthly = proPrices.data.find((p: any) => p.recurring?.interval === 'month');
+          if (proMonthly) switchProducts.push({ product: proProduct.id, prices: [proMonthly.id] });
+        }
+        if (premiumProduct) {
+          const premiumPrices = await stripe.prices.list({ product: premiumProduct.id, active: true });
+          const premiumMonthly = premiumPrices.data.find((p: any) => p.recurring?.interval === 'month');
+          if (premiumMonthly) switchProducts.push({ product: premiumProduct.id, prices: [premiumMonthly.id] });
+        }
+        
+        const portalFeatures: any = {
+          subscription_cancel: {
+            enabled: true,
+            mode: 'at_period_end',
+            cancellation_reason: {
+              enabled: true,
+              options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'other'],
+            },
+          },
+          payment_method_update: { enabled: true },
+          invoice_history: { list: true },
+        };
+        
+        if (switchProducts.length > 1) {
+          portalFeatures.subscription_update = {
+            enabled: true,
+            default_allowed_updates: ['price'],
+            proration_behavior: 'create_prorations',
+            products: switchProducts,
+          };
+        }
 
-      const session = await stripe.billingPortal.sessions.create({
+        // Try to find and update existing config, or create a new one
+        const existingConfigs = await stripe.billingPortal.configurations.list({ limit: 5 });
+        const defaultConfig = existingConfigs.data.find((c: any) => c.is_default);
+        
+        if (defaultConfig) {
+          const updated = await stripe.billingPortal.configurations.update(defaultConfig.id, {
+            features: portalFeatures,
+          });
+          configId = updated.id;
+        } else {
+          const config = await stripe.billingPortal.configurations.create({
+            business_profile: {
+              headline: 'Manage your Habit Builder subscription',
+            },
+            features: portalFeatures,
+          });
+          configId = config.id;
+        }
+      } catch (configError: any) {
+        console.error("Portal config setup error (falling back to default):", configError?.message || configError);
+      }
+
+      // Create portal session (with or without custom config)
+      const sessionParams: any = {
         customer: user.stripeCustomerId,
         return_url: `${baseUrl}/account`,
-        configuration: configId,
-      });
+      };
+      if (configId) {
+        sessionParams.configuration = configId;
+      }
 
+      const session = await stripe.billingPortal.sessions.create(sessionParams);
       res.json({ url: session.url });
-    } catch (error) {
-      console.error("Customer portal error:", error);
+    } catch (error: any) {
+      console.error("Customer portal error:", error?.message || error);
       res.status(500).json({ error: "Failed to open subscription management" });
     }
   });
