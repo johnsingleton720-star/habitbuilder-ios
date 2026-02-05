@@ -164,18 +164,19 @@ function ConversationDetail({ conversationId, onBack }: { conversationId: number
 
   return (
     <div className="flex flex-col h-[calc(100vh-200px)]">
-      <div className="flex items-center gap-4 pb-4 border-b">
-        <Button variant="ghost" size="icon" onClick={onBack} data-testid="button-back-messages">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center gap-3 pb-4 border-b">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 flex-shrink-0" data-testid="button-back-messages">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
         </Button>
         <Avatar 
-          className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+          className="w-8 h-8 md:w-10 md:h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
           onClick={() => data?.otherUser && navigate(`/community/profile/${data.otherUser.userId}`)}
         >
           <AvatarImage src={data?.otherUser?.avatarUrl || undefined} />
           <AvatarFallback>{data?.otherUser?.displayName?.[0] || "?"}</AvatarFallback>
         </Avatar>
-        <span className="font-medium">{data?.otherUser?.displayName || "Unknown User"}</span>
+        <span className="font-medium text-sm md:text-base truncate">{data?.otherUser?.displayName || "Unknown User"}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto py-4 space-y-3">
@@ -241,7 +242,7 @@ export default function Messages() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="container max-w-2xl mx-auto p-6">
+    <div className="container max-w-2xl mx-auto p-4 md:p-6">
       {selectedConversation ? (
         <ConversationDetail 
           conversationId={selectedConversation} 
@@ -249,13 +250,15 @@ export default function Messages() {
         />
       ) : (
         <>
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/community")} data-testid="button-back-community">
-              <ArrowLeft className="w-5 h-5" />
+          <div className="flex items-center gap-3 mb-6">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/community")} className="gap-2" data-testid="button-back-community">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to Community</span>
+              <span className="sm:hidden">Back</span>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Messages</h1>
-              <p className="text-muted-foreground">Your private conversations</p>
+              <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
+              <p className="text-xs md:text-sm text-muted-foreground">Your private conversations</p>
             </div>
           </div>
           <ConversationList onSelect={setSelectedConversation} />

@@ -226,14 +226,16 @@ function MyProfile() {
   }
 
   return (
-    <div className="container max-w-2xl mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/community")} data-testid="button-back-community">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="container max-w-2xl mx-auto p-4 md:p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/community")} className="gap-2" data-testid="button-back-community">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Back to Community</span>
+          <span className="sm:hidden">Back</span>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground">Manage your community presence</p>
+          <h1 className="text-xl md:text-2xl font-bold">My Profile</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Manage your community presence</p>
         </div>
       </div>
 
@@ -248,45 +250,45 @@ function MyProfile() {
             <ProfileEditor profile={profile} onClose={() => setIsEditing(false)} />
           ) : (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-6">
-                  <Avatar className="w-24 h-24">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6">
+                  <Avatar className="w-20 h-20 md:w-24 md:h-24 mx-auto md:mx-0">
                     <AvatarImage src={profile.avatarUrl || undefined} />
-                    <AvatarFallback className="text-2xl">{profile.displayName?.[0] || "?"}</AvatarFallback>
+                    <AvatarFallback className="text-xl md:text-2xl">{profile.displayName?.[0] || "?"}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                       <div>
-                        <h2 className="text-2xl font-bold">{profile.displayName || "Anonymous"}</h2>
-                        <div className="flex items-center gap-2 mt-1">
+                        <h2 className="text-xl md:text-2xl font-bold">{profile.displayName || "Anonymous"}</h2>
+                        <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
                           <Badge variant="secondary">Level {profile.level || 1}</Badge>
                           <span className="text-sm text-muted-foreground">{profile.xpPoints || 0} XP</span>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2" data-testid="button-edit-profile">
+                      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2 mx-auto md:mx-0" data-testid="button-edit-profile">
                         <Edit2 className="w-4 h-4" />
                         Edit
                       </Button>
                     </div>
-                    <p className="mt-4 text-muted-foreground">
+                    <p className="mt-4 text-muted-foreground text-sm md:text-base">
                       {profile.bio || "No bio yet. Tell the community about yourself!"}
                     </p>
-                    <div className="flex items-center gap-6 mt-6 pt-4 border-t">
+                    <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t">
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{profile.totalLikes}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <p className="text-xl md:text-2xl font-bold">{profile.totalLikes}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                           <Heart className="w-3 h-3" /> Likes
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{profile.postsCount}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <p className="text-xl md:text-2xl font-bold">{profile.postsCount}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                           <MessageSquare className="w-3 h-3" /> Posts
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{profile.commentsCount}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <p className="text-xl md:text-2xl font-bold">{profile.commentsCount}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                           <MessageCircle className="w-3 h-3" /> Comments
                         </p>
                       </div>
@@ -369,31 +371,32 @@ function PublicProfile({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="container max-w-2xl mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => window.history.back()} data-testid="button-back">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="container max-w-2xl mx-auto p-4 md:p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="gap-2" data-testid="button-back">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
         </Button>
-        <h1 className="text-2xl font-bold">Profile</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Profile</h1>
       </div>
 
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-6">
-            <Avatar className="w-24 h-24">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6">
+            <Avatar className="w-20 h-20 md:w-24 md:h-24 mx-auto md:mx-0">
               <AvatarImage src={profile.avatarUrl || undefined} />
-              <AvatarFallback className="text-2xl">{profile.displayName?.[0] || "?"}</AvatarFallback>
+              <AvatarFallback className="text-xl md:text-2xl">{profile.displayName?.[0] || "?"}</AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold">{profile.displayName || "Anonymous"}</h2>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h2 className="text-xl md:text-2xl font-bold">{profile.displayName || "Anonymous"}</h2>
+                  <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
                     <Badge variant="secondary">Level {profile.level || 1}</Badge>
                     <span className="text-sm text-muted-foreground">{profile.xpPoints || 0} XP</span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center md:justify-start">
                   {profile.allowProfileLikes && (
                     <Button 
                       variant={profile.hasLiked ? "default" : "outline"} 
@@ -422,24 +425,24 @@ function PublicProfile({ userId }: { userId: string }) {
                 </div>
               </div>
               {profile.bio && (
-                <p className="mt-4 text-muted-foreground">{profile.bio}</p>
+                <p className="mt-4 text-muted-foreground text-sm md:text-base">{profile.bio}</p>
               )}
-              <div className="flex items-center gap-6 mt-6 pt-4 border-t">
+              <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{profile.totalLikes}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-xl md:text-2xl font-bold">{profile.totalLikes}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                     <Heart className="w-3 h-3" /> Likes
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{profile.postsCount}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-xl md:text-2xl font-bold">{profile.postsCount}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                     <MessageSquare className="w-3 h-3" /> Posts
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{profile.commentsCount}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-xl md:text-2xl font-bold">{profile.commentsCount}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1">
                     <MessageCircle className="w-3 h-3" /> Comments
                   </p>
                 </div>

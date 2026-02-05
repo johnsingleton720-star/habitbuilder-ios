@@ -164,9 +164,10 @@ export default function Account() {
           animate={{ opacity: 1, y: 0 }}
         >
           <Link href="/">
-            <Button variant="ghost" className="gap-2 mb-4" data-testid="button-back-home">
-              <ArrowLeft className="w-5 h-5" />
-              Back to Dashboard
+            <Button variant="ghost" size="sm" className="gap-2 mb-4" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
         </motion.div>

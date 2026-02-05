@@ -102,9 +102,10 @@ export default function Paywall() {
       >
         <div className="mb-6">
           <Link href="/">
-            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+            <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
         </div>

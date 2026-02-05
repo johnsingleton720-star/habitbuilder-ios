@@ -139,7 +139,7 @@ export default function HabitDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-            <Badge variant="secondary" className="gap-1">
+            <Badge variant="secondary" className="gap-1 hidden sm:flex">
               <Flame className="w-3 h-3" />
               {habit.currentStreak || 0} day streak
             </Badge>
@@ -147,9 +147,10 @@ export default function HabitDetail() {
               <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
             )}
             {habit.setupComplete && currentPlan && (
-              <Button onClick={handleStartSession} className="gap-2" data-testid="button-start-session">
+              <Button onClick={handleStartSession} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session">
                 <Play className="w-4 h-4" />
-                Start Session
+                <span className="hidden sm:inline">Start Session</span>
+                <span className="sm:hidden">Start</span>
               </Button>
             )}
           </div>

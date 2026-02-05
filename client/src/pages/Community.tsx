@@ -251,17 +251,18 @@ function CategoryPosts({ slug, onBack, isReadOnly = false }: { slug: string; onB
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack} data-testid="button-back-categories">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 flex-shrink-0" data-testid="button-back-categories">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
         </Button>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <IconComponent className="w-6 h-6 text-primary" />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <IconComponent className="w-5 h-5 md:w-6 md:h-6 text-primary" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold">{data?.category.name}</h2>
-            <p className="text-muted-foreground">{data?.category.description}</p>
+          <div className="min-w-0">
+            <h2 className="text-lg md:text-2xl font-bold truncate">{data?.category.name}</h2>
+            <p className="text-xs md:text-sm text-muted-foreground truncate">{data?.category.description}</p>
           </div>
         </div>
       </div>
@@ -398,9 +399,10 @@ function PostDetail({ postId, onBack, isReadOnly = false }: { postId: number; on
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack} data-testid="button-back-category">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2" data-testid="button-back-category">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
         </Button>
         <Badge variant="secondary">{post.category?.name}</Badge>
       </div>
@@ -570,24 +572,32 @@ export default function Community() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
+    <div className="container max-w-4xl mx-auto p-4 md:p-6">
       {isProOnly && <ProReadOnlyBanner onUpgrade={() => navigate("/paywall")} />}
       
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Community</h1>
-          <p className="text-muted-foreground">Connect with fellow habit builders</p>
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-2" data-testid="button-back-dashboard">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Back to Dashboard</span>
+          <span className="sm:hidden">Back</span>
+        </Button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold">Community</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Connect with fellow habit builders</p>
         </div>
         {isPremium && (
           <div className="flex items-center gap-2">
             <Link href="/community/messages">
-              <Button variant="outline" className="gap-2" data-testid="button-messages">
+              <Button variant="outline" size="icon" className="md:hidden" data-testid="button-messages-mobile">
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" className="gap-2 hidden md:flex" data-testid="button-messages">
                 <MessageCircle className="w-4 h-4" />
                 Messages
               </Button>
             </Link>
             <Link href="/community/profile">
-              <Button variant="outline" className="gap-2" data-testid="button-my-profile">
+              <Button variant="outline" size="sm" className="gap-1 text-xs md:text-sm md:gap-2" data-testid="button-my-profile">
                 My Profile
               </Button>
             </Link>

@@ -138,12 +138,13 @@ export default function Accountability() {
 
   if (!isPremium) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
         <div className="mb-6">
           <Link href="/">
-            <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+            <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
         </div>
@@ -170,19 +171,20 @@ export default function Accountability() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl space-y-6">
+    <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
       <div className="mb-2">
         <Link href="/">
-          <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </Link>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Users className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             Accountability Partners
           </h1>
           <p className="text-muted-foreground mt-1">
