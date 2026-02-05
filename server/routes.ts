@@ -3406,11 +3406,24 @@ Return JSON with:
   // Premium users: Full access (post, comment, like, message)
   // ==========================================
 
-  // Helper to check subscription tier
-  const getUserTier = async (userId: string): Promise<string | null> => {
+  // Helper to get user with full subscription info
+  const getUserSubscriptionInfo = async (userId: string) => {
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!user.length) return null;
-    return user[0].subscriptionTier;
+    
+    const u = user[0];
+    // Admins always have full access
+    if (u.isAdmin) {
+      return { tier: 'premium', isAdmin: true, hasPaid: true };
+    }
+    
+    // If hasPaid is true but tier is 'free', treat as 'pro' (handles webhook sync delays)
+    let effectiveTier = u.subscriptionTier || 'free';
+    if (u.hasPaid && effectiveTier === 'free') {
+      effectiveTier = 'pro';
+    }
+    
+    return { tier: effectiveTier, isAdmin: u.isAdmin, hasPaid: u.hasPaid };
   };
 
   // Pro or Premium check middleware (read-only access)
@@ -3419,11 +3432,24 @@ Return JSON with:
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    const tier = await getUserTier(userId);
-    if (tier !== "pro" && tier !== "premium") {
+    
+    const info = await getUserSubscriptionInfo(userId);
+    if (!info) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    
+    // Admins always pass
+    if (info.isAdmin) {
+      (req as any).userTier = 'premium';
+      (req as any).isAdmin = true;
+      return next();
+    }
+    
+    if (info.tier !== "pro" && info.tier !== "premium") {
       return res.status(403).json({ error: "Pro or Premium subscription required", code: "PREMIUM_REQUIRED" });
     }
-    (req as any).userTier = tier;
+    
+    (req as any).userTier = info.tier;
     next();
   };
 
@@ -3433,10 +3459,23 @@ Return JSON with:
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    const tier = await getUserTier(userId);
-    if (tier !== "premium") {
+    
+    const info = await getUserSubscriptionInfo(userId);
+    if (!info) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    
+    // Admins always pass
+    if (info.isAdmin) {
+      (req as any).userTier = 'premium';
+      (req as any).isAdmin = true;
+      return next();
+    }
+    
+    if (info.tier !== "premium") {
       return res.status(403).json({ error: "Premium subscription required for this action", code: "ENGAGEMENT_PREMIUM_ONLY" });
     }
+    
     next();
   };
 
