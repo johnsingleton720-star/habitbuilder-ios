@@ -59,6 +59,15 @@ The core system enables personalized habit coaching:
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.
 
+### Community Forum (Premium Only)
+-   **Forum Categories**: Progress Updates, Tips & Motivation, Accountability Partners, Questions & Help, General Discussion
+-   **Posts & Comments**: Users can create posts, comment, and like content
+-   **User Profiles**: Public profiles with display names, bios, and achievement badges
+-   **Direct Messaging**: In-app private messaging between premium users
+-   **Privacy Controls**: Users can toggle profile visibility, messaging, profile likes, and habit progress display
+-   **Routes**: `/community`, `/community/post/:id`, `/community/messages`, `/community/profile/:userId`
+-   **Database Tables**: `user_profiles`, `forum_categories`, `forum_posts`, `forum_comments`, `post_likes`, `comment_likes`, `profile_likes`, `conversations`, `messages`
+
 ## External Dependencies
 
 ### Third-Party Services
