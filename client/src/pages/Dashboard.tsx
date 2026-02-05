@@ -12,7 +12,7 @@ import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -144,6 +144,12 @@ export default function Dashboard() {
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-accountability">
                   <Users className="mr-2 h-4 w-4" />
                   Accountability Partners
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/community">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-community">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Community Forum
                 </DropdownMenuItem>
               </Link>
               <Link href="/account">

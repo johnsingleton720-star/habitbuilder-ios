@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages } from "@shared/schema";
 import crypto from "crypto";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
@@ -3305,6 +3305,601 @@ Return JSON with:
     } catch (error) {
       console.error("Error fetching admin analytics:", error);
       res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // ==========================================
+  // COMMUNITY FEATURES (Premium Only)
+  // ==========================================
+
+  // Helper to check premium status
+  const isPremiumUser = async (userId: string): Promise<boolean> => {
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) return false;
+    const tier = user[0].subscriptionTier;
+    return tier === "pro" || tier === "premium";
+  };
+
+  // Premium check middleware
+  const requirePremium = async (req: any, res: any, next: any) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isPremium = await isPremiumUser(userId);
+    if (!isPremium) {
+      return res.status(403).json({ error: "Premium subscription required", code: "PREMIUM_REQUIRED" });
+    }
+    next();
+  };
+
+  // Get or create user profile
+  app.get("/api/community/profile", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      let profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      
+      if (!profile.length) {
+        const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        const displayName = user[0]?.firstName ? `${user[0].firstName} ${user[0].lastName || ''}`.trim() : 'Anonymous';
+        await db.insert(userProfiles).values({
+          userId,
+          displayName,
+          avatarUrl: user[0]?.profileImageUrl,
+        });
+        profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      }
+      
+      res.json(profile[0]);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/community/profile", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { displayName, bio, avatarUrl, profileVisible, showHabitProgress, allowMessages, allowProfileLikes } = req.body;
+      
+      const existing = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      if (!existing.length) {
+        await db.insert(userProfiles).values({ userId, displayName, bio, avatarUrl, profileVisible, showHabitProgress, allowMessages, allowProfileLikes });
+      } else {
+        await db.update(userProfiles)
+          .set({ displayName, bio, avatarUrl, profileVisible, showHabitProgress, allowMessages, allowProfileLikes, updatedAt: new Date() })
+          .where(eq(userProfiles.userId, userId));
+      }
+      
+      const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      res.json(profile[0]);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  // Get public profile by user ID
+  app.get("/api/community/profile/:userId", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const targetUserId = req.params.userId;
+      const currentUserId = req.user!.claims.sub;
+      
+      const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, targetUserId)).limit(1);
+      if (!profile.length || !profile[0].profileVisible) {
+        return res.status(404).json({ error: "Profile not found or private" });
+      }
+      
+      const user = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+      const hasLiked = await db.select().from(profileLikes)
+        .where(and(eq(profileLikes.profileUserId, targetUserId), eq(profileLikes.likedByUserId, currentUserId)))
+        .limit(1);
+      
+      res.json({
+        ...profile[0],
+        firstName: user[0]?.firstName,
+        level: user[0]?.level || 1,
+        xpPoints: user[0]?.xpPoints || 0,
+        hasLiked: hasLiked.length > 0,
+      });
+    } catch (error) {
+      console.error("Error fetching public profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  // Like/unlike a profile
+  app.post("/api/community/profile/:userId/like", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const targetUserId = req.params.userId;
+      const currentUserId = req.user!.claims.sub;
+      
+      if (targetUserId === currentUserId) {
+        return res.status(400).json({ error: "Cannot like your own profile" });
+      }
+      
+      const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, targetUserId)).limit(1);
+      if (!profile.length || !profile[0].allowProfileLikes) {
+        return res.status(404).json({ error: "Profile not found or likes disabled" });
+      }
+      
+      const existingLike = await db.select().from(profileLikes)
+        .where(and(eq(profileLikes.profileUserId, targetUserId), eq(profileLikes.likedByUserId, currentUserId)))
+        .limit(1);
+      
+      if (existingLike.length) {
+        await db.delete(profileLikes).where(eq(profileLikes.id, existingLike[0].id));
+        await db.update(userProfiles)
+          .set({ totalLikes: sql`GREATEST(0, ${userProfiles.totalLikes} - 1)` })
+          .where(eq(userProfiles.userId, targetUserId));
+        res.json({ liked: false });
+      } else {
+        await db.insert(profileLikes).values({ profileUserId: targetUserId, likedByUserId: currentUserId });
+        await db.update(userProfiles)
+          .set({ totalLikes: sql`${userProfiles.totalLikes} + 1` })
+          .where(eq(userProfiles.userId, targetUserId));
+        res.json({ liked: true });
+      }
+    } catch (error) {
+      console.error("Error toggling profile like:", error);
+      res.status(500).json({ error: "Failed to toggle like" });
+    }
+  });
+
+  // Get forum categories
+  app.get("/api/community/categories", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const categories = await db.select().from(forumCategories).orderBy(forumCategories.sortOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
+  // Get posts by category
+  app.get("/api/community/categories/:slug/posts", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const category = await db.select().from(forumCategories).where(eq(forumCategories.slug, slug)).limit(1);
+      if (!category.length) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      const posts = await db.select({
+        post: forumPosts,
+        profile: userProfiles,
+      })
+        .from(forumPosts)
+        .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId))
+        .where(eq(forumPosts.categoryId, category[0].id))
+        .orderBy(sql`${forumPosts.isPinned} DESC, ${forumPosts.lastActivityAt} DESC`)
+        .limit(limit)
+        .offset(offset);
+      
+      res.json({
+        category: category[0],
+        posts: posts.map(p => ({
+          ...p.post,
+          author: p.profile ? { displayName: p.profile.displayName, avatarUrl: p.profile.avatarUrl } : null,
+        })),
+      });
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ error: "Failed to fetch posts" });
+    }
+  });
+
+  // Create a new post
+  app.post("/api/community/posts", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { categoryId, title, content } = req.body;
+      
+      if (!title?.trim() || !content?.trim()) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+      
+      const [post] = await db.insert(forumPosts).values({
+        userId,
+        categoryId,
+        title: title.trim(),
+        content: content.trim(),
+      }).returning();
+      
+      await db.update(forumCategories)
+        .set({ postsCount: sql`${forumCategories.postsCount} + 1` })
+        .where(eq(forumCategories.id, categoryId));
+      
+      await db.update(userProfiles)
+        .set({ postsCount: sql`${userProfiles.postsCount} + 1` })
+        .where(eq(userProfiles.userId, userId));
+      
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ error: "Failed to create post" });
+    }
+  });
+
+  // Get a single post with comments
+  app.get("/api/community/posts/:id", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const currentUserId = req.user!.claims.sub;
+      
+      const postResult = await db.select({
+        post: forumPosts,
+        profile: userProfiles,
+        category: forumCategories,
+      })
+        .from(forumPosts)
+        .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId))
+        .leftJoin(forumCategories, eq(forumPosts.categoryId, forumCategories.id))
+        .where(eq(forumPosts.id, postId))
+        .limit(1);
+      
+      if (!postResult.length) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      const comments = await db.select({
+        comment: forumComments,
+        profile: userProfiles,
+      })
+        .from(forumComments)
+        .leftJoin(userProfiles, eq(forumComments.userId, userProfiles.userId))
+        .where(eq(forumComments.postId, postId))
+        .orderBy(forumComments.createdAt);
+      
+      const hasLiked = await db.select().from(postLikes)
+        .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, currentUserId)))
+        .limit(1);
+      
+      const commentIds = comments.map(c => c.comment.id);
+      const userCommentLikes = commentIds.length > 0 ? await db.select().from(commentLikes)
+        .where(and(
+          sql`${commentLikes.commentId} IN (${sql.join(commentIds.map(id => sql`${id}`), sql`, `)})`,
+          eq(commentLikes.userId, currentUserId)
+        )) : [];
+      
+      const likedCommentIds = new Set(userCommentLikes.map(l => l.commentId));
+      
+      res.json({
+        ...postResult[0].post,
+        author: postResult[0].profile ? { 
+          userId: postResult[0].post.userId,
+          displayName: postResult[0].profile.displayName, 
+          avatarUrl: postResult[0].profile.avatarUrl 
+        } : null,
+        category: postResult[0].category,
+        hasLiked: hasLiked.length > 0,
+        comments: comments.map(c => ({
+          ...c.comment,
+          author: c.profile ? { 
+            userId: c.comment.userId,
+            displayName: c.profile.displayName, 
+            avatarUrl: c.profile.avatarUrl 
+          } : null,
+          hasLiked: likedCommentIds.has(c.comment.id),
+        })),
+      });
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).json({ error: "Failed to fetch post" });
+    }
+  });
+
+  // Like/unlike a post
+  app.post("/api/community/posts/:id/like", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const userId = req.user!.claims.sub;
+      
+      const existingLike = await db.select().from(postLikes)
+        .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)))
+        .limit(1);
+      
+      if (existingLike.length) {
+        await db.delete(postLikes).where(eq(postLikes.id, existingLike[0].id));
+        await db.update(forumPosts)
+          .set({ likesCount: sql`GREATEST(0, ${forumPosts.likesCount} - 1)` })
+          .where(eq(forumPosts.id, postId));
+        res.json({ liked: false });
+      } else {
+        await db.insert(postLikes).values({ postId, userId });
+        await db.update(forumPosts)
+          .set({ likesCount: sql`${forumPosts.likesCount} + 1` })
+          .where(eq(forumPosts.id, postId));
+        res.json({ liked: true });
+      }
+    } catch (error) {
+      console.error("Error toggling post like:", error);
+      res.status(500).json({ error: "Failed to toggle like" });
+    }
+  });
+
+  // Add comment to a post
+  app.post("/api/community/posts/:id/comments", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const userId = req.user!.claims.sub;
+      const { content, parentCommentId } = req.body;
+      
+      if (!content?.trim()) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+      
+      const post = await db.select().from(forumPosts).where(eq(forumPosts.id, postId)).limit(1);
+      if (!post.length || post[0].isLocked) {
+        return res.status(400).json({ error: "Post not found or locked" });
+      }
+      
+      const [comment] = await db.insert(forumComments).values({
+        postId,
+        userId,
+        content: content.trim(),
+        parentCommentId: parentCommentId || null,
+      }).returning();
+      
+      await db.update(forumPosts)
+        .set({ 
+          commentsCount: sql`${forumPosts.commentsCount} + 1`,
+          lastActivityAt: new Date(),
+        })
+        .where(eq(forumPosts.id, postId));
+      
+      await db.update(userProfiles)
+        .set({ commentsCount: sql`${userProfiles.commentsCount} + 1` })
+        .where(eq(userProfiles.userId, userId));
+      
+      const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      
+      res.json({
+        ...comment,
+        author: profile[0] ? { 
+          userId,
+          displayName: profile[0].displayName, 
+          avatarUrl: profile[0].avatarUrl 
+        } : null,
+        hasLiked: false,
+      });
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // Like/unlike a comment
+  app.post("/api/community/comments/:id/like", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const userId = req.user!.claims.sub;
+      
+      const existingLike = await db.select().from(commentLikes)
+        .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, userId)))
+        .limit(1);
+      
+      if (existingLike.length) {
+        await db.delete(commentLikes).where(eq(commentLikes.id, existingLike[0].id));
+        await db.update(forumComments)
+          .set({ likesCount: sql`GREATEST(0, ${forumComments.likesCount} - 1)` })
+          .where(eq(forumComments.id, commentId));
+        res.json({ liked: false });
+      } else {
+        await db.insert(commentLikes).values({ commentId, userId });
+        await db.update(forumComments)
+          .set({ likesCount: sql`${forumComments.likesCount} + 1` })
+          .where(eq(forumComments.id, commentId));
+        res.json({ liked: true });
+      }
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      res.status(500).json({ error: "Failed to toggle like" });
+    }
+  });
+
+  // Get conversations
+  app.get("/api/community/messages", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+      if (!profile.length || !profile[0].allowMessages) {
+        return res.json([]);
+      }
+      
+      const convos = await db.select()
+        .from(conversations)
+        .where(sql`${conversations.participant1Id} = ${userId} OR ${conversations.participant2Id} = ${userId}`)
+        .orderBy(sql`${conversations.lastMessageAt} DESC`);
+      
+      const result = await Promise.all(convos.map(async (convo) => {
+        const otherUserId = convo.participant1Id === userId ? convo.participant2Id : convo.participant1Id;
+        const otherProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, otherUserId)).limit(1);
+        const unreadCount = convo.participant1Id === userId ? convo.unreadCount1 : convo.unreadCount2;
+        
+        return {
+          ...convo,
+          otherUser: otherProfile[0] ? {
+            userId: otherUserId,
+            displayName: otherProfile[0].displayName,
+            avatarUrl: otherProfile[0].avatarUrl,
+          } : null,
+          unreadCount,
+        };
+      }));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get messages in a conversation
+  app.get("/api/community/messages/:conversationId", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const conversationId = parseInt(req.params.conversationId);
+      
+      const convo = await db.select().from(conversations).where(eq(conversations.id, conversationId)).limit(1);
+      if (!convo.length || (convo[0].participant1Id !== userId && convo[0].participant2Id !== userId)) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      
+      const msgs = await db.select().from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(messages.createdAt);
+      
+      await db.update(messages)
+        .set({ isRead: true })
+        .where(and(eq(messages.conversationId, conversationId), sql`${messages.senderId} != ${userId}`));
+      
+      if (convo[0].participant1Id === userId) {
+        await db.update(conversations).set({ unreadCount1: 0 }).where(eq(conversations.id, conversationId));
+      } else {
+        await db.update(conversations).set({ unreadCount2: 0 }).where(eq(conversations.id, conversationId));
+      }
+      
+      const otherUserId = convo[0].participant1Id === userId ? convo[0].participant2Id : convo[0].participant1Id;
+      const otherProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, otherUserId)).limit(1);
+      
+      res.json({
+        conversation: convo[0],
+        otherUser: otherProfile[0] ? {
+          userId: otherUserId,
+          displayName: otherProfile[0].displayName,
+          avatarUrl: otherProfile[0].avatarUrl,
+        } : null,
+        messages: msgs,
+      });
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/community/messages", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const senderId = req.user!.claims.sub;
+      const { recipientId, content, conversationId } = req.body;
+      
+      if (!content?.trim()) {
+        return res.status(400).json({ error: "Message content is required" });
+      }
+      
+      const senderProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, senderId)).limit(1);
+      if (!senderProfile.length || !senderProfile[0].allowMessages) {
+        return res.status(400).json({ error: "You have messaging disabled" });
+      }
+      
+      let convoId = conversationId;
+      
+      if (!convoId && recipientId) {
+        const recipientProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, recipientId)).limit(1);
+        if (!recipientProfile.length || !recipientProfile[0].allowMessages) {
+          return res.status(400).json({ error: "Recipient has messaging disabled" });
+        }
+        
+        const existingConvo = await db.select().from(conversations)
+          .where(sql`(${conversations.participant1Id} = ${senderId} AND ${conversations.participant2Id} = ${recipientId}) OR (${conversations.participant1Id} = ${recipientId} AND ${conversations.participant2Id} = ${senderId})`)
+          .limit(1);
+        
+        if (existingConvo.length) {
+          convoId = existingConvo[0].id;
+        } else {
+          const [newConvo] = await db.insert(conversations).values({
+            participant1Id: senderId,
+            participant2Id: recipientId,
+          }).returning();
+          convoId = newConvo.id;
+        }
+      }
+      
+      if (!convoId) {
+        return res.status(400).json({ error: "Recipient or conversation required" });
+      }
+      
+      const convo = await db.select().from(conversations).where(eq(conversations.id, convoId)).limit(1);
+      if (!convo.length || (convo[0].participant1Id !== senderId && convo[0].participant2Id !== senderId)) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      
+      const [message] = await db.insert(messages).values({
+        conversationId: convoId,
+        senderId,
+        content: content.trim(),
+      }).returning();
+      
+      const preview = content.trim().substring(0, 100);
+      if (convo[0].participant1Id === senderId) {
+        await db.update(conversations)
+          .set({ lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount2: sql`${conversations.unreadCount2} + 1` })
+          .where(eq(conversations.id, convoId));
+      } else {
+        await db.update(conversations)
+          .set({ lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount1: sql`${conversations.unreadCount1} + 1` })
+          .where(eq(conversations.id, convoId));
+      }
+      
+      res.json({ message, conversationId: convoId });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Get unread message count
+  app.get("/api/community/messages/unread-count", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const convos = await db.select()
+        .from(conversations)
+        .where(sql`${conversations.participant1Id} = ${userId} OR ${conversations.participant2Id} = ${userId}`);
+      
+      let totalUnread = 0;
+      for (const convo of convos) {
+        totalUnread += convo.participant1Id === userId ? (convo.unreadCount1 || 0) : (convo.unreadCount2 || 0);
+      }
+      
+      res.json({ unreadCount: totalUnread });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  // Get recent posts for community home
+  app.get("/api/community/recent-posts", isAuthenticated, requirePremium, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const posts = await db.select({
+        post: forumPosts,
+        profile: userProfiles,
+        category: forumCategories,
+      })
+        .from(forumPosts)
+        .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId))
+        .leftJoin(forumCategories, eq(forumPosts.categoryId, forumCategories.id))
+        .orderBy(sql`${forumPosts.lastActivityAt} DESC`)
+        .limit(limit);
+      
+      res.json(posts.map(p => ({
+        ...p.post,
+        author: p.profile ? { displayName: p.profile.displayName, avatarUrl: p.profile.avatarUrl } : null,
+        category: p.category,
+      })));
+    } catch (error) {
+      console.error("Error fetching recent posts:", error);
+      res.status(500).json({ error: "Failed to fetch posts" });
     }
   });
 

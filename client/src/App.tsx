@@ -21,6 +21,9 @@ import Progress from "@/pages/Progress";
 import AdminFeedback from "@/pages/AdminFeedback";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
+import Community from "@/pages/Community";
+import Messages from "@/pages/Messages";
+import UserProfile from "@/pages/UserProfile";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -82,6 +85,11 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/accountability" component={Accountability} />
       <Route path="/account" component={Account} />
+      <Route path="/community" component={Community} />
+      <Route path="/community/post/:id" component={Community} />
+      <Route path="/community/messages" component={Messages} />
+      <Route path="/community/profile" component={UserProfile} />
+      <Route path="/community/profile/:userId" component={UserProfile} />
       <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
