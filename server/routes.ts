@@ -672,6 +672,7 @@ export async function registerRoutes(
   app.post("/api/stripe/customer-portal", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const authEmail = req.user!.claims.email;
       const stripe = await getUncachableStripeClient();
       const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
 
@@ -686,7 +687,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const resolvedCustomerId = await resolveStripeCustomerId(stripe, user);
+      let resolvedCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!resolvedCustomerId && authEmail && authEmail !== user.email) {
+        try {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
+          if (customers.data.length > 0) {
+            resolvedCustomerId = customers.data[0].id;
+            await db.update(users).set({ stripeCustomerId: resolvedCustomerId, email: authEmail }).where(eq(users.id, user.id));
+          }
+        } catch (e: any) { console.error("Fallback email lookup:", e?.message); }
+      }
       if (!resolvedCustomerId) {
         return res.status(400).json({ error: "No subscription found" });
       }
@@ -879,6 +889,7 @@ export async function registerRoutes(
   app.get("/api/subscription/details", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const authEmail = req.user!.claims.email;
       const stripe = await getUncachableStripeClient();
 
       const [user] = await db
@@ -891,7 +902,21 @@ export async function registerRoutes(
         return res.json({ hasSubscription: false });
       }
 
-      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      let stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      
+      // Fallback: try auth claims email if DB email didn't find a customer
+      if (!stripeCustomerId && authEmail && authEmail !== user.email) {
+        try {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
+          if (customers.data.length > 0) {
+            stripeCustomerId = customers.data[0].id;
+            await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
+          }
+        } catch (e: any) {
+          console.error("Fallback email lookup error:", e?.message);
+        }
+      }
+
       if (!stripeCustomerId) {
         return res.json({ hasSubscription: false });
       }
@@ -936,25 +961,38 @@ export async function registerRoutes(
     }
   });
 
-  // Helper to resolve a user's Stripe customer ID - searches by email if not stored
+  // Helper to resolve a user's Stripe customer ID - searches by subscription ID or email if not stored
   const resolveStripeCustomerId = async (stripe: any, user: any): Promise<string | null> => {
     if (user.stripeCustomerId) return user.stripeCustomerId;
 
-    // No stored customer ID - try to find by email
-    const userEmail = user.email;
-    if (!userEmail) return null;
-
     try {
-      const customers = await stripe.customers.list({
-        email: userEmail,
-        limit: 5,
-      });
+      // Method 1: Look up via stored subscription ID
+      if (user.subscriptionId) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(user.subscriptionId);
+          if (sub?.customer) {
+            const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+            await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
+            return customerId;
+          }
+        } catch (subErr: any) {
+          console.error("Error looking up subscription:", subErr?.message);
+        }
+      }
 
-      if (customers.data.length > 0) {
-        const customerId = customers.data[0].id;
-        // Save it so we don't have to look it up again
-        await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
-        return customerId;
+      // Method 2: Search by email
+      const userEmail = user.email;
+      if (userEmail) {
+        const customers = await stripe.customers.list({
+          email: userEmail,
+          limit: 5,
+        });
+
+        if (customers.data.length > 0) {
+          const customerId = customers.data[0].id;
+          await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
+          return customerId;
+        }
       }
     } catch (err: any) {
       console.error("Error resolving Stripe customer:", err?.message || err);
@@ -986,6 +1024,7 @@ export async function registerRoutes(
   app.post("/api/subscription/cancel", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const authEmail = req.user!.claims.email;
       const stripe = await getUncachableStripeClient();
 
       const [user] = await db
@@ -998,7 +1037,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      let stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId && authEmail && authEmail !== user.email) {
+        try {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
+          if (customers.data.length > 0) {
+            stripeCustomerId = customers.data[0].id;
+            await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
+          }
+        } catch (e: any) { console.error("Fallback email lookup:", e?.message); }
+      }
       if (!stripeCustomerId) {
         return res.status(400).json({ error: "No subscription found" });
       }
@@ -1027,6 +1075,7 @@ export async function registerRoutes(
   app.post("/api/subscription/reactivate", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const authEmail = req.user!.claims.email;
       const stripe = await getUncachableStripeClient();
 
       const [user] = await db
@@ -1039,7 +1088,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      let stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId && authEmail && authEmail !== user.email) {
+        try {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
+          if (customers.data.length > 0) {
+            stripeCustomerId = customers.data[0].id;
+            await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
+          }
+        } catch (e: any) { console.error("Fallback email lookup:", e?.message); }
+      }
       if (!stripeCustomerId) {
         return res.status(400).json({ error: "No subscription found" });
       }
@@ -1068,6 +1126,7 @@ export async function registerRoutes(
   app.post("/api/subscription/change-plan", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const authEmail = req.user!.claims.email;
       const { targetTier } = req.body;
 
       if (!targetTier || !['pro', 'premium'].includes(targetTier)) {
@@ -1086,7 +1145,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      let stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId && authEmail && authEmail !== user.email) {
+        try {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
+          if (customers.data.length > 0) {
+            stripeCustomerId = customers.data[0].id;
+            await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
+          }
+        } catch (e: any) { console.error("Fallback email lookup:", e?.message); }
+      }
       if (!stripeCustomerId) {
         return res.status(400).json({ error: "No subscription found" });
       }

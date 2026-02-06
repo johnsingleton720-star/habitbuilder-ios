@@ -40,13 +40,16 @@ export class WebhookHandlers {
         const tier = session.metadata?.tier || 'pro';
         const updateData: any = { 
           hasPaid: true,
-          subscriptionTier: tier, // Always set tier for paid users
+          subscriptionTier: tier,
           subscriptionStatus: 'active',
         };
         
-        // If it's a subscription checkout, store the subscription ID
         if (session.subscription) {
           updateData.subscriptionId = session.subscription;
+        }
+        
+        if (session.customer) {
+          updateData.stripeCustomerId = session.customer;
         }
         
         await db
