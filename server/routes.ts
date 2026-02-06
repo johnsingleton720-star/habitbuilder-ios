@@ -10,6 +10,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages } from "@shared/schema";
 import crypto from "crypto";
+import { checkContentSafety } from "./contentSafety";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -129,6 +130,18 @@ export async function registerRoutes(
   await autoSeedTemplates();
   
   const objectStorageService = new ObjectStorageService();
+
+  app.post("/api/user/accept-tos", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await db.update(users).set({ tosAcceptedAt: new Date() }).where(eq(users.id, userId));
+      const updatedUser = await storage.getUser(userId);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error accepting TOS:", error);
+      res.status(500).json({ error: "Failed to accept terms of service" });
+    }
+  });
 
   // Profile image upload endpoint
   app.post("/api/user/profile-image", isAuthenticated, async (req: any, res) => {
@@ -317,6 +330,15 @@ export async function registerRoutes(
       }
       
       const input = api.habits.create.input.parse(req.body);
+      
+      const safetyCheck = checkContentSafety(input.title ?? '', input.description, input.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ 
+          error: safetyCheck.message,
+          safetyFlag: safetyCheck.reason,
+        });
+      }
+      
       const habit = await storage.createHabit(userId, input);
       res.status(201).json(habit);
     } catch (err) {
@@ -334,6 +356,17 @@ export async function registerRoutes(
     try {
       const userId = req.user!.claims.sub;
       const input = api.habits.update.input.parse(req.body);
+      
+      if (input.title || input.description || input.goal) {
+        const safetyCheck = checkContentSafety(input.title ?? '', input.description, input.goal);
+        if (!safetyCheck.allowed) {
+          return res.status(400).json({ 
+            error: safetyCheck.message,
+            safetyFlag: safetyCheck.reason,
+          });
+        }
+      }
+      
       const habit = await storage.updateHabit(Number(req.params.id), userId, input);
       
       if (!habit) {
@@ -1388,6 +1421,11 @@ Be creative and diverse. Cover different angles and approaches to completing "${
         return res.status(404).json({ error: "Habit not found" });
       }
 
+      const safetyCheck = checkContentSafety(habit.title, habit.description, habit.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
+      }
+
       const prompt = `You are an expert habit coach conducting an intake interview to create a personalized action plan.
 
 The user wants to build this habit: "${habit.title}"
@@ -1417,7 +1455,7 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
         messages: [
           {
             role: "system",
-            content: "You are a supportive habit coach. Ask thoughtful questions to understand the user's needs. Always return valid JSON.",
+            content: "You are a supportive habit coach. Ask thoughtful questions to understand the user's needs. Always return valid JSON. SAFETY: Do not generate content that promotes violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. If a habit request seems harmful, respond with questions that redirect toward positive, healthy alternatives.",
           },
           { role: "user", content: prompt },
         ],
@@ -1445,6 +1483,11 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const safetyCheck = checkContentSafety(habit.title, habit.description, habit.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
       }
 
       // Calculate date range
@@ -1500,7 +1543,7 @@ REQUIREMENTS:
           messages: [
             {
               role: "system",
-              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks.",
+              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -1609,7 +1652,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON.",
+            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -1950,7 +1993,7 @@ CRITICAL: Use REAL app names, REAL website URLs, and REAL book titles. Templates
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance with real tools and resources. Always return valid JSON with complete, usable content.",
+            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance with real tools and resources. Always return valid JSON with complete, usable content. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
           },
           { role: "user", content: prompt },
         ],
@@ -2045,7 +2088,7 @@ Return JSON:
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON." },
+          { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
@@ -2096,7 +2139,7 @@ Return JSON with:
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON." },
+          { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },

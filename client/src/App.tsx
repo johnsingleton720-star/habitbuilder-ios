@@ -24,6 +24,7 @@ import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
 import Messages from "@/pages/Messages";
 import UserProfile from "@/pages/UserProfile";
+import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -63,6 +64,10 @@ function Router() {
 
   if (!user) {
     return <Landing />;
+  }
+
+  if (!user.tosAcceptedAt) {
+    return <TermsOfServiceModal />;
   }
 
   if (isPaymentLoading) {
