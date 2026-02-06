@@ -682,7 +682,12 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!user) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const resolvedCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!resolvedCustomerId) {
         return res.status(400).json({ error: "No subscription found" });
       }
 
@@ -751,7 +756,7 @@ export async function registerRoutes(
 
       // Create portal session (with or without custom config)
       const sessionParams: any = {
-        customer: user.stripeCustomerId,
+        customer: resolvedCustomerId,
         return_url: `${baseUrl}/account`,
       };
       if (configId) {
@@ -882,12 +887,17 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!user) {
+        return res.json({ hasSubscription: false });
+      }
+
+      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId) {
         return res.json({ hasSubscription: false });
       }
 
       const subscriptions = await stripe.subscriptions.list({
-        customer: user.stripeCustomerId,
+        customer: stripeCustomerId,
         limit: 5,
         expand: ['data.items.data.price.product'],
       });
@@ -926,6 +936,33 @@ export async function registerRoutes(
     }
   });
 
+  // Helper to resolve a user's Stripe customer ID - searches by email if not stored
+  const resolveStripeCustomerId = async (stripe: any, user: any): Promise<string | null> => {
+    if (user.stripeCustomerId) return user.stripeCustomerId;
+
+    // No stored customer ID - try to find by email
+    const userEmail = user.email;
+    if (!userEmail) return null;
+
+    try {
+      const customers = await stripe.customers.list({
+        email: userEmail,
+        limit: 5,
+      });
+
+      if (customers.data.length > 0) {
+        const customerId = customers.data[0].id;
+        // Save it so we don't have to look it up again
+        await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
+        return customerId;
+      }
+    } catch (err: any) {
+      console.error("Error resolving Stripe customer:", err?.message || err);
+    }
+
+    return null;
+  };
+
   // Helper to find user's active subscription from Stripe
   const findUserSubscription = async (stripe: any, stripeCustomerId: string) => {
     const activeSubscriptions = await stripe.subscriptions.list({
@@ -957,11 +994,16 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!user) {
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, stripeCustomerId);
       if (!subscription) {
         return res.status(400).json({ error: "No active subscription found" });
       }
@@ -993,11 +1035,16 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!user) {
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, stripeCustomerId);
       if (!subscription) {
         return res.status(400).json({ error: "No active subscription found" });
       }
@@ -1035,11 +1082,16 @@ export async function registerRoutes(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!user) {
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      const subscription = await findUserSubscription(stripe, user.stripeCustomerId);
+      const stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      if (!stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      const subscription = await findUserSubscription(stripe, stripeCustomerId);
       if (!subscription) {
         return res.status(400).json({ error: "No active subscription found" });
       }
