@@ -39,7 +39,8 @@ export const users = pgTable("users", {
   // Premium features
   streakFreezesAllowed: varchar("streak_freezes_allowed").default("2"), // Freezes allowed per month
   publicProfileEnabled: boolean("public_profile_enabled").default(false),
-  publicProfileSlug: varchar("public_profile_slug").unique(), // Unique slug for public profile
+  publicProfileSlug: varchar("public_profile_slug").unique(),
+  tosAcceptedAt: timestamp("tos_accepted_at"),
   
   // Gamification
   xpPoints: integer("xp_points").default(0),
