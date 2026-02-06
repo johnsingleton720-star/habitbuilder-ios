@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -14,22 +16,24 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
-      {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-display text-2xl font-bold text-primary">
             <Leaf className="w-6 h-6 fill-primary/20" />
             <span>Habit Builder</span>
           </div>
-          <Button onClick={scrollToLogin} variant="outline" className="font-semibold">
-            Sign In
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={scrollToLogin} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+              Sign In
+            </Button>
+            <Button onClick={scrollToLogin} size="sm" data-testid="button-nav-get-started">
+              Get Started Free
+            </Button>
+          </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
-        {/* Floating decorative elements */}
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
@@ -43,36 +47,40 @@ export default function Landing() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Sparkles className="w-4 h-4" />
-              <span>Start your journey today</span>
+              <span>AI-powered habit coaching</span>
             </div>
             
-            <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground">
+            <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
               Build habits that <br />
               <span className="text-gradient">actually stick.</span>
             </h1>
             
             <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
-              Transform your daily routine with a beautifully simple habit tracker designed to help you focus on what matters most.
+              Your personal AI coach creates custom action plans, guides you through daily sessions, and keeps you motivated with streaks and achievements.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button onClick={scrollToLogin} size="lg" className="h-14 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all">
-                Start 2-Day Free Trial
+              <Button onClick={scrollToLogin} size="lg" data-testid="button-hero-cta">
+                Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
             
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-8 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <span className="font-medium">No credit card required</span>
+              </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
                 <span>2-day free trial</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>Then just $6/month</span>
+                <span>Cancel anytime</span>
               </div>
-              <LoginTroubleshootDialog />
             </div>
+            <LoginTroubleshootDialog />
           </motion.div>
 
           <motion.div 
@@ -82,7 +90,6 @@ export default function Landing() {
             className="relative hidden lg:block"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6 animate-pulse-glow" />
-            {/* Abstract visual representation of the app */}
             <div className="relative glass-panel rounded-2xl p-6 shadow-2xl transform -rotate-2 border border-white/40">
               <div className="space-y-4">
                 {[
@@ -95,7 +102,7 @@ export default function Landing() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.4 + i * 0.15 }}
-                    className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                    className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm"
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       item.icon === 'complete' ? 'bg-primary/20 text-primary' : 
@@ -124,72 +131,242 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Grid */}
       <section className="py-24 bg-white/50 dark:bg-card/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold">Everything you need to grow</h2>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              An interactive coach in your pocket. We guide you through every step of building lasting habits.
+              More than just a tracker. Habit Builder is an interactive coach that guides you through every step.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                icon: <CheckCircle2 className="w-8 h-8 text-primary" />,
+                icon: <Sparkles className="w-7 h-7 text-primary" />,
+                title: "AI Coaching Interview",
+                desc: "Answer personalized questions about your goals, and AI creates a tailored action plan just for you."
+              },
+              {
+                icon: <Target className="w-7 h-7 text-accent" />,
                 title: "Guided Sessions",
-                desc: "Start each habit with a pre-action checklist, then get coached through every step with timers and prompts."
+                desc: "Step-by-step coaching walks you through each habit with timers, notes, and progress tracking."
               },
               {
-                icon: <Sparkles className="w-8 h-8 text-accent" />,
-                title: "AI Action Plans",
-                desc: "Generate personalized step-by-step plans with AI. Explore each step, add notes, and track your answers."
+                icon: <Flame className="w-7 h-7 text-orange-500 dark:text-orange-400" />,
+                title: "Streaks & Achievements",
+                desc: "Stay motivated with daily streaks, milestone badges, and a sense of accomplishment."
               },
               {
-                icon: <Leaf className="w-8 h-8 text-emerald-500" />,
-                title: "Smart Scheduling",
-                desc: "Set specific days and times for each habit. Your dashboard shows exactly what to focus on today."
-              }
+                icon: <Trophy className="w-7 h-7 text-amber-500 dark:text-amber-400" />,
+                title: "XP & Leveling System",
+                desc: "Earn XP through daily challenges, level up from Beginner to Habit Hero across 12 tiers."
+              },
+              {
+                icon: <BarChart3 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />,
+                title: "Progress Analytics",
+                desc: "Track your journey with visual charts, completion rates, and mood correlation insights."
+              },
+              {
+                icon: <Users className="w-7 h-7 text-blue-500 dark:text-blue-400" />,
+                title: "Community Forum",
+                desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired."
+              },
             ].map((feature, i) => (
               <motion.div 
                 key={i}
-                whileHover={{ y: -5, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={scrollToLogin}
-                className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer group"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="bg-white dark:bg-card p-6 rounded-xl border border-border/50"
+                data-testid={`card-feature-${i}`}
               >
-                <div className="mb-6 p-3 bg-background dark:bg-muted rounded-xl w-fit group-hover:bg-primary/10 transition-colors">
+                <div className="mb-4 p-2.5 bg-background dark:bg-muted rounded-lg w-fit">
                   {feature.icon}
                 </div>
-                <h3 className="font-display text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
-                <div className="mt-4 flex items-center gap-1 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                  Try it free
-                  <ArrowRight className="w-4 h-4" />
-                </div>
+                <h3 className="font-display text-lg font-bold mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
 
-          {/* Additional CTA after features */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mt-16 text-center"
+            className="mt-12 text-center"
           >
-            <Button onClick={scrollToLogin} size="lg" className="h-14 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all" data-testid="button-cta-features">
-              Start Your Free Trial
+            <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-features">
+              Try It Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
+            <p className="mt-3 text-sm text-muted-foreground">No credit card needed</p>
           </motion.div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6" id="pricing">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Start with a free trial, then pick the plan that works for you. Cancel anytime.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0 }}
+            >
+              <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex justify-center mb-3">
+                      <Leaf className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Trial</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Try it for 2 days</p>
+                    <div className="mt-3">
+                      <span className="text-4xl font-display font-bold">$0</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-2.5 flex-1">
+                    {[
+                      "Up to 3 habits",
+                      "AI coaching interview",
+                      "Personalized action plans",
+                      "Basic streaks & tracking",
+                      "Habit templates library",
+                    ].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                    {[
+                      "Advanced analytics",
+                      "Community forum access",
+                      "Voice notes",
+                    ].map((f, i) => (
+                      <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <X className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
+                    Start Free Trial
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="h-full flex flex-col relative border-primary shadow-lg shadow-primary/20" data-testid="card-pricing-pro">
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  Most Popular
+                </Badge>
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex justify-center mb-3">
+                      <Sparkles className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
+                    <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
+                    <div className="mt-3">
+                      <span className="text-4xl font-display font-bold text-primary">$6</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-2.5 flex-1">
+                    {[
+                      "Unlimited habits",
+                      "AI coaching & action plans",
+                      "Guided sessions with summaries",
+                      "Streaks & achievements",
+                      "XP & leveling system",
+                      "Weekly reports",
+                      "Community forum (read access)",
+                      "Habit templates library",
+                    ].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
+                    Get Started
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="h-full flex flex-col" data-testid="card-pricing-premium">
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex justify-center mb-3">
+                      <Crown className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
+                    <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
+                    <div className="mt-3">
+                      <span className="text-4xl font-display font-bold text-amber-500">$15</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-2.5 flex-1">
+                    {[
+                      "Everything in Pro",
+                      "Advanced analytics & trends",
+                      "AI-generated insights & reports",
+                      "Community forum (full access)",
+                      "Direct messaging",
+                      "Voice notes",
+                      "Accountability partners",
+                      "Editable templates",
+                      "CSV data export",
+                      "Priority support",
+                    ].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-premium">
+                    Get Started
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            All plans start with a 2-day free trial. No credit card required to start.
+          </p>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-white/50 dark:bg-card/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold">Loved by habit builders</h2>
@@ -219,7 +396,8 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/50"
+                className="bg-white dark:bg-card p-8 rounded-xl border border-border/50"
+                data-testid={`card-testimonial-${i}`}
               >
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, j) => (
@@ -227,15 +405,15 @@ export default function Landing() {
                   ))}
                 </div>
                 <p className="text-foreground/80 leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div>
                     <p className="font-semibold text-foreground">{testimonial.name}</p>
                     <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                   </div>
-                  <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                    <CheckCircle2 className="w-3 h-3" />
+                  <Badge variant="secondary">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
                     {testimonial.streak}
-                  </div>
+                  </Badge>
                 </div>
               </motion.div>
             ))}
@@ -243,7 +421,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Urgency CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <motion.div
@@ -260,14 +437,21 @@ export default function Landing() {
               The best time to start was yesterday. The second best time is right now. Your future self will thank you for taking action today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button onClick={scrollToLogin} size="lg" className="h-14 px-10 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all" data-testid="button-cta-urgency">
-                Start Building Today
+              <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-urgency">
+                Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Join thousands who started their journey this week
-            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <span>No credit card required</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-primary" />
+                <span>Set up in under 2 minutes</span>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
