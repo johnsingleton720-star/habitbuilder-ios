@@ -10,10 +10,13 @@ export function usePageTitle(pageTitle?: string) {
       document.title = `${BASE_TITLE} - Build Better Habits | AI-Powered Habit Coaching`;
     }
 
-    const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) {
-      canonical.setAttribute("href", window.location.origin + window.location.pathname);
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
     }
+    canonical.setAttribute("href", window.location.origin + window.location.pathname);
 
     return () => {
       document.title = `${BASE_TITLE} - Build Better Habits | AI-Powered Habit Coaching`;
