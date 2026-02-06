@@ -2,9 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Shield } from "lucide-react";
 
 export function TermsOfServiceModal() {
@@ -23,18 +21,18 @@ export function TermsOfServiceModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <CardHeader className="pb-4">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-card text-card-foreground border rounded-md shadow-sm">
+        <div className="p-6 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-primary" />
-            <CardTitle data-testid="text-tos-title">Terms of Service & Community Guidelines</CardTitle>
+            <h2 className="text-lg font-semibold" data-testid="text-tos-title">Terms of Service & Community Guidelines</h2>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             Please review and accept our terms before using Habit Builder.
           </p>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <ScrollArea className="flex-1 max-h-[50vh] border rounded-md p-4" data-testid="scroll-tos-content">
+        </div>
+        <div className="flex-1 flex flex-col gap-4 px-6 pb-6 overflow-hidden min-h-0">
+          <div className="flex-1 overflow-y-auto border rounded-md p-4 min-h-0" data-testid="scroll-tos-content">
             <div className="space-y-4 text-sm pr-4">
               <section>
                 <h3 className="font-semibold mb-2">1. Acceptance of Terms</h3>
@@ -117,9 +115,9 @@ export function TermsOfServiceModal() {
                 </p>
               </section>
             </div>
-          </ScrollArea>
+          </div>
 
-          <div className="flex items-start gap-3 pt-2">
+          <div className="flex items-start gap-3 pt-2 shrink-0">
             <Checkbox
               id="accept-tos"
               checked={accepted}
@@ -135,7 +133,7 @@ export function TermsOfServiceModal() {
           </div>
 
           <Button
-            className="w-full"
+            className="w-full shrink-0"
             disabled={!accepted || acceptTosMutation.isPending}
             onClick={() => acceptTosMutation.mutate()}
             data-testid="button-accept-tos"
@@ -145,8 +143,8 @@ export function TermsOfServiceModal() {
             ) : null}
             Accept & Continue
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
