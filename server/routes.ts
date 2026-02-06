@@ -687,11 +687,21 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No subscription found" });
       }
 
-      let resolvedCustomerId = await resolveStripeCustomerId(stripe, user);
-      if (!resolvedCustomerId && authEmail && authEmail !== user.email) {
+      let resolvedCustomerId = await resolveStripeCustomerId(stripe, user, true);
+      if (!resolvedCustomerId && authEmail) {
         try {
-          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
-          if (customers.data.length > 0) {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 10 });
+          for (const customer of customers.data) {
+            try {
+              const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
+              if (subs.data.length > 0) {
+                resolvedCustomerId = customer.id;
+                await db.update(users).set({ stripeCustomerId: resolvedCustomerId, email: authEmail }).where(eq(users.id, user.id));
+                break;
+              }
+            } catch (e: any) { /* skip */ }
+          }
+          if (!resolvedCustomerId && customers.data.length > 0) {
             resolvedCustomerId = customers.data[0].id;
             await db.update(users).set({ stripeCustomerId: resolvedCustomerId, email: authEmail }).where(eq(users.id, user.id));
           }
@@ -902,13 +912,27 @@ export async function registerRoutes(
         return res.json({ hasSubscription: false });
       }
 
-      let stripeCustomerId = await resolveStripeCustomerId(stripe, user);
+      // Use verifyHasSubscription=true so if stored customer has no subs, we re-resolve
+      let stripeCustomerId = await resolveStripeCustomerId(stripe, user, true);
       
       // Fallback: try auth claims email if DB email didn't find a customer
-      if (!stripeCustomerId && authEmail && authEmail !== user.email) {
+      if (!stripeCustomerId && authEmail) {
         try {
-          const customers = await stripe.customers.list({ email: authEmail, limit: 5 });
-          if (customers.data.length > 0) {
+          const customers = await stripe.customers.list({ email: authEmail, limit: 10 });
+          // Find the customer with an active subscription
+          for (const customer of customers.data) {
+            try {
+              const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
+              if (subs.data.length > 0) {
+                stripeCustomerId = customer.id;
+                await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
+                console.log(`Auth email fallback: resolved customer ${customer.id} for user ${user.id}`);
+                break;
+              }
+            } catch (e: any) { /* skip */ }
+          }
+          // If no customer with sub found, use first customer
+          if (!stripeCustomerId && customers.data.length > 0) {
             stripeCustomerId = customers.data[0].id;
             await db.update(users).set({ stripeCustomerId, email: authEmail }).where(eq(users.id, user.id));
           }
@@ -962,8 +986,23 @@ export async function registerRoutes(
   });
 
   // Helper to resolve a user's Stripe customer ID - searches by subscription ID or email if not stored
-  const resolveStripeCustomerId = async (stripe: any, user: any): Promise<string | null> => {
-    if (user.stripeCustomerId) return user.stripeCustomerId;
+  // When multiple customers share an email, picks the one with an active subscription
+  const resolveStripeCustomerId = async (stripe: any, user: any, verifyHasSubscription = false): Promise<string | null> => {
+    // If we have a stored customer ID, optionally verify it has a subscription
+    if (user.stripeCustomerId) {
+      if (!verifyHasSubscription) return user.stripeCustomerId;
+      // Verify this customer actually has an active subscription
+      try {
+        const subs = await stripe.subscriptions.list({ customer: user.stripeCustomerId, limit: 1 });
+        if (subs.data.length > 0) return user.stripeCustomerId;
+        // Stored customer has NO subscriptions - clear it and re-resolve below
+        console.log(`Stored customer ${user.stripeCustomerId} has no subs, re-resolving for user ${user.id}`);
+        await db.update(users).set({ stripeCustomerId: null }).where(eq(users.id, user.id));
+      } catch (e: any) {
+        console.error("Error verifying stored customer:", e?.message);
+        return user.stripeCustomerId; // On error, still use stored ID
+      }
+    }
 
     try {
       // Method 1: Look up via stored subscription ID
@@ -980,15 +1019,44 @@ export async function registerRoutes(
         }
       }
 
-      // Method 2: Search by email
+      // Method 2: Search by email - find the customer that actually has an active subscription
       const userEmail = user.email;
       if (userEmail) {
         const customers = await stripe.customers.list({
           email: userEmail,
-          limit: 5,
+          limit: 10,
         });
 
         if (customers.data.length > 0) {
+          // Check each customer for an active subscription, prefer that one
+          for (const customer of customers.data) {
+            try {
+              const subs = await stripe.subscriptions.list({
+                customer: customer.id,
+                status: 'active',
+                limit: 1,
+              });
+              if (subs.data.length > 0) {
+                await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, user.id));
+                console.log(`Resolved Stripe customer ${customer.id} (has active sub) for user ${user.id}`);
+                return customer.id;
+              }
+              // Also check trialing
+              const trialSubs = await stripe.subscriptions.list({
+                customer: customer.id,
+                status: 'trialing',
+                limit: 1,
+              });
+              if (trialSubs.data.length > 0) {
+                await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, user.id));
+                console.log(`Resolved Stripe customer ${customer.id} (has trialing sub) for user ${user.id}`);
+                return customer.id;
+              }
+            } catch (subCheckErr: any) {
+              console.error(`Error checking subs for customer ${customer.id}:`, subCheckErr?.message);
+            }
+          }
+          // No customer with active sub found - fall back to first customer
           const customerId = customers.data[0].id;
           await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
           return customerId;
