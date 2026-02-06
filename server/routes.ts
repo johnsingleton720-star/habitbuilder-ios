@@ -1271,6 +1271,112 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
         .join("\n\n");
 
+      let fixedDailyPlans: any[];
+
+      if (duration === "monthly") {
+        const weekPrompt = `Create a personalized 4-week habit plan for: "${habit.title}"
+
+User's interview answers:
+${contextSummary}
+
+Create exactly 4 weeks. Each week has a theme and 3-4 daily tasks that apply to each day of that week.
+Progress difficulty: Week 1 = easy wins, Week 4 = full routine.
+
+Return JSON:
+{
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "theme": "Week theme (e.g., 'Building the Foundation')",
+      "dailyTasks": [
+        {
+          "title": "Action-oriented title",
+          "description": "Detailed instructions:\\n1) Step one\\n2) Step two\\nPro Tip: helpful advice",
+          "duration": 10
+        }
+      ]
+    }
+  ],
+  "aiContext": "2-3 sentence summary of goals and recommended approach"
+}
+
+REQUIREMENTS:
+1. Each task description: 30-60 words with numbered steps (use \\n)
+2. Be specific to their answers (time available, experience level)
+3. Progress difficulty gradually across weeks
+4. Include concrete numbers (reps, minutes, amounts)
+5. Reference their specific situation`;
+
+        const weekResponse = await openaiClient.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks.",
+            },
+            { role: "user", content: weekPrompt },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+        });
+
+        const weekContent = weekResponse.choices[0].message.content;
+        if (!weekContent) throw new Error("No content from AI");
+
+        let weekData;
+        try {
+          weekData = JSON.parse(weekContent);
+        } catch (parseError) {
+          console.error("JSON parse error, raw content:", weekContent);
+          throw new Error("Failed to parse AI response");
+        }
+
+        if (!weekData.weeks || !Array.isArray(weekData.weeks) || weekData.weeks.length === 0) {
+          throw new Error("Invalid weekly plan structure from AI");
+        }
+
+        const enhancedContextWeekly = weekData.aiContext || "";
+
+        fixedDailyPlans = [];
+        for (let dayIndex = 0; dayIndex < daysCount; dayIndex++) {
+          const planDate = new Date(startDate);
+          planDate.setDate(planDate.getDate() + dayIndex);
+          const weekIndex = Math.min(Math.floor(dayIndex / 7), weekData.weeks.length - 1);
+          const week = weekData.weeks[weekIndex];
+
+          fixedDailyPlans.push({
+            date: planDate.toISOString().split('T')[0],
+            dayNumber: dayIndex + 1,
+            focus: week.theme || `Week ${weekIndex + 1}`,
+            tasks: (week.dailyTasks || []).map((task: any, tIdx: number) => ({
+              id: `day${dayIndex + 1}-task${tIdx + 1}`,
+              title: task.title,
+              description: task.description,
+              duration: task.duration || 10,
+              completed: false,
+              notes: "",
+            })),
+            completed: false,
+            timeSpent: 0,
+          });
+        }
+
+        const enhancedContext = enhancedContextWeekly;
+
+        await storage.updateHabit(habitId, userId, {
+          questions: questions,
+          planDuration: duration,
+          planStartDate: startDate.toISOString().split('T')[0],
+          planEndDate: endDate.toISOString().split('T')[0],
+          dailyPlans: fixedDailyPlans,
+          aiContext: enhancedContext,
+          setupComplete: true,
+        });
+
+        res.json({ success: true, dailyPlans: fixedDailyPlans, aiContext: enhancedContext });
+        return;
+      }
+
       const prompt = `Create a personalized ${duration} action plan for: "${habit.title}"
 
 User's interview answers:
@@ -1339,7 +1445,7 @@ REQUIREMENTS:
       }
 
       // Fix dates: AI often generates wrong dates, so we override with correct sequential dates
-      const fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
+      fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
         const planDate = new Date(startDate);
         planDate.setDate(planDate.getDate() + index);
         return {

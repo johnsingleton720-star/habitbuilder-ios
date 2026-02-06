@@ -254,36 +254,111 @@ export default function HabitDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Day Selector */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {dailyPlans.map((plan, index) => {
-                  const planDate = parseISO(plan.date);
-                  const isSelected = plan.date === selectedDay;
-                  const isPastDay = isPast(planDate) && !isToday(planDate);
-                  
-                  return (
-                    <button
-                      key={plan.date}
-                      onClick={() => setSelectedDay(plan.date)}
-                      className={cn(
-                        "flex-shrink-0 px-4 py-2 rounded-lg border transition-all",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "bg-card border-border hover:border-primary/50",
-                        plan.completed && !isSelected && "bg-primary/10 border-primary/30"
-                      )}
-                      data-testid={`day-selector-${index + 1}`}
-                    >
-                      <div className="text-center">
-                        <p className="text-xs opacity-70">Day {index + 1}</p>
-                        <p className="font-medium">{format(planDate, "MMM d")}</p>
-                        {plan.completed && (
-                          <CheckCircle2 className="w-3 h-3 mx-auto mt-1" />
+              {dailyPlans.length > 14 ? (
+                <div className="space-y-3">
+                  {(() => {
+                    const weeks: DailyPlan[][] = [];
+                    for (let i = 0; i < dailyPlans.length; i += 7) {
+                      weeks.push(dailyPlans.slice(i, i + 7));
+                    }
+                    const selectedWeekIndex = weeks.findIndex(week =>
+                      week.some(p => p.date === selectedDay)
+                    );
+                    const [activeWeek, setActiveWeekState] = [
+                      selectedWeekIndex >= 0 ? selectedWeekIndex : 0,
+                      (idx: number) => {
+                        const firstDay = weeks[idx]?.[0];
+                        if (firstDay) setSelectedDay(firstDay.date);
+                      }
+                    ];
+                    return (
+                      <>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {weeks.map((week, wIdx) => {
+                            const weekCompleted = week.every(p => p.completed);
+                            const weekPartial = week.some(p => p.completed);
+                            const isActiveWeek = wIdx === (selectedWeekIndex >= 0 ? selectedWeekIndex : 0);
+                            return (
+                              <button
+                                key={wIdx}
+                                onClick={() => setActiveWeekState(wIdx)}
+                                className={cn(
+                                  "flex-shrink-0 px-3 py-1.5 rounded-md border text-sm transition-all",
+                                  isActiveWeek
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-card border-border hover-elevate",
+                                  weekCompleted && !isActiveWeek && "bg-primary/10 border-primary/30",
+                                  weekPartial && !weekCompleted && !isActiveWeek && "border-primary/20"
+                                )}
+                                data-testid={`week-selector-${wIdx + 1}`}
+                              >
+                                Week {wIdx + 1}
+                                {weekCompleted && <CheckCircle2 className="w-3 h-3 inline ml-1" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1.5">
+                          {weeks[selectedWeekIndex >= 0 ? selectedWeekIndex : 0]?.map((plan, index) => {
+                            const planDate = parseISO(plan.date);
+                            const isSelected = plan.date === selectedDay;
+                            return (
+                              <button
+                                key={plan.date}
+                                onClick={() => setSelectedDay(plan.date)}
+                                className={cn(
+                                  "px-2 py-2 rounded-md border transition-all text-center",
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-card border-border hover-elevate",
+                                  plan.completed && !isSelected && "bg-primary/10 border-primary/30"
+                                )}
+                                data-testid={`day-selector-${plan.dayNumber || index + 1}`}
+                              >
+                                <p className="text-xs opacity-70">Day {plan.dayNumber || index + 1}</p>
+                                <p className="font-medium text-sm">{format(planDate, "MMM d")}</p>
+                                {plan.completed && (
+                                  <CheckCircle2 className="w-3 h-3 mx-auto mt-0.5" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {dailyPlans.map((plan, index) => {
+                    const planDate = parseISO(plan.date);
+                    const isSelected = plan.date === selectedDay;
+                    
+                    return (
+                      <button
+                        key={plan.date}
+                        onClick={() => setSelectedDay(plan.date)}
+                        className={cn(
+                          "flex-shrink-0 px-4 py-2 rounded-lg border transition-all",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground border-primary" 
+                            : "bg-card border-border hover-elevate",
+                          plan.completed && !isSelected && "bg-primary/10 border-primary/30"
                         )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                        data-testid={`day-selector-${index + 1}`}
+                      >
+                        <div className="text-center">
+                          <p className="text-xs opacity-70">Day {index + 1}</p>
+                          <p className="font-medium">{format(planDate, "MMM d")}</p>
+                          {plan.completed && (
+                            <CheckCircle2 className="w-3 h-3 mx-auto mt-1" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Current Day Tasks */}
               {currentPlan && (

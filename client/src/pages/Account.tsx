@@ -103,7 +103,7 @@ export default function Account() {
 
   const { data: subDetails, isLoading: isLoadingSubDetails } = useQuery<SubscriptionDetails>({
     queryKey: ["/api/subscription/details"],
-    enabled: hasPaid || isPro || isPremium,
+    enabled: !!user,
   });
 
   const cancelSubscriptionMutation = useMutation({
@@ -355,7 +355,7 @@ export default function Account() {
                 </div>
               )}
 
-              {isLoadingSubDetails && (hasPaid || isPro || isPremium) && (
+              {isLoadingSubDetails && (
                 <div className="flex items-center justify-center py-2">
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 </div>
