@@ -56,6 +56,11 @@ The core system enables personalized habit coaching:
 ### Habit Templates
 -   A library of pre-built habit templates is available for various categories.
 
+### Terms of Service & Content Safety
+-   **TOS Acceptance**: New users must accept Terms of Service before using the app. Modal blocks access until accepted. Stored as `tosAcceptedAt` in users table.
+-   **Content Safety Filter**: Server-side validation (`server/contentSafety.ts`) blocks harmful habit creation — violence, exploitation of minors, illegal activities, self-harm, hate speech. Flagged patterns (explicit content, substance promotion, gambling) are blocked with constructive guidance messages.
+-   **AI Safety Guardrails**: All AI system prompts include safety instructions preventing generation of harmful, violent, or explicit content.
+
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.
 
