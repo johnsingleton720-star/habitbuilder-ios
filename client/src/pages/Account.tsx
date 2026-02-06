@@ -642,10 +642,10 @@ export default function Account() {
                       <div className="pt-2">
                         <p className="text-sm font-medium mb-2">Top Referrers</p>
                         <div className="space-y-1">
-                          {adminAnalytics.topReferrers.slice(0, 3).map((ref, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
-                              <span className="text-muted-foreground truncate max-w-[200px]">{ref.referrer}</span>
-                              <Badge variant="outline">{ref.count}</Badge>
+                          {adminAnalytics.topReferrers.map((ref: { referrer: string; count: number }, i: number) => (
+                            <div key={i} className="flex items-center justify-between gap-2 text-sm py-1 border-b last:border-0">
+                              <span className="text-muted-foreground truncate max-w-[200px]" data-testid={`text-referrer-${i}`}>{ref.referrer}</span>
+                              <Badge variant="outline" data-testid={`text-referrer-count-${i}`}>{ref.count}</Badge>
                             </div>
                           ))}
                         </div>

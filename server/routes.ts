@@ -3577,24 +3577,28 @@ Return JSON with:
         }
       }
       
-      const correlations = Array.from(habitMoodMap.entries())
-        .map(([habitId, stats]) => {
-          const habit = userHabits.find(h => h.id === habitId);
+      const correlations = userHabits
+        .map((habit) => {
+          const stats = habitMoodMap.get(habit.id);
           return {
-            habitId,
-            habitTitle: habit?.title || "Unknown habit",
-            correlation: stats.total > 0 ? ((stats.good / stats.total) * 100).toFixed(0) : 0,
-            timesCompleted: stats.total,
+            habitId: habit.id,
+            habitTitle: habit.title,
+            correlation: stats && stats.total > 0 ? ((stats.good / stats.total) * 100).toFixed(0) : null,
+            timesCompleted: stats?.total || 0,
           };
         })
-        .sort((a, b) => Number(b.correlation) - Number(a.correlation))
-        .slice(0, 5);
+        .sort((a, b) => {
+          if (a.correlation === null && b.correlation === null) return 0;
+          if (a.correlation === null) return 1;
+          if (b.correlation === null) return -1;
+          return Number(b.correlation) - Number(a.correlation);
+        });
       
       const insights = [
         `Your average mood score is ${avgMood.toFixed(1)}/5`,
         avgEnergy > 0 ? `Average energy level: ${avgEnergy.toFixed(1)}/5` : null,
         avgStress > 0 ? `Average stress level: ${avgStress.toFixed(1)}/5` : null,
-        correlations.length > 0 ? 
+        correlations.length > 0 && correlations[0].correlation !== null ? 
           `${correlations[0].habitTitle} is associated with ${correlations[0].correlation}% good mood days` : null,
       ].filter(Boolean);
       
@@ -3971,8 +3975,7 @@ Return JSON with:
           sql`${pageViews.referrer} is not null and ${pageViews.referrer} != ''`
         ))
         .groupBy(pageViews.referrer)
-        .orderBy(sql`count(*) desc`)
-        .limit(5);
+        .orderBy(sql`count(*) desc`);
 
       // Get total registered users
       const totalUsers = await db.select({ count: sql<number>`count(*)` }).from(users);

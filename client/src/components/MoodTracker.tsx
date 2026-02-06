@@ -51,7 +51,7 @@ interface MoodInsights {
   correlations: {
     habitId: number;
     habitTitle: string;
-    correlation: string;
+    correlation: string | null;
     timesCompleted: number;
   }[];
   stats?: {
@@ -355,13 +355,17 @@ export function MoodTracker() {
               <span className="text-sm font-medium">Mood Correlations</span>
             </div>
             <div className="space-y-2">
-              {(insights as MoodInsights).correlations.slice(0, 3).map((corr: { habitId: number; habitTitle: string; correlation: string; timesCompleted: number }) => (
-                <div key={corr.habitId} className="flex items-center justify-between text-sm">
+              {(insights as MoodInsights).correlations.map((corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
+                <div key={corr.habitId} className="flex items-center justify-between text-sm" data-testid={`mood-correlation-${corr.habitId}`}>
                   <span className="text-muted-foreground">{corr.habitTitle}</span>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-3 h-3 text-green-600" />
-                    <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
-                  </div>
+                  {corr.correlation !== null ? (
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-3 h-3 text-green-600" />
+                      <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/60">No data yet</span>
+                  )}
                 </div>
               ))}
             </div>
