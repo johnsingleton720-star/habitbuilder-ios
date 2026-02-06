@@ -4,8 +4,10 @@ import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone } fro
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function Landing() {
+  usePageTitle();
   const scrollToLogin = () => {
     window.location.href = "/api/login";
   };

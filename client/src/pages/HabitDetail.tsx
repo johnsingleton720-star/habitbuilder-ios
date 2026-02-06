@@ -20,8 +20,10 @@ import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
 import { CoachingCheckin } from "@/components/CoachingCheckin";
 import { DailyMotivation } from "@/components/DailyMotivation";
 import { StreakProtection } from "@/components/StreakProtection";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function HabitDetail() {
+  usePageTitle("Habit Details");
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();

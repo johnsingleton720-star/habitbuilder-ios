@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import type { Habit, HabitTemplate } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -29,6 +30,7 @@ interface BrokenStreakInfo {
 }
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabits();
   const [isDialogOpen, setIsDialogOpen] = useState(false);

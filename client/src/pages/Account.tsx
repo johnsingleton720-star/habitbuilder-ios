@@ -20,8 +20,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useHabits } from "@/hooks/use-habits";
 import { format } from "date-fns";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function Account() {
+  usePageTitle("Account");
   const { user, logout } = useAuth();
   const { hasPaid, isTrialActive, trialEndsAt } = usePaymentStatus();
   const { tier, isPro, isPremium } = useSubscription();

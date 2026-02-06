@@ -9,10 +9,12 @@ import { Link, useRoute } from "wouter";
 import { format, subDays, startOfWeek, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import type { DailyPlan, ProgressEntry, Habit } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type ViewType = "today" | "yesterday" | "total" | "streak";
 
 export default function ProgressPage() {
+  usePageTitle("Progress");
   const [, params] = useRoute("/progress/:view");
   const view = (params?.view as ViewType) || "today";
   const { data: habits, isLoading } = useHabits();

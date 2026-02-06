@@ -28,6 +28,7 @@ import {
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import type { Habit, ProgressEntry } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface AnalyticsData {
   totalSessions: number;
@@ -45,6 +46,7 @@ interface AnalyticsData {
 }
 
 export default function Analytics() {
+  usePageTitle("Analytics");
   const { isPremium, canUseFeature, getUpgradeMessage } = useSubscription();
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("month");

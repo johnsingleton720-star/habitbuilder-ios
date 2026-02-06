@@ -11,6 +11,7 @@ import { ArrowLeft, Send, MessageCircle, Crown, Lock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface Conversation {
   id: number;
@@ -238,6 +239,7 @@ function ConversationDetail({ conversationId, onBack }: { conversationId: number
 }
 
 export default function Messages() {
+  usePageTitle("Messages");
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [, navigate] = useLocation();
 

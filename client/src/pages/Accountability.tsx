@@ -31,12 +31,14 @@ import {
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Habit, AccountabilityPartner } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface PartnerWithProgress extends AccountabilityPartner {
   sharedHabits?: { habitId: number; title: string; streak: number; lastActive: string }[];
 }
 
 export default function Accountability() {
+  usePageTitle("Accountability");
   const { isPremium, canUseFeature } = useSubscription();
   const { toast } = useToast();
   const [isInviteOpen, setIsInviteOpen] = useState(false);

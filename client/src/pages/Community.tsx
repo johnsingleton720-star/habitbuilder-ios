@@ -17,6 +17,7 @@ import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const categoryIcons: Record<string, any> = {
   TrendingUp,
@@ -532,6 +533,7 @@ function PostDetail({ postId, onBack, isReadOnly = false }: { postId: number; on
 }
 
 export default function Community() {
+  usePageTitle("Community");
   const [location, navigate] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { isPro, isPremium } = useSubscription();

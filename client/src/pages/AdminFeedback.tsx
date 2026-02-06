@@ -15,6 +15,7 @@ import {
 import { Link } from "wouter";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface FeedbackItem {
   id: number;
@@ -192,6 +193,7 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
 }
 
 export default function AdminFeedback() {
+  usePageTitle("Admin Feedback");
   const { data: feedbackItems, isLoading } = useQuery<FeedbackItem[]>({
     queryKey: ["/api/admin/feedback"],
   });

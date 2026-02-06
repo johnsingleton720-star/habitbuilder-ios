@@ -10,6 +10,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface PricingTier {
   tier: string;
@@ -27,6 +28,7 @@ interface PricingData {
 }
 
 export default function Paywall() {
+  usePageTitle("Choose Your Plan");
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();

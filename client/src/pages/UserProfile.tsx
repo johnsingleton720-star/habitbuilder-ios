@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface UserProfile {
   id: number;
@@ -456,6 +457,7 @@ function PublicProfile({ userId }: { userId: string }) {
 }
 
 export default function UserProfile() {
+  usePageTitle("Profile");
   const params = useParams<{ userId?: string }>();
   
   if (params.userId) {
