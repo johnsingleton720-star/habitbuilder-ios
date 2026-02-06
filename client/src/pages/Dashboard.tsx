@@ -152,6 +152,7 @@ export default function Dashboard() {
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-community">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Community Forum
+                  <span className="ml-auto text-xs text-muted-foreground">Soon</span>
                 </DropdownMenuItem>
               </Link>
               <Link href="/account">

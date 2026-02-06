@@ -445,7 +445,7 @@ export default function Landing() {
               },
               {
                 icon: <Users className="w-7 h-7 text-blue-500 dark:text-blue-400" />,
-                title: "Community Forum",
+                title: "Community Forum (Coming Soon)",
                 desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired."
               },
             ].map((feature, i) => (
@@ -526,7 +526,7 @@ export default function Landing() {
                     ))}
                     {[
                       "Advanced analytics",
-                      "Community forum access",
+                      "Community forum (coming soon)",
                       "Voice notes",
                     ].map((f, i) => (
                       <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -572,7 +572,7 @@ export default function Landing() {
                       "Streaks & achievements",
                       "XP & leveling system",
                       "Weekly reports",
-                      "Community forum (read access)",
+                      "Community forum (coming soon)",
                       "Habit templates library",
                     ].map((f, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
@@ -613,7 +613,7 @@ export default function Landing() {
                       "Everything in Pro",
                       "Advanced analytics & trends",
                       "AI-generated insights & reports",
-                      "Community forum (full access)",
+                      "Community forum (coming soon)",
                       "Direct messaging",
                       "Voice notes",
                       "Accountability partners",

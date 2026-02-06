@@ -62,32 +62,6 @@ export default function Account() {
   const totalCompletions = habits?.reduce((acc, habit) => acc + (habit.progress?.length || 0), 0) || 0;
   const totalHabits = habits?.length || 0;
 
-  interface CommunityProfile {
-    profileVisible: boolean;
-    allowMessages: boolean;
-    allowProfileLikes: boolean;
-    showHabitProgress: boolean;
-  }
-
-  const { data: communityProfile } = useQuery<CommunityProfile>({
-    queryKey: ["/api/community/profile"],
-    enabled: isPremium,
-    retry: false,
-  });
-
-  const updateCommunitySettings = useMutation({
-    mutationFn: async (updates: Partial<CommunityProfile>) => {
-      return apiRequest("PATCH", "/api/community/profile", updates);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/community/profile"] });
-      toast({ title: "Community settings updated!" });
-    },
-    onError: () => {
-      toast({ title: "Failed to update settings", variant: "destructive" });
-    },
-  });
-
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showChangePlan, setShowChangePlan] = useState(false);
 
@@ -723,73 +697,6 @@ export default function Account() {
           <ThemeSelector />
         </motion.div>
 
-        {isPremium && communityProfile && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  Community Privacy
-                </CardTitle>
-                <CardDescription>Control your presence in the community</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="profileVisible">Public Profile</Label>
-                    <p className="text-sm text-muted-foreground">Allow others to view your profile</p>
-                  </div>
-                  <Switch
-                    id="profileVisible"
-                    checked={communityProfile.profileVisible}
-                    onCheckedChange={(checked) => updateCommunitySettings.mutate({ profileVisible: checked })}
-                    data-testid="switch-profile-visible"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="allowMessages">Direct Messages</Label>
-                    <p className="text-sm text-muted-foreground">Allow others to send you messages</p>
-                  </div>
-                  <Switch
-                    id="allowMessages"
-                    checked={communityProfile.allowMessages}
-                    onCheckedChange={(checked) => updateCommunitySettings.mutate({ allowMessages: checked })}
-                    data-testid="switch-allow-messages"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="allowProfileLikes">Profile Likes</Label>
-                    <p className="text-sm text-muted-foreground">Allow others to like your profile</p>
-                  </div>
-                  <Switch
-                    id="allowProfileLikes"
-                    checked={communityProfile.allowProfileLikes}
-                    onCheckedChange={(checked) => updateCommunitySettings.mutate({ allowProfileLikes: checked })}
-                    data-testid="switch-allow-likes"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="showHabitProgress">Show Progress</Label>
-                    <p className="text-sm text-muted-foreground">Display your habit stats on your profile</p>
-                  </div>
-                  <Switch
-                    id="showHabitProgress"
-                    checked={communityProfile.showHabitProgress}
-                    onCheckedChange={(checked) => updateCommunitySettings.mutate({ showHabitProgress: checked })}
-                    data-testid="switch-show-progress"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

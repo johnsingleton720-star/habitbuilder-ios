@@ -22,8 +22,6 @@ import AdminFeedback from "@/pages/AdminFeedback";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
-import Messages from "@/pages/Messages";
-import UserProfile from "@/pages/UserProfile";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 
 function Router() {
@@ -92,9 +90,9 @@ function Router() {
       <Route path="/account" component={Account} />
       <Route path="/community" component={Community} />
       <Route path="/community/post/:id" component={Community} />
-      <Route path="/community/messages" component={Messages} />
-      <Route path="/community/profile" component={UserProfile} />
-      <Route path="/community/profile/:userId" component={UserProfile} />
+      <Route path="/community/messages" component={Community} />
+      <Route path="/community/profile" component={Community} />
+      <Route path="/community/profile/:userId" component={Community} />
       <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
