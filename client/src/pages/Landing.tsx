@@ -1,15 +1,154 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
 import { usePageTitle } from "@/hooks/use-page-title";
 
+const habitGoals = [
+  {
+    id: "exercise",
+    label: "Exercise More",
+    icon: Dumbbell,
+    color: "text-orange-500 dark:text-orange-400",
+    bgColor: "bg-orange-500/10",
+    plan: {
+      title: "Daily Exercise Routine",
+      summary: "Build a sustainable fitness habit with progressive daily movement goals tailored to your schedule.",
+      daily: [
+        "5-minute morning stretch routine",
+        "15-minute walk during lunch break",
+        "10-minute evening bodyweight workout",
+      ],
+      weekly: [
+        "Add 5 minutes to one session each week",
+        "Try one new type of exercise",
+        "Rest day with light yoga or stretching",
+      ],
+      insight: "Starting with just 30 minutes spread across the day makes exercise feel effortless. Most users hit their stride by week 2.",
+    },
+  },
+  {
+    id: "reading",
+    label: "Read Daily",
+    icon: BookOpen,
+    color: "text-blue-500 dark:text-blue-400",
+    bgColor: "bg-blue-500/10",
+    plan: {
+      title: "Daily Reading Habit",
+      summary: "Transform reading from a chore into a highlight of your day with structured, achievable page goals.",
+      daily: [
+        "Read 10 pages before breakfast",
+        "Jot down one key takeaway in a journal",
+        "Replace 15 min of screen time with reading",
+      ],
+      weekly: [
+        "Review your notes and reflect on themes",
+        "Choose next book or topic to explore",
+        "Share a favorite passage with a friend",
+      ],
+      insight: "10 pages a day adds up to 30+ books a year. The key is linking reading to an existing routine like your morning coffee.",
+    },
+  },
+  {
+    id: "meditation",
+    label: "Meditate",
+    icon: Brain,
+    color: "text-purple-500 dark:text-purple-400",
+    bgColor: "bg-purple-500/10",
+    plan: {
+      title: "Mindfulness Practice",
+      summary: "Develop a calming meditation practice that reduces stress and improves focus, starting with just 5 minutes.",
+      daily: [
+        "5-minute guided breathing after waking up",
+        "1-minute mindful pause before lunch",
+        "5-minute body scan before sleep",
+      ],
+      weekly: [
+        "Increase one session by 2 minutes",
+        "Try a new meditation technique",
+        "Reflect on stress levels in your journal",
+      ],
+      insight: "Consistency beats duration. 5 minutes daily for a month builds more mental resilience than occasional 30-minute sessions.",
+    },
+  },
+  {
+    id: "eating",
+    label: "Eat Healthier",
+    icon: Apple,
+    color: "text-green-500 dark:text-green-400",
+    bgColor: "bg-green-500/10",
+    plan: {
+      title: "Healthy Eating Plan",
+      summary: "Make nutritious choices automatic by building small, sustainable changes into your daily meals.",
+      daily: [
+        "Add one extra serving of vegetables to lunch",
+        "Drink a glass of water before each meal",
+        "Prep a healthy snack for the afternoon",
+      ],
+      weekly: [
+        "Try one new healthy recipe",
+        "Plan meals for the upcoming week",
+        "Swap one processed food for a whole food",
+      ],
+      insight: "Adding healthy foods works better than restricting. Users who focus on adding vegetables see the biggest long-term improvements.",
+    },
+  },
+  {
+    id: "sleep",
+    label: "Sleep Better",
+    icon: Moon,
+    color: "text-indigo-500 dark:text-indigo-400",
+    bgColor: "bg-indigo-500/10",
+    plan: {
+      title: "Better Sleep Routine",
+      summary: "Create a wind-down ritual that helps you fall asleep faster and wake up feeling refreshed.",
+      daily: [
+        "Set a consistent bedtime alarm",
+        "No screens 30 minutes before bed",
+        "5-minute wind-down journaling or stretching",
+      ],
+      weekly: [
+        "Review sleep quality and adjust bedtime",
+        "Optimize bedroom environment",
+        "Track energy levels to find patterns",
+      ],
+      insight: "A consistent bedtime is the single biggest factor in sleep quality. Even shifting 15 minutes earlier can transform your mornings.",
+    },
+  },
+  {
+    id: "journaling",
+    label: "Start Journaling",
+    icon: Pencil,
+    color: "text-amber-500 dark:text-amber-400",
+    bgColor: "bg-amber-500/10",
+    plan: {
+      title: "Daily Journaling Practice",
+      summary: "Build self-awareness and clarity through a simple, guided writing practice that takes just minutes.",
+      daily: [
+        "Write 3 things you're grateful for each morning",
+        "Spend 5 minutes free-writing about your day",
+        "Note one thing you learned or noticed today",
+      ],
+      weekly: [
+        "Review the week's entries for patterns",
+        "Write a letter to your future self",
+        "Set one intention for the coming week",
+      ],
+      insight: "Gratitude journaling is scientifically proven to boost happiness. Most users notice improved mood within just 2 weeks.",
+    },
+  },
+];
+
 export default function Landing() {
   usePageTitle();
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const activeGoal = habitGoals.find((g) => g.id === selectedGoal);
+
   const scrollToLogin = () => {
     window.location.href = "/api/login";
   };
@@ -63,6 +202,14 @@ export default function Landing() {
               <Button onClick={scrollToLogin} size="lg" data-testid="button-hero-cta">
                 Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => document.getElementById("try-it")?.scrollIntoView({ behavior: "smooth" })}
+                data-testid="button-hero-preview"
+              >
+                See a Sample Plan
               </Button>
             </div>
             
@@ -131,7 +278,136 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 bg-white/50 dark:bg-card/30">
+      <section className="py-24 bg-white/50 dark:bg-card/30" id="try-it">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12 space-y-4">
+            <Badge variant="secondary" className="mb-2">
+              <Zap className="w-3 h-3 mr-1" />
+              30-Second Preview
+            </Badge>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-tryit-heading">
+              What's your top habit goal?
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Pick a goal and see a sample AI action plan instantly — no sign-up needed.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+            {habitGoals.map((goal) => {
+              const Icon = goal.icon;
+              const isSelected = selectedGoal === goal.id;
+              return (
+                <button
+                  key={goal.id}
+                  onClick={() => setSelectedGoal(isSelected ? null : goal.id)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
+                    isSelected
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 toggle-elevated"
+                      : "border-border/50 bg-white dark:bg-card"
+                  }`}
+                  data-testid={`button-goal-${goal.id}`}
+                >
+                  <div className={`p-2 rounded-lg ${goal.bgColor}`}>
+                    <Icon className={`w-5 h-5 ${goal.color}`} />
+                  </div>
+                  <span className="text-sm font-medium text-center">{goal.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <AnimatePresence mode="wait">
+            {activeGoal && (
+              <motion.div
+                key={activeGoal.id}
+                initial={{ opacity: 0, y: 20, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -10, height: 0 }}
+                transition={{ duration: 0.35 }}
+                data-testid="preview-plan-container"
+              >
+                <Card className="overflow-visible">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3 mb-6">
+                      <div className={`p-2 rounded-lg ${activeGoal.bgColor} shrink-0`}>
+                        <activeGoal.icon className={`w-6 h-6 ${activeGoal.color}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-display text-xl font-bold" data-testid="text-plan-title">
+                          {activeGoal.plan.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">{activeGoal.plan.summary}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-sm">Daily Actions</span>
+                        </div>
+                        {activeGoal.plan.daily.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5 text-sm" data-testid={`text-daily-action-${i}`}>
+                            <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <BarChart3 className="w-4 h-4 text-accent" />
+                          <span className="font-semibold text-sm">Weekly Goals</span>
+                        </div>
+                        {activeGoal.plan.weekly.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5 text-sm" data-testid={`text-weekly-goal-${i}`}>
+                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 mb-6">
+                      <div className="flex items-start gap-2.5">
+                        <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-semibold text-sm">AI Insight</span>
+                          <p className="text-sm text-muted-foreground mt-1" data-testid="text-ai-insight">
+                            {activeGoal.plan.insight}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        This is just a preview. Sign up to get a <span className="font-semibold text-foreground">fully personalized plan</span> based on your schedule, experience, and goals.
+                      </p>
+                      <Button onClick={scrollToLogin} className="shrink-0" data-testid="button-preview-signup">
+                        Get My Full Plan
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {!selectedGoal && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-sm text-muted-foreground mt-6"
+            >
+              Select a goal above to see your sample action plan
+            </motion.p>
+          )}
+        </div>
+      </section>
+
+      <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
