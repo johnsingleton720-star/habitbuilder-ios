@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +33,21 @@ interface GamificationStats {
   weeklyXpGoal: number;
   todaysChallenges: DailyChallenge[];
 }
+
+const XP_LEVELS = [
+  { level: 1, minXp: 0, title: "Beginner" },
+  { level: 2, minXp: 100, title: "Starter" },
+  { level: 3, minXp: 300, title: "Committed" },
+  { level: 4, minXp: 600, title: "Dedicated" },
+  { level: 5, minXp: 1000, title: "Consistent" },
+  { level: 6, minXp: 1500, title: "Focused" },
+  { level: 7, minXp: 2200, title: "Advanced" },
+  { level: 8, minXp: 3000, title: "Expert" },
+  { level: 9, minXp: 4000, title: "Master" },
+  { level: 10, minXp: 5500, title: "Legend" },
+  { level: 11, minXp: 7500, title: "Champion" },
+  { level: 12, minXp: 10000, title: "Habit Hero" },
+];
 
 const CHALLENGE_ICONS: Record<string, typeof Target> = {
   complete_tasks: Target,
@@ -136,9 +152,69 @@ export function GamificationDisplay() {
                 <Trophy className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-display text-xl font-bold">Level {stats.level}</span>
                   <Badge variant="secondary" className="text-xs">{stats.levelTitle}</Badge>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" data-testid="button-level-info">
+                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Trophy className="w-5 h-5 text-primary" />
+                          How Leveling Up Works
+                        </DialogTitle>
+                        <DialogDescription>
+                          Earn XP by completing daily challenges. As you accumulate XP, you level up and unlock new titles.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-2">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium mb-2">How to earn XP</p>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            <li className="flex items-center gap-2"><Target className="w-3.5 h-3.5 text-primary shrink-0" /> Complete daily challenges (40-100 XP each)</li>
+                            <li className="flex items-center gap-2"><Flame className="w-3.5 h-3.5 text-primary shrink-0" /> Maintain habit streaks</li>
+                            <li className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-primary shrink-0" /> Spend time on your habits</li>
+                            <li className="flex items-center gap-2"><Star className="w-3.5 h-3.5 text-primary shrink-0" /> Work on all your active habits</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium mb-2">All Levels</p>
+                          <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                            {XP_LEVELS.map((lvl) => (
+                              <div
+                                key={lvl.level}
+                                className={cn(
+                                  "flex items-center justify-between gap-2 text-sm px-2 py-1.5 rounded-md",
+                                  stats.level === lvl.level && "bg-primary/10 font-medium"
+                                )}
+                                data-testid={`level-info-${lvl.level}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className={cn(
+                                    "w-6 text-center font-mono text-xs",
+                                    stats.level === lvl.level ? "text-primary font-bold" : "text-muted-foreground"
+                                  )}>
+                                    {lvl.level}
+                                  </span>
+                                  <span>{lvl.title}</span>
+                                  {stats.level === lvl.level && (
+                                    <Badge variant="default" className="text-[10px] px-1.5 py-0">You</Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {lvl.minXp.toLocaleString()} XP
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {stats.xpPoints.toLocaleString()} XP
