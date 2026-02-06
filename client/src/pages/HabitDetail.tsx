@@ -45,9 +45,10 @@ export default function HabitDetail() {
       return res.json();
     },
     onSuccess: () => {
-      // Invalidate both specific habit and full list so dashboard updates immediately
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
   });
 

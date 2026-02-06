@@ -1768,6 +1768,26 @@ REQUIREMENTS:
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
       });
 
+      if (completed) {
+        const allHabits = await storage.getHabits(userId);
+        const today = new Date().toISOString().split('T')[0];
+        const habitsWorkedToday = allHabits.filter(h =>
+          h.dailyPlans?.some(p => p.date === today && p.tasks.some(t => t.completed))
+        ).length;
+
+        await updateChallengeProgress(userId, {
+          tasksCompleted: 1,
+          timeSpent: timeSpent || 0,
+          habitsWorkedOn: habitsWorkedToday,
+          totalActiveHabits: allHabits.length,
+          notesAdded: notes ? 1 : 0,
+          streakMaintained: currentStreak > 0,
+          isBeforeNoon: new Date().getHours() < 12,
+        });
+
+        await checkAndAwardAchievements(userId);
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating task:", error);
@@ -1817,13 +1837,17 @@ REQUIREMENTS:
         }
       }
 
+      const newTotalTime = (habit.totalTimeSpent || 0) + timeSpent;
+
       await storage.updateHabit(habitId, userId, {
         dailyPlans,
         progress,
-        totalTimeSpent: (habit.totalTimeSpent || 0) + timeSpent,
+        totalTimeSpent: newTotalTime,
         currentStreak,
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
       });
+
+      await checkAndAwardAchievements(userId);
 
       res.json({ success: true, currentStreak });
     } catch (error) {
@@ -2666,6 +2690,9 @@ Return JSON with:
   app.get("/api/achievements", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+
+      await checkAndAwardAchievements(userId);
+
       const achievements = await db.select()
         .from(userAchievements)
         .where(eq(userAchievements.userId, userId));
@@ -3694,6 +3721,133 @@ Return JSON with:
       : 100;
     
     return { level: currentLevel.level, title: currentLevel.title, xpToNext, progress };
+  }
+
+  async function updateChallengeProgress(userId: string, event: {
+    tasksCompleted?: number;
+    timeSpent?: number;
+    habitsWorkedOn?: number;
+    totalActiveHabits?: number;
+    notesAdded?: number;
+    streakMaintained?: boolean;
+    isBeforeNoon?: boolean;
+  }) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const todaysChallenges = await db.select().from(dailyChallenges)
+        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
+
+      if (todaysChallenges.length === 0) return;
+
+      for (const challenge of todaysChallenges) {
+        if (challenge.completed) continue;
+
+        let increment = 0;
+        switch (challenge.challengeType) {
+          case 'complete_tasks':
+            if (event.tasksCompleted) increment = event.tasksCompleted;
+            break;
+          case 'time_goal':
+            if (event.timeSpent) increment = event.timeSpent;
+            break;
+          case 'all_habits':
+            if (event.habitsWorkedOn) {
+              const target = challenge.targetValue || 3;
+              const newVal = Math.min(event.habitsWorkedOn, target);
+              increment = Math.max(0, newVal - (challenge.currentValue || 0));
+            }
+            break;
+          case 'streak_builder':
+            if (event.streakMaintained) increment = 1;
+            break;
+          case 'early_bird':
+            if (event.isBeforeNoon) increment = 1;
+            break;
+          case 'note_taker':
+            if (event.notesAdded) increment = event.notesAdded;
+            break;
+        }
+
+        if (increment > 0) {
+          const newValue = Math.min((challenge.currentValue || 0) + increment, challenge.targetValue || 1);
+          const completed = newValue >= (challenge.targetValue || 1);
+
+          await db.update(dailyChallenges)
+            .set({
+              currentValue: newValue,
+              completed,
+              completedAt: completed ? new Date() : null,
+            })
+            .where(eq(dailyChallenges.id, challenge.id));
+
+          if (completed) {
+            const user = await storage.getUser(userId);
+            const currentXp = user?.xpPoints || 0;
+            await db.update(users)
+              .set({
+                xpPoints: currentXp + challenge.xpReward,
+                dailyChallengesCompleted: (user?.dailyChallengesCompleted || 0) + 1,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, userId));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating challenge progress:", error);
+    }
+  }
+
+  async function checkAndAwardAchievements(userId: string) {
+    try {
+      const existingAchievements = await db.select()
+        .from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+      const unlockedIds = new Set(existingAchievements.map(a => a.achievementId));
+
+      const userHabits = await storage.getHabits(userId);
+      const totalHabits = userHabits.length;
+      const hasActionPlan = userHabits.some(h => h.dailyPlans && h.dailyPlans.length > 0);
+
+      let maxStreak = 0;
+      let totalSessions = 0;
+      let totalTime = 0;
+
+      for (const habit of userHabits) {
+        maxStreak = Math.max(maxStreak, habit.currentStreak || 0, habit.longestStreak || 0);
+        totalSessions += (habit.progress?.length || 0);
+        totalTime += (habit.totalTimeSpent || 0);
+      }
+
+      const achievementsToCheck = [
+        { id: "streak_3", check: maxStreak >= 3 },
+        { id: "streak_7", check: maxStreak >= 7 },
+        { id: "streak_14", check: maxStreak >= 14 },
+        { id: "streak_30", check: maxStreak >= 30 },
+        { id: "streak_100", check: maxStreak >= 100 },
+        { id: "sessions_5", check: totalSessions >= 5 },
+        { id: "sessions_25", check: totalSessions >= 25 },
+        { id: "sessions_100", check: totalSessions >= 100 },
+        { id: "time_60", check: totalTime >= 60 },
+        { id: "time_300", check: totalTime >= 300 },
+        { id: "time_1200", check: totalTime >= 1200 },
+        { id: "habits_3", check: totalHabits >= 3 },
+        { id: "habits_5", check: totalHabits >= 5 },
+        { id: "first_plan", check: hasActionPlan },
+      ];
+
+      const newlyUnlocked: string[] = [];
+      for (const { id, check } of achievementsToCheck) {
+        if (check && !unlockedIds.has(id)) {
+          await db.insert(userAchievements).values({ userId, achievementId: id });
+          newlyUnlocked.push(id);
+        }
+      }
+      return newlyUnlocked;
+    } catch (error) {
+      console.error("Error checking achievements:", error);
+      return [];
+    }
   }
 
   // Get user's gamification stats

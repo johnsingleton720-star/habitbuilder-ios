@@ -79,14 +79,15 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
   const currentTask = tasks[currentTaskIndex];
 
   const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, completed, notes }: { taskId: string; completed?: boolean; notes?: string }) => {
-      const res = await apiRequest("PATCH", `/api/habits/${habit.id}/tasks/${taskId}`, { completed, notes });
+    mutationFn: async ({ taskId, completed, notes, timeSpent }: { taskId: string; completed?: boolean; notes?: string; timeSpent?: number }) => {
+      const res = await apiRequest("PATCH", `/api/habits/${habit.id}/tasks/${taskId}`, { completed, notes, timeSpent });
       return res.json();
     },
     onSuccess: () => {
-      // Invalidate both specific habit and full list so dashboard updates immediately
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
   });
 
@@ -109,6 +110,8 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
   });
 
@@ -233,11 +236,13 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
     // Save notes and time for this task
     setAllTaskNotes(prev => [...prev, currentTaskNote]);
     
-    // Mark task complete via API
+    const timeSpentMinutes = Math.max(1, Math.round(taskTimeElapsed / 60));
+
     updateTaskMutation.mutate({
       taskId: currentTask.id,
       completed: true,
       notes: taskNotes || undefined,
+      timeSpent: timeSpentMinutes,
     });
     
     const newCompletedCount = completedTasks.length + 1;
