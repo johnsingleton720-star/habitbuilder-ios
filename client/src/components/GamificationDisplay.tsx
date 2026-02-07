@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle, Crown } from "lucide-react";
+import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle, Crown, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,8 +58,37 @@ const CHALLENGE_ICONS: Record<string, typeof Target> = {
   note_taker: Sparkles,
 };
 
+function useTimeUntilMidnight() {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    function calculate() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m`);
+      }
+    }
+
+    calculate();
+    const interval = setInterval(calculate, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return timeLeft;
+}
+
 export function GamificationDisplay() {
   const { toast } = useToast();
+  const timeUntilReset = useTimeUntilMidnight();
   const [celebration, setCelebration] = useState<{
     show: boolean;
     type: "level_up" | "challenge";
@@ -256,6 +285,12 @@ export function GamificationDisplay() {
               </Badge>
             </div>
           </div>
+          {hasChallenges && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1" data-testid="text-challenge-reset">
+              <RotateCcw className="w-3 h-3" />
+              <span>Challenges reset in {timeUntilReset}</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {!hasChallenges ? (
