@@ -80,7 +80,8 @@ export interface HabitTip {
 // Schedule type for habit scheduling
 export interface HabitSchedule {
   days: string[]; // Array of day names: "monday", "tuesday", etc.
-  time: string; // Time in HH:mm format
+  time: string; // Default time in HH:mm format (used when no per-day time is set)
+  dayTimes?: Record<string, string>; // Per-day times in HH:mm format, e.g. { monday: "07:00", wednesday: "18:00" }
   reminder: boolean; // Whether to show reminders
 }
 

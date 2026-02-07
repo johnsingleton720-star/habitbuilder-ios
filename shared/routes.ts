@@ -46,6 +46,7 @@ export const habitTipSchema = z.object({
 export const habitScheduleSchema = z.object({
   days: z.array(z.string()),
   time: z.string(),
+  dayTimes: z.record(z.string(), z.string()).optional(),
   reminder: z.boolean(),
 });
 

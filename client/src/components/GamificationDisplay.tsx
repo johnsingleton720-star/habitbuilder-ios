@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle } from "lucide-react";
+import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -241,14 +241,20 @@ export function GamificationDisplay() {
       {/* Daily Challenges Card */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Zap className="w-5 h-5 text-amber-500" />
               Daily Challenges
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
-              {stats.todaysChallenges.filter(c => c.completed).length}/{stats.todaysChallenges.length} Complete
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs" data-testid="badge-challenges-premium">
+                <Crown className="w-3 h-3 mr-1" />
+                Pro / Premium
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {stats.todaysChallenges.filter(c => c.completed).length}/{stats.todaysChallenges.length} Complete
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
