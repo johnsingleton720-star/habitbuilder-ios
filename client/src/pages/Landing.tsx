@@ -195,21 +195,21 @@ export default function Landing() {
             <Leaf className="w-6 h-6 fill-primary/20" />
             <span>Habit Builder</span>
           </a>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Link href="/templates">
-              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hidden sm:inline-flex" data-testid="link-nav-templates">
+              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
                 Templates
               </Button>
             </Link>
             <Link href="/blog">
-              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hidden sm:inline-flex" data-testid="link-nav-blog">
+              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
                 Blog
               </Button>
             </Link>
-            <Button onClick={scrollToLogin} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+            <Button onClick={scrollToLogin} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
               Sign In
             </Button>
-            <Button onClick={scrollToLogin} size="sm" data-testid="button-nav-get-started">
+            <Button onClick={scrollToLogin} data-testid="button-nav-get-started">
               Get Started Free
             </Button>
           </div>
