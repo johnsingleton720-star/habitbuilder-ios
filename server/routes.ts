@@ -1715,6 +1715,222 @@ REQUIREMENTS:
     }
   });
 
+  // Regenerate plan with a different duration, keeping existing questions/answers
+  app.post("/api/habits/:id/regenerate-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { duration } = req.body;
+
+      if (!["daily", "weekly", "monthly"].includes(duration)) {
+        return res.status(400).json({ error: "Invalid duration. Must be daily, weekly, or monthly." });
+      }
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      if (!habit.setupComplete) {
+        return res.status(400).json({ error: "Habit setup must be completed first before changing plan type." });
+      }
+
+      const safetyCheck = checkContentSafety(habit.title, habit.description, habit.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
+      }
+
+      const questions = (habit.questions || []) as any[];
+      const startDate = new Date();
+      const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + daysCount - 1);
+
+      const contextSummary = questions
+        .filter((q: any) => q.answer)
+        .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
+        .join("\n\n");
+
+      let fixedDailyPlans: any[];
+
+      if (duration === "monthly") {
+        const weekPrompt = `Create a personalized 4-week habit plan for: "${habit.title}"
+${habit.goal ? `Goal: ${habit.goal}` : ""}
+
+User's interview answers:
+${contextSummary}
+
+Create exactly 4 weeks. Each week has a theme and 3-4 daily tasks that apply to each day of that week.
+Progress difficulty: Week 1 = easy wins, Week 4 = full routine.
+
+Return JSON:
+{
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "theme": "Week theme",
+      "dailyTasks": [
+        {
+          "title": "Action-oriented title",
+          "description": "Detailed instructions:\\n1) Step one\\n2) Step two\\nPro Tip: helpful advice",
+          "duration": 10
+        }
+      ]
+    }
+  ],
+  "aiContext": "2-3 sentence summary of goals and recommended approach"
+}
+
+REQUIREMENTS:
+1. Each task description: 30-60 words with numbered steps (use \\n)
+2. Be specific to their answers (time available, experience level)
+3. Progress difficulty gradually across weeks
+4. Include concrete numbers (reps, minutes, amounts)
+5. Reference their specific situation`;
+
+        const weekResponse = await openaiClient.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            },
+            { role: "user", content: weekPrompt },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+        });
+
+        const weekContent = weekResponse.choices[0].message.content;
+        if (!weekContent) throw new Error("No content from AI");
+
+        const weekData = JSON.parse(weekContent);
+        if (!weekData.weeks || !Array.isArray(weekData.weeks) || weekData.weeks.length === 0) {
+          throw new Error("Invalid weekly plan structure from AI");
+        }
+
+        fixedDailyPlans = [];
+        for (let dayIndex = 0; dayIndex < daysCount; dayIndex++) {
+          const planDate = new Date(startDate);
+          planDate.setDate(planDate.getDate() + dayIndex);
+          const weekIndex = Math.min(Math.floor(dayIndex / 7), weekData.weeks.length - 1);
+          const week = weekData.weeks[weekIndex];
+
+          fixedDailyPlans.push({
+            date: planDate.toISOString().split('T')[0],
+            dayNumber: dayIndex + 1,
+            focus: week.theme || `Week ${weekIndex + 1}`,
+            tasks: (week.dailyTasks || []).map((task: any, tIdx: number) => ({
+              id: `day${dayIndex + 1}-task${tIdx + 1}`,
+              title: task.title,
+              description: task.description,
+              duration: task.duration || 10,
+              completed: false,
+              notes: "",
+            })),
+            completed: false,
+            timeSpent: 0,
+          });
+        }
+
+        await storage.updateHabit(habitId, userId, {
+          planDuration: duration,
+          planStartDate: startDate.toISOString().split('T')[0],
+          planEndDate: endDate.toISOString().split('T')[0],
+          dailyPlans: fixedDailyPlans,
+          aiContext: weekData.aiContext || habit.aiContext,
+        });
+
+        res.json({ success: true, dailyPlans: fixedDailyPlans });
+        return;
+      }
+
+      // Daily or Weekly
+      const prompt = `Create a personalized ${duration} action plan for: "${habit.title}"
+${habit.goal ? `Goal: ${habit.goal}` : ""}
+
+User's interview answers:
+${contextSummary}
+
+Create ${daysCount} daily plans with 3-4 tasks each.
+
+Return JSON:
+{
+  "dailyPlans": [
+    {
+      "date": "${startDate.toISOString().split('T')[0]}",
+      "dayNumber": 1,
+      "focus": "Day theme",
+      "tasks": [
+        {
+          "id": "day1-task1",
+          "title": "Action-oriented title",
+          "description": "Detailed instructions:\\n1) What to do\\n2) Step-by-step how\\nPro Tip: One helpful tip.",
+          "duration": 10,
+          "completed": false,
+          "notes": ""
+        }
+      ],
+      "completed": false,
+      "timeSpent": 0
+    }
+  ],
+  "aiContext": "2-3 sentence summary of goals and recommended approach"
+}
+
+REQUIREMENTS:
+1. Each task description: 50-100 words with numbered steps separated by newlines (use \\n in the JSON)
+2. Be specific to their answers (time available, experience level)
+3. Progress difficulty gradually - Day 1 is easy wins
+4. Include concrete numbers (reps, minutes, amounts)
+5. Reference their specific situation in descriptions`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const planData = JSON.parse(content);
+      if (!planData.dailyPlans || !Array.isArray(planData.dailyPlans)) {
+        throw new Error("Invalid plan structure from AI");
+      }
+
+      fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
+        const planDate = new Date(startDate);
+        planDate.setDate(planDate.getDate() + index);
+        return {
+          ...plan,
+          date: planDate.toISOString().split('T')[0],
+          dayNumber: index + 1,
+        };
+      });
+
+      await storage.updateHabit(habitId, userId, {
+        planDuration: duration,
+        planStartDate: startDate.toISOString().split('T')[0],
+        planEndDate: endDate.toISOString().split('T')[0],
+        dailyPlans: fixedDailyPlans,
+        aiContext: planData.aiContext || habit.aiContext,
+      });
+
+      res.json({ success: true, dailyPlans: fixedDailyPlans });
+    } catch (error) {
+      console.error("Error regenerating plan:", error);
+      res.status(500).json({ error: "Failed to regenerate plan" });
+    }
+  });
+
   // Update a specific task in a daily plan
   app.patch("/api/habits/:id/tasks/:taskId", isAuthenticated, async (req: any, res) => {
     try {

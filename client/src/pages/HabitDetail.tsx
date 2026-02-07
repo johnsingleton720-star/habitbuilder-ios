@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -34,10 +36,37 @@ export default function HabitDetail() {
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [guidanceTask, setGuidanceTask] = useState<RoutineTask | null>(null);
+  const [showPlanTypeChanger, setShowPlanTypeChanger] = useState(false);
+  const [newPlanDuration, setNewPlanDuration] = useState<string>("");
+  const { toast } = useToast();
   
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
     queryKey: ["/api/habits", habitId],
     enabled: !isNaN(habitId) && habitId > 0,
+  });
+
+  const regeneratePlanMutation = useMutation({
+    mutationFn: async (duration: string) => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/regenerate-plan`, { duration });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      setShowPlanTypeChanger(false);
+      setSelectedDay(null);
+      toast({
+        title: "Plan updated",
+        description: "Your plan has been regenerated with the new schedule.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "Could not regenerate your plan. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const updateTaskMutation = useMutation({
@@ -274,13 +303,95 @@ export default function HabitDetail() {
         {habit.setupComplete && dailyPlans.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Your {habit.planDuration} Plan
-              </CardTitle>
-              <CardDescription>
-                {habit.planStartDate} to {habit.planEndDate}
-              </CardDescription>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Your {habit.planDuration} Plan
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {habit.planStartDate} to {habit.planEndDate}
+                  </CardDescription>
+                </div>
+                {!showPlanTypeChanger && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setNewPlanDuration(habit.planDuration || "weekly");
+                      setShowPlanTypeChanger(true);
+                    }}
+                    data-testid="button-change-plan-type"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Change Plan Type
+                  </Button>
+                )}
+              </div>
+              <AnimatePresence>
+                {showPlanTypeChanger && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <Card className="mt-3 bg-muted/30">
+                      <CardContent className="p-4 space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Switch your plan type and regenerate with fresh tasks. Your existing interview answers will be used to create the new plan.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                          <Select value={newPlanDuration} onValueChange={setNewPlanDuration}>
+                            <SelectTrigger className="w-full sm:w-48" data-testid="select-plan-duration">
+                              <SelectValue placeholder="Select plan type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily" data-testid="option-daily">Daily (1 day)</SelectItem>
+                              <SelectItem value="weekly" data-testid="option-weekly">Weekly (7 days)</SelectItem>
+                              <SelectItem value="monthly" data-testid="option-monthly">Monthly (30 days)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => regeneratePlanMutation.mutate(newPlanDuration)}
+                              disabled={regeneratePlanMutation.isPending || newPlanDuration === habit.planDuration}
+                              data-testid="button-regenerate-plan"
+                            >
+                              {regeneratePlanMutation.isPending ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4 h-4 mr-2" />
+                                  Regenerate Plan
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowPlanTypeChanger(false)}
+                              disabled={regeneratePlanMutation.isPending}
+                              data-testid="button-cancel-change-plan"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                        {newPlanDuration !== habit.planDuration && (
+                          <p className="text-xs text-muted-foreground">
+                            This will replace your current {habit.planDuration} plan with a new {newPlanDuration} plan. Your progress will be reset.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Day Selector */}
