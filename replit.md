@@ -55,6 +55,22 @@ The core system enables personalized habit coaching:
 
 ### Habit Templates
 -   A library of pre-built habit templates is available for various categories.
+-   **Public Templates Gallery**: `/templates` - Publicly accessible (no auth required) page showing all templates by category with SEO metadata and sign-up CTAs.
+
+### Blog (SEO Content)
+-   **Static blog articles**: Stored in `client/src/data/blog-articles.ts` as structured data (no CMS).
+-   **Routes**: `/blog` (listing), `/blog/:slug` (individual articles).
+-   **Articles include**: Sections, FAQs with JSON-LD schema, keywords, and sign-up CTAs.
+-   **Publicly accessible**: No login required. Targets long-tail SEO keywords.
+
+### Interactive AI Demo
+-   Landing page "try it" section allows visitors to type any habit goal and get an AI-generated action plan.
+-   **API**: `POST /api/demo-plan` (public, rate-limited to 5 requests/hour per IP).
+-   Uses content safety checks and OpenAI gpt-4o-mini model.
+
+### Public Routes
+-   App.tsx router supports public routes (`/templates`, `/blog`, `/blog/:slug`) that render without authentication.
+-   Public pages share a common nav with links to Home, Templates, Blog, Sign In, and Get Started.
 
 ### Terms of Service & Content Safety
 -   **TOS Acceptance**: New users must accept Terms of Service before using the app. Modal blocks access until accepted. Stored as `tosAcceptedAt` in users table.

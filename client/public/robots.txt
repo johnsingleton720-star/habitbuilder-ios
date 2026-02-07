@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /templates
+Allow: /blog
+Allow: /blog/
 Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard

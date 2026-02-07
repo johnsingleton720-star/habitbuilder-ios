@@ -3089,6 +3089,70 @@ Return JSON with:
     }
   });
 
+  // Public demo: generate a sample habit plan using AI (rate-limited, no auth required)
+  const demoPlanLimiter = new Map<string, { count: number; resetAt: number }>();
+  app.post("/api/demo-plan", async (req, res) => {
+    try {
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      const now = Date.now();
+      const limit = demoPlanLimiter.get(clientIp);
+      if (limit && limit.resetAt > now) {
+        if (limit.count >= 5) {
+          return res.status(429).json({ error: "You've reached the demo limit. Sign up for unlimited AI coaching!" });
+        }
+        limit.count++;
+      } else {
+        demoPlanLimiter.set(clientIp, { count: 1, resetAt: now + 3600000 });
+      }
+
+      const { habitGoal } = req.body;
+      if (!habitGoal || typeof habitGoal !== "string" || habitGoal.trim().length < 3 || habitGoal.length > 200) {
+        return res.status(400).json({ error: "Please enter a habit goal (3-200 characters)." });
+      }
+
+      const safetyCheck = checkContentSafety(habitGoal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message || "That goal isn't supported. Try something positive and constructive!" });
+      }
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a habit coaching assistant. Generate a brief, actionable habit plan for the user's goal. Return ONLY valid JSON with this structure:
+{
+  "title": "Short plan title",
+  "summary": "1-2 sentence summary of the approach",
+  "daily": ["action 1", "action 2", "action 3"],
+  "weekly": ["milestone 1", "milestone 2", "milestone 3"],
+  "insight": "One motivational insight or tip"
+}
+Keep each item under 80 characters. Be specific and practical. Do not generate any harmful, violent, or explicit content.`
+          },
+          {
+            role: "user",
+            content: `Create a habit plan for: ${habitGoal.trim()}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to generate plan. Please try again." });
+      }
+
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const plan = JSON.parse(cleaned);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error generating demo plan:", error);
+      res.status(500).json({ error: "Failed to generate plan. Please try again." });
+    }
+  });
+
   // Seed default templates if none exist (admin only or first-time setup)
   app.post("/api/templates/seed", isAuthenticated, async (req: any, res) => {
     try {

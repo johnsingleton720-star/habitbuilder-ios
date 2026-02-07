@@ -22,7 +22,12 @@ import AdminFeedback from "@/pages/AdminFeedback";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
+import PublicTemplates from "@/pages/PublicTemplates";
+import BlogList from "@/pages/BlogList";
+import BlogArticle from "@/pages/BlogArticle";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
+
+const PUBLIC_ROUTES = ["/templates", "/blog"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -51,6 +56,19 @@ function Router() {
       window.history.replaceState({}, '', '/');
     }
   }, [toast]);
+
+  const isPublicRoute = PUBLIC_ROUTES.some(route => location.startsWith(route));
+
+  if (isPublicRoute) {
+    return (
+      <Switch>
+        <Route path="/templates" component={PublicTemplates} />
+        <Route path="/blog/:slug" component={BlogArticle} />
+        <Route path="/blog" component={BlogList} />
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
 
   if (isAuthLoading) {
     return (

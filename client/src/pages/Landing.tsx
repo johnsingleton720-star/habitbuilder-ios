@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 const habitGoals = [
   {
@@ -144,13 +147,44 @@ const habitGoals = [
   },
 ];
 
+interface AIPlan {
+  title: string;
+  summary: string;
+  daily: string[];
+  weekly: string[];
+  insight: string;
+}
+
 export default function Landing() {
   usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6/month or Premium at $15/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const activeGoal = habitGoals.find((g) => g.id === selectedGoal);
 
+  const [customGoal, setCustomGoal] = useState("");
+  const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const scrollToLogin = () => {
     window.location.href = "/api/login";
+  };
+
+  const handleCustomGoalSubmit = async () => {
+    if (!customGoal.trim() || customGoal.trim().length < 3) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiPlan(null);
+    setSelectedGoal(null);
+    try {
+      const response = await apiRequest("POST", "/api/demo-plan", { habitGoal: customGoal.trim() });
+      const plan = await response.json();
+      setAiPlan(plan);
+    } catch (err: any) {
+      const errorData = err?.message || "Something went wrong. Please try again.";
+      setAiError(errorData);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -162,6 +196,16 @@ export default function Landing() {
             <span>Habit Builder</span>
           </a>
           <div className="flex items-center gap-3">
+            <Link href="/templates">
+              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hidden sm:inline-flex" data-testid="link-nav-templates">
+                Templates
+              </Button>
+            </Link>
+            <Link href="/blog">
+              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hidden sm:inline-flex" data-testid="link-nav-blog">
+                Blog
+              </Button>
+            </Link>
             <Button onClick={scrollToLogin} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
               Sign In
             </Button>
@@ -283,14 +327,36 @@ export default function Landing() {
           <div className="text-center mb-12 space-y-4">
             <Badge variant="secondary" className="mb-2">
               <Zap className="w-3 h-3 mr-1" />
-              30-Second Preview
+              Live AI Demo
             </Badge>
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-tryit-heading">
-              What's your top habit goal?
+              Try it now — type any habit goal
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Pick a goal and see a sample AI action plan instantly — no sign-up needed.
+              Our AI coach will create a personalized action plan in seconds. Pick a popular goal or type your own.
             </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., Learn Spanish, Run a 5K, Practice guitar..."
+                value={customGoal}
+                onChange={(e) => setCustomGoal(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCustomGoalSubmit()}
+                className="flex-1"
+                maxLength={200}
+                data-testid="input-custom-goal"
+              />
+              <Button 
+                onClick={handleCustomGoalSubmit} 
+                disabled={aiLoading || customGoal.trim().length < 3}
+                data-testid="button-generate-plan"
+              >
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <span className="ml-2 hidden sm:inline">Generate Plan</span>
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
@@ -300,7 +366,11 @@ export default function Landing() {
               return (
                 <button
                   key={goal.id}
-                  onClick={() => setSelectedGoal(isSelected ? null : goal.id)}
+                  onClick={() => {
+                    setAiPlan(null);
+                    setAiError(null);
+                    setSelectedGoal(isSelected ? null : goal.id);
+                  }}
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
                     isSelected
                       ? "border-primary bg-primary/5 dark:bg-primary/10 toggle-elevated"
@@ -318,7 +388,109 @@ export default function Landing() {
           </div>
 
           <AnimatePresence mode="wait">
-            {activeGoal && (
+            {aiLoading && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-12"
+              >
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+                <p className="text-muted-foreground">Creating your personalized plan...</p>
+              </motion.div>
+            )}
+
+            {aiError && !aiLoading && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-8"
+              >
+                <p className="text-sm text-destructive" data-testid="text-ai-error">{aiError}</p>
+              </motion.div>
+            )}
+
+            {aiPlan && !aiLoading && (
+              <motion.div
+                key="ai-plan"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.35 }}
+                data-testid="ai-plan-container"
+              >
+                <Card className="overflow-visible">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3 mb-1">
+                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <Badge variant="secondary" className="mb-2">AI Generated</Badge>
+                        <h3 className="font-display text-xl font-bold" data-testid="text-ai-plan-title">
+                          {aiPlan.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">{aiPlan.summary}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 mb-6 mt-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-sm">Daily Actions</span>
+                        </div>
+                        {aiPlan.daily?.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5 text-sm">
+                            <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <BarChart3 className="w-4 h-4 text-accent" />
+                          <span className="font-semibold text-sm">Weekly Goals</span>
+                        </div>
+                        {aiPlan.weekly?.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5 text-sm">
+                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {aiPlan.insight && (
+                      <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 mb-6">
+                        <div className="flex items-start gap-2.5">
+                          <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          <div>
+                            <span className="font-semibold text-sm">AI Insight</span>
+                            <p className="text-sm text-muted-foreground mt-1">{aiPlan.insight}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        This plan was generated just for you. Sign up to get <span className="font-semibold text-foreground">guided daily sessions, progress tracking, and deeper coaching</span>.
+                      </p>
+                      <Button onClick={scrollToLogin} className="shrink-0" data-testid="button-ai-plan-signup">
+                        Start Building This Habit
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeGoal && !aiPlan && !aiLoading && (
               <motion.div
                 key={activeGoal.id}
                 initial={{ opacity: 0, y: 20, height: 0 }}
@@ -395,13 +567,13 @@ export default function Landing() {
             )}
           </AnimatePresence>
 
-          {!selectedGoal && (
+          {!selectedGoal && !aiPlan && !aiLoading && !aiError && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center text-sm text-muted-foreground mt-6"
             >
-              Select a goal above to see your sample action plan
+              Type your own goal above or select a popular one to see an instant plan
             </motion.p>
           )}
         </div>
@@ -734,7 +906,7 @@ export default function Landing() {
 
       <footer className="py-12 border-t border-border" role="contentinfo">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-8">
             <div className="space-y-4">
               <p className="text-sm font-medium text-foreground/80">Habit Builder - AI-Powered Habit Coaching</p>
               <p className="text-xs text-muted-foreground max-w-md">
@@ -750,9 +922,15 @@ export default function Landing() {
                 }
               />
             </div>
-            <div className="flex flex-col items-start md:items-end gap-2">
-              <p className="text-sm text-muted-foreground">Share the love:</p>
-              <SocialShare variant="compact" />
+            <div className="flex flex-col items-start md:items-end gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link>
+                <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Share the love:</p>
+                <SocialShare variant="compact" />
+              </div>
             </div>
           </div>
         </div>
