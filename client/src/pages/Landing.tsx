@@ -783,6 +783,7 @@ export default function Landing() {
                   <ul className="space-y-2.5 flex-1">
                     {[
                       "Everything in Pro",
+                      "AI Coach Chat (150 msgs/month)",
                       "Advanced analytics & trends",
                       "AI-generated insights & reports",
                       "Community forum (coming soon)",

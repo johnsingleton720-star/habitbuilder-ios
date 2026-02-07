@@ -12,7 +12,8 @@ import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -146,6 +147,13 @@ export default function Dashboard() {
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-accountability">
                   <Users className="mr-2 h-4 w-4" />
                   Accountability Partners
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/coach">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-coach-chat">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Coach Chat
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/community">

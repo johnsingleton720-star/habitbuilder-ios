@@ -22,6 +22,7 @@ import AdminFeedback from "@/pages/AdminFeedback";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
+import CoachChat from "@/pages/CoachChat";
 import PublicTemplates from "@/pages/PublicTemplates";
 import BlogList from "@/pages/BlogList";
 import BlogArticle from "@/pages/BlogArticle";
@@ -111,6 +112,7 @@ function Router() {
       <Route path="/community/messages" component={Community} />
       <Route path="/community/profile" component={Community} />
       <Route path="/community/profile/:userId" component={Community} />
+      <Route path="/coach" component={CoachChat} />
       <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />

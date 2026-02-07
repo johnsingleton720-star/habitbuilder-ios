@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages } from "@shared/schema";
 import crypto from "crypto";
 import { checkContentSafety } from "./contentSafety";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
@@ -558,8 +558,8 @@ export async function registerRoutes(
           description: 'Maximum support for transformational habits',
           features: [
             'Everything in Pro',
+            'AI Coach Chat (150 msgs/month)',
             'Voice notes during sessions',
-            'Voice interaction in Coach Chat',
             'Advanced analytics dashboard',
             'AI-powered insights & correlations',
             'Accountability partner sharing',
@@ -4505,6 +4505,267 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
     
     return { tier: effectiveTier, isAdmin: u.isAdmin, hasPaid: u.hasPaid };
   };
+
+  // ==========================================
+  // AI COACH CHAT (Premium Only - 150 messages/month)
+  // ==========================================
+
+  const COACH_MESSAGE_LIMIT = 150;
+
+  const getCoachUsage = async (userId: string) => {
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) return { used: 0, limit: COACH_MESSAGE_LIMIT, resetAt: null };
+    
+    const u = user[0];
+    const now = new Date();
+    const resetAt = u.coachMessagesResetAt ? new Date(u.coachMessagesResetAt) : null;
+    
+    if (!resetAt || resetAt <= now) {
+      const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      await db.update(users).set({ coachMessagesUsed: 0, coachMessagesResetAt: nextReset }).where(eq(users.id, userId));
+      return { used: 0, limit: COACH_MESSAGE_LIMIT, resetAt: nextReset.toISOString() };
+    }
+    
+    return { used: u.coachMessagesUsed || 0, limit: COACH_MESSAGE_LIMIT, resetAt: resetAt.toISOString() };
+  };
+
+  app.get("/api/coach/usage", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const usage = await getCoachUsage(userId);
+      res.json(usage);
+    } catch (error) {
+      console.error("Error getting coach usage:", error);
+      res.status(500).json({ error: "Failed to get usage" });
+    }
+  });
+
+  app.get("/api/coach/history", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const chats = await db.select().from(coachChats)
+        .where(eq(coachChats.userId, userId))
+        .orderBy(sql`${coachChats.createdAt} DESC`)
+        .limit(50);
+      res.json(chats);
+    } catch (error) {
+      console.error("Error getting coach history:", error);
+      res.status(500).json({ error: "Failed to get chat history" });
+    }
+  });
+
+  app.get("/api/coach/chat/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const chatId = parseInt(req.params.id);
+      
+      const chat = await db.select().from(coachChats)
+        .where(and(eq(coachChats.id, chatId), eq(coachChats.userId, userId)))
+        .limit(1);
+      
+      if (!chat.length) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+      
+      const chatMessages = await db.select().from(coachMessages)
+        .where(eq(coachMessages.chatId, chatId))
+        .orderBy(sql`${coachMessages.createdAt} ASC`);
+      
+      res.json({ chat: chat[0], messages: chatMessages });
+    } catch (error) {
+      console.error("Error getting chat:", error);
+      res.status(500).json({ error: "Failed to get chat" });
+    }
+  });
+
+  app.post("/api/coach/start", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const info = await getUserSubscriptionInfo(userId);
+      if (!info || (info.tier !== "premium" && !info.isAdmin)) {
+        return res.status(403).json({ error: "Premium subscription required for Coach Chat" });
+      }
+
+      const usage = await getCoachUsage(userId);
+      if (usage.used >= usage.limit) {
+        return res.status(429).json({ 
+          error: "Monthly coach message limit reached", 
+          usage,
+          message: `You've used all ${usage.limit} coach messages this month. Your limit resets on ${new Date(usage.resetAt!).toLocaleDateString()}.`
+        });
+      }
+
+      const [newChat] = await db.insert(coachChats).values({
+        userId,
+        title: "New Coaching Session",
+      }).returning();
+
+      const systemGreeting = "Hi there! I'm your habit coach. What would you like to work on today? Whether it's starting a new habit, staying consistent, or overcoming a challenge, I'm here to help.";
+
+      await db.insert(coachMessages).values({
+        chatId: newChat.id,
+        role: "assistant",
+        content: systemGreeting,
+      });
+
+      await db.update(coachChats).set({ messageCount: 1 }).where(eq(coachChats.id, newChat.id));
+
+      res.json({ 
+        chat: { ...newChat, messageCount: 1 },
+        messages: [{ id: 0, chatId: newChat.id, role: "assistant", content: systemGreeting, createdAt: new Date() }],
+        usage,
+      });
+    } catch (error) {
+      console.error("Error starting coach chat:", error);
+      res.status(500).json({ error: "Failed to start chat" });
+    }
+  });
+
+  app.post("/api/coach/chat/:id/message", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const chatId = parseInt(req.params.id);
+      const { message } = req.body;
+
+      if (!message || typeof message !== "string" || message.trim().length < 1) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      if (message.trim().length > 2000) {
+        return res.status(400).json({ error: "Message too long (max 2000 characters)" });
+      }
+
+      const info = await getUserSubscriptionInfo(userId);
+      if (!info || (info.tier !== "premium" && !info.isAdmin)) {
+        return res.status(403).json({ error: "Premium subscription required for Coach Chat" });
+      }
+
+      const chat = await db.select().from(coachChats)
+        .where(and(eq(coachChats.id, chatId), eq(coachChats.userId, userId)))
+        .limit(1);
+      
+      if (!chat.length) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+
+      if (!chat[0].isActive) {
+        return res.status(400).json({ error: "This chat session has ended. Start a new one." });
+      }
+
+      const usage = await getCoachUsage(userId);
+      if (usage.used >= usage.limit) {
+        return res.status(429).json({ 
+          error: "Monthly coach message limit reached",
+          usage,
+          message: `You've used all ${usage.limit} coach messages this month. Your limit resets on ${new Date(usage.resetAt!).toLocaleDateString()}.`
+        });
+      }
+
+      const safetyCheck = checkContentSafety(message);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message || "Please keep the conversation positive and constructive." });
+      }
+
+      await db.insert(coachMessages).values({
+        chatId,
+        role: "user",
+        content: message.trim(),
+      });
+
+      const previousMessages = await db.select().from(coachMessages)
+        .where(eq(coachMessages.chatId, chatId))
+        .orderBy(sql`${coachMessages.createdAt} ASC`)
+        .limit(30);
+
+      const userHabits = await db.select().from(habits)
+        .where(eq(habits.userId, userId))
+        .limit(10);
+
+      const habitContext = userHabits.length > 0 
+        ? `\n\nUser's current habits: ${userHabits.map(h => `${h.title} (streak: ${h.currentStreak || 0} days, total time: ${h.totalTimeSpent || 0} minutes)`).join(", ")}`
+        : "";
+
+      const aiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+        {
+          role: "system",
+          content: `You are a warm, encouraging habit coach inside the Habit Builder app. Your role is to help users build, maintain, and improve their habits. Be conversational, empathetic, and practical. Keep responses concise (2-4 paragraphs max). Ask follow-up questions to understand the user better. Offer specific, actionable advice tailored to their situation. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. When suggesting tools, recommend features within the Habit Builder app (like action plans, guided sessions, templates, streaks, etc.). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit content.${habitContext}`
+        },
+        ...previousMessages.map(m => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      ];
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: aiMessages,
+        temperature: 0.8,
+        max_tokens: 600,
+      });
+
+      const aiContent = response.choices[0]?.message?.content || "I'm here to help! Could you tell me more about what you're working on?";
+
+      await db.insert(coachMessages).values({
+        chatId,
+        role: "assistant",
+        content: aiContent,
+      });
+
+      const newMessageCount = (chat[0].messageCount || 0) + 2;
+      
+      let chatTitle = chat[0].title;
+      if (chat[0].title === "New Coaching Session" && newMessageCount >= 3) {
+        const words = message.trim().split(" ").slice(0, 6).join(" ");
+        chatTitle = words.length > 40 ? words.substring(0, 40) + "..." : words;
+      }
+
+      await db.update(coachChats).set({ messageCount: newMessageCount, title: chatTitle }).where(eq(coachChats.id, chatId));
+
+      await db.update(users).set({ 
+        coachMessagesUsed: sql`COALESCE(coach_messages_used, 0) + 1` 
+      }).where(eq(users.id, userId));
+
+      const updatedUsage = await getCoachUsage(userId);
+
+      res.json({ 
+        reply: aiContent,
+        usage: updatedUsage,
+      });
+    } catch (error) {
+      console.error("Error in coach chat:", error);
+      res.status(500).json({ error: "Failed to get coach response" });
+    }
+  });
+
+  app.post("/api/coach/chat/:id/end", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const chatId = parseInt(req.params.id);
+
+      const chat = await db.select().from(coachChats)
+        .where(and(eq(coachChats.id, chatId), eq(coachChats.userId, userId)))
+        .limit(1);
+      
+      if (!chat.length) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+
+      await db.update(coachChats).set({ 
+        isActive: false, 
+        endedAt: new Date() 
+      }).where(eq(coachChats.id, chatId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error ending coach chat:", error);
+      res.status(500).json({ error: "Failed to end chat" });
+    }
+  });
+
+  // ==========================================
+  // COMMUNITY FEATURES
+  // ==========================================
 
   // Pro or Premium check middleware (read-only access)
   const requireProOrPremium = async (req: any, res: any, next: any) => {

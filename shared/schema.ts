@@ -502,3 +502,29 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+// ==========================================
+// AI COACH CHAT (Premium Only)
+// ==========================================
+
+export const coachChats = pgTable("coach_chats", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  isActive: boolean("is_active").default(true),
+  messageCount: integer("message_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+});
+
+export type CoachChat = typeof coachChats.$inferSelect;
+
+export const coachMessages = pgTable("coach_messages", {
+  id: serial("id").primaryKey(),
+  chatId: integer("chat_id").notNull().references(() => coachChats.id),
+  role: text("role").notNull(), // "user" | "assistant"
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CoachMessage = typeof coachMessages.$inferSelect;

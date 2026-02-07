@@ -42,6 +42,10 @@ export const users = pgTable("users", {
   publicProfileSlug: varchar("public_profile_slug").unique(),
   tosAcceptedAt: timestamp("tos_accepted_at"),
   
+  // Coach chat usage tracking
+  coachMessagesUsed: integer("coach_messages_used").default(0),
+  coachMessagesResetAt: timestamp("coach_messages_reset_at"),
+  
   // Gamification
   xpPoints: integer("xp_points").default(0),
   level: integer("level").default(1),

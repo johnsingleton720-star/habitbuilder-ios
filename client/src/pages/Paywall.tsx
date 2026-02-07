@@ -262,7 +262,7 @@ export default function Paywall() {
               <div className="text-center">
                 <Crown className="w-8 h-8 text-amber-500 mx-auto mb-2" />
                 <p className="font-medium">Premium Features</p>
-                <p className="text-muted-foreground">Voice notes, accountability partners, and more</p>
+                <p className="text-muted-foreground">AI Coach Chat, voice notes, accountability partners, and more</p>
               </div>
             </div>
           </div>
