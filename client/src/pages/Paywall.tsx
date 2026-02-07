@@ -28,7 +28,7 @@ interface PricingData {
 }
 
 export default function Paywall() {
-  usePageTitle("Choose Your Plan");
+  usePageTitle("Choose Your Plan", "Choose the right Habit Builder plan. Pro at $6/month with unlimited AI-coached habits, or Premium at $15/month with advanced analytics and community features. Start with a free 2-day trial.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();

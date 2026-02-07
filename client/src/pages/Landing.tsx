@@ -145,7 +145,7 @@ const habitGoals = [
 ];
 
 export default function Landing() {
-  usePageTitle();
+  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6/month or Premium at $15/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const activeGoal = habitGoals.find((g) => g.id === selectedGoal);
 
@@ -155,12 +155,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4">
+      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 font-display text-2xl font-bold text-primary">
+          <a href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-primary" aria-label="Habit Builder - Home">
             <Leaf className="w-6 h-6 fill-primary/20" />
             <span>Habit Builder</span>
-          </div>
+          </a>
           <div className="flex items-center gap-3">
             <Button onClick={scrollToLogin} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
               Sign In
@@ -172,7 +172,7 @@ export default function Landing() {
         </div>
       </nav>
 
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden" aria-label="Hero - AI-powered habit coaching">
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
@@ -278,7 +278,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 bg-white/50 dark:bg-card/30" id="try-it">
+      <section className="py-24 bg-white/50 dark:bg-card/30" id="try-it" aria-label="Try a sample habit plan">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12 space-y-4">
             <Badge variant="secondary" className="mb-2">
@@ -407,7 +407,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24">
+      <section className="py-24" aria-label="Features">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
@@ -483,7 +483,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 px-6" id="pricing">
+      <section className="py-24 px-6" id="pricing" aria-label="Pricing plans">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
@@ -642,7 +642,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 px-6 bg-white/50 dark:bg-card/30">
+      <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold">Loved by habit builders</h2>
@@ -732,14 +732,18 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-12 border-t border-border">
+      <footer className="py-12 border-t border-border" role="contentinfo">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="space-y-4">
+              <p className="text-sm font-medium text-foreground/80">Habit Builder - AI-Powered Habit Coaching</p>
+              <p className="text-xs text-muted-foreground max-w-md">
+                Build better habits with personalized AI coaching. Daily habit tracker, guided sessions, streak tracking, XP leveling system, and progress analytics. Available on web and mobile.
+              </p>
               <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
               <InstallAppDialog 
                 trigger={
-                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" data-testid="button-get-app-landing">
+                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" data-testid="button-get-app-landing">
                     <Smartphone className="w-4 h-4" />
                     Want this site as an app?
                   </Button>

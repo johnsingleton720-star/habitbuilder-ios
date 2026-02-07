@@ -2,6 +2,12 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
-Disallow: /paywall
+Disallow: /dashboard
+Disallow: /habit/
+Disallow: /account
+Disallow: /analytics
+Disallow: /progress
+Disallow: /messages
+Disallow: /accountability
 
-Sitemap: /sitemap.xml
+Sitemap: https://habitbuilder.pro/sitemap.xml
