@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { 
   Sunrise, Dumbbell, BookOpen, Brain, Apple, PenTool, GraduationCap, 
-  Smartphone, Moon, Heart, Target, Loader2, ArrowRight, Leaf, Users, Sparkles
+  Smartphone, Moon, Heart, Target, Loader2, ArrowRight, ArrowLeft, Leaf, Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,16 +39,21 @@ function PublicNav() {
           <Leaf className="w-6 h-6 fill-primary/20" />
           <span>Habit Builder</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <Link href="/templates">
+            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
+              Templates
+            </Button>
+          </Link>
           <Link href="/blog">
             <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
               Blog
             </Button>
           </Link>
-          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
             Sign In
           </Button>
-          <Button onClick={() => window.location.href = "/api/login"} size="sm" data-testid="button-nav-get-started">
+          <Button onClick={() => window.location.href = "/api/login"} data-testid="button-nav-get-started">
             Get Started Free
           </Button>
         </div>
@@ -75,7 +80,18 @@ export default function PublicTemplates() {
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
       
-      <section className="pt-28 pb-12 px-6" aria-label="Habit templates header">
+      <section className="pt-24 pb-2 px-6">
+        <div className="max-w-5xl mx-auto">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="pb-12 px-6" aria-label="Habit templates header">
         <div className="max-w-5xl mx-auto text-center space-y-4">
           <Badge variant="secondary" className="mb-2">
             <Target className="w-3 h-3 mr-1" />
@@ -138,12 +154,6 @@ export default function PublicTemplates() {
                                   <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
                                     <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                                     <span>Goal: {template.suggestedGoal}</span>
-                                  </div>
-                                )}
-                                {template.usageCount && template.usageCount > 0 && (
-                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <Users className="w-3 h-3" />
-                                    <span>Used by {template.usageCount} people</span>
                                   </div>
                                 )}
                               </CardContent>

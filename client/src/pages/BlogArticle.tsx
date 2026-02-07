@@ -16,16 +16,21 @@ function PublicNav() {
           <Leaf className="w-6 h-6 fill-primary/20" />
           <span>Habit Builder</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link href="/templates">
             <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
               Templates
             </Button>
           </Link>
-          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+          <Link href="/blog">
+            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
+              Blog
+            </Button>
+          </Link>
+          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
             Sign In
           </Button>
-          <Button onClick={() => window.location.href = "/api/login"} size="sm" data-testid="button-nav-get-started">
+          <Button onClick={() => window.location.href = "/api/login"} data-testid="button-nav-get-started">
             Get Started Free
           </Button>
         </div>

@@ -128,11 +128,6 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
                             <p className="text-sm text-muted-foreground line-clamp-2">
                               {template.description}
                             </p>
-                            {template.usageCount && template.usageCount > 0 && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                Used by {template.usageCount} people
-                              </p>
-                            )}
                           </CardContent>
                         </Card>
                       </motion.div>

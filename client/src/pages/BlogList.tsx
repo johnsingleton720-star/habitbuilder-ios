@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Leaf, BookOpen, Clock, Tag } from "lucide-react";
+import { ArrowRight, ArrowLeft, Leaf, BookOpen, Clock, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,16 +15,21 @@ function PublicNav() {
           <Leaf className="w-6 h-6 fill-primary/20" />
           <span>Habit Builder</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link href="/templates">
             <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
               Templates
             </Button>
           </Link>
-          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+          <Link href="/blog">
+            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
+              Blog
+            </Button>
+          </Link>
+          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
             Sign In
           </Button>
-          <Button onClick={() => window.location.href = "/api/login"} size="sm" data-testid="button-nav-get-started">
+          <Button onClick={() => window.location.href = "/api/login"} data-testid="button-nav-get-started">
             Get Started Free
           </Button>
         </div>
@@ -40,7 +45,18 @@ export default function BlogList() {
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
       
-      <section className="pt-28 pb-12 px-6" aria-label="Blog header">
+      <section className="pt-24 pb-2 px-6">
+        <div className="max-w-3xl mx-auto">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="pb-12 px-6" aria-label="Blog header">
         <div className="max-w-3xl mx-auto text-center space-y-4">
           <Badge variant="secondary" className="mb-2">
             <BookOpen className="w-3 h-3 mr-1" />
