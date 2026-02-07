@@ -119,6 +119,23 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  const PRIMARY_DOMAIN = "habitbuilder.pro";
+
+  app.use((req, res, next) => {
+    const host = req.hostname;
+    if (
+      host &&
+      host !== PRIMARY_DOMAIN &&
+      host.endsWith(".replit.app") &&
+      (req.method === "GET" || req.method === "HEAD") &&
+      !req.path.startsWith("/api/")
+    ) {
+      const target = `https://${PRIMARY_DOMAIN}${req.originalUrl}`;
+      return res.redirect(301, target);
+    }
+    next();
+  });
+
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
@@ -663,7 +680,7 @@ export async function registerRoutes(
       }
 
       const stripe = await getUncachableStripeClient();
-      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const baseUrl = `https://${PRIMARY_DOMAIN}`;
 
       // Find or create Stripe customer
       let customerId: string | undefined;
@@ -716,7 +733,7 @@ export async function registerRoutes(
       const userId = req.user!.claims.sub;
       const authEmail = req.user!.claims.email;
       const stripe = await getUncachableStripeClient();
-      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const baseUrl = `https://${PRIMARY_DOMAIN}`;
 
       // Get user's Stripe customer ID
       const [user] = await db
