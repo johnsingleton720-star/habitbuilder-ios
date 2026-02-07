@@ -27,8 +27,10 @@ import PublicTemplates from "@/pages/PublicTemplates";
 import BlogList from "@/pages/BlogList";
 import BlogArticle from "@/pages/BlogArticle";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
+import { CookieConsent } from "@/components/CookieConsent";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
-const PUBLIC_ROUTES = ["/templates", "/blog"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -66,6 +68,7 @@ function Router() {
         <Route path="/templates" component={PublicTemplates} />
         <Route path="/blog/:slug" component={BlogArticle} />
         <Route path="/blog" component={BlogList} />
+        <Route path="/privacy" component={PrivacyPolicy} />
         <Route component={Landing} />
       </Switch>
     );
@@ -127,6 +130,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <CookieConsent />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

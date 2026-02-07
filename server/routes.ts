@@ -2579,9 +2579,10 @@ Return JSON with:
                 // Refresh user data
                 user = await storage.getUser(userId);
               }
-            } else if (user.hasPaid) {
+            } else if (user.hasPaid && !user.isAdmin) {
               // User was marked as paid but has no active subscription - handle cancellation
               // Only downgrade if no active/trialing subscription exists
+              // Never downgrade admin/owner accounts
               await db.update(users).set({
                 hasPaid: false,
                 subscriptionTier: 'free',

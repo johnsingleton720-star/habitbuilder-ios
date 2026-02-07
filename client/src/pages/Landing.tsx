@@ -1012,6 +1012,7 @@ export default function Landing() {
               <div className="flex items-center gap-4 flex-wrap">
                 <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link>
                 <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>
+                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground" data-testid="link-privacy-policy">Privacy Policy</Link>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Share the love:</p>
