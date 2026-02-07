@@ -1361,7 +1361,7 @@ Make the tips varied across categories. Be specific and practical.`;
         messages: [
           {
             role: "system",
-            content: "You are a habit coach. Provide actionable, specific guidance for building new habits. Always return valid JSON.",
+            content: "You are a habit coach. Provide actionable, specific guidance for building new habits. Always return valid JSON. IMPORTANT: Never mention specific third-party apps, brands, services, or competitors by name (e.g. no Duolingo, Headspace, Calm, MyFitnessPal, etc.). Use generic descriptions instead (e.g. 'a language learning app' or 'a meditation app').",
           },
           {
             role: "user",
@@ -1415,7 +1415,7 @@ Be creative and diverse. Cover different angles and approaches to completing "${
         messages: [
           {
             role: "system",
-            content: "You are a helpful habit coach. Generate specific, relatable options that help users reflect on their habits. Always return valid JSON.",
+            content: "You are a helpful habit coach. Generate specific, relatable options that help users reflect on their habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name.",
           },
           {
             role: "user",
@@ -1481,7 +1481,7 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
         messages: [
           {
             role: "system",
-            content: "You are a supportive habit coach. Ask thoughtful questions to understand the user's needs. Always return valid JSON. SAFETY: Do not generate content that promotes violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. If a habit request seems harmful, respond with questions that redirect toward positive, healthy alternatives.",
+            content: "You are a supportive habit coach. Ask thoughtful questions to understand the user's needs. Always return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Do not generate content that promotes violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. If a habit request seems harmful, respond with questions that redirect toward positive, healthy alternatives.",
           },
           { role: "user", content: prompt },
         ],
@@ -1569,7 +1569,7 @@ REQUIREMENTS:
           messages: [
             {
               role: "system",
-              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -1678,7 +1678,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead (e.g. 'a meditation app' not 'Headspace'). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -1907,7 +1907,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead (e.g. 'a meditation app' not 'Headspace'). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -2209,16 +2209,15 @@ Generate detailed, practical guidance that someone can follow immediately:
 
 2. TIPS (5-6): Expert coaching tips including common mistakes, pro tips, and psychology insights. Each tip should be 2-3 sentences with actionable advice.
 
-3. TOOLS (6-8): Real apps, websites, and tools with actual URLs. Include:
-   - Popular mobile apps (with actual App Store/Play Store names)
-   - Websites (use real URLs like https://mint.com, https://headspace.com, etc.)
-   - Online tools and calculators
-   - Books with actual author names
+3. TOOLS (6-8): Generic categories of tools and techniques — do NOT name specific third-party apps, brands, or services. Instead describe them generically. For example, say "a habit tracking app" instead of naming a specific one. Include:
+   - Types of helpful apps (described generically, no brand names)
+   - Types of online resources and calculators
+   - Books with actual author names (books are fine to name specifically)
    Each tool should have features array and pricing info.
 
 4. TEMPLATES (2-3): Complete, ready-to-use templates with a title and full content. Write out the ENTIRE template, not a description. Include placeholders like [Your Name], [Date], etc. These should be print-ready or copy-paste ready.
 
-5. VIDEOS (4-5): Specific YouTube search queries. Make them very specific like "10 minute morning meditation for beginners guided" not just "meditation".
+5. VIDEOS (4-5): Specific search queries for finding helpful videos. Make them very specific like "10 minute morning meditation for beginners guided" not just "meditation".
 
 Return JSON exactly like this:
 {
@@ -2227,12 +2226,12 @@ Return JSON exactly like this:
   "tools": [
     {
       "id": "tool-1",
-      "name": "Actual App/Site Name",
+      "name": "Generic Tool Description",
       "type": "app",
-      "description": "What it does",
-      "url": "https://actualurl.com",
+      "description": "What this type of tool does",
+      "url": "",
       "features": ["Feature 1", "Feature 2"],
-      "pricing": "Free" or "$X/month"
+      "pricing": "Varies"
     }
   ],
   "templates": [
@@ -2245,21 +2244,21 @@ Return JSON exactly like this:
   "videos": [
     {
       "title": "Descriptive video title",
-      "searchQuery": "very specific youtube search query",
-      "channel": "Expected channel type",
+      "searchQuery": "very specific search query for finding helpful videos",
+      "channel": "Expected content type",
       "duration": "~10 min"
     }
   ]
 }
 
-CRITICAL: Use REAL app names, REAL website URLs, and REAL book titles. Templates must be complete and usable.`;
+CRITICAL: Do NOT mention specific third-party apps, brands, websites, or services by name (no Duolingo, Headspace, Calm, MyFitnessPal, Mint, etc.). Use generic descriptions instead. Books with author names are acceptable. Templates must be complete and usable.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance with real tools and resources. Always return valid JSON with complete, usable content. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
+            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance. Always return valid JSON with complete, usable content. IMPORTANT: Never mention specific third-party apps, brands, websites, or services by name (no Duolingo, Headspace, Calm, MyFitnessPal, etc.). Use generic descriptions instead. Books with author names are acceptable. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
           },
           { role: "user", content: prompt },
         ],
@@ -2354,7 +2353,7 @@ Return JSON:
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
+          { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
@@ -2405,7 +2404,7 @@ Return JSON with:
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
+          { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
@@ -3128,7 +3127,7 @@ Return JSON with:
   "weekly": ["milestone 1", "milestone 2", "milestone 3"],
   "insight": "One motivational insight or tip"
 }
-Keep each item under 80 characters. Be specific and practical. Do not generate any harmful, violent, or explicit content.`
+Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead (e.g. 'a language learning app'). Do not generate any harmful, violent, or explicit content.`
           },
           {
             role: "user",
@@ -3599,7 +3598,7 @@ Keep each item under 80 characters. Be specific and practical. Do not generate a
         messages: [
           {
             role: "system",
-            content: "You are a habit coach providing personalized insights. Analyze the user's habit data and provide 3-5 actionable insights. Be encouraging but honest. Keep each insight to 1-2 sentences.",
+            content: "You are a habit coach providing personalized insights. Analyze the user's habit data and provide 3-5 actionable insights. Be encouraging but honest. Keep each insight to 1-2 sentences. Never mention specific third-party apps, brands, or services by name.",
           },
           {
             role: "user",
