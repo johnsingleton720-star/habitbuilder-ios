@@ -417,6 +417,81 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Habit Stacking/Linking (Premium feature)
+  const linkHabitSchema = z.object({
+    linkedHabitId: z.number().int().positive(),
+  });
+
+  app.post("/api/habits/:id/link", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const parsed = linkHabitSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Valid linkedHabitId is required" });
+      }
+      const { linkedHabitId } = parsed.data;
+
+      // Check premium subscription
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium');
+      if (!isPremium) {
+        return res.status(403).json({ error: "Habit stacking requires a Premium subscription" });
+      }
+
+      if (habitId === linkedHabitId) {
+        return res.status(400).json({ error: "Cannot link a habit to itself" });
+      }
+
+      const userHabits = await storage.getHabits(userId);
+      const sourceHabit = userHabits.find(h => h.id === habitId);
+      const targetHabit = userHabits.find(h => h.id === linkedHabitId);
+
+      if (!sourceHabit || !targetHabit) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      let current = linkedHabitId;
+      const visited = new Set<number>([habitId]);
+      while (current) {
+        if (visited.has(current)) {
+          return res.status(400).json({ error: "This would create a circular chain. Try a different habit." });
+        }
+        visited.add(current);
+        const nextHabit = userHabits.find(h => h.id === current);
+        current = nextHabit?.linkedHabitId ?? 0;
+      }
+
+      await storage.linkHabit(habitId, userId, linkedHabitId);
+
+      res.json({ success: true, habitId, linkedHabitId });
+    } catch (error) {
+      console.error("Error linking habit:", error);
+      res.status(500).json({ error: "Failed to link habit" });
+    }
+  });
+
+  app.delete("/api/habits/:id/link", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const userHabits = await storage.getHabits(userId);
+      const habit = userHabits.find(h => h.id === habitId);
+      if (!habit) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      await storage.unlinkHabit(habitId, userId);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unlinking habit:", error);
+      res.status(500).json({ error: "Failed to unlink habit" });
+    }
+  });
+
   // Motivational Quote Endpoint - Real quotes from famous people
   const realQuotes = [
     { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
@@ -559,6 +634,7 @@ export async function registerRoutes(
           features: [
             'Everything in Pro',
             'AI Coach Chat (150 msgs/month)',
+            'Habit stacking & linking',
             'Voice notes during sessions',
             'Advanced analytics dashboard',
             'AI-powered insights & correlations',

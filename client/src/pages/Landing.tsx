@@ -786,6 +786,7 @@ export default function Landing() {
                       "AI Coach Chat (150 msgs/month)",
                       "Advanced analytics & trends",
                       "AI-generated insights & reports",
+                      "Habit stacking & linking",
                       "Community forum (coming soon)",
                       "Direct messaging",
                       "Voice notes",

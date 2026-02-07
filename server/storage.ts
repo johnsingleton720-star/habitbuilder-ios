@@ -23,6 +23,8 @@ export interface IStorage {
   createHabit(userId: string, habit: InsertHabit): Promise<Habit>;
   updateHabit(id: number, userId: string, updates: HabitUpdates): Promise<Habit | undefined>;
   deleteHabit(id: number, userId: string): Promise<void>;
+  linkHabit(id: number, userId: string, linkedHabitId: number): Promise<Habit | undefined>;
+  unlinkHabit(id: number, userId: string): Promise<Habit | undefined>;
   getUser(userId: string): Promise<User | undefined>;
 }
 
@@ -57,6 +59,24 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(habits)
       .where(and(eq(habits.id, id), eq(habits.userId, userId)));
+  }
+
+  async linkHabit(id: number, userId: string, linkedHabitId: number): Promise<Habit | undefined> {
+    const [updated] = await db
+      .update(habits)
+      .set({ linkedHabitId })
+      .where(and(eq(habits.id, id), eq(habits.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async unlinkHabit(id: number, userId: string): Promise<Habit | undefined> {
+    const [updated] = await db
+      .update(habits)
+      .set({ linkedHabitId: null })
+      .where(and(eq(habits.id, id), eq(habits.userId, userId)))
+      .returning();
+    return updated;
   }
 
   async getUser(userId: string): Promise<User | undefined> {

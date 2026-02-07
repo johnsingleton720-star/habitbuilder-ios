@@ -17,6 +17,7 @@ interface SubscriptionFeatures {
   hasPrioritySupport: boolean;
   hasAdvancedAnalytics: boolean;
   hasCoachChat: boolean;
+  hasHabitStacking: boolean;
 }
 
 const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = {
@@ -36,6 +37,7 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasPrioritySupport: false, // Premium only
     hasAdvancedAnalytics: false, // Premium only
     hasCoachChat: false, // Premium only
+    hasHabitStacking: false, // Premium only
   },
   free: {
     maxHabits: 0, // No access after trial expires
@@ -53,6 +55,7 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasPrioritySupport: false,
     hasAdvancedAnalytics: false,
     hasCoachChat: false,
+    hasHabitStacking: false,
   },
   pro: {
     maxHabits: Infinity,
@@ -70,6 +73,7 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasPrioritySupport: false,
     hasAdvancedAnalytics: false,
     hasCoachChat: false,
+    hasHabitStacking: false,
   },
   premium: {
     maxHabits: Infinity,
@@ -87,6 +91,7 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasPrioritySupport: true,
     hasAdvancedAnalytics: true,
     hasCoachChat: true,
+    hasHabitStacking: true,
   },
 };
 

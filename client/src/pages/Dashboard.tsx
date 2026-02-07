@@ -12,7 +12,9 @@ import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown } from "lucide-react";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect } from "react";
@@ -39,6 +41,12 @@ export default function Dashboard() {
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { features } = useSubscription();
+
+  const habitStacks = habits?.filter(h => h.linkedHabitId).map(h => {
+    const linked = habits?.find(lh => lh.id === h.linkedHabitId);
+    return linked ? { from: h, to: linked } : null;
+  }).filter(Boolean) as { from: Habit; to: Habit }[] | undefined;
   
   const handleSelectTemplate = (template: HabitTemplate) => {
     setSelectedTemplate(template);
@@ -255,6 +263,38 @@ export default function Dashboard() {
         >
           <MoodTracker />
         </motion.section>
+
+        {/* Habit Stacks Section (Premium) */}
+        {features.hasHabitStacking && habitStacks && habitStacks.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <Card data-testid="card-dashboard-stacks">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Link2 className="w-4 h-4 text-primary" />
+                  Your Habit Stacks
+                </CardTitle>
+                <CardDescription>
+                  Linked habits that flow into each other
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {habitStacks.map(({ from, to }) => (
+                  <Link key={from.id} href={`/habit/${from.id}`}>
+                    <div className="flex items-center gap-2 p-2 rounded-lg hover-elevate cursor-pointer" data-testid={`stack-${from.id}-${to.id}`}>
+                      <span className="text-sm font-medium truncate">{from.title}</span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm font-medium truncate">{to.title}</span>
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.section>
+        )}
 
         {/* Habits Section */}
         <section className="space-y-6">

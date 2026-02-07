@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,12 +23,14 @@ import { CoachingCheckin } from "@/components/CoachingCheckin";
 import { DailyMotivation } from "@/components/DailyMotivation";
 import { StreakProtection } from "@/components/StreakProtection";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export default function HabitDetail() {
   usePageTitle("Habit Details");
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();
+  const { features } = useSubscription();
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -43,6 +45,40 @@ export default function HabitDetail() {
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
     queryKey: ["/api/habits", habitId],
     enabled: !isNaN(habitId) && habitId > 0,
+  });
+
+  const { data: allHabits } = useQuery<Habit[]>({
+    queryKey: ["/api/habits"],
+  });
+
+  const linkHabitMutation = useMutation({
+    mutationFn: async (linkedHabitId: number) => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/link`, { linkedHabitId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Habits linked", description: "Your habit stack has been updated." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Could not link habits", description: err?.message || "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const unlinkHabitMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/habits/${habitId}/link`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Link removed", description: "Habit has been unlinked." });
+    },
+    onError: () => {
+      toast({ title: "Could not unlink", description: "Please try again.", variant: "destructive" });
+    },
   });
 
   const regeneratePlanMutation = useMutation({
@@ -250,6 +286,113 @@ export default function HabitDetail() {
               streakFreezeMonth: habit.streakFreezeMonth,
             }}
           />
+        )}
+
+        {/* Habit Stacking (Premium Feature) */}
+        {habit.setupComplete && (
+          <Card data-testid="card-habit-stacking">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Link2 className="w-4 h-4 text-primary" />
+                  Habit Stacking
+                </CardTitle>
+                {!features.hasHabitStacking && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Crown className="w-3 h-3" />
+                    Premium
+                  </Badge>
+                )}
+              </div>
+              <CardDescription>
+                Link habits together to build powerful routines
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!features.hasHabitStacking ? (
+                <div className="text-center py-3">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Chain habits together with habit stacking. After completing one habit, seamlessly flow into the next.
+                  </p>
+                  <Link href="/paywall">
+                    <Button variant="outline" size="sm" data-testid="button-upgrade-stacking">
+                      <Crown className="w-4 h-4 mr-1" />
+                      Upgrade to Premium
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  {habit.linkedHabitId ? (
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-sm text-muted-foreground shrink-0">After this, do:</span>
+                        <Link href={`/habit/${habit.linkedHabitId}`}>
+                          <Button variant="ghost" size="sm" className="gap-1 font-medium" data-testid="link-stacked-habit">
+                            {allHabits?.find(h => h.id === habit.linkedHabitId)?.title || "Linked habit"}
+                            <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => unlinkHabitMutation.mutate()}
+                        disabled={unlinkHabitMutation.isPending}
+                        data-testid="button-unlink-habit"
+                      >
+                        <Unlink className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Choose a habit to do right after completing this one:
+                      </p>
+                      {allHabits && allHabits.filter(h => h.id !== habitId && h.setupComplete).length > 0 ? (
+                        <Select
+                          onValueChange={(val) => {
+                            const id = Number(val);
+                            if (!isNaN(id) && id > 0) {
+                              linkHabitMutation.mutate(id);
+                            }
+                          }}
+                          disabled={linkHabitMutation.isPending}
+                        >
+                          <SelectTrigger data-testid="select-link-habit">
+                            <SelectValue placeholder="Select a habit to link..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allHabits
+                              .filter(h => h.id !== habitId && h.setupComplete)
+                              .map(h => (
+                                <SelectItem key={h.id} value={String(h.id)} data-testid={`select-habit-${h.id}`}>
+                                  {h.title}
+                                </SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No other habits available to link. Create and set up another habit first.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {/* Show habits that link TO this one */}
+                  {allHabits?.some(h => h.linkedHabitId === habitId) && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
+                      <Link2 className="w-3 h-3" />
+                      <span>
+                        Follows: {allHabits.filter(h => h.linkedHabitId === habitId).map(h => h.title).join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Progress Overview */}
