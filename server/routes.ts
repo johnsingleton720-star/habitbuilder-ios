@@ -293,21 +293,30 @@ export async function registerRoutes(
   });
 
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
-    const userId = req.user!.claims.sub;
-    let habit = await storage.getHabit(Number(req.params.id));
-    
-    if (!habit) {
-      return res.status(404).json({ message: 'Habit not found' });
-    }
-    
-    if (habit.userId !== userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+    try {
+      const userId = req.user!.claims.sub;
+      const id = Number(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid habit ID' });
+      }
+      let habit = await storage.getHabit(id);
+      
+      if (!habit) {
+        return res.status(404).json({ message: 'Habit not found' });
+      }
+      
+      if (habit.userId !== userId) {
+          return res.status(401).json({ message: 'Unauthorized' });
+      }
 
-    // Auto-fix if dates are reversed
-    habit = await autoFixHabitDates(habit);
+      // Auto-fix if dates are reversed
+      habit = await autoFixHabitDates(habit);
 
-    res.json(habit);
+      res.json(habit);
+    } catch (error) {
+      console.error("Error fetching habit:", error);
+      res.status(500).json({ message: 'Failed to load habit' });
+    }
   });
 
   app.post(api.habits.create.path, isAuthenticated, async (req: any, res) => {

@@ -35,8 +35,9 @@ export default function HabitDetail() {
   const [noteText, setNoteText] = useState("");
   const [guidanceTask, setGuidanceTask] = useState<RoutineTask | null>(null);
   
-  const { data: habit, isLoading } = useQuery<Habit>({
+  const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
     queryKey: ["/api/habits", habitId],
+    enabled: !isNaN(habitId) && habitId > 0,
   });
 
   const updateTaskMutation = useMutation({
@@ -85,10 +86,36 @@ export default function HabitDetail() {
     );
   }
 
+  if (isError) {
+    const is401 = error?.message?.includes("401");
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center p-4 gap-4">
+        <h1 className="text-2xl font-bold" data-testid="text-habit-error">
+          {is401 ? "Please sign in to view this habit" : "Unable to load habit"}
+        </h1>
+        <p className="text-muted-foreground text-center max-w-md" data-testid="text-habit-error-detail">
+          {is401
+            ? "Your session may have expired. Please sign in again."
+            : "Something went wrong loading this habit. Please try again."}
+        </p>
+        <div className="flex gap-3">
+          {!is401 && (
+            <Button variant="outline" onClick={() => refetch()} data-testid="button-retry-habit">
+              Try Again
+            </Button>
+          )}
+          <Link href="/">
+            <Button data-testid="button-back-home">Go Back Home</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!habit) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold mb-4">Habit not found</h1>
+        <h1 className="text-2xl font-bold mb-4" data-testid="text-habit-not-found">Habit not found</h1>
         <Link href="/">
           <Button data-testid="button-back-home">Go Back Home</Button>
         </Link>
