@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2 } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -652,6 +652,90 @@ export default function Landing() {
             </Button>
             <p className="mt-3 text-sm text-muted-foreground">No credit card needed</p>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Habit Stacking">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <Badge variant="secondary" className="gap-1.5">
+                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                Premium Feature
+              </Badge>
+              <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-stacking-heading">
+                Build powerful routines with Habit Stacking
+              </h2>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                Chain your habits together so finishing one naturally flows into the next. 
+                Based on the proven "habit stacking" technique from behavioral science, 
+                this feature helps you build unstoppable daily routines.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Link any two habits into a chain",
+                  "Finish one habit and seamlessly start the next",
+                  "Build morning routines, evening wind-downs, or workout flows",
+                  "See your full habit chain at a glance on the dashboard",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button onClick={scrollToLogin} className="gap-2" data-testid="button-cta-stacking">
+                Get Started Free
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              <Card data-testid="card-stacking-demo">
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Link2 className="w-5 h-5 text-primary" />
+                    <span className="font-display font-bold">Your Morning Stack</span>
+                  </div>
+                  {[
+                    { title: "5-Minute Meditation", icon: Brain, color: "text-violet-500 dark:text-violet-400", bg: "bg-violet-500/10" },
+                    { title: "Morning Journaling", icon: Pencil, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-500/10" },
+                    { title: "Healthy Breakfast", icon: Apple, color: "text-green-500 dark:text-green-400", bg: "bg-green-500/10" },
+                    { title: "20-Minute Workout", icon: Dumbbell, color: "text-orange-500 dark:text-orange-400", bg: "bg-orange-500/10" },
+                  ].map((habit, i, arr) => (
+                    <div key={i}>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50" data-testid={`demo-stack-item-${i}`}>
+                        <div className={`w-9 h-9 rounded-lg ${habit.bg} flex items-center justify-center shrink-0`}>
+                          <habit.icon className={`w-4.5 h-4.5 ${habit.color}`} />
+                        </div>
+                        <span className="text-sm font-medium">{habit.title}</span>
+                        <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto shrink-0" />
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className="flex justify-center py-1">
+                          <ArrowRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    Complete each habit to unlock the next in your chain
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </section>
 
