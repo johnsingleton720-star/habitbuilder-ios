@@ -4,7 +4,7 @@ import { ArrowLeft, Shield } from "lucide-react";
 import { Link } from "wouter";
 
 export default function PrivacyPolicy() {
-  usePageTitle("Privacy Policy | Habit Builder");
+  usePageTitle("Privacy Policy", "Learn how Habit Builder collects, uses, and protects your personal data. Read our Privacy Policy covering GDPR, CCPA, cookies, AI data usage, and your rights.");
 
   return (
     <div className="min-h-screen bg-background">

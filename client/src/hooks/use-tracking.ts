@@ -18,6 +18,9 @@ export function useTracking() {
     if (location === lastTrackedPath.current) return;
     lastTrackedPath.current = location;
 
+    const consent = localStorage.getItem("habit-builder-cookie-consent");
+    if (consent !== "accepted") return;
+
     const sessionId = getSessionId();
     const referrer = document.referrer || "";
 
