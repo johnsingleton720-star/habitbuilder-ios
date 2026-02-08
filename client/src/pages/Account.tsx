@@ -22,6 +22,104 @@ import { useHabits } from "@/hooks/use-habits";
 import { format } from "date-fns";
 import { usePageTitle } from "@/hooks/use-page-title";
 
+interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  subscriptionTier: string;
+  hasPaid: boolean;
+  subscriptionStatus: string;
+  stripeCustomerId: string;
+  trialEndsAt: string;
+  createdAt: string;
+}
+
+function AdminUserManager() {
+  const [searchEmail, setSearchEmail] = useState("");
+  const [selectedTier, setSelectedTier] = useState<string>("premium");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: allUsers, isLoading } = useQuery<AdminUser[]>({
+    queryKey: ["/api/admin/users"],
+  });
+
+  const filteredUsers = allUsers?.filter(u =>
+    !u.email?.includes("example.com") && !u.email?.includes("test.com") &&
+    (searchEmail === "" || u.email?.toLowerCase().includes(searchEmail.toLowerCase()) || u.id.toLowerCase().includes(searchEmail.toLowerCase()))
+  );
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ userId, tier, hasPaid }: { userId: string; tier: string; hasPaid: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/subscription`, { subscriptionTier: tier, hasPaid });
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: "Updated", description: `User ${variables.userId} set to ${variables.tier}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to update user", variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Users className="w-4 h-4" />
+        <span className="font-medium text-sm">User Management</span>
+      </div>
+      <Input
+        placeholder="Search by email or user ID..."
+        value={searchEmail}
+        onChange={(e) => setSearchEmail(e.target.value)}
+        data-testid="input-admin-search-users"
+      />
+      {isLoading ? (
+        <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
+      ) : (
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {filteredUsers?.map((u) => (
+            <div key={u.id} className="flex items-center justify-between gap-2 p-2 border rounded-md text-sm" data-testid={`admin-user-row-${u.id}`}>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{u.email || u.id}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={u.subscriptionTier === 'premium' ? 'default' : u.subscriptionTier === 'pro' ? 'secondary' : 'outline'}>
+                    {u.subscriptionTier || 'free'}
+                  </Badge>
+                  {u.hasPaid && <Badge variant="outline">Paid</Badge>}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Select defaultValue={u.subscriptionTier || 'free'} onValueChange={(val) => setSelectedTier(val)}>
+                  <SelectTrigger className="w-24" data-testid={`select-tier-${u.id}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  onClick={() => updateMutation.mutate({ userId: u.id, tier: selectedTier, hasPaid: selectedTier !== 'free' })}
+                  disabled={updateMutation.isPending}
+                  data-testid={`button-update-tier-${u.id}`}
+                >
+                  {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                </Button>
+              </div>
+            </div>
+          ))}
+          {filteredUsers?.length === 0 && <p className="text-muted-foreground text-center text-sm py-2">No users found</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Account() {
   usePageTitle("Account");
   const { user, logout } = useAuth();
@@ -649,6 +747,7 @@ export default function Account() {
                 <CardDescription>Quick actions for app management</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <AdminUserManager />
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2"
