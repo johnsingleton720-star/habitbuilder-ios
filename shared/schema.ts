@@ -126,6 +126,9 @@ export const habits = pgTable("habits", {
   streakFreezeUsed: integer("streak_freeze_used").default(0), // Freezes used this month
   streakFreezeMonth: text("streak_freeze_month"), // Month when freeze count resets (YYYY-MM)
   
+  // Archiving
+  archived: boolean("archived").default(false),
+  
   // Habit stacking (Premium feature)
   linkedHabitId: integer("linked_habit_id"), // "After completing this habit, do linked habit next"
   

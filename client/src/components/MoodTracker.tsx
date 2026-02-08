@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, Check, Sparkles } from "lucide-react";
+import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +62,27 @@ interface MoodInsights {
   };
 }
 
+interface MoodReport {
+  habitTitle: string;
+  totalEntries: number;
+  positiveRate: number;
+  avgMoodWith: number;
+  avgMoodWithout: number;
+  moodImpact: number;
+  avgEnergy: number;
+  avgStress: number;
+  avgSleep: number;
+  moodDistribution: Record<string, number>;
+  notes: {
+    date: string;
+    mood: string;
+    notes: string;
+    energy?: number;
+    stress?: number;
+    sleep?: number;
+  }[];
+}
+
 export function MoodTracker() {
   const { user } = useAuth();
   const { data: habits } = useHabits();
@@ -73,6 +94,8 @@ export function MoodTracker() {
   const [sleep, setSleep] = useState([3]);
   const [notes, setNotes] = useState("");
   const [selectedHabits, setSelectedHabits] = useState<number[]>([]);
+  const [reportHabitId, setReportHabitId] = useState<number | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   const today = format(new Date(), "yyyy-MM-dd");
@@ -84,6 +107,11 @@ export function MoodTracker() {
   const { data: insights } = useQuery<MoodInsights>({
     queryKey: ["/api/mood/insights"],
     enabled: Boolean(isPremium && entries.length >= 3),
+  });
+
+  const { data: moodReport, isLoading: reportLoading } = useQuery<MoodReport>({
+    queryKey: ["/api/mood/report", reportHabitId],
+    enabled: Boolean(reportHabitId && reportOpen),
   });
   
   const todayEntry = entries.find(e => e.date === today);
@@ -141,10 +169,24 @@ export function MoodTracker() {
         : [...prev, habitId]
     );
   };
+
+  const openReport = (habitId: number) => {
+    setReportHabitId(habitId);
+    setReportOpen(true);
+  };
   
   const recentMoods = entries.slice(-7).reverse();
+
+  const getMoodLabel = (mood: string) => {
+    return MOOD_OPTIONS.find(o => o.value === mood)?.label || mood;
+  };
+
+  const getMoodIcon = (mood: string) => {
+    return MOOD_OPTIONS.find(o => o.value === mood);
+  };
   
   return (
+    <>
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -354,19 +396,30 @@ export function MoodTracker() {
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span className="text-sm font-medium">Mood Correlations</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {(insights as MoodInsights).correlations.map((corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
-                <div key={corr.habitId} className="flex items-center justify-between text-sm" data-testid={`mood-correlation-${corr.habitId}`}>
-                  <span className="text-muted-foreground">{corr.habitTitle}</span>
-                  {corr.correlation !== null ? (
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-3 h-3 text-green-600" />
-                      <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground/60">No data yet</span>
+                <button
+                  key={corr.habitId}
+                  onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
+                  className={cn(
+                    "flex items-center justify-between text-sm w-full p-2 rounded-lg transition-all text-left",
+                    corr.correlation !== null ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
                   )}
-                </div>
+                  data-testid={`mood-correlation-${corr.habitId}`}
+                >
+                  <span className="text-muted-foreground">{corr.habitTitle}</span>
+                  <div className="flex items-center gap-2">
+                    {corr.correlation !== null ? (
+                      <>
+                        <TrendingUp className="w-3 h-3 text-green-600" />
+                        <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60">No data yet</span>
+                    )}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -380,5 +433,176 @@ export function MoodTracker() {
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={reportOpen} onOpenChange={(open) => { setReportOpen(open); if (!open) setReportHabitId(null); }}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Mood Report: {moodReport?.habitTitle || "Loading..."}
+          </DialogTitle>
+          <DialogDescription>
+            Detailed analytics for how this habit affects your mood
+          </DialogDescription>
+        </DialogHeader>
+
+        {reportLoading ? (
+          <div className="py-8 text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Analyzing mood data...</p>
+          </div>
+        ) : moodReport ? (
+          <div className="space-y-5 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="border-border/50">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{moodReport.positiveRate}%</p>
+                  <p className="text-xs text-muted-foreground">Positive mood rate</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{moodReport.totalEntries}</p>
+                  <p className="text-xs text-muted-foreground">Entries recorded</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-border/50">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Mood Impact
+                </h4>
+                <div className="flex items-center justify-between">
+                  <div className="text-center flex-1">
+                    <p className="text-lg font-bold text-foreground">{moodReport.avgMoodWith}/5</p>
+                    <p className="text-xs text-muted-foreground">With habit</p>
+                  </div>
+                  <div className="text-center px-3">
+                    <div className={cn(
+                      "flex items-center gap-1 text-sm font-bold",
+                      moodReport.moodImpact > 0 ? "text-green-600" : moodReport.moodImpact < 0 ? "text-red-500" : "text-muted-foreground"
+                    )}>
+                      {moodReport.moodImpact > 0 ? <ArrowUp className="w-4 h-4" /> : moodReport.moodImpact < 0 ? <ArrowDown className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                      {moodReport.moodImpact > 0 ? "+" : ""}{moodReport.moodImpact}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">difference</p>
+                  </div>
+                  <div className="text-center flex-1">
+                    <p className="text-lg font-bold text-muted-foreground">{moodReport.avgMoodWithout}/5</p>
+                    <p className="text-xs text-muted-foreground">Without habit</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {(moodReport.avgEnergy > 0 || moodReport.avgStress > 0 || moodReport.avgSleep > 0) && (
+              <Card className="border-border/50">
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="text-sm font-semibold">Averages on days with this habit</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {moodReport.avgEnergy > 0 && (
+                      <div className="text-center">
+                        <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                        <p className="text-lg font-bold">{moodReport.avgEnergy}</p>
+                        <p className="text-[10px] text-muted-foreground">Energy</p>
+                      </div>
+                    )}
+                    {moodReport.avgStress > 0 && (
+                      <div className="text-center">
+                        <Brain className="w-4 h-4 text-purple-500 mx-auto mb-1" />
+                        <p className="text-lg font-bold">{moodReport.avgStress}</p>
+                        <p className="text-[10px] text-muted-foreground">Stress</p>
+                      </div>
+                    )}
+                    {moodReport.avgSleep > 0 && (
+                      <div className="text-center">
+                        <Moon className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+                        <p className="text-lg font-bold">{moodReport.avgSleep}</p>
+                        <p className="text-[10px] text-muted-foreground">Sleep</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border-border/50">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="text-sm font-semibold">Mood Distribution</h4>
+                <div className="space-y-2">
+                  {Object.entries(moodReport.moodDistribution).filter(([_, count]) => count > 0).map(([mood, count]) => {
+                    const option = getMoodIcon(mood);
+                    const total = moodReport.totalEntries;
+                    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                    if (!option) return null;
+                    const Icon = option.icon;
+                    return (
+                      <div key={mood} className="flex items-center gap-3">
+                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0", option.bgColor)}>
+                          <Icon className={cn("w-3.5 h-3.5", option.color)} />
+                        </div>
+                        <span className="text-sm text-foreground w-16">{option.label}</span>
+                        <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
+                          <div
+                            className={cn("h-full rounded-full", option.bgColor)}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-14 text-right">{count} ({pct}%)</span>
+                      </div>
+                    );
+                  })}
+                  {Object.values(moodReport.moodDistribution).every(c => c === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-2">No mood data recorded with this habit yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {moodReport.notes.length > 0 && (
+              <Card className="border-border/50">
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    Notes Summary ({moodReport.notes.length} entries)
+                  </h4>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {moodReport.notes.map((note, i) => {
+                      const option = getMoodIcon(note.mood);
+                      const Icon = option?.icon || Meh;
+                      return (
+                        <div key={i} className="flex gap-3 p-2.5 rounded-lg bg-muted/30">
+                          <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", option?.bgColor || "bg-muted")}>
+                            <Icon className={cn("w-3.5 h-3.5", option?.color || "text-muted-foreground")} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium text-foreground">
+                                {format(new Date(note.date), "MMM d, yyyy")}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {getMoodLabel(note.mood)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{note.notes}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-muted-foreground">
+            <p>No report data available</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

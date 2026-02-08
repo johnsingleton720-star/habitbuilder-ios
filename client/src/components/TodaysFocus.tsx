@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   const todayStr = format(today, "yyyy-MM-dd");
   const dayName = format(today, "EEEE").toLowerCase();
   const TimeIcon = getTimeOfDayIcon();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const getScheduledHabits = () => {
     return habits.filter((habit) => {
@@ -82,6 +84,8 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
     const total = todayPlan.tasks.length;
     return { completed, total };
   };
+
+  const otherRemaining = remainingHabits.filter(h => h.id !== nextHabit?.id);
 
   return (
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/15 dark:from-primary/25 dark:via-primary/15 dark:to-accent/20 shadow-lg dark:border dark:border-primary/20">
@@ -252,64 +256,87 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
           </motion.div>
         ) : null}
 
-        {/* All remaining habits - full list */}
-        {remainingHabits.length > 1 && (
-          <div className="pt-2 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {remainingHabits.length - 1} more habit{remainingHabits.length > 2 ? "s" : ""} remaining
-            </p>
-            <div className="space-y-1.5">
-              {remainingHabits.filter(h => h.id !== nextHabit?.id).map((habit) => {
-                const taskProgress = getHabitTodayProgress(habit);
-                const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
-                return (
-                  <Link key={habit.id} href={`/habit/${habit.id}`}>
-                    <div
-                      className="group flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-all cursor-pointer"
-                      data-testid={`remaining-habit-${habit.id}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm truncate text-gray-900 dark:text-white">{habit.title}</span>
-                          {!habit.setupComplete && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Setup</Badge>
-                          )}
-                        </div>
-                        {taskProgress && taskProgress.total > 0 && (
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
-                              <div
-                                className={cn("h-full rounded-full", pct > 0 ? "bg-amber-500" : "bg-muted")}
-                                style={{ width: `${pct}%` }}
-                              />
+        {/* Collapsible remaining habits */}
+        {otherRemaining.length > 0 && (
+          <div className="pt-2">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 w-full text-left p-2 rounded-lg hover:bg-white/30 dark:hover:bg-black/20 transition-colors"
+              data-testid="button-toggle-remaining-habits"
+            >
+              <ChevronDown className={cn(
+                "w-4 h-4 text-muted-foreground transition-transform",
+                isExpanded ? "rotate-0" : "-rotate-90"
+              )} />
+              <span className="text-xs font-medium text-muted-foreground">
+                {otherRemaining.length} more habit{otherRemaining.length > 1 ? "s" : ""} remaining
+              </span>
+            </button>
+            
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-1.5 pt-1">
+                    {otherRemaining.map((habit) => {
+                      const taskProgress = getHabitTodayProgress(habit);
+                      const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
+                      return (
+                        <Link key={habit.id} href={`/habit/${habit.id}`}>
+                          <div
+                            className="group flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-all cursor-pointer"
+                            data-testid={`remaining-habit-${habit.id}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm truncate text-gray-900 dark:text-white">{habit.title}</span>
+                                {!habit.setupComplete && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Setup</Badge>
+                                )}
+                              </div>
+                              {taskProgress && taskProgress.total > 0 && (
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
+                                    <div
+                                      className={cn("h-full rounded-full", pct > 0 ? "bg-amber-500" : "bg-muted")}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground font-medium">
+                                    {taskProgress.completed}/{taskProgress.total}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            <span className="text-[10px] text-muted-foreground font-medium">
-                              {taskProgress.completed}/{taskProgress.total}
-                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {habit.schedule?.time && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              )}
+                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {habit.schedule?.time && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        )}
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
-        {/* Completed habits */}
+        {/* Completed habits - also collapsible */}
         {completedToday.length > 0 && remainingHabits.length > 0 && (
           <div className="pt-2 space-y-2">
             <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">

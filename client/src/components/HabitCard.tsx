@@ -7,7 +7,8 @@ import {
   Music, Palette, Camera, Pencil, Target, Trophy, Zap, Compass,
   Mountain, Bike, Waves, Wind, TreePine, Flower2, Cookie, GlassWater,
   Pill, Stethoscope, Scale, Shirt, Home, Users, MessageCircle, Phone,
-  Wallet, PiggyBank, GraduationCap, Languages, Code, Laptop, Gamepad2
+  Wallet, PiggyBank, GraduationCap, Languages, Code, Laptop, Gamepad2,
+  Archive, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useDeleteHabit } from "@/hooks/use-habits";
@@ -21,14 +22,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, forwardRef } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { HabitFormDialog } from "./HabitFormDialog";
 import { GuidedSession } from "./GuidedSession";
 import { HabitSetupWizard } from "./HabitSetupWizard";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import type { DailyPlan } from "@shared/schema";
 import { useTheme } from "@/components/ThemeProvider";
+import { useToast } from "@/hooks/use-toast";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -164,6 +168,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const { toast } = useToast();
 
   const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
   const today = format(new Date(), "yyyy-MM-dd");
@@ -173,11 +178,13 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
   const todaysTasks = todaysPlan?.tasks || [];
   const completedTasksCount = todaysTasks.filter(t => t.completed).length;
-  // Consider complete if plan is marked complete OR all tasks are done
   const allTasksCompleted = todaysTasks.length > 0 && todaysTasks.every(t => t.completed);
   const isCompletedToday = todaysPlan?.completed || allTasksCompleted;
   const totalTasksCount = todaysTasks.length;
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
+
+  const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+  const isPlanCompleted = habit.setupComplete && planEndDate ? planEndDate < today : false;
 
   const { icon: HabitIcon, color: iconColor, colorStyle } = getSmartHabitIcon(
     habit.title, 
@@ -188,6 +195,33 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   );
   const pastelClass = getPastelClass(habit.id);
   const { bgStyle: customCardBg, useCustomBg } = getCardBackgroundFromColor(habit.customColor, isDarkMode);
+
+  const extendPlanMutation = useMutation({
+    mutationFn: async () => {
+      const extDuration = habit.planDuration === "daily" ? "weekly" : (habit.planDuration || "weekly");
+      return await apiRequest("POST", `/api/habits/${habit.id}/extend-plan`, { duration: extDuration });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Plan extended!", description: "Your plan has been extended with new tasks." });
+    },
+    onError: () => {
+      toast({ title: "Failed to extend plan", variant: "destructive" });
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/habits/${habit.id}/archive`, { archived: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Habit archived", description: "This habit has been moved to your archive." });
+    },
+    onError: () => {
+      toast({ title: "Failed to archive", variant: "destructive" });
+    },
+  });
 
   const handleStartClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -212,7 +246,8 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         className={cn(
           "group relative overflow-hidden rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer",
-          !useCustomBg && pastelClass
+          !useCustomBg && pastelClass,
+          isPlanCompleted && "opacity-70"
         )}
         style={useCustomBg ? customCardBg : undefined}
         data-testid={`card-habit-${habit.id}`}
@@ -224,15 +259,29 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
           <div className="flex-1">
             {/* Icon & Title Row */}
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 dark:bg-white/10 shadow-sm border border-white/50 dark:border-white/10">
+              <div className={cn(
+                "flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm border",
+                isPlanCompleted 
+                  ? "bg-muted/50 dark:bg-muted/20 border-muted" 
+                  : "bg-white/80 dark:bg-white/10 border-white/50 dark:border-white/10"
+              )}>
                 <HabitIcon 
-                  className={cn("w-6 h-6", iconColor)} 
-                  style={colorStyle ? { color: colorStyle } : undefined}
+                  className={cn("w-6 h-6", isPlanCompleted ? "text-muted-foreground" : iconColor)} 
+                  style={!isPlanCompleted && colorStyle ? { color: colorStyle } : undefined}
                 />
               </div>
               <div className="flex-1">
-                <h3 className="font-display text-lg font-bold text-foreground leading-tight">{habit.title}</h3>
-                {!habit.setupComplete && (
+                <h3 className={cn(
+                  "font-display text-lg font-bold leading-tight",
+                  isPlanCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                )}>{habit.title}</h3>
+                {isPlanCompleted && (
+                  <Badge variant="outline" className="mt-1 text-xs bg-amber-100/50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Plan completed
+                  </Badge>
+                )}
+                {!habit.setupComplete && !isPlanCompleted && (
                   <Badge variant="outline" className="mt-1 text-xs bg-white/50 dark:bg-black/20">
                     <Sparkles className="w-3 h-3 mr-1" />
                     Setup needed
@@ -241,73 +290,112 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
               </div>
             </div>
 
-            {habit.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{habit.description}</p>
-            )}
-            
-            {/* Progress bar */}
-            {habit.setupComplete && totalTasksCount > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-muted-foreground font-medium">Today's Progress</span>
-                  <span className="font-bold text-foreground">{completedTasksCount}/{totalTasksCount}</span>
-                </div>
-                <div className="h-2.5 rounded-full bg-white/50 dark:bg-black/20 overflow-hidden shadow-inner">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className={cn(
-                      "h-full rounded-full",
-                      isCompletedToday 
-                        ? "bg-gradient-to-r from-primary to-accent" 
-                        : "bg-gradient-to-r from-primary/70 to-primary"
-                    )}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Stats Row */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-100/80 dark:bg-orange-950/50 px-3 py-1.5 rounded-full border border-orange-200/50 dark:border-orange-800/50">
-                <Flame className="w-3.5 h-3.5 fill-current" />
-                <span>{streak} day{streak !== 1 ? 's' : ''}</span>
-              </div>
-              
-              {longestStreak > 0 && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded-full">
-                  <Star className="w-3 h-3" />
-                  <span>Best: {longestStreak}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm"
-                className="gap-1.5 shadow-md shadow-primary/20 rounded-xl font-semibold"
-                onClick={handleStartClick}
-                data-testid={`button-start-${habit.id}`}
-              >
-                {habit.setupComplete ? (
-                  <>
-                    <Play className="w-3.5 h-3.5" />
-                    Start Session
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Setup Plan
-                  </>
+            {isPlanCompleted ? (
+              <div className="space-y-3">
+                {habit.description && (
+                  <p className="text-sm text-muted-foreground/60 line-clamp-1 line-through">{habit.description}</p>
                 )}
-              </Button>
-              <span className="flex items-center gap-1 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                View Details
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </div>
+                <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.preventDefault()}>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="gap-1.5 rounded-xl"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); extendPlanMutation.mutate(); }}
+                    disabled={extendPlanMutation.isPending}
+                    data-testid={`button-extend-card-${habit.id}`}
+                  >
+                    {extendPlanMutation.isPending ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    )}
+                    Extend Plan
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 rounded-xl"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveMutation.mutate(); }}
+                    disabled={archiveMutation.isPending}
+                    data-testid={`button-archive-card-${habit.id}`}
+                  >
+                    {archiveMutation.isPending ? (
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Archive className="w-3.5 h-3.5" />
+                    )}
+                    Archive
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {habit.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{habit.description}</p>
+                )}
+                
+                {habit.setupComplete && totalTasksCount > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="text-muted-foreground font-medium">Today's Progress</span>
+                      <span className="font-bold text-foreground">{completedTasksCount}/{totalTasksCount}</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-white/50 dark:bg-black/20 overflow-hidden shadow-inner">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className={cn(
+                          "h-full rounded-full",
+                          isCompletedToday 
+                            ? "bg-gradient-to-r from-primary to-accent" 
+                            : "bg-gradient-to-r from-primary/70 to-primary"
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-100/80 dark:bg-orange-950/50 px-3 py-1.5 rounded-full border border-orange-200/50 dark:border-orange-800/50">
+                    <Flame className="w-3.5 h-3.5 fill-current" />
+                    <span>{streak} day{streak !== 1 ? 's' : ''}</span>
+                  </div>
+                  
+                  {longestStreak > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded-full">
+                      <Star className="w-3 h-3" />
+                      <span>Best: {longestStreak}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 shadow-md shadow-primary/20 rounded-xl font-semibold"
+                    onClick={handleStartClick}
+                    data-testid={`button-start-${habit.id}`}
+                  >
+                    {habit.setupComplete ? (
+                      <>
+                        <Play className="w-3.5 h-3.5" />
+                        Start Session
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Setup Plan
+                      </>
+                    )}
+                  </Button>
+                  <span className="flex items-center gap-1 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    View Details
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Right side - Menu & Completion indicator */}
@@ -338,7 +426,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {habit.setupComplete && (
+            {habit.setupComplete && !isPlanCompleted && (
               <motion.div
                 initial={false}
                 animate={{ 
@@ -360,6 +448,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   <Check className="w-7 h-7 stroke-[3]" />
                 </motion.div>
               </motion.div>
+            )}
+
+            {isPlanCompleted && (
+              <div className="mt-2 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
+                <Check className="w-7 h-7 stroke-[3] text-amber-600 dark:text-amber-400" />
+              </div>
             )}
           </div>
         </div>

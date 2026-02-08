@@ -2156,6 +2156,26 @@ REQUIREMENTS:
     }
   });
 
+  // Archive/unarchive a habit
+  app.post("/api/habits/:id/archive", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { archived } = req.body;
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+      
+      const updated = await storage.updateHabit(habitId, userId, { archived: !!archived });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error archiving habit:", error);
+      res.status(500).json({ error: "Failed to archive habit" });
+    }
+  });
+
   // Update a specific task in a daily plan
   app.patch("/api/habits/:id/tasks/:taskId", isAuthenticated, async (req: any, res) => {
     try {
@@ -4183,6 +4203,101 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
     } catch (error) {
       console.error("Error generating mood insights:", error);
       res.status(500).json({ error: "Failed to generate insights" });
+    }
+  });
+
+  // Mood report for a specific habit correlation
+  app.get("/api/mood/report/:habitId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      const user = await storage.getUser(userId);
+      
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      if (!isPremium) {
+        return res.status(403).json({ error: "Mood reports require Premium subscription" });
+      }
+      
+      const allEntries = await db.select()
+        .from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(moodEntries.date);
+      
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+      
+      const moodValues: Record<string, number> = { great: 5, good: 4, okay: 3, bad: 2, terrible: 1 };
+      
+      // Entries where this habit was logged
+      const habitEntries = allEntries.filter(e => {
+        const ids = (e.habitIds as number[]) || [];
+        return ids.includes(habitId);
+      });
+      
+      // Entries where this habit was NOT logged
+      const nonHabitEntries = allEntries.filter(e => {
+        const ids = (e.habitIds as number[]) || [];
+        return !ids.includes(habitId);
+      });
+      
+      const avgMoodWith = habitEntries.length > 0 
+        ? habitEntries.reduce((s, e) => s + (moodValues[e.mood] || 3), 0) / habitEntries.length 
+        : 0;
+      const avgMoodWithout = nonHabitEntries.length > 0 
+        ? nonHabitEntries.reduce((s, e) => s + (moodValues[e.mood] || 3), 0) / nonHabitEntries.length 
+        : 0;
+      
+      const avgEnergyWith = habitEntries.filter(e => e.energy).length > 0
+        ? habitEntries.filter(e => e.energy).reduce((s, e) => s + (e.energy || 0), 0) / habitEntries.filter(e => e.energy).length
+        : 0;
+      const avgStressWith = habitEntries.filter(e => e.stress).length > 0
+        ? habitEntries.filter(e => e.stress).reduce((s, e) => s + (e.stress || 0), 0) / habitEntries.filter(e => e.stress).length
+        : 0;
+      const avgSleepWith = habitEntries.filter(e => e.sleep).length > 0
+        ? habitEntries.filter(e => e.sleep).reduce((s, e) => s + (e.sleep || 0), 0) / habitEntries.filter(e => e.sleep).length
+        : 0;
+      
+      // Mood distribution
+      const moodDistribution: Record<string, number> = { great: 0, good: 0, okay: 0, bad: 0, terrible: 0 };
+      for (const entry of habitEntries) {
+        moodDistribution[entry.mood] = (moodDistribution[entry.mood] || 0) + 1;
+      }
+      
+      // Collect notes from entries where this habit was logged
+      const notesEntries = habitEntries
+        .filter(e => e.notes && e.notes.trim().length > 0)
+        .map(e => ({
+          date: e.date,
+          mood: e.mood,
+          notes: e.notes!,
+          energy: e.energy,
+          stress: e.stress,
+          sleep: e.sleep,
+        }))
+        .reverse(); // Most recent first
+      
+      // Positive rate
+      const positiveCount = habitEntries.filter(e => moodValues[e.mood] >= 4).length;
+      const positiveRate = habitEntries.length > 0 ? Math.round((positiveCount / habitEntries.length) * 100) : 0;
+      
+      res.json({
+        habitTitle: habit.title,
+        totalEntries: habitEntries.length,
+        positiveRate,
+        avgMoodWith: Number(avgMoodWith.toFixed(1)),
+        avgMoodWithout: Number(avgMoodWithout.toFixed(1)),
+        moodImpact: Number((avgMoodWith - avgMoodWithout).toFixed(1)),
+        avgEnergy: Number(avgEnergyWith.toFixed(1)),
+        avgStress: Number(avgStressWith.toFixed(1)),
+        avgSleep: Number(avgSleepWith.toFixed(1)),
+        moodDistribution,
+        notes: notesEntries,
+      });
+    } catch (error) {
+      console.error("Error generating mood report:", error);
+      res.status(500).json({ error: "Failed to generate mood report" });
     }
   });
 

@@ -43,7 +43,8 @@ export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
   const { features } = useSubscription();
 
-  const habitStacks = habits?.filter(h => h.linkedHabitId).map(h => {
+  const activeHabits = habits?.filter(h => !h.archived);
+  const habitStacks = activeHabits?.filter(h => h.linkedHabitId).map(h => {
     const linked = habits?.find(lh => lh.id === h.linkedHabitId);
     return linked ? { from: h, to: linked } : null;
   }).filter(Boolean) as { from: Habit; to: Habit }[] | undefined;
@@ -220,7 +221,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <TodaysFocus habits={habits} />
+            <TodaysFocus habits={activeHabits} />
           </motion.section>
         )}
 
@@ -231,7 +232,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            <ProgressSummary habits={habits} />
+            <ProgressSummary habits={activeHabits} />
           </motion.section>
         )}
 
@@ -302,7 +303,7 @@ export default function Dashboard() {
             <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
               Your Habits 
               <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
-                {habits?.length || 0}
+                {activeHabits?.length || 0}
               </span>
             </h2>
             <div className="flex gap-2">
@@ -320,7 +321,7 @@ export default function Dashboard() {
                 <div key={i} className="h-40 rounded-2xl bg-muted/50 animate-pulse border border-border/50" />
               ))}
             </div>
-          ) : habits?.length === 0 ? (
+          ) : activeHabits?.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -338,7 +339,7 @@ export default function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <AnimatePresence mode="popLayout">
-                {habits?.map((habit) => (
+                {activeHabits?.map((habit) => (
                   <HabitCard key={habit.id} habit={habit} />
                 ))}
               </AnimatePresence>
