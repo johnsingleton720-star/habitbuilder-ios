@@ -184,7 +184,11 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
   const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
-  const isPlanCompleted = habit.setupComplete && planEndDate ? planEndDate < today : false;
+  const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+  const allDailyPlansExpired = habit.setupComplete && lastDailyPlanDate ? lastDailyPlanDate < today : false;
+  const isPlanCompleted = habit.setupComplete && (
+    (planEndDate ? planEndDate < today : false) || allDailyPlansExpired
+  );
 
   const { icon: HabitIcon, color: iconColor, colorStyle } = getSmartHabitIcon(
     habit.title, 

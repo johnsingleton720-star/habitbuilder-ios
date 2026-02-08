@@ -219,7 +219,9 @@ export default function HabitDetail() {
   
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
-  const isPlanExpired = planEndDate ? planEndDate < todayStr : false;
+  const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+  const allDailyPlansExpired = habit.setupComplete && lastDailyPlanDate ? lastDailyPlanDate < todayStr : false;
+  const isPlanExpired = habit.setupComplete ? ((planEndDate ? planEndDate < todayStr : false) || allDailyPlansExpired) : false;
   const isPlanFullyCompleted = totalDays > 0 && completedDays === totalDays;
   const isPlanDone = isPlanExpired || isPlanFullyCompleted;
   const isSelectedDayPast = selectedDay ? selectedDay < todayStr : false;

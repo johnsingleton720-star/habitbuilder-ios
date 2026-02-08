@@ -221,7 +221,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <TodaysFocus habits={activeHabits} />
+            <TodaysFocus habits={activeHabits || []} />
           </motion.section>
         )}
 
@@ -232,7 +232,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            <ProgressSummary habits={activeHabits} />
+            <ProgressSummary habits={activeHabits || []} />
           </motion.section>
         )}
 

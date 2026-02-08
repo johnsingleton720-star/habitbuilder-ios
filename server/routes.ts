@@ -2050,7 +2050,15 @@ REQUIREMENTS:
         return res.status(404).json({ error: "Habit not found" });
       }
 
-      if (!habit.setupComplete || !habit.planEndDate) {
+      if (!habit.setupComplete) {
+        return res.status(400).json({ error: "Habit must have a completed plan to extend." });
+      }
+
+      const existingPlans = (habit.dailyPlans || []) as any[];
+      const lastDailyPlanDate = existingPlans.length > 0 ? existingPlans[existingPlans.length - 1].date : null;
+      const effectiveEndDate = habit.planEndDate || lastDailyPlanDate;
+      
+      if (!effectiveEndDate) {
         return res.status(400).json({ error: "Habit must have a completed plan to extend." });
       }
 
@@ -2059,8 +2067,7 @@ REQUIREMENTS:
         return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
       }
 
-      const existingPlans = (habit.dailyPlans || []) as any[];
-      const existingEndDate = new Date(habit.planEndDate);
+      const existingEndDate = new Date(effectiveEndDate);
       const newStartDate = new Date(existingEndDate);
       newStartDate.setDate(newStartDate.getDate() + 1);
 
@@ -2167,6 +2174,79 @@ REQUIREMENTS:
   });
 
   // Archive/unarchive a habit
+  app.post("/api/habits/:id/repair-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const habit = await storage.getHabit(habitId);
+      
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+      
+      if (!habit.setupComplete) {
+        return res.status(400).json({ error: "Habit setup is not complete" });
+      }
+      
+      const existingPlans = (habit.dailyPlans || []) as any[];
+      const planEndDate = habit.planEndDate;
+      
+      if (!planEndDate || existingPlans.length === 0) {
+        return res.status(400).json({ error: "No plan data to repair" });
+      }
+      
+      const lastPlanDate = existingPlans[existingPlans.length - 1].date;
+      const endDate = new Date(planEndDate + "T12:00:00");
+      const lastDate = new Date(lastPlanDate + "T12:00:00");
+      
+      if (lastDate >= endDate) {
+        return res.json({ success: true, message: "Plan is already complete", repaired: false });
+      }
+      
+      const missingDays: any[] = [];
+      const currentDate = new Date(lastDate);
+      currentDate.setDate(currentDate.getDate() + 1);
+      
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayNumber = existingPlans.length + missingDays.length + 1;
+        
+        const weekIndex = Math.floor((dayNumber - 1) / 7);
+        const templateDay = existingPlans[Math.min(existingPlans.length - 1, weekIndex % existingPlans.length)];
+        
+        missingDays.push({
+          date: dateStr,
+          dayNumber,
+          focus: templateDay.focus || `Day ${dayNumber}`,
+          tasks: (templateDay.tasks || []).map((task: any, tIdx: number) => ({
+            id: `day${dayNumber}-task${tIdx + 1}`,
+            title: task.title,
+            description: task.description,
+            duration: task.duration || 10,
+            completed: false,
+            notes: "",
+          })),
+          completed: false,
+          timeSpent: 0,
+        });
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      if (missingDays.length === 0) {
+        return res.json({ success: true, message: "No missing days", repaired: false });
+      }
+      
+      const combinedPlans = [...existingPlans, ...missingDays];
+      await storage.updateHabit(habitId, userId, { dailyPlans: combinedPlans });
+      
+      res.json({ success: true, repaired: true, addedDays: missingDays.length, totalDays: combinedPlans.length });
+    } catch (error) {
+      console.error("Error repairing plan:", error);
+      res.status(500).json({ error: "Failed to repair plan" });
+    }
+  });
+
   app.post("/api/habits/:id/archive", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

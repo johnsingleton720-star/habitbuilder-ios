@@ -28,8 +28,19 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   const TimeIcon = getTimeOfDayIcon();
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const isPlanStillActive = (habit: HabitResponse) => {
+    if (!habit.setupComplete) return true;
+    const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+    const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+    const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+    if (planEndDate && planEndDate < todayStr) return false;
+    if (lastDailyPlanDate && lastDailyPlanDate < todayStr) return false;
+    return true;
+  };
+
   const getScheduledHabits = () => {
     return habits.filter((habit) => {
+      if (!isPlanStillActive(habit)) return false;
       if (!habit.schedule?.days || habit.schedule.days.length === 0) {
         return true;
       }
