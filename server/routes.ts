@@ -2114,7 +2114,7 @@ REQUIREMENTS:
 4. Reference their specific situation`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -2123,7 +2123,7 @@ REQUIREMENTS:
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2000,
+        max_tokens: 4000,
       });
 
       const content = response.choices[0].message.content;
