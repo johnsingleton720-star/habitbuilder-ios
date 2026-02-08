@@ -41,6 +41,8 @@ interface SessionSummary {
   summary: string;
   insights: string[];
   encouragement: string;
+  performanceTips?: string[];
+  nextSteps?: string[];
 }
 
 const INITIAL_CHECKLIST: ChecklistItem[] = [
@@ -602,7 +604,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               key="complete"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="py-6 space-y-6"
+              className="py-4 space-y-5"
             >
               {/* Celebration animation */}
               <div className="relative text-center">
@@ -610,7 +612,7 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", duration: 0.8 }}
-                  className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
                 >
                   <motion.div
                     animate={{ 
@@ -619,11 +621,10 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                     }}
                     transition={{ repeat: 2, duration: 0.5 }}
                   >
-                    <PartyPopper className="w-10 h-10 text-primary" />
+                    <PartyPopper className="w-8 h-8 text-primary" />
                   </motion.div>
                 </motion.div>
                 
-                {/* Confetti-like decorations */}
                 {[...Array(6)].map((_, i) => (
                   <motion.div
                     key={i}
@@ -645,20 +646,75 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+                  className="text-xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
                 >
                   Session Complete!
                 </motion.h3>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-muted-foreground mt-2"
-                >
-                  {completedTasks.length} of {tasks.length} task{tasks.length !== 1 ? 's' : ''} completed
-                  {totalSessionTime > 0 && ` in ${formatTime(totalSessionTime)}`}
-                </motion.p>
               </div>
+
+              {/* Session Stats Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="grid grid-cols-3 gap-2"
+              >
+                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-xl font-bold text-primary">{completedTasks.length}/{tasks.length}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Tasks Done</p>
+                </div>
+                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-xl font-bold text-primary">
+                    {totalSessionTime >= 60 ? `${Math.floor(totalSessionTime / 60)}m` : `${totalSessionTime}s`}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Time Spent</p>
+                </div>
+                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-xl font-bold text-primary">
+                    {tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0}%
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Completion</p>
+                </div>
+              </motion.div>
+
+              {/* Per-task breakdown */}
+              {allTaskNotes.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Timer className="w-3.5 h-3.5 text-primary" />
+                        Task Breakdown
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {allTaskNotes.map((note, i) => {
+                        const timeMin = Math.max(1, Math.round(note.timeSpent / 60));
+                        const isTaskDone = completedTasks.some(t => t.id === note.taskId);
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            {isTaskDone ? (
+                              <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            ) : (
+                              <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                            )}
+                            <span className={cn("flex-1 truncate", isTaskDone ? "text-foreground" : "text-muted-foreground")}>
+                              {note.task}
+                            </span>
+                            <Badge variant="outline" className="text-[10px] flex-shrink-0">
+                              {timeMin}m
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
               {/* AI Summary Section */}
               <motion.div
@@ -668,9 +724,9 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
               >
                 <Card className="border-primary/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-primary" />
-                      Session Summary
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Brain className="w-3.5 h-3.5 text-primary" />
+                      AI Coach Feedback
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -684,13 +740,41 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                         <p className="text-sm text-foreground">{sessionSummary.summary}</p>
                         
                         {sessionSummary.insights && sessionSummary.insights.length > 0 && (
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Insights</p>
-                            <ul className="space-y-1">
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Insights</p>
+                            <ul className="space-y-1.5">
                               {sessionSummary.insights.map((insight, i) => (
                                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                                   <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
                                   {insight}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
+                            <ul className="space-y-1.5">
+                              {sessionSummary.performanceTips.map((tip, i) => (
+                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                  <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                  {tip}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {sessionSummary.nextSteps && sessionSummary.nextSteps.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Steps</p>
+                            <ul className="space-y-1.5">
+                              {sessionSummary.nextSteps.map((step, i) => (
+                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                  <ArrowRight className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                  {step}
                                 </li>
                               ))}
                             </ul>

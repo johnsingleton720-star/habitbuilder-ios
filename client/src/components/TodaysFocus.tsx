@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { Check, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
+import { Check, CheckCircle2, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,29 +37,19 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
 
   const scheduledHabits = getScheduledHabits();
   
-  const completedToday = scheduledHabits.filter((h) => {
+  const isHabitCompleted = (h: HabitResponse) => {
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     const todayPlan = dailyPlans.find(p => p.date === todayStr);
     if (!todayPlan) return false;
-    // Consider complete if plan is marked complete OR if all tasks are done
     if (todayPlan.completed) return true;
     if (todayPlan.tasks && todayPlan.tasks.length > 0) {
       return todayPlan.tasks.every(t => t.completed);
     }
     return false;
-  });
-  
-  const remainingHabits = scheduledHabits.filter((h) => {
-    const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
-    const todayPlan = dailyPlans.find(p => p.date === todayStr);
-    if (!todayPlan) return true; // No plan = not completed
-    // Check if plan is marked complete OR if all tasks are done
-    if (todayPlan.completed) return false;
-    if (todayPlan.tasks && todayPlan.tasks.length > 0) {
-      return !todayPlan.tasks.every(t => t.completed);
-    }
-    return true;
-  });
+  };
+
+  const completedToday = scheduledHabits.filter(isHabitCompleted);
+  const remainingHabits = scheduledHabits.filter(h => !isHabitCompleted(h));
   
   const progress = scheduledHabits.length > 0 
     ? Math.round((completedToday.length / scheduledHabits.length) * 100) 
@@ -114,7 +104,6 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
             </div>
           </div>
           
-          {/* Circular progress indicator */}
           <div className="relative">
             <svg className="w-16 h-16 progress-ring" viewBox="0 0 64 64">
               <circle
@@ -153,7 +142,6 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Progress Bar */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-black/40 backdrop-blur-sm">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm mb-1.5">
@@ -175,14 +163,14 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-8"
+            className="text-center py-6"
           >
             <motion.div 
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-4"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-3"
             >
-              <Sparkles className="w-10 h-10 text-primary" />
+              <Sparkles className="w-8 h-8 text-primary" />
             </motion.div>
             <h3 className="font-display text-xl font-bold text-gradient">
               All done for today!
@@ -264,28 +252,83 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
           </motion.div>
         ) : null}
 
+        {/* All remaining habits - full list */}
         {remainingHabits.length > 1 && (
-          <div className="pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
+          <div className="pt-2 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
               {remainingHabits.length - 1} more habit{remainingHabits.length > 2 ? "s" : ""} remaining
             </p>
-            <div className="flex flex-wrap gap-2">
-              {remainingHabits.slice(1, 4).map((habit) => (
+            <div className="space-y-1.5">
+              {remainingHabits.filter(h => h.id !== nextHabit?.id).map((habit) => {
+                const taskProgress = getHabitTodayProgress(habit);
+                const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
+                return (
+                  <Link key={habit.id} href={`/habit/${habit.id}`}>
+                    <div
+                      className="group flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-all cursor-pointer"
+                      data-testid={`remaining-habit-${habit.id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm truncate text-gray-900 dark:text-white">{habit.title}</span>
+                          {!habit.setupComplete && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Setup</Badge>
+                          )}
+                        </div>
+                        {taskProgress && taskProgress.total > 0 && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
+                              <div
+                                className={cn("h-full rounded-full", pct > 0 ? "bg-amber-500" : "bg-muted")}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-medium">
+                              {taskProgress.completed}/{taskProgress.total}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {habit.schedule?.time && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Completed habits */}
+        {completedToday.length > 0 && remainingHabits.length > 0 && (
+          <div className="pt-2 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-primary" />
+              {completedToday.length} completed today
+            </p>
+            <div className="space-y-1">
+              {completedToday.map((habit) => (
                 <Link key={habit.id} href={`/habit/${habit.id}`}>
-                  <Badge
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-primary/10 transition-colors px-3 py-1"
-                    data-testid={`badge-remaining-${habit.id}`}
+                  <div
+                    className="group flex items-center gap-3 p-2.5 rounded-xl bg-primary/5 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                    data-testid={`completed-habit-${habit.id}`}
                   >
-                    {habit.title}
-                  </Badge>
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground line-through truncate flex-1">{habit.title}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </div>
                 </Link>
               ))}
-              {remainingHabits.length > 4 && (
-                <Badge variant="outline" className="text-muted-foreground">
-                  +{remainingHabits.length - 4} more
-                </Badge>
-              )}
             </div>
           </div>
         )}

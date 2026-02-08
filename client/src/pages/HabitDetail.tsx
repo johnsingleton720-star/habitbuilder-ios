@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -105,6 +105,29 @@ export default function HabitDetail() {
     },
   });
 
+  const extendPlanMutation = useMutation({
+    mutationFn: async (duration: string) => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/extend-plan`, { duration });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      setSelectedDay(null);
+      toast({
+        title: "Plan extended",
+        description: "New days have been added to your plan. Keep up the momentum!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "Could not extend your plan. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, completed, notes, timeSpent }: { taskId: string; completed?: boolean; notes?: string; timeSpent?: number }) => {
       const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, notes, timeSpent });
@@ -190,9 +213,21 @@ export default function HabitDetail() {
 
   const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
   const currentPlan = dailyPlans.find(p => p.date === selectedDay);
-  const completedDays = dailyPlans.filter(p => p.completed).length;
+  const completedDays = dailyPlans.filter(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed))).length;
   const totalDays = dailyPlans.length;
   const overallProgress = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
+  
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+  const isPlanExpired = planEndDate ? planEndDate < todayStr : false;
+  const isPlanFullyCompleted = totalDays > 0 && completedDays === totalDays;
+  const isPlanDone = isPlanExpired || isPlanFullyCompleted;
+  const isSelectedDayPast = selectedDay ? selectedDay < todayStr : false;
+  const isSelectedDayToday = selectedDay === todayStr;
+  
+  const totalTasksInPlan = dailyPlans.reduce((sum, p) => sum + p.tasks.length, 0);
+  const completedTasksInPlan = dailyPlans.reduce((sum, p) => sum + p.tasks.filter(t => t.completed).length, 0);
+  const taskCompletionRate = totalTasksInPlan > 0 ? Math.round((completedTasksInPlan / totalTasksInPlan) * 100) : 0;
 
   const handleToggleTask = (taskId: string, currentCompleted: boolean) => {
     updateTaskMutation.mutate({ 
@@ -241,7 +276,7 @@ export default function HabitDetail() {
             {habit.setupComplete && (
               <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
             )}
-            {habit.setupComplete && currentPlan && (
+            {habit.setupComplete && currentPlan && !isPlanDone && !isSelectedDayPast && (
               <Button onClick={handleStartSession} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session">
                 <Play className="w-4 h-4" />
                 <span className="hidden sm:inline">Start Session</span>
@@ -268,6 +303,100 @@ export default function HabitDetail() {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Plan Completed/Expired Banner */}
+        {habit.setupComplete && isPlanDone && dailyPlans.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className={cn(
+              "border-2",
+              isPlanFullyCompleted 
+                ? "border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" 
+                : "border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20"
+            )}>
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", duration: 0.6 }}
+                    className={cn(
+                      "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
+                      isPlanFullyCompleted 
+                        ? "bg-gradient-to-br from-primary/20 to-accent/20" 
+                        : "bg-amber-100 dark:bg-amber-900/30"
+                    )}
+                  >
+                    {isPlanFullyCompleted ? (
+                      <Trophy className="w-8 h-8 text-primary" />
+                    ) : (
+                      <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                    )}
+                  </motion.div>
+                  
+                  <div>
+                    <h3 className="text-lg font-display font-bold">
+                      {isPlanFullyCompleted ? "Plan Completed!" : "Plan Period Ended"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {isPlanFullyCompleted 
+                        ? `Amazing work! You completed ${completedDays} of ${totalDays} days with ${taskCompletionRate}% of all tasks done.`
+                        : `This ${habit.planDuration} plan ran from ${habit.planStartDate} to ${planEndDate}. You completed ${completedDays} of ${totalDays} days (${taskCompletionRate}% of tasks).`
+                      }
+                    </p>
+                  </div>
+
+                  <div className="w-full bg-muted/50 rounded-full h-3 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${overallProgress}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      className={cn(
+                        "h-full rounded-full",
+                        overallProgress === 100 
+                          ? "bg-gradient-to-r from-primary to-accent" 
+                          : "bg-gradient-to-r from-amber-400 to-orange-500"
+                      )}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{completedDays}/{totalDays} days completed</p>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <Button
+                      onClick={() => {
+                        const extDuration = habit.planDuration === "daily" ? "weekly" : (habit.planDuration || "weekly");
+                        extendPlanMutation.mutate(extDuration);
+                      }}
+                      disabled={extendPlanMutation.isPending}
+                      className="flex-1 gap-2"
+                      data-testid="button-extend-plan"
+                    >
+                      {extendPlanMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CalendarPlus className="w-4 h-4" />
+                      )}
+                      Extend Plan
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowPlanTypeChanger(true);
+                      }}
+                      className="flex-1 gap-2"
+                      data-testid="button-start-fresh"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Start Fresh
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
         {/* Daily Motivation from AI Coach */}
@@ -397,7 +526,7 @@ export default function HabitDetail() {
 
         {/* Progress Overview */}
         {habit.setupComplete && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -406,7 +535,21 @@ export default function HabitDetail() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{completedDays}/{totalDays}</p>
-                    <p className="text-sm text-muted-foreground">Days completed</p>
+                    <p className="text-sm text-muted-foreground">Days done</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{taskCompletionRate}%</p>
+                    <p className="text-sm text-muted-foreground">Tasks done</p>
                   </div>
                 </div>
               </CardContent>
@@ -419,8 +562,8 @@ export default function HabitDetail() {
                     <Timer className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{habit.totalTimeSpent || 0} min</p>
-                    <p className="text-sm text-muted-foreground">Total time spent</p>
+                    <p className="text-2xl font-bold">{habit.totalTimeSpent || 0}m</p>
+                    <p className="text-sm text-muted-foreground">Time spent</p>
                   </div>
                 </div>
               </CardContent>
@@ -433,8 +576,8 @@ export default function HabitDetail() {
                     <Flame className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{habit.longestStreak || 0} days</p>
-                    <p className="text-sm text-muted-foreground">Longest streak</p>
+                    <p className="text-2xl font-bold">{habit.longestStreak || 0}d</p>
+                    <p className="text-sm text-muted-foreground">Best streak</p>
                   </div>
                 </div>
               </CardContent>
@@ -559,8 +702,8 @@ export default function HabitDetail() {
                       <>
                         <div className="flex gap-2 overflow-x-auto pb-1">
                           {weeks.map((week, wIdx) => {
-                            const weekCompleted = week.every(p => p.completed);
-                            const weekPartial = week.some(p => p.completed);
+                            const weekCompleted = week.every(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed)));
+                            const weekPartial = week.some(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed)));
                             const isActiveWeek = wIdx === (selectedWeekIndex >= 0 ? selectedWeekIndex : 0);
                             return (
                               <button
@@ -586,24 +729,39 @@ export default function HabitDetail() {
                           {weeks[selectedWeekIndex >= 0 ? selectedWeekIndex : 0]?.map((plan, index) => {
                             const planDate = parseISO(plan.date);
                             const isSelected = plan.date === selectedDay;
+                            const isDayPast = plan.date < todayStr;
+                            const isDayToday = plan.date === todayStr;
+                            const isDayCompleted = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
+                            const tasksCompleted = plan.tasks.filter(t => t.completed).length;
+                            const taskTotal = plan.tasks.length;
+                            const hasPartialProgress = tasksCompleted > 0 && !isDayCompleted;
                             return (
                               <button
                                 key={plan.date}
                                 onClick={() => setSelectedDay(plan.date)}
                                 className={cn(
-                                  "px-2 py-2 rounded-md border transition-all text-center",
+                                  "px-2 py-2 rounded-md border transition-all text-center relative",
                                   isSelected
                                     ? "bg-primary text-primary-foreground border-primary"
+                                    : isDayToday
+                                    ? "bg-accent/20 border-primary/50 ring-1 ring-primary/30"
+                                    : isDayCompleted
+                                    ? "bg-primary/10 border-primary/30"
+                                    : isDayPast
+                                    ? "bg-muted/50 border-border/50 opacity-60"
                                     : "bg-card border-border hover-elevate",
-                                  plan.completed && !isSelected && "bg-primary/10 border-primary/30"
                                 )}
                                 data-testid={`day-selector-${plan.dayNumber || index + 1}`}
                               >
                                 <p className="text-xs opacity-70">Day {plan.dayNumber || index + 1}</p>
                                 <p className="font-medium text-sm">{format(planDate, "MMM d")}</p>
-                                {plan.completed && (
-                                  <CheckCircle2 className="w-3 h-3 mx-auto mt-0.5" />
-                                )}
+                                {isDayCompleted ? (
+                                  <CheckCircle2 className={cn("w-3 h-3 mx-auto mt-0.5", isSelected ? "text-primary-foreground" : "text-primary")} />
+                                ) : hasPartialProgress ? (
+                                  <span className={cn("text-[10px] font-medium mt-0.5 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
+                                ) : isDayPast && !isSelected ? (
+                                  <span className="text-[10px] text-muted-foreground mt-0.5 block">missed</span>
+                                ) : null}
                               </button>
                             );
                           })}
@@ -617,6 +775,12 @@ export default function HabitDetail() {
                   {dailyPlans.map((plan, index) => {
                     const planDate = parseISO(plan.date);
                     const isSelected = plan.date === selectedDay;
+                    const isDayPast = plan.date < todayStr;
+                    const isDayToday = plan.date === todayStr;
+                    const isDayCompleted = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
+                    const tasksCompleted = plan.tasks.filter(t => t.completed).length;
+                    const taskTotal = plan.tasks.length;
+                    const hasPartialProgress = tasksCompleted > 0 && !isDayCompleted;
                     
                     return (
                       <button
@@ -626,17 +790,26 @@ export default function HabitDetail() {
                           "flex-shrink-0 px-4 py-2 rounded-lg border transition-all",
                           isSelected 
                             ? "bg-primary text-primary-foreground border-primary" 
+                            : isDayToday
+                            ? "bg-accent/20 border-primary/50 ring-1 ring-primary/30"
+                            : isDayCompleted
+                            ? "bg-primary/10 border-primary/30"
+                            : isDayPast
+                            ? "bg-muted/50 border-border/50 opacity-60"
                             : "bg-card border-border hover-elevate",
-                          plan.completed && !isSelected && "bg-primary/10 border-primary/30"
                         )}
                         data-testid={`day-selector-${index + 1}`}
                       >
                         <div className="text-center">
                           <p className="text-xs opacity-70">Day {index + 1}</p>
                           <p className="font-medium">{format(planDate, "MMM d")}</p>
-                          {plan.completed && (
-                            <CheckCircle2 className="w-3 h-3 mx-auto mt-1" />
-                          )}
+                          {isDayCompleted ? (
+                            <CheckCircle2 className={cn("w-3 h-3 mx-auto mt-1", isSelected ? "text-primary-foreground" : "text-primary")} />
+                          ) : hasPartialProgress ? (
+                            <span className={cn("text-[10px] font-medium mt-1 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
+                          ) : isDayPast && !isSelected ? (
+                            <span className="text-[10px] text-muted-foreground mt-1 block">missed</span>
+                          ) : null}
                         </div>
                       </button>
                     );
@@ -649,8 +822,14 @@ export default function HabitDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <h4 className="font-medium">
+                      <h4 className="font-medium flex items-center gap-2">
                         {isToday(parseISO(currentPlan.date)) ? "Today's Tasks" : `Tasks for ${format(parseISO(currentPlan.date), "MMMM d")}`}
+                        {currentPlan.date < todayStr && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">Past</Badge>
+                        )}
+                        {isToday(parseISO(currentPlan.date)) && (
+                          <Badge variant="outline" className="text-xs border-primary/30 text-primary">Today</Badge>
+                        )}
                       </h4>
                       {currentPlan.focus && (
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -659,9 +838,25 @@ export default function HabitDetail() {
                         </p>
                       )}
                     </div>
-                    <Badge variant={currentPlan.completed ? "default" : "secondary"}>
-                      {currentPlan.tasks.filter(t => t.completed).length}/{currentPlan.tasks.length} complete
-                    </Badge>
+                    {(() => {
+                      const dayCompleted = currentPlan.tasks.filter(t => t.completed).length;
+                      const dayTotal = currentPlan.tasks.length;
+                      const dayPct = dayTotal > 0 ? Math.round((dayCompleted / dayTotal) * 100) : 0;
+                      const isDayDone = dayCompleted === dayTotal && dayTotal > 0;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                            <div 
+                              className={cn("h-full rounded-full transition-all", isDayDone ? "bg-primary" : "bg-amber-500")}
+                              style={{ width: `${dayPct}%` }}
+                            />
+                          </div>
+                          <Badge variant={isDayDone ? "default" : "secondary"}>
+                            {dayCompleted}/{dayTotal} complete
+                          </Badge>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <AnimatePresence mode="popLayout">

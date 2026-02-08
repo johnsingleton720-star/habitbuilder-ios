@@ -2024,6 +2024,138 @@ REQUIREMENTS:
     }
   });
 
+  // Extend plan from current end date, preserving existing progress
+  app.post("/api/habits/:id/extend-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { duration } = req.body;
+
+      if (!["daily", "weekly", "monthly"].includes(duration)) {
+        return res.status(400).json({ error: "Extension duration must be daily, weekly, or monthly." });
+      }
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      if (!habit.setupComplete || !habit.planEndDate) {
+        return res.status(400).json({ error: "Habit must have a completed plan to extend." });
+      }
+
+      const safetyCheck = checkContentSafety(habit.title, habit.description, habit.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
+      }
+
+      const existingPlans = (habit.dailyPlans || []) as any[];
+      const existingEndDate = new Date(habit.planEndDate);
+      const newStartDate = new Date(existingEndDate);
+      newStartDate.setDate(newStartDate.getDate() + 1);
+
+      const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
+      const newEndDate = new Date(newStartDate);
+      newEndDate.setDate(newEndDate.getDate() + daysCount - 1);
+
+      const questions = (habit.questions || []) as any[];
+      const contextSummary = questions
+        .filter((q: any) => q.answer)
+        .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
+        .join("\n\n");
+
+      const completedDays = existingPlans.filter((p: any) => p.completed).length;
+      const totalDays = existingPlans.length;
+
+      const prompt = `Create an EXTENSION plan for the habit: "${habit.title}"
+${habit.goal ? `Goal: ${habit.goal}` : ""}
+
+User's interview answers:
+${contextSummary}
+
+Previous plan context: ${habit.aiContext || "No additional context"}
+The user completed ${completedDays} out of ${totalDays} days in their previous plan.
+
+Create ${daysCount} new daily plans continuing from where they left off. 
+This is a CONTINUATION - build on progress made, increase difficulty slightly.
+Day numbering starts at ${totalDays + 1}.
+
+Return JSON:
+{
+  "dailyPlans": [
+    {
+      "date": "${newStartDate.toISOString().split('T')[0]}",
+      "dayNumber": ${totalDays + 1},
+      "focus": "Day theme",
+      "tasks": [
+        {
+          "id": "day${totalDays + 1}-task1",
+          "title": "Action-oriented title",
+          "description": "Detailed instructions",
+          "duration": 10,
+          "completed": false,
+          "notes": ""
+        }
+      ],
+      "completed": false,
+      "timeSpent": 0
+    }
+  ],
+  "aiContext": "Updated summary including extension goals"
+}
+
+REQUIREMENTS:
+1. Each task description: 50-100 words with numbered steps
+2. Build on previous plan progress - increase difficulty
+3. Include concrete numbers (reps, minutes, amounts)
+4. Reference their specific situation`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert habit coach. Create detailed, personalized action plans that build on previous progress. Always return valid JSON. SAFETY: Never generate harmful content.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const planData = JSON.parse(content);
+      if (!planData.dailyPlans || !Array.isArray(planData.dailyPlans)) {
+        throw new Error("Invalid plan structure from AI");
+      }
+
+      const fixedNewPlans = planData.dailyPlans.map((plan: any, index: number) => {
+        const planDate = new Date(newStartDate);
+        planDate.setDate(planDate.getDate() + index);
+        return {
+          ...plan,
+          date: planDate.toISOString().split('T')[0],
+          dayNumber: totalDays + index + 1,
+        };
+      });
+
+      const combinedPlans = [...existingPlans, ...fixedNewPlans];
+
+      await storage.updateHabit(habitId, userId, {
+        planEndDate: newEndDate.toISOString().split('T')[0],
+        dailyPlans: combinedPlans,
+        aiContext: planData.aiContext || habit.aiContext,
+      });
+
+      res.json({ success: true, dailyPlans: combinedPlans });
+    } catch (error) {
+      console.error("Error extending plan:", error);
+      res.status(500).json({ error: "Failed to extend plan" });
+    }
+  });
+
   // Update a specific task in a daily plan
   app.patch("/api/habits/:id/tasks/:taskId", isAuthenticated, async (req: any, res) => {
     try {
@@ -2204,24 +2336,28 @@ REQUIREMENTS:
         `Task ${i + 1} (${n.task}): ${n.note}`
       ).join('\n');
 
-      const prompt = `You are a supportive habit coach. The user just completed a habit session for "${habitTitle}". 
+      const prompt = `You are an expert habit coach providing detailed session analytics. The user just completed a habit session for "${habitTitle}". 
 
 Session stats:
-- Completed ${tasksCompleted} of ${totalTasks} tasks
+- Completed ${tasksCompleted} of ${totalTasks} tasks (${totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0}% completion rate)
 - Time spent: ${timeSpent} minutes
 
 Their notes from this session:
 ${notesText}
 
-Please provide:
-1. A brief, warm summary (2-3 sentences) of their session based on their notes
-2. 1-2 specific insights or patterns you notice from their notes
-3. An encouraging message to keep them motivated
+Provide a comprehensive session analysis in JSON format with these fields:
+1. "summary": A warm, specific 2-3 sentence summary referencing what they actually did based on their notes
+2. "insights": 2-3 specific observations about their approach, patterns, or progress (be concrete, not generic)
+3. "performanceTips": 1-2 actionable tips to improve their next session based on what you observe (e.g., time management, focus areas, technique adjustments)
+4. "nextSteps": 1-2 specific actions they should take before their next session to build momentum
+5. "encouragement": A personalized, motivating message that references something specific from their session
 
-Respond in JSON format:
+Respond ONLY with valid JSON:
 {
   "summary": "...",
-  "insights": ["insight 1", "insight 2"],
+  "insights": ["...", "..."],
+  "performanceTips": ["...", "..."],
+  "nextSteps": ["...", "..."],
   "encouragement": "..."
 }`;
 
