@@ -44,6 +44,7 @@ export interface RoutineTask {
   description: string;
   duration: number; // Minutes
   completed: boolean;
+  skipped?: boolean;
   notes?: string;
   guidance?: TaskGuidance;
 }

@@ -58,7 +58,8 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
     if (!todayPlan) return false;
     if (todayPlan.completed) return true;
     if (todayPlan.tasks && todayPlan.tasks.length > 0) {
-      return todayPlan.tasks.every(t => t.completed);
+      const activeTasks = todayPlan.tasks.filter(t => !t.skipped);
+      return activeTasks.length > 0 && activeTasks.every(t => t.completed);
     }
     return false;
   };
@@ -94,8 +95,9 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
     const todayPlan = dailyPlans.find(p => p.date === todayStr);
     if (!todayPlan) return null;
     const completed = todayPlan.tasks.filter(t => t.completed).length;
-    const total = todayPlan.tasks.length;
-    return { completed, total };
+    const skipped = todayPlan.tasks.filter(t => t.skipped).length;
+    const total = todayPlan.tasks.length - skipped;
+    return { completed, total, skipped };
   };
 
   const otherRemaining = remainingHabits.filter(h => h.id !== nextHabit?.id);

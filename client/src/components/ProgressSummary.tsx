@@ -24,7 +24,9 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     const plan = dailyPlans.find(p => p.date === dateStr);
     if (!plan || plan.tasks.length === 0) return false;
-    return plan.completed || plan.tasks.every(t => t.completed);
+    const activeTasks = plan.tasks.filter(t => !t.skipped);
+    if (activeTasks.length === 0) return false;
+    return plan.completed || activeTasks.every(t => t.completed);
   };
 
   const habitsWithTodayPlans = habits.filter(h => {
@@ -79,7 +81,8 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
         isScheduled,
         hasTasks,
         completedTasks: plan ? plan.tasks.filter(t => t.completed).length : 0,
-        totalTasks: plan ? plan.tasks.length : 0,
+        skippedTasks: plan ? plan.tasks.filter(t => t.skipped).length : 0,
+        totalTasks: plan ? plan.tasks.filter(t => !t.skipped).length : 0,
       };
     }).filter(h => h.isScheduled || h.hasTasks);
   };
@@ -240,7 +243,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                       <p className="text-sm text-muted-foreground py-3 text-center">No habits scheduled for this day</p>
                     ) : (
                       <div className="space-y-1.5">
-                        {selectedDateHabits.map(({ habit, plan, isComplete, hasTasks, completedTasks, totalTasks }) => (
+                        {selectedDateHabits.map(({ habit, plan, isComplete, hasTasks, completedTasks, skippedTasks, totalTasks }) => (
                           <Link key={habit.id} href={`/habit/${habit.id}`}>
                             <div
                               className={`flex items-center gap-3 p-2.5 rounded-lg transition-all cursor-pointer ${

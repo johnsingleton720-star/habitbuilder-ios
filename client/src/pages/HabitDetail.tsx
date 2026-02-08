@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -129,8 +129,8 @@ export default function HabitDetail() {
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, completed, notes, timeSpent }: { taskId: string; completed?: boolean; notes?: string; timeSpent?: number }) => {
-      const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, notes, timeSpent });
+    mutationFn: async ({ taskId, completed, skipped, notes, timeSpent }: { taskId: string; completed?: boolean; skipped?: boolean; notes?: string; timeSpent?: number }) => {
+      const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, skipped, notes, timeSpent });
       return res.json();
     },
     onSuccess: () => {
@@ -228,8 +228,10 @@ export default function HabitDetail() {
   const isSelectedDayToday = selectedDay === todayStr;
   
   const totalTasksInPlan = dailyPlans.reduce((sum, p) => sum + p.tasks.length, 0);
+  const skippedTasksInPlan = dailyPlans.reduce((sum, p) => sum + p.tasks.filter(t => t.skipped).length, 0);
   const completedTasksInPlan = dailyPlans.reduce((sum, p) => sum + p.tasks.filter(t => t.completed).length, 0);
-  const taskCompletionRate = totalTasksInPlan > 0 ? Math.round((completedTasksInPlan / totalTasksInPlan) * 100) : 0;
+  const activeTasksInPlan = totalTasksInPlan - skippedTasksInPlan;
+  const taskCompletionRate = activeTasksInPlan > 0 ? Math.round((completedTasksInPlan / activeTasksInPlan) * 100) : 0;
 
   const handleToggleTask = (taskId: string, currentCompleted: boolean) => {
     updateTaskMutation.mutate({ 
@@ -237,6 +239,10 @@ export default function HabitDetail() {
       completed: !currentCompleted,
       timeSpent: !currentCompleted ? 5 : 0, // Add 5 min when completing
     });
+  };
+
+  const handleSkipTask = (taskId: string) => {
+    updateTaskMutation.mutate({ taskId, skipped: true });
   };
 
   const handleSaveNote = (taskId: string) => {
@@ -713,8 +719,14 @@ export default function HabitDetail() {
                       <>
                         <div className="flex gap-2 overflow-x-auto pb-1">
                           {weeks.map((week, wIdx) => {
-                            const weekCompleted = week.every(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed)));
-                            const weekPartial = week.some(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed)));
+                            const weekCompleted = week.every(p => {
+                              const active = p.tasks.filter(t => !t.skipped);
+                              return p.completed || (active.length > 0 && active.every(t => t.completed));
+                            });
+                            const weekPartial = week.some(p => {
+                              const active = p.tasks.filter(t => !t.skipped);
+                              return p.completed || (active.length > 0 && active.every(t => t.completed));
+                            });
                             const isActiveWeek = wIdx === (selectedWeekIndex >= 0 ? selectedWeekIndex : 0);
                             return (
                               <button
@@ -742,9 +754,10 @@ export default function HabitDetail() {
                             const isSelected = plan.date === selectedDay;
                             const isDayPast = plan.date < todayStr;
                             const isDayToday = plan.date === todayStr;
-                            const isDayCompleted = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
+                            const activeTasksMonthly = plan.tasks.filter(t => !t.skipped);
+                            const isDayCompleted = activeTasksMonthly.length > 0 && activeTasksMonthly.every(t => t.completed) && plan.tasks.some(t => t.completed);
                             const tasksCompleted = plan.tasks.filter(t => t.completed).length;
-                            const taskTotal = plan.tasks.length;
+                            const taskTotal = activeTasksMonthly.length;
                             const hasPartialProgress = tasksCompleted > 0 && !isDayCompleted;
                             return (
                               <button
@@ -788,9 +801,10 @@ export default function HabitDetail() {
                     const isSelected = plan.date === selectedDay;
                     const isDayPast = plan.date < todayStr;
                     const isDayToday = plan.date === todayStr;
-                    const isDayCompleted = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
+                    const activeTasks = plan.tasks.filter(t => !t.skipped);
+                    const isDayCompleted = plan.completed || (activeTasks.length > 0 && activeTasks.every(t => t.completed));
                     const tasksCompleted = plan.tasks.filter(t => t.completed).length;
-                    const taskTotal = plan.tasks.length;
+                    const taskTotal = activeTasks.length;
                     const hasPartialProgress = tasksCompleted > 0 && !isDayCompleted;
                     
                     return (
@@ -851,9 +865,10 @@ export default function HabitDetail() {
                     </div>
                     {(() => {
                       const dayCompleted = currentPlan.tasks.filter(t => t.completed).length;
-                      const dayTotal = currentPlan.tasks.length;
-                      const dayPct = dayTotal > 0 ? Math.round((dayCompleted / dayTotal) * 100) : 0;
-                      const isDayDone = dayCompleted === dayTotal && dayTotal > 0;
+                      const daySkipped = currentPlan.tasks.filter(t => t.skipped).length;
+                      const dayActive = currentPlan.tasks.length - daySkipped;
+                      const dayPct = dayActive > 0 ? Math.round((dayCompleted / dayActive) * 100) : 0;
+                      const isDayDone = dayCompleted === dayActive && dayActive > 0;
                       return (
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
@@ -863,7 +878,8 @@ export default function HabitDetail() {
                             />
                           </div>
                           <Badge variant={isDayDone ? "default" : "secondary"}>
-                            {dayCompleted}/{dayTotal} complete
+                            {dayCompleted}/{dayActive} complete
+                            {daySkipped > 0 && ` (${daySkipped} skipped)`}
                           </Badge>
                         </div>
                       );
@@ -881,42 +897,58 @@ export default function HabitDetail() {
                       >
                         <Card className={cn(
                           "transition-all",
-                          task.completed && "bg-primary/5 border-primary/30 opacity-75"
+                          task.completed && "bg-primary/5 border-primary/30 opacity-75",
+                          task.skipped && "opacity-60"
                         )}>
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
                               <button
-                                onClick={() => handleToggleTask(task.id, task.completed)}
+                                onClick={() => {
+                                  if (task.skipped) {
+                                    updateTaskMutation.mutate({ taskId: task.id, skipped: false });
+                                  } else {
+                                    handleToggleTask(task.id, task.completed);
+                                  }
+                                }}
                                 className={cn(
                                   "mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
                                   task.completed
                                     ? "bg-primary border-primary text-primary-foreground"
+                                    : task.skipped
+                                    ? "bg-muted border-muted-foreground/20 text-muted-foreground"
                                     : "border-muted-foreground/30 hover:border-primary/50"
                                 )}
                                 data-testid={`checkbox-task-${task.id}`}
                               >
                                 {task.completed && <Check className="w-3.5 h-3.5" />}
+                                {task.skipped && <SkipForward className="w-3 h-3" />}
                               </button>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
                                     <p className={cn(
                                       "font-medium",
-                                      task.completed && "line-through text-muted-foreground"
+                                      task.completed && "line-through text-muted-foreground",
+                                      task.skipped && "line-through text-muted-foreground"
                                     )}>
                                       {task.title}
                                     </p>
-                                    {!task.completed && (
+                                    {!task.completed && !task.skipped && (
                                       <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
                                         {task.description}
                                       </p>
                                     )}
                                   </div>
-                                  <Badge variant={task.completed ? "secondary" : "outline"} className="flex-shrink-0">
+                                  <Badge variant={task.completed ? "secondary" : task.skipped ? "outline" : "outline"} className="flex-shrink-0">
                                     {task.completed ? (
                                       <>
                                         <Check className="w-3 h-3 mr-1" />
                                         Done
+                                      </>
+                                    ) : task.skipped ? (
+                                      <>
+                                        <SkipForward className="w-3 h-3 mr-1" />
+                                        Skipped
                                       </>
                                     ) : (
                                       <>
@@ -927,8 +959,8 @@ export default function HabitDetail() {
                                   </Badge>
                                 </div>
 
-                                {!task.completed && (
-                                  <div className="mt-3">
+                                {!task.completed && !task.skipped && (
+                                  <div className="mt-3 flex items-center gap-2 flex-wrap">
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -938,6 +970,16 @@ export default function HabitDetail() {
                                     >
                                       <Lightbulb className="w-3 h-3" />
                                       Get Examples & Resources
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="gap-1.5 text-muted-foreground"
+                                      onClick={() => handleSkipTask(task.id)}
+                                      data-testid={`button-skip-${task.id}`}
+                                    >
+                                      <SkipForward className="w-3 h-3" />
+                                      Skip
                                     </Button>
                                   </div>
                                 )}

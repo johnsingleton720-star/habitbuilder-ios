@@ -298,6 +298,34 @@ export async function registerRoutes(
     return habit;
   }
 
+  function autoMarkSkippedTasks(habit: any): { updated: boolean; habit: any } {
+    const today = new Date().toISOString().split('T')[0];
+    const dailyPlans = habit.dailyPlans || [];
+    let updated = false;
+
+    for (const plan of dailyPlans) {
+      if (plan.date < today) {
+        for (const task of plan.tasks) {
+          if (!task.completed && !task.skipped) {
+            task.skipped = true;
+            task.completed = false;
+            updated = true;
+          }
+          if (task.completed && task.skipped) {
+            task.skipped = false;
+            updated = true;
+          }
+        }
+        const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+        const anyCompleted = plan.tasks.some((t: any) => t.completed);
+        const allResolved = plan.tasks.every((t: any) => t.completed || t.skipped);
+        plan.completed = allResolved && anyCompleted && activeTasks.length > 0;
+      }
+    }
+
+    return { updated, habit: { ...habit, dailyPlans } };
+  }
+
   // Protected routes
   app.get(api.habits.list.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
@@ -305,8 +333,17 @@ export async function registerRoutes(
     
     // Auto-fix any habits with reversed dates
     const fixedHabits = await Promise.all(habits.map(autoFixHabitDates));
+
+    const processedHabits = [];
+    for (const h of fixedHabits) {
+      const { updated, habit: processed } = autoMarkSkippedTasks(h);
+      if (updated) {
+        await storage.updateHabit(processed.id, userId, { dailyPlans: processed.dailyPlans });
+      }
+      processedHabits.push(processed);
+    }
     
-    res.json(fixedHabits);
+    res.json(processedHabits);
   });
 
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
@@ -329,7 +366,12 @@ export async function registerRoutes(
       // Auto-fix if dates are reversed
       habit = await autoFixHabitDates(habit);
 
-      res.json(habit);
+      const { updated, habit: processed } = autoMarkSkippedTasks(habit);
+      if (updated) {
+        await storage.updateHabit(processed.id, userId, { dailyPlans: processed.dailyPlans });
+      }
+
+      res.json(processed);
     } catch (error) {
       console.error("Error fetching habit:", error);
       res.status(500).json({ message: 'Failed to load habit' });
@@ -2317,7 +2359,7 @@ REQUIREMENTS:
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
       const taskId = req.params.taskId;
-      const { completed, notes, timeSpent } = req.body;
+      const { completed, skipped, notes, timeSpent } = req.body;
       
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
@@ -2334,18 +2376,28 @@ REQUIREMENTS:
         if (taskIndex !== -1) {
           if (completed !== undefined) {
             plan.tasks[taskIndex].completed = completed;
+            if (completed) {
+              plan.tasks[taskIndex].skipped = false;
+            }
+          }
+          if (skipped !== undefined) {
+            plan.tasks[taskIndex].skipped = skipped;
+            if (skipped) {
+              plan.tasks[taskIndex].completed = false;
+            }
           }
           if (notes !== undefined) {
             plan.tasks[taskIndex].notes = notes;
           }
           if (timeSpent !== undefined) {
-            const oldTime = plan.tasks[taskIndex].duration || 0;
             totalTimeSpent += timeSpent;
             plan.timeSpent = (plan.timeSpent || 0) + timeSpent;
           }
           
-          // Check if all tasks in this day are complete
-          plan.completed = plan.tasks.every(t => t.completed);
+          // Day is complete only if all tasks are either completed or skipped, with at least one completed
+          const allResolved = plan.tasks.every(t => t.completed || t.skipped);
+          const anyCompleted = plan.tasks.some(t => t.completed);
+          plan.completed = allResolved && anyCompleted;
           taskFound = true;
           break;
         }

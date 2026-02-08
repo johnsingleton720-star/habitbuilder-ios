@@ -178,10 +178,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
   const todaysTasks = todaysPlan?.tasks || [];
   const completedTasksCount = todaysTasks.filter(t => t.completed).length;
-  const allTasksCompleted = todaysTasks.length > 0 && todaysTasks.every(t => t.completed);
-  const isCompletedToday = todaysPlan?.completed || allTasksCompleted;
+  const skippedTasksCount = todaysTasks.filter(t => t.skipped).length;
+  const activeTasksCount = todaysTasks.length - skippedTasksCount;
+  const allResolved = activeTasksCount > 0 && todaysTasks.every(t => t.completed || t.skipped) && completedTasksCount > 0;
+  const isCompletedToday = allResolved;
   const totalTasksCount = todaysTasks.length;
-  const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
+  const progressPercent = activeTasksCount > 0 ? (completedTasksCount / activeTasksCount) * 100 : 0;
 
   const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
   const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
@@ -351,7 +353,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs mb-1.5">
                       <span className="text-muted-foreground font-medium">Today's Progress</span>
-                      <span className="font-bold text-foreground">{completedTasksCount}/{totalTasksCount}</span>
+                      <span className="font-bold text-foreground">
+                        {completedTasksCount}/{activeTasksCount}
+                        {skippedTasksCount > 0 && (
+                          <span className="text-muted-foreground font-normal ml-1 text-[10px]">({skippedTasksCount} skipped)</span>
+                        )}
+                      </span>
                     </div>
                     <div className="h-2.5 rounded-full bg-white/50 dark:bg-black/20 overflow-hidden shadow-inner">
                       <motion.div 
