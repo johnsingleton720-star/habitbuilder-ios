@@ -1433,7 +1433,7 @@ IMPORTANT: Make steps interactive and explorable - phrase them as questions or r
 Make the tips varied across categories. Be specific and practical.`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -1445,6 +1445,7 @@ Make the tips varied across categories. Be specific and practical.`;
           },
         ],
         response_format: { type: "json_object" },
+        max_tokens: 1500,
       });
 
       const content = response.choices[0].message.content;
@@ -1487,7 +1488,7 @@ Return a JSON object with:
 Be creative and diverse. Cover different angles and approaches to completing "${stepText}".`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -1499,6 +1500,7 @@ Be creative and diverse. Cover different angles and approaches to completing "${
           },
         ],
         response_format: { type: "json_object" },
+        max_tokens: 800,
       });
 
       const content = response.choices[0].message.content;
@@ -1553,7 +1555,7 @@ Return a JSON object with:
 Make questions conversational and specific to "${habit.title}". Avoid generic questions.`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -1562,6 +1564,7 @@ Make questions conversational and specific to "${habit.title}". Avoid generic qu
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
+        max_tokens: 1000,
       });
 
       const content = response.choices[0].message.content;
@@ -2111,7 +2114,7 @@ REQUIREMENTS:
 4. Reference their specific situation`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -2120,7 +2123,7 @@ REQUIREMENTS:
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 4000,
+        max_tokens: 2000,
       });
 
       const content = response.choices[0].message.content;
@@ -2486,7 +2489,7 @@ Return JSON exactly like this:
 CRITICAL: Do NOT mention specific third-party apps, brands, websites, or services by name (no Duolingo, Headspace, Calm, MyFitnessPal, Mint, etc.). Use generic descriptions instead. Books with author names are acceptable. Templates must be complete and usable.`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -2495,7 +2498,7 @@ CRITICAL: Do NOT mention specific third-party apps, brands, websites, or service
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 4000,
+        max_tokens: 2500,
       });
 
       const content = response.choices[0].message.content;
@@ -2583,13 +2586,13 @@ Return JSON:
 }`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: "You are an empathetic, supportive habit coach. Be warm and personal, not generic. Always return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1000,
+        max_tokens: 600,
       });
 
       const content = response.choices[0].message.content;
@@ -2634,13 +2637,13 @@ Return JSON with:
 }`;
 
       const response = await openaiClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: "You are an encouraging habit coach. Be brief, specific, and motivating. Return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content." },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 500,
+        max_tokens: 400,
       });
 
       const content = response.choices[0].message.content;
@@ -3855,7 +3858,7 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -3866,7 +3869,7 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
             content: `Here's my habit data: ${JSON.stringify(habitSummary)}. What insights can you share about my progress?`,
           },
         ],
-        max_tokens: 500,
+        max_tokens: 400,
       });
       
       const insights = response.choices[0]?.message?.content || "Keep up the great work on your habits!";
@@ -4218,29 +4221,28 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
         return res.status(403).json({ error: "Mood reports require Premium subscription" });
       }
       
-      const allEntries = await db.select()
-        .from(moodEntries)
-        .where(eq(moodEntries.userId, userId))
-        .orderBy(moodEntries.date);
-      
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
       }
       
+      const allEntries = await db.select()
+        .from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(moodEntries.date);
+      
       const moodValues: Record<string, number> = { great: 5, good: 4, okay: 3, bad: 2, terrible: 1 };
       
-      // Entries where this habit was logged
-      const habitEntries = allEntries.filter(e => {
+      const habitEntries: typeof allEntries = [];
+      const nonHabitEntries: typeof allEntries = [];
+      for (const e of allEntries) {
         const ids = (e.habitIds as number[]) || [];
-        return ids.includes(habitId);
-      });
-      
-      // Entries where this habit was NOT logged
-      const nonHabitEntries = allEntries.filter(e => {
-        const ids = (e.habitIds as number[]) || [];
-        return !ids.includes(habitId);
-      });
+        if (ids.includes(habitId)) {
+          habitEntries.push(e);
+        } else {
+          nonHabitEntries.push(e);
+        }
+      }
       
       const avgMoodWith = habitEntries.length > 0 
         ? habitEntries.reduce((s, e) => s + (moodValues[e.mood] || 3), 0) / habitEntries.length 
@@ -4249,15 +4251,15 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
         ? nonHabitEntries.reduce((s, e) => s + (moodValues[e.mood] || 3), 0) / nonHabitEntries.length 
         : 0;
       
-      const avgEnergyWith = habitEntries.filter(e => e.energy).length > 0
-        ? habitEntries.filter(e => e.energy).reduce((s, e) => s + (e.energy || 0), 0) / habitEntries.filter(e => e.energy).length
-        : 0;
-      const avgStressWith = habitEntries.filter(e => e.stress).length > 0
-        ? habitEntries.filter(e => e.stress).reduce((s, e) => s + (e.stress || 0), 0) / habitEntries.filter(e => e.stress).length
-        : 0;
-      const avgSleepWith = habitEntries.filter(e => e.sleep).length > 0
-        ? habitEntries.filter(e => e.sleep).reduce((s, e) => s + (e.sleep || 0), 0) / habitEntries.filter(e => e.sleep).length
-        : 0;
+      let energySum = 0, energyCount = 0, stressSum = 0, stressCount = 0, sleepSum = 0, sleepCount = 0;
+      for (const e of habitEntries) {
+        if (e.energy) { energySum += e.energy; energyCount++; }
+        if (e.stress) { stressSum += e.stress; stressCount++; }
+        if (e.sleep) { sleepSum += e.sleep; sleepCount++; }
+      }
+      const avgEnergyWith = energyCount > 0 ? energySum / energyCount : 0;
+      const avgStressWith = stressCount > 0 ? stressSum / stressCount : 0;
+      const avgSleepWith = sleepCount > 0 ? sleepSum / sleepCount : 0;
       
       // Mood distribution
       const moodDistribution: Record<string, number> = { great: 0, good: 0, okay: 0, bad: 0, terrible: 0 };
