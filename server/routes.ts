@@ -1625,6 +1625,8 @@ ${contextSummary}
 Create exactly 4 weeks. Each week has a theme and 3-4 daily tasks that apply to each day of that week.
 Progress difficulty: Week 1 = easy wins, Week 4 = full routine.
 
+Also recommend a schedule based on the user's answers — which days of the week to practice and the best time of day (in HH:mm 24-hour format). Use their daily routine, available time, and habits they mentioned to pick the optimal days and time.
+
 Return JSON:
 {
   "weeks": [
@@ -1640,6 +1642,10 @@ Return JSON:
       ]
     }
   ],
+  "schedule": {
+    "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    "time": "08:00"
+  },
   "aiContext": "2-3 sentence summary of goals and recommended approach"
 }
 
@@ -1648,7 +1654,9 @@ REQUIREMENTS:
 2. Be specific to their answers (time available, experience level)
 3. Progress difficulty gradually across weeks
 4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation`;
+5. Reference their specific situation
+6. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
+7. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")`;
 
         const weekResponse = await openaiClient.chat.completions.create({
           model: "gpt-4o",
@@ -1679,6 +1687,7 @@ REQUIREMENTS:
         }
 
         const enhancedContextWeekly = weekData.aiContext || "";
+        const aiSchedule = weekData.schedule;
 
         fixedDailyPlans = [];
         for (let dayIndex = 0; dayIndex < daysCount; dayIndex++) {
@@ -1706,7 +1715,7 @@ REQUIREMENTS:
 
         const enhancedContext = enhancedContextWeekly;
 
-        await storage.updateHabit(habitId, userId, {
+        const updateData: any = {
           questions: questions,
           planDuration: duration,
           planStartDate: startDate.toISOString().split('T')[0],
@@ -1714,9 +1723,23 @@ REQUIREMENTS:
           dailyPlans: fixedDailyPlans,
           aiContext: enhancedContext,
           setupComplete: true,
-        });
+        };
 
-        res.json({ success: true, dailyPlans: fixedDailyPlans, aiContext: enhancedContext });
+        if (aiSchedule && aiSchedule.days && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0) {
+          const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+          const filteredDays = aiSchedule.days.filter((d: string) => validDays.includes(d.toLowerCase())).map((d: string) => d.toLowerCase());
+          if (filteredDays.length > 0) {
+            updateData.schedule = {
+              days: filteredDays,
+              time: aiSchedule.time || "08:00",
+              reminder: true,
+            };
+          }
+        }
+
+        await storage.updateHabit(habitId, userId, updateData);
+
+        res.json({ success: true, dailyPlans: fixedDailyPlans, aiContext: enhancedContext, schedule: updateData.schedule });
         return;
       }
 
@@ -1726,6 +1749,8 @@ User's interview answers:
 ${contextSummary}
 
 Create ${daysCount} daily plans with 3-4 tasks each.
+
+Also recommend a schedule based on the user's answers — which days of the week to practice and the best time of day (in HH:mm 24-hour format). Use their daily routine, available time, and habits they mentioned to pick the optimal days and time.
 
 Return JSON:
 {
@@ -1748,6 +1773,10 @@ Return JSON:
       "timeSpent": 0
     }
   ],
+  "schedule": {
+    "days": ["monday", "wednesday", "friday"],
+    "time": "07:00"
+  },
   "aiContext": "2-3 sentence summary of goals and recommended approach"
 }
 
@@ -1757,7 +1786,9 @@ REQUIREMENTS:
 3. Progress difficulty gradually - Day 1 is easy wins
 4. Include concrete numbers (reps, minutes, amounts)
 5. Reference their specific situation in descriptions
-6. Format descriptions as: "1) First step\\n2) Second step\\n3) Third step\\nPro Tip: helpful advice"`;
+6. Format descriptions as: "1) First step\\n2) Second step\\n3) Third step\\nPro Tip: helpful advice"
+7. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
+8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -1799,9 +1830,9 @@ REQUIREMENTS:
       });
 
       const enhancedContext = planData.aiContext || "";
+      const aiSchedule = planData.schedule;
 
-      // Update habit with the generated plan
-      await storage.updateHabit(habitId, userId, {
+      const updateData: any = {
         questions: questions,
         planDuration: duration,
         planStartDate: startDate.toISOString().split('T')[0],
@@ -1809,9 +1840,23 @@ REQUIREMENTS:
         dailyPlans: fixedDailyPlans,
         aiContext: enhancedContext,
         setupComplete: true,
-      });
+      };
 
-      res.json({ success: true, ...planData });
+      if (aiSchedule && aiSchedule.days && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0) {
+        const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        const filteredDays = aiSchedule.days.filter((d: string) => validDays.includes(d.toLowerCase())).map((d: string) => d.toLowerCase());
+        if (filteredDays.length > 0) {
+          updateData.schedule = {
+            days: filteredDays,
+            time: aiSchedule.time || "08:00",
+            reminder: true,
+          };
+        }
+      }
+
+      await storage.updateHabit(habitId, userId, updateData);
+
+      res.json({ success: true, ...planData, schedule: updateData.schedule });
     } catch (error) {
       console.error("Error generating plan:", error);
       res.status(500).json({ error: "Failed to generate plan" });
@@ -2384,6 +2429,9 @@ REQUIREMENTS:
       if (todayPlan) {
         todayPlan.completed = true;
         todayPlan.timeSpent = (todayPlan.timeSpent || 0) + timeSpent;
+        todayPlan.tasks.forEach(task => {
+          task.completed = true;
+        });
       }
 
       // Calculate current streak (use spread to avoid mutating original array)

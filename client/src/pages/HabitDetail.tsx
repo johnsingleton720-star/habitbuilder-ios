@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -599,6 +599,15 @@ export default function HabitDetail() {
                   </CardTitle>
                   <CardDescription className="mt-1">
                     {habit.planStartDate} to {habit.planEndDate}
+                    {habit.schedule?.days && habit.schedule.days.length > 0 && (
+                      <span className="block mt-0.5">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(0, 3)).join(", ")}
+                        {habit.schedule.time && (
+                          <> at {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</>
+                        )}
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 {!showPlanTypeChanger && (
@@ -872,16 +881,22 @@ export default function HabitDetail() {
                       >
                         <Card className={cn(
                           "transition-all",
-                          task.completed && "bg-primary/5 border-primary/30"
+                          task.completed && "bg-primary/5 border-primary/30 opacity-75"
                         )}>
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
-                              <Checkbox
-                                checked={task.completed}
-                                onCheckedChange={() => handleToggleTask(task.id, task.completed)}
-                                className="mt-1"
+                              <button
+                                onClick={() => handleToggleTask(task.id, task.completed)}
+                                className={cn(
+                                  "mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                                  task.completed
+                                    ? "bg-primary border-primary text-primary-foreground"
+                                    : "border-muted-foreground/30 hover:border-primary/50"
+                                )}
                                 data-testid={`checkbox-task-${task.id}`}
-                              />
+                              >
+                                {task.completed && <Check className="w-3.5 h-3.5" />}
+                              </button>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
@@ -891,29 +906,41 @@ export default function HabitDetail() {
                                     )}>
                                       {task.title}
                                     </p>
-                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
-                                      {task.description}
-                                    </p>
+                                    {!task.completed && (
+                                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
+                                        {task.description}
+                                      </p>
+                                    )}
                                   </div>
-                                  <Badge variant="outline" className="flex-shrink-0">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    {task.duration} min
+                                  <Badge variant={task.completed ? "secondary" : "outline"} className="flex-shrink-0">
+                                    {task.completed ? (
+                                      <>
+                                        <Check className="w-3 h-3 mr-1" />
+                                        Done
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {task.duration} min
+                                      </>
+                                    )}
                                   </Badge>
                                 </div>
 
-                                {/* Guidance Button */}
-                                <div className="mt-3">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="gap-2"
-                                    onClick={() => setGuidanceTask(task)}
-                                    data-testid={`button-guidance-${task.id}`}
-                                  >
-                                    <Lightbulb className="w-3 h-3" />
-                                    Get Examples & Resources
-                                  </Button>
-                                </div>
+                                {!task.completed && (
+                                  <div className="mt-3">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-2"
+                                      onClick={() => setGuidanceTask(task)}
+                                      data-testid={`button-guidance-${task.id}`}
+                                    >
+                                      <Lightbulb className="w-3 h-3" />
+                                      Get Examples & Resources
+                                    </Button>
+                                  </div>
+                                )}
 
                                 {/* Notes */}
                                 {editingTask === task.id ? (

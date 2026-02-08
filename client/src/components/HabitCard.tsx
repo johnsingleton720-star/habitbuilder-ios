@@ -8,7 +8,7 @@ import {
   Mountain, Bike, Waves, Wind, TreePine, Flower2, Cookie, GlassWater,
   Pill, Stethoscope, Scale, Shirt, Home, Users, MessageCircle, Phone,
   Wallet, PiggyBank, GraduationCap, Languages, Code, Laptop, Gamepad2,
-  Archive, RefreshCw, AlertTriangle
+  Archive, RefreshCw, AlertTriangle, Clock
 } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useDeleteHabit } from "@/hooks/use-habits";
@@ -335,7 +335,16 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
             ) : (
               <>
                 {habit.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{habit.description}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{habit.description}</p>
+                )}
+
+                {habit.schedule?.time && habit.schedule?.days?.length > 0 && (
+                  <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5" data-testid={`schedule-${habit.id}`}>
+                    <Clock className="w-3 h-3" />
+                    {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(0, 3)).join(", ")}
+                    {" at "}
+                    {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  </p>
                 )}
                 
                 {habit.setupComplete && totalTasksCount > 0 && (

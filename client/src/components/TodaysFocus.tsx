@@ -42,7 +42,9 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
     return habits.filter((habit) => {
       if (!isPlanStillActive(habit)) return false;
       if (!habit.schedule?.days || habit.schedule.days.length === 0) {
-        return true;
+        const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+        const hasTodayPlan = dailyPlans.some(p => p.date === todayStr);
+        return hasTodayPlan || !habit.setupComplete;
       }
       return habit.schedule.days.includes(dayName);
     });
