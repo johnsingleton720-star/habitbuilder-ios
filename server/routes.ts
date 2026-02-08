@@ -2959,6 +2959,34 @@ Return JSON with:
     }
   });
 
+  app.patch("/api/admin/users/:userId/subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const adminId = req.user!.claims.sub;
+      const admin = await storage.getUser(adminId);
+      
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { userId } = req.params;
+      const { subscriptionTier, hasPaid } = req.body;
+      
+      const updateData: any = {};
+      if (subscriptionTier) updateData.subscriptionTier = subscriptionTier;
+      if (hasPaid !== undefined) updateData.hasPaid = hasPaid;
+      if (hasPaid) updateData.subscriptionStatus = 'active';
+      
+      await db.update(users).set(updateData).where(eq(users.id, userId));
+      
+      const updatedUser = await storage.getUser(userId);
+      console.log(`Admin ${adminId} updated user ${userId} subscription to ${subscriptionTier}`);
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error("Error updating user subscription:", error);
+      res.status(500).json({ error: "Failed to update user subscription" });
+    }
+  });
+
   // Fix habit dates for the current user
   app.post("/api/fix-my-habits", isAuthenticated, async (req: any, res) => {
     try {
