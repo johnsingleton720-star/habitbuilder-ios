@@ -77,6 +77,13 @@ The core system enables personalized habit coaching:
 -   **Content Safety Filter**: Server-side validation (`server/contentSafety.ts`) blocks harmful habit creation — violence, exploitation of minors, illegal activities, self-harm, hate speech. Flagged patterns (explicit content, substance promotion, gambling) are blocked with constructive guidance messages.
 -   **AI Safety Guardrails**: All AI system prompts include safety instructions preventing generation of harmful, violent, or explicit content.
 
+### Timezone Support
+-   **User Timezone**: Stored in `users.timezone` column (IANA timezone string, e.g., "America/New_York").
+-   **Auto-Detection**: Browser timezone is auto-detected on login via `Intl.DateTimeFormat().resolvedOptions().timeZone` and synced to server if user hasn't set one.
+-   **Server-Side**: `getUserToday(timezone)` helper in `server/routes.ts` computes "today" in user's timezone for auto-skip logic, streak calculations, and daily challenges.
+-   **Settings**: Users can manually change timezone in Account page with a dropdown of common timezones.
+-   **API**: `PATCH /api/user/timezone` to update timezone.
+
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.
 

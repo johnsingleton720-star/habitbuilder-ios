@@ -11,6 +11,21 @@ import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages } from "@shared/schema";
 import crypto from "crypto";
 import { checkContentSafety } from "./contentSafety";
+
+function getUserToday(timezone?: string | null): string {
+  const tz = timezone || "UTC";
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(new Date());
+  } catch {
+    return new Date().toISOString().split("T")[0];
+  }
+}
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -217,6 +232,29 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/timezone", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { timezone } = req.body;
+      if (!timezone || typeof timezone !== "string") {
+        return res.status(400).json({ error: "Timezone is required" });
+      }
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: timezone });
+      } catch {
+        return res.status(400).json({ error: "Invalid timezone" });
+      }
+      const [updated] = await db.update(users)
+        .set({ timezone, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      res.json({ success: true, timezone: updated.timezone });
+    } catch (error) {
+      console.error("Error saving timezone:", error);
+      res.status(500).json({ error: "Failed to save timezone" });
+    }
+  });
+
   // Confirm profile image upload and update user record
   app.post("/api/user/profile-image/confirm", isAuthenticated, async (req: any, res) => {
     try {
@@ -298,8 +336,8 @@ export async function registerRoutes(
     return habit;
   }
 
-  function autoMarkSkippedTasks(habit: any): { updated: boolean; habit: any } {
-    const today = new Date().toISOString().split('T')[0];
+  function autoMarkSkippedTasks(habit: any, userTimezone?: string | null): { updated: boolean; habit: any } {
+    const today = getUserToday(userTimezone);
     const dailyPlans = habit.dailyPlans || [];
     let updated = false;
 
@@ -329,6 +367,8 @@ export async function registerRoutes(
   // Protected routes
   app.get(api.habits.list.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
+    const user = await storage.getUser(userId);
+    const userTz = user?.timezone;
     const habits = await storage.getHabits(userId);
     
     // Auto-fix any habits with reversed dates
@@ -336,7 +376,7 @@ export async function registerRoutes(
 
     const processedHabits = [];
     for (const h of fixedHabits) {
-      const { updated, habit: processed } = autoMarkSkippedTasks(h);
+      const { updated, habit: processed } = autoMarkSkippedTasks(h, userTz);
       if (updated) {
         await storage.updateHabit(processed.id, userId, { dailyPlans: processed.dailyPlans });
       }
@@ -349,6 +389,8 @@ export async function registerRoutes(
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      const userTz = user?.timezone;
       const id = Number(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid habit ID' });
@@ -366,7 +408,7 @@ export async function registerRoutes(
       // Auto-fix if dates are reversed
       habit = await autoFixHabitDates(habit);
 
-      const { updated, habit: processed } = autoMarkSkippedTasks(habit);
+      const { updated, habit: processed } = autoMarkSkippedTasks(habit, userTz);
       if (updated) {
         await storage.updateHabit(processed.id, userId, { dailyPlans: processed.dailyPlans });
       }
@@ -2357,6 +2399,8 @@ REQUIREMENTS:
   app.patch("/api/habits/:id/tasks/:taskId", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      const userTz = user?.timezone;
       const habitId = Number(req.params.id);
       const taskId = req.params.taskId;
       const { completed, skipped, notes, timeSpent } = req.body;
@@ -2409,11 +2453,11 @@ REQUIREMENTS:
 
       // Calculate streak
       let currentStreak = 0;
-      const today = new Date().toISOString().split('T')[0];
+      const todayForStreak = getUserToday(userTz);
       for (let i = dailyPlans.length - 1; i >= 0; i--) {
         if (dailyPlans[i].completed) {
           currentStreak++;
-        } else if (dailyPlans[i].date <= today) {
+        } else if (dailyPlans[i].date <= todayForStreak) {
           break;
         }
       }
@@ -2427,9 +2471,9 @@ REQUIREMENTS:
 
       if (completed) {
         const allHabits = await storage.getHabits(userId);
-        const today = new Date().toISOString().split('T')[0];
+        const todayForChallenge = getUserToday(userTz);
         const habitsWorkedToday = allHabits.filter(h =>
-          h.dailyPlans?.some(p => p.date === today && p.tasks.some(t => t.completed))
+          h.dailyPlans?.some(p => p.date === todayForChallenge && p.tasks.some(t => t.completed))
         ).length;
 
         await updateChallengeProgress(userId, {
@@ -2439,8 +2483,13 @@ REQUIREMENTS:
           totalActiveHabits: allHabits.length,
           notesAdded: notes ? 1 : 0,
           streakMaintained: currentStreak > 0,
-          isBeforeNoon: new Date().getHours() < 12,
-        });
+          isBeforeNoon: (() => {
+            try {
+              const hourStr = new Intl.DateTimeFormat("en-US", { timeZone: userTz || "UTC", hour: "numeric", hour12: false }).format(new Date());
+              return parseInt(hourStr) < 12;
+            } catch { return new Date().getHours() < 12; }
+          })(),
+        }, userTz);
 
         await checkAndAwardAchievements(userId);
       }
@@ -2804,8 +2853,9 @@ Return JSON:
         return res.status(404).json({ error: "Habit not found" });
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const todayPlan = (habit.dailyPlans || []).find(p => p.date === today);
+      const userForMotiv = await storage.getUser(userId);
+      const todayMotiv = getUserToday(userForMotiv?.timezone);
+      const todayPlan = (habit.dailyPlans || []).find(p => p.date === todayMotiv);
       const tasksToday = todayPlan?.tasks || [];
       const completedToday = tasksToday.filter(t => t.completed).length;
 
@@ -4581,9 +4631,9 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
     notesAdded?: number;
     streakMaintained?: boolean;
     isBeforeNoon?: boolean;
-  }) {
+  }, userTimezone?: string | null) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getUserToday(userTimezone);
       const todaysChallenges = await db.select().from(dailyChallenges)
         .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
 
@@ -4714,9 +4764,9 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
       const levelInfo = calculateLevel(xpPoints);
       
       // Get today's challenges
-      const today = new Date().toISOString().split('T')[0];
+      const todayGami = getUserToday(user?.timezone);
       const todaysChallenges = await db.select().from(dailyChallenges)
-        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
+        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, todayGami)));
       
       res.json({
         xpPoints,
@@ -4746,11 +4796,11 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
         return res.status(403).json({ error: "Daily challenges require Pro or Premium subscription" });
       }
       
-      const today = new Date().toISOString().split('T')[0];
+      const todayChallenge = getUserToday(user?.timezone);
       
       // Check if already generated today
       const existing = await db.select().from(dailyChallenges)
-        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, today)));
+        .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, todayChallenge)));
       
       if (existing.length > 0) {
         return res.json({ challenges: existing, message: "Challenges already generated for today" });
@@ -4777,7 +4827,7 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
       for (const template of selectedChallenges) {
         const [challenge] = await db.insert(dailyChallenges).values({
           userId,
-          date: today,
+          date: todayChallenge,
           challengeType: template.type,
           title: template.title,
           description: template.description,

@@ -34,7 +34,7 @@ export const users = pgTable("users", {
   colorTheme: varchar("color_theme").default("nature"), // nature, minimal, ocean, sunset, lavender, forest
   darkModeSchedule: jsonb("dark_mode_schedule").$type<{ enabled: boolean; startHour: number; endHour: number }>(), // Auto dark mode
   emailReminders: boolean("email_reminders").default(true),
-  timezone: varchar("timezone").default("UTC"),
+  timezone: varchar("timezone"),
   trialEndsAt: timestamp("trial_ends_at"), // 2-day trial period end date
   
   // Premium features

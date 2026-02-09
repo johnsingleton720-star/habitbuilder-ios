@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -117,6 +117,122 @@ function AdminUserManager() {
         </div>
       )}
     </div>
+  );
+}
+
+const COMMON_TIMEZONES = [
+  "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Anchorage", "Pacific/Honolulu", "America/Phoenix",
+  "America/Toronto", "America/Vancouver", "America/Edmonton", "America/Winnipeg",
+  "America/Halifax", "America/St_Johns",
+  "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Rome", "Europe/Madrid",
+  "Europe/Amsterdam", "Europe/Brussels", "Europe/Stockholm", "Europe/Oslo",
+  "Europe/Helsinki", "Europe/Athens", "Europe/Moscow", "Europe/Istanbul",
+  "Asia/Dubai", "Asia/Kolkata", "Asia/Bangkok", "Asia/Singapore",
+  "Asia/Shanghai", "Asia/Tokyo", "Asia/Seoul", "Asia/Hong_Kong",
+  "Australia/Sydney", "Australia/Melbourne", "Australia/Perth", "Australia/Brisbane",
+  "Pacific/Auckland", "Pacific/Fiji",
+  "America/Sao_Paulo", "America/Argentina/Buenos_Aires", "America/Mexico_City",
+  "Africa/Cairo", "Africa/Johannesburg", "Africa/Lagos", "Africa/Nairobi",
+];
+
+function formatTzLabel(tz: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const time = formatter.format(now);
+    const offset = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      timeZoneName: "shortOffset",
+    }).formatToParts(now).find(p => p.type === "timeZoneName")?.value || "";
+    const city = tz.split("/").pop()?.replace(/_/g, " ") || tz;
+    return `${city} (${offset}, ${time})`;
+  } catch {
+    return tz;
+  }
+}
+
+function TimezoneSettings({ user }: { user: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const [selectedTz, setSelectedTz] = useState(user?.timezone || detectedTz || "America/New_York");
+
+  const updateTzMutation = useMutation({
+    mutationFn: async (timezone: string) => {
+      const res = await apiRequest("PATCH", "/api/user/timezone", { timezone });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Timezone updated", description: `Your timezone is now set to ${selectedTz.split("/").pop()?.replace(/_/g, " ")}` });
+    },
+    onError: () => {
+      toast({ title: "Failed to update timezone", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="w-5 h-5 text-blue-500" />
+          Timezone
+        </CardTitle>
+        <CardDescription>
+          Set your timezone so tasks and schedules match your local time
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="timezone-select">Your Timezone</Label>
+          <Select value={selectedTz} onValueChange={setSelectedTz}>
+            <SelectTrigger data-testid="select-timezone">
+              <SelectValue placeholder="Select timezone" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from(new Set([
+                ...(user?.timezone && !COMMON_TIMEZONES.includes(user.timezone) ? [user.timezone] : []),
+                ...(detectedTz && !COMMON_TIMEZONES.includes(detectedTz) ? [detectedTz] : []),
+                ...COMMON_TIMEZONES,
+              ])).map(tz => (
+                <SelectItem key={tz} value={tz}>
+                  {formatTzLabel(tz)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {detectedTz && detectedTz !== selectedTz && (
+          <p className="text-sm text-muted-foreground">
+            Your browser detected: <span className="font-medium">{detectedTz.split("/").pop()?.replace(/_/g, " ")}</span>
+            {" "}
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-sm text-primary underline"
+              onClick={() => setSelectedTz(detectedTz)}
+              data-testid="button-use-detected-tz"
+            >
+              Use this
+            </Button>
+          </p>
+        )}
+        <Button
+          onClick={() => updateTzMutation.mutate(selectedTz)}
+          disabled={updateTzMutation.isPending || selectedTz === user?.timezone}
+          data-testid="button-save-timezone"
+        >
+          {updateTzMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Save Timezone
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -787,6 +903,14 @@ export default function Account() {
             </Card>
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38 }}
+        >
+          <TimezoneSettings user={user} />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
