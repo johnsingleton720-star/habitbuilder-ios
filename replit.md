@@ -36,6 +36,7 @@ The core system enables personalized habit coaching:
 -   **Action Plan Generation**: Based on user answers, AI creates detailed daily/weekly/monthly action plans.
 -   **Guided Sessions**: Interactive sessions walk users through tasks with notes and timers, and provide post-session AI summaries.
 -   **Habit Customization**: Users can personalize habits with custom icons, colors, and assign them to categories.
+-   **Smart Resources**: AI generates real, clickable external resources (articles, books, courses, blogs, free templates) relevant to each task. Resources link to actual public pages. NEVER recommends competing habit tracking apps — only complementary educational/skill resources.
 
 ### Payment System
 -   **Subscription Tiers**: Free, Pro ($6 USD/month), and Premium ($15 USD/month) tiers.

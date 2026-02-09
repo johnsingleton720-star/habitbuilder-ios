@@ -2681,11 +2681,17 @@ Generate detailed, practical guidance that someone can follow immediately:
 
 2. TIPS (5-6): Expert coaching tips including common mistakes, pro tips, and psychology insights. Each tip should be 2-3 sentences with actionable advice.
 
-3. TOOLS (6-8): Generic categories of tools and techniques — do NOT name specific third-party apps, brands, or services. Instead describe them generically. For example, say "a habit tracking app" instead of naming a specific one. Include:
-   - Types of helpful apps (described generically, no brand names)
-   - Types of online resources and calculators
-   - Books with actual author names (books are fine to name specifically)
-   Each tool should have features array and pricing info.
+3. RESOURCES (6-8): Recommend REAL, specific external resources that complement this habit — things the user can click and visit. Focus on:
+   - Educational articles and blog posts (from sites like Psychology Today, Harvard Health, Medium, WikiHow, etc.)
+   - Books with actual author names and links to search for them
+   - Free downloadable templates or printables (from sites like Canva, Template.net, etc.)
+   - Online courses or educational platforms (Coursera, Skillshare, Khan Academy, etc.)
+   - Podcasts or educational YouTube channels relevant to the topic
+   - Paid resources, tools, or services that help with this specific activity (NOT habit tracking apps)
+   
+   CRITICAL EXCLUSION: Do NOT recommend any habit tracking apps, habit building apps, goal tracking apps, or anything that competes with a habit coaching platform. No Habitica, Streaks, HabitNow, Loop, Fabulous, Strides, Way of Life, Coach.me, etc. Focus on resources that teach skills, provide knowledge, or offer tools specific to the ACTIVITY itself (e.g., for a cooking habit, recommend recipe sites and cooking courses — NOT habit trackers).
+   
+   Each resource MUST include a real, working URL that the user can click to visit. Use well-known, established websites.
 
 4. TEMPLATES (2-3): Complete, ready-to-use templates with a title and full content. Write out the ENTIRE template, not a description. Include placeholders like [Your Name], [Date], etc. These should be print-ready or copy-paste ready.
 
@@ -2697,13 +2703,13 @@ Return JSON exactly like this:
   "tips": ["Tip text here", "..."],
   "tools": [
     {
-      "id": "tool-1",
-      "name": "Generic Tool Description",
-      "type": "app",
-      "description": "What this type of tool does",
-      "url": "",
-      "features": ["Feature 1", "Feature 2"],
-      "pricing": "Varies"
+      "id": "resource-1",
+      "name": "Specific Resource Name",
+      "type": "article",
+      "description": "What this resource offers and why it's helpful",
+      "url": "https://real-website.com/specific-page",
+      "features": ["Key benefit 1", "Key benefit 2"],
+      "pricing": "Free"
     }
   ],
   "templates": [
@@ -2723,14 +2729,19 @@ Return JSON exactly like this:
   ]
 }
 
-CRITICAL: Do NOT mention specific third-party apps, brands, websites, or services by name (no Duolingo, Headspace, Calm, MyFitnessPal, Mint, etc.). Use generic descriptions instead. Books with author names are acceptable. Templates must be complete and usable.`;
+CRITICAL RULES:
+1. RESOURCES must have REAL, clickable URLs to well-known websites (articles, blogs, courses, books on Amazon/Goodreads, free templates, educational sites). Every resource MUST have a valid url field.
+2. NEVER recommend habit tracking apps, habit building apps, goal setting apps, or productivity apps that compete with a habit coaching platform (no Habitica, Streaks, HabitNow, Loop, Fabulous, Strides, Way of Life, Coach.me, Todoist, etc.).
+3. Resource "type" should be one of: "article", "book", "website", "course", "template", "podcast", "blog", "tool" (for activity-specific tools only, NOT habit trackers).
+4. Focus on resources that teach the SKILL or ACTIVITY of the habit (e.g., recipe sites for cooking, language courses for learning languages).
+5. Templates must be complete and usable.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance. Always return valid JSON with complete, usable content. IMPORTANT: Never mention specific third-party apps, brands, websites, or services by name (no Duolingo, Headspace, Calm, MyFitnessPal, etc.). Use generic descriptions instead. Books with author names are acceptable. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
+            content: "You are an expert habit coach and resource curator. Provide extremely detailed, practical guidance. Always return valid JSON with complete, usable content. For the 'tools' array: recommend REAL external resources with actual clickable URLs (articles, blogs, books, courses, free templates, educational sites). NEVER recommend habit tracking apps, habit building apps, or goal tracking apps that compete with a habit coaching platform (no Habitica, Streaks, Fabulous, Coach.me, Todoist, etc.). Focus on resources that teach the SKILL or ACTIVITY of the habit itself. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
           },
           { role: "user", content: prompt },
         ],
@@ -2759,11 +2770,32 @@ CRITICAL: Do NOT mention specific third-party apps, brands, websites, or service
         }));
       }
 
-      // Ensure required fields exist with defaults
+      // Normalize and validate resources - ensure each has a URL and required fields
+      const rawResources = guidance.tools || guidance.resources || [];
+      const validTypes = ['article', 'book', 'website', 'course', 'template', 'podcast', 'blog', 'tool', 'video'];
+      const competitorKeywords = ['habit track', 'habit build', 'goal track', 'habitica', 'streaks app', 'fabulous', 'coach.me', 'todoist', 'strides', 'way of life', 'habitnow', 'loop habit'];
+      
+      const validatedResources = rawResources
+        .filter((r: any) => {
+          if (!r.name || !r.description) return false;
+          const nameLower = (r.name || '').toLowerCase();
+          const descLower = (r.description || '').toLowerCase();
+          return !competitorKeywords.some(kw => nameLower.includes(kw) || descLower.includes(kw));
+        })
+        .map((r: any, i: number) => ({
+          id: r.id || `resource-${i + 1}`,
+          name: r.name,
+          type: validTypes.includes(r.type) ? r.type : 'website',
+          description: r.description,
+          url: r.url && r.url.startsWith('http') ? r.url : '',
+          features: Array.isArray(r.features) ? r.features : [],
+          pricing: r.pricing || 'Free',
+        }));
+
       const safeGuidance = {
         examples: guidance.examples || [],
         tips: guidance.tips || [],
-        tools: guidance.tools || guidance.resources || [],
+        tools: validatedResources,
         templates: normalizedTemplates,
         videos: guidance.videos || guidance.videoSuggestions || [],
       };

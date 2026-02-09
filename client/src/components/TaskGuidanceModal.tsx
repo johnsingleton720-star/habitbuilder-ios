@@ -45,7 +45,7 @@ import { Crown, Lock } from "lucide-react";
 
 const LOADING_MESSAGES = [
   "Searching for expert tips...",
-  "Finding helpful tools & apps...",
+  "Finding helpful resources...",
   "Looking up video tutorials...",
   "Creating downloadable templates...",
   "Gathering step-by-step examples...",
@@ -149,13 +149,16 @@ interface TaskGuidanceModalProps {
 }
 
 const resourceIcons: Record<string, React.ReactNode> = {
-  app: <Smartphone className="w-4 h-4" />,
+  article: <BookOpen className="w-4 h-4" />,
+  blog: <BookOpen className="w-4 h-4" />,
   website: <Globe className="w-4 h-4" />,
   tool: <Wrench className="w-4 h-4" />,
   book: <BookMarked className="w-4 h-4" />,
+  course: <Star className="w-4 h-4" />,
   template: <ClipboardList className="w-4 h-4" />,
+  podcast: <Play className="w-4 h-4" />,
   video: <Video className="w-4 h-4" />,
-  software: <Globe className="w-4 h-4" />,
+  app: <Smartphone className="w-4 h-4" />,
   service: <Star className="w-4 h-4" />,
 };
 
@@ -574,8 +577,8 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                   <span className="hidden sm:inline">Tips</span>
                 </TabsTrigger>
                 <TabsTrigger value="tools" className="gap-1.5 text-xs sm:text-sm" data-testid="tab-tools">
-                  <Wrench className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Tools</span>
+                  <Globe className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Resources</span>
                 </TabsTrigger>
                 <TabsTrigger value="templates" className="gap-1.5 text-xs sm:text-sm" data-testid="tab-templates">
                   <FileText className="w-3.5 h-3.5" />
@@ -634,8 +637,8 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
               <TabsContent value="tools" className="space-y-4 mt-0">
                 <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/10">
                   <p className="text-sm font-medium flex items-center gap-2">
-                    <Wrench className="w-4 h-4 text-blue-500" />
-                    Recommended apps, websites, and tools to help you
+                    <Globe className="w-4 h-4 text-blue-500" />
+                    Articles, courses, books, and resources to help you
                   </p>
                 </div>
                 <div className="grid gap-4">
@@ -678,7 +681,11 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                                 className="inline-flex items-center text-sm text-primary hover:underline mt-2"
                                 data-testid={`link-tool-${index}`}
                               >
-                                Visit Website <ExternalLink className="w-3 h-3 ml-1" />
+                                {tool.type === 'article' || tool.type === 'blog' ? 'Read Article' :
+                                 tool.type === 'book' ? 'Find Book' :
+                                 tool.type === 'course' ? 'View Course' :
+                                 tool.type === 'podcast' ? 'Listen Now' :
+                                 'Visit Resource'} <ExternalLink className="w-3 h-3 ml-1" />
                               </a>
                             )}
                           </div>
