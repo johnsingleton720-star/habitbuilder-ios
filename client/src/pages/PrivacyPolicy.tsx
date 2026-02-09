@@ -4,7 +4,7 @@ import { ArrowLeft, Shield } from "lucide-react";
 import { Link } from "wouter";
 
 export default function PrivacyPolicy() {
-  usePageTitle("Privacy Policy", "Learn how Habit Builder collects, uses, and protects your personal data. Read our Privacy Policy covering GDPR, CCPA, cookies, AI data usage, and your rights.");
+  usePageTitle("Privacy Policy", "Learn how HabitBuilder.pro collects, uses, and protects your personal data. Read our Privacy Policy covering GDPR, CCPA, cookies, AI data usage, and your rights.");
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">1. Introduction</h2>
             <p className="text-muted-foreground">
-              Habit Builder ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our web application and related services (collectively, the "Service"). By using the Service, you agree to the collection and use of information in accordance with this policy.
+              HabitBuilder.pro ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our web application and related services (collectively, the "Service"). By using the Service, you agree to the collection and use of information in accordance with this policy.
             </p>
           </section>
 

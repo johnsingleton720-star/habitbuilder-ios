@@ -17,7 +17,7 @@ export const blogArticles: BlogArticle[] = [
     slug: "how-to-build-a-morning-routine",
     title: "How to Build a Morning Routine That Sticks: A Step-by-Step Guide",
     excerpt: "Learn the science-backed method for creating a morning routine you'll actually follow. From the two-minute rule to habit stacking, discover techniques that transform chaotic mornings into productive starts.",
-    author: "Habit Builder Team",
+    author: "HabitBuilder.pro Team",
     publishedDate: "2026-01-15",
     readTime: "7 min read",
     category: "Routines",
@@ -41,7 +41,7 @@ export const blogArticles: BlogArticle[] = [
       },
       {
         heading: "Track Your Streak and Celebrate Small Wins",
-        content: "There's a powerful psychological principle called the \"streak effect.\" Once you have a few consecutive days of following your routine, you become motivated to not break the chain. Each day you maintain the streak, the psychological cost of breaking it increases.\n\nTrack your morning routine completion with a simple method. It could be checking off a box on a calendar, marking it in an app, or using a habit tracker. The visual evidence of your consistency becomes its own motivation.\n\nCelebrate small milestones. Completed a week? Acknowledge it. Hit 30 days? That's worth recognizing. These celebrations reinforce the positive neural pathways that make the habit stick.\n\nWith AI-powered coaching from tools like Habit Builder, you can get personalized reminders, track your streaks automatically, and receive guidance when your motivation dips. The combination of technology and behavioral science makes building a morning routine more achievable than ever."
+        content: "There's a powerful psychological principle called the \"streak effect.\" Once you have a few consecutive days of following your routine, you become motivated to not break the chain. Each day you maintain the streak, the psychological cost of breaking it increases.\n\nTrack your morning routine completion with a simple method. It could be checking off a box on a calendar, marking it in an app, or using a habit tracker. The visual evidence of your consistency becomes its own motivation.\n\nCelebrate small milestones. Completed a week? Acknowledge it. Hit 30 days? That's worth recognizing. These celebrations reinforce the positive neural pathways that make the habit stick.\n\nWith AI-powered coaching from tools like HabitBuilder.pro, you can get personalized reminders, track your streaks automatically, and receive guidance when your motivation dips. The combination of technology and behavioral science makes building a morning routine more achievable than ever."
       }
     ],
     faqs: [
@@ -54,7 +54,7 @@ export const blogArticles: BlogArticle[] = [
     slug: "habit-stacking-guide",
     title: "Habit Stacking: The Simple Strategy to Build Multiple Habits at Once",
     excerpt: "Discover how to use habit stacking to build powerful routines by linking new habits to existing ones. This proven technique makes habit formation faster and more reliable.",
-    author: "Habit Builder Team",
+    author: "HabitBuilder.pro Team",
     publishedDate: "2026-01-22",
     readTime: "6 min read",
     category: "Techniques",
@@ -90,7 +90,7 @@ export const blogArticles: BlogArticle[] = [
     slug: "science-of-habit-formation",
     title: "The Science of Habit Formation: What Research Actually Says",
     excerpt: "Explore the neuroscience behind how habits form, how long they really take to build, and evidence-based strategies for making behavior change permanent.",
-    author: "Habit Builder Team",
+    author: "HabitBuilder.pro Team",
     publishedDate: "2026-01-29",
     readTime: "8 min read",
     category: "Science",
@@ -127,7 +127,7 @@ export const blogArticles: BlogArticle[] = [
     slug: "best-habit-tracking-methods",
     title: "Best Habit Tracking Methods: Paper, Apps, and AI Coaching Compared",
     excerpt: "Compare the most popular habit tracking methods from simple pen-and-paper to AI-powered coaching apps. Find out which approach works best for different personality types and goals.",
-    author: "Habit Builder Team",
+    author: "HabitBuilder.pro Team",
     publishedDate: "2026-02-05",
     readTime: "6 min read",
     category: "Tools",
@@ -147,7 +147,7 @@ export const blogArticles: BlogArticle[] = [
       },
       {
         heading: "AI-Powered Habit Coaching: The Next Generation",
-        content: "AI habit coaching represents a fundamental shift from passive tracking to active guidance. Instead of simply recording whether you completed a habit, AI coaches like Habit Builder interview you about your goals, create personalized action plans, and adapt their guidance based on your progress.\n\nThe key differences from traditional trackers:\n\n1. Personalized plans: Instead of generic reminders, you get daily and weekly action items tailored to your schedule, preferences, and experience level.\n\n2. Guided sessions: Walk through your tasks with built-in timers and note-taking, turning vague intentions into concrete actions.\n\n3. Adaptive coaching: When you struggle with a habit, the AI provides specific guidance rather than just showing you a broken streak.\n\n4. Progress insights: AI analyzes your patterns and provides actionable feedback about what's working and what needs adjustment.\n\n5. Gamification with purpose: XP, leveling, and achievements aren't just gimmicks. They create the immediate rewards that neuroscience says are critical for habit formation.\n\nBest for: People who want more than just tracking. If you need guidance on how to actually build the habit, not just a checkbox, AI coaching provides the structure and accountability that traditional trackers lack."
+        content: "AI habit coaching represents a fundamental shift from passive tracking to active guidance. Instead of simply recording whether you completed a habit, AI coaches like HabitBuilder.pro interview you about your goals, create personalized action plans, and adapt their guidance based on your progress.\n\nThe key differences from traditional trackers:\n\n1. Personalized plans: Instead of generic reminders, you get daily and weekly action items tailored to your schedule, preferences, and experience level.\n\n2. Guided sessions: Walk through your tasks with built-in timers and note-taking, turning vague intentions into concrete actions.\n\n3. Adaptive coaching: When you struggle with a habit, the AI provides specific guidance rather than just showing you a broken streak.\n\n4. Progress insights: AI analyzes your patterns and provides actionable feedback about what's working and what needs adjustment.\n\n5. Gamification with purpose: XP, leveling, and achievements aren't just gimmicks. They create the immediate rewards that neuroscience says are critical for habit formation.\n\nBest for: People who want more than just tracking. If you need guidance on how to actually build the habit, not just a checkbox, AI coaching provides the structure and accountability that traditional trackers lack."
       },
       {
         heading: "Choosing the Right Method for You",
@@ -155,7 +155,7 @@ export const blogArticles: BlogArticle[] = [
       }
     ],
     faqs: [
-      { question: "What's the best free habit tracker app?", answer: "For basic tracking, apps like Loop Habit Tracker (Android) and Streaks (iOS) are solid free options. For a more guided experience with AI coaching, Habit Builder offers a free trial that includes personalized action plans." },
+      { question: "What's the best free habit tracker app?", answer: "For basic tracking, apps like Loop Habit Tracker (Android) and Streaks (iOS) are solid free options. For a more guided experience with AI coaching, HabitBuilder.pro offers a free trial that includes personalized action plans." },
       { question: "Should I track every habit I have?", answer: "No. Track only the habits you're actively building or struggling with. Once a habit becomes truly automatic (you don't need to think about it), you can stop tracking it and focus on new habits." },
     ]
   },

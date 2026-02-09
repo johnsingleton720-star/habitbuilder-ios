@@ -8,6 +8,7 @@ import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trop
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
+import { Logo, LogoFooter } from "@/components/Logo";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -191,9 +192,8 @@ export default function Landing() {
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
       <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-primary" aria-label="Habit Builder - Home">
-            <Leaf className="w-6 h-6 fill-primary/20" />
-            <span>Habit Builder</span>
+          <a href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
+            <Logo />
           </a>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Link href="/templates">
@@ -584,7 +584,7 @@ export default function Landing() {
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              More than just a tracker. Habit Builder is an interactive coach that guides you through every step.
+              More than just a tracker. HabitBuilder.pro is an interactive coach that guides you through every step.
             </p>
           </div>
 
@@ -999,11 +999,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-start justify-between gap-8">
             <div className="space-y-4">
-              <p className="text-sm font-medium text-foreground/80">Habit Builder - AI-Powered Habit Coaching</p>
+              <LogoFooter />
               <p className="text-xs text-muted-foreground max-w-md">
                 Build better habits with personalized AI coaching. Daily habit tracker, guided sessions, streak tracking, XP leveling system, and progress analytics. Available on web and mobile.
               </p>
-              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
+              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
               <InstallAppDialog 
                 trigger={
                   <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" data-testid="button-get-app-landing">

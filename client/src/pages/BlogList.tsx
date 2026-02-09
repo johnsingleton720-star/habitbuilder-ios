@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Leaf, BookOpen, Clock, Tag } from "lucide-react";
+import { ArrowRight, ArrowLeft, BookOpen, Clock, Tag } from "lucide-react";
+import { Logo, LogoFooter } from "@/components/Logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +12,8 @@ function PublicNav() {
   return (
     <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-primary" aria-label="Habit Builder - Home">
-          <Leaf className="w-6 h-6 fill-primary/20" />
-          <span>Habit Builder</span>
+        <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
+          <Logo />
         </Link>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link href="/templates">
@@ -60,7 +60,7 @@ export default function BlogList() {
         <div className="max-w-3xl mx-auto text-center space-y-4">
           <Badge variant="secondary" className="mb-2">
             <BookOpen className="w-3 h-3 mr-1" />
-            Habit Builder Blog
+            HabitBuilder.pro Blog
           </Badge>
           <h1 className="font-display text-4xl lg:text-5xl font-bold" data-testid="text-blog-heading">
             Learn to Build Better Habits
@@ -122,7 +122,7 @@ export default function BlogList() {
             Put these strategies into practice
           </h2>
           <p className="text-muted-foreground text-lg">
-            Habit Builder's AI coach creates personalized action plans based on the science 
+            HabitBuilder.pro's AI coach creates personalized action plans based on the science 
             of habit formation. Start your free trial and see the difference.
           </p>
           <Button onClick={() => window.location.href = "/api/login"} size="lg" data-testid="button-blog-cta">
@@ -135,7 +135,7 @@ export default function BlogList() {
 
       <footer className="py-8 border-t border-border" role="contentinfo">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link>
             <Link href="/blog" className="text-sm font-medium text-foreground">Blog</Link>

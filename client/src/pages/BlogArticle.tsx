@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Leaf, Clock, Tag, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Tag, ChevronRight } from "lucide-react";
+import { Logo, LogoFooter } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,9 +13,8 @@ function PublicNav() {
   return (
     <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-primary" aria-label="Habit Builder - Home">
-          <Leaf className="w-6 h-6 fill-primary/20" />
-          <span>Habit Builder</span>
+        <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
+          <Logo />
         </Link>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link href="/templates">
@@ -44,7 +44,7 @@ export default function BlogArticle() {
   const article = slug ? getArticleBySlug(slug) : undefined;
   
   usePageTitle(
-    article ? `${article.title} - Habit Builder Blog` : "Article Not Found",
+    article ? `${article.title} - HabitBuilder.pro Blog` : "Article Not Found",
     article?.excerpt || "Read expert articles on habit formation and behavior change."
   );
 
@@ -77,7 +77,7 @@ export default function BlogArticle() {
     "description": article.excerpt,
     "author": { "@type": "Organization", "name": article.author },
     "datePublished": article.publishedDate,
-    "publisher": { "@type": "Organization", "name": "Habit Builder", "url": "https://habitbuilder.pro" },
+    "publisher": { "@type": "Organization", "name": "HabitBuilder.pro", "url": "https://habitbuilder.pro" },
     "mainEntityOfPage": `https://habitbuilder.pro/blog/${article.slug}`,
     "keywords": article.keywords.join(", "),
   };
@@ -208,7 +208,7 @@ export default function BlogArticle() {
             Ready to put this into practice?
           </h2>
           <p className="text-muted-foreground text-lg">
-            Habit Builder's AI coach turns these strategies into personalized daily action plans. 
+            HabitBuilder.pro's AI coach turns these strategies into personalized daily action plans. 
             Start building your habits with expert guidance.
           </p>
           <Button onClick={() => window.location.href = "/api/login"} size="lg" data-testid="button-article-cta">
@@ -221,7 +221,7 @@ export default function BlogArticle() {
 
       <footer className="py-8 border-t border-border" role="contentinfo">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link>
             <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>

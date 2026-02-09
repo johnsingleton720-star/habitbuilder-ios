@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { 
   Sunrise, Dumbbell, BookOpen, Brain, Apple, PenTool, GraduationCap, 
-  Smartphone, Moon, Heart, Target, Loader2, ArrowRight, ArrowLeft, Leaf, Sparkles
+  Smartphone, Moon, Heart, Target, Loader2, ArrowRight, ArrowLeft, Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { Logo, LogoFooter } from "@/components/Logo";
 import { Link } from "wouter";
 import type { HabitTemplate } from "@shared/schema";
 
@@ -35,9 +36,8 @@ function PublicNav() {
   return (
     <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-primary" aria-label="Habit Builder - Home">
-          <Leaf className="w-6 h-6 fill-primary/20" />
-          <span>Habit Builder</span>
+        <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
+          <Logo />
         </Link>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link href="/templates">
@@ -196,7 +196,7 @@ export default function PublicTemplates() {
 
       <footer className="py-8 border-t border-border" role="contentinfo">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Habit Builder. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link>
             <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>

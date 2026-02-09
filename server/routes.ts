@@ -3289,7 +3289,7 @@ Return JSON with:
         await db.insert(users).values({
           id: systemUserId,
           email: "team@habitbuilder.app",
-          firstName: "Habit Builder",
+          firstName: "HabitBuilder",
           lastName: "Team",
           subscriptionTier: "premium",
         });

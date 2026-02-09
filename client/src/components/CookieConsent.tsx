@@ -43,7 +43,7 @@ export function CookieConsent() {
               <Cookie className="w-5 h-5 text-primary shrink-0 mt-0.5" />
               <div className="flex-1 space-y-3">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We use essential cookies for authentication and preferences. By continuing to use Habit Builder, you agree to our use of cookies.{" "}
+                  We use essential cookies for authentication and preferences. By continuing to use HabitBuilder.pro, you agree to our use of cookies.{" "}
                   <Link href="/privacy" className="text-primary underline underline-offset-2">
                     Privacy Policy
                   </Link>

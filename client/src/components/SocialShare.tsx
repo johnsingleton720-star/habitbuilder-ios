@@ -11,8 +11,8 @@ interface SocialShareProps {
 }
 
 export function SocialShare({ 
-  title = "Habit Builder - Build habits that actually stick",
-  text = "I'm building better habits with Habit Builder! AI-powered coaching helps me stay on track. Try it free:",
+  title = "HabitBuilder.pro - Build habits that actually stick",
+  text = "I'm building better habits with HabitBuilder.pro! AI-powered coaching helps me stay on track. Try it free:",
   url,
   variant = "default"
 }: SocialShareProps) {

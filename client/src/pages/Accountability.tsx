@@ -447,7 +447,7 @@ export default function Accountability() {
                   ))}
                 </ul>
                 <p className="text-sm text-muted-foreground italic">
-                  Sent via Habit Builder
+                  Sent via HabitBuilder.pro
                 </p>
               </div>
             </CardContent>

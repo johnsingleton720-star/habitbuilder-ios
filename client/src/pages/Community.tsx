@@ -35,7 +35,7 @@ const upcomingFeatures = [
 ];
 
 export default function Community() {
-  usePageTitle("Community Forum", "Join the Habit Builder community. Share progress, find accountability partners, get tips and motivation from fellow habit builders.");
+  usePageTitle("Community Forum", "Join the HabitBuilder.pro community. Share progress, find accountability partners, get tips and motivation from fellow habit builders.");
   const [, navigate] = useLocation();
 
   return (

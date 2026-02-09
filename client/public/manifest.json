@@ -1,6 +1,6 @@
 {
-  "name": "Habit Builder",
-  "short_name": "Habit Builder",
+  "name": "HabitBuilder.pro",
+  "short_name": "HabitBuilder",
   "description": "Build positive habits that stick with daily tracking and AI-powered motivation",
   "start_url": "/",
   "display": "standalone",

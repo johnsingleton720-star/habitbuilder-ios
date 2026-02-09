@@ -710,7 +710,7 @@ export default function Account() {
                 <MessageSquare className="w-5 h-5 text-blue-500" />
                 Feedback & Support
               </CardTitle>
-              <CardDescription>Help us improve Habit Builder</CardDescription>
+              <CardDescription>Help us improve HabitBuilder.pro</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button

@@ -28,7 +28,7 @@ export function TermsOfServiceModal() {
             <h2 className="text-lg font-semibold" data-testid="text-tos-title">Terms of Service & Community Guidelines</h2>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Please review and accept our terms before using Habit Builder.
+            Please review and accept our terms before using HabitBuilder.pro.
           </p>
         </div>
         <div className="flex-1 flex flex-col gap-4 px-6 pb-6 overflow-hidden min-h-0">
@@ -37,14 +37,14 @@ export function TermsOfServiceModal() {
               <section>
                 <h3 className="font-semibold mb-2">1. Acceptance of Terms</h3>
                 <p className="text-muted-foreground">
-                  By using Habit Builder, you agree to these Terms of Service and our Community Guidelines. If you do not agree, you may not use the service.
+                  By using HabitBuilder.pro, you agree to these Terms of Service and our Community Guidelines. If you do not agree, you may not use the service.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-semibold mb-2">2. Acceptable Use</h3>
                 <p className="text-muted-foreground">
-                  Habit Builder is designed to help you build positive, healthy habits. You agree to use the platform for lawful, constructive purposes only. You must be at least 18 years old to use this service.
+                  HabitBuilder.pro is designed to help you build positive, healthy habits. You agree to use the platform for lawful, constructive purposes only. You must be at least 18 years old to use this service.
                 </p>
               </section>
 
@@ -76,7 +76,7 @@ export function TermsOfServiceModal() {
               <section>
                 <h3 className="font-semibold mb-2">5. AI-Generated Content</h3>
                 <p className="text-muted-foreground">
-                  Habit Builder uses AI to generate personalized coaching plans. AI-generated content is provided as guidance and should not be considered professional medical, legal, or financial advice. We implement safety filters on AI-generated content to prevent harmful outputs.
+                  HabitBuilder.pro uses AI to generate personalized coaching plans. AI-generated content is provided as guidance and should not be considered professional medical, legal, or financial advice. We implement safety filters on AI-generated content to prevent harmful outputs.
                 </p>
               </section>
 

@@ -25,13 +25,13 @@ export function InstallAppDialog({ trigger }: InstallAppDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-primary" />
-            Install Habit Builder
+            Install HabitBuilder.pro
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
           <p className="text-muted-foreground text-sm">
-            Add Habit Builder to your home screen for quick access - it works just like a regular app!
+            Add HabitBuilder.pro to your home screen for quick access - it works just like a regular app!
           </p>
 
           <div className="space-y-4">
@@ -66,7 +66,7 @@ export function InstallAppDialog({ trigger }: InstallAppDialogProps) {
               </div>
               <ol className="text-sm text-muted-foreground space-y-2 ml-7 list-decimal">
                 <li>Click the <strong>install icon</strong> in the address bar</li>
-                <li>Or click menu and select <strong>"Install Habit Builder"</strong></li>
+                <li>Or click menu and select <strong>"Install HabitBuilder.pro"</strong></li>
               </ol>
             </div>
           </div>

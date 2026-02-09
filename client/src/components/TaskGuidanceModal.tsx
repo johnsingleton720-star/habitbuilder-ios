@@ -507,7 +507,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     
     // ============ FOOTER ============
     const lastPage = pdfDoc.getPages()[pdfDoc.getPageCount() - 1];
-    lastPage.drawText("Created with Habit Builder - Your Personal Habit Coach", { x: margin, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
+    lastPage.drawText("Created with HabitBuilder.pro - Your Personal Habit Coach", { x: margin, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
     lastPage.drawText(new Date().toLocaleDateString(), { x: pageWidth - margin - 60, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
     
     // Save and download

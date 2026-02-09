@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
 import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -28,7 +29,7 @@ interface PricingData {
 }
 
 export default function Paywall() {
-  usePageTitle("Choose Your Plan", "Choose the right Habit Builder plan. Pro at $6 USD/month with unlimited AI-coached habits, or Premium at $15 USD/month with advanced analytics and community features. Start with a free 2-day trial.");
+  usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. Pro at $6 USD/month with unlimited AI-coached habits, or Premium at $15 USD/month with advanced analytics and community features. Start with a free 2-day trial.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();
@@ -112,9 +113,8 @@ export default function Paywall() {
           </Link>
         </div>
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4 font-display text-2xl font-bold text-primary">
-            <Leaf className="w-8 h-8 fill-primary/20" />
-            <span>Habit Builder</span>
+          <div className="inline-flex items-center gap-2 mb-4">
+            <Logo size="lg" />
           </div>
           
           {trialExpired ? (
