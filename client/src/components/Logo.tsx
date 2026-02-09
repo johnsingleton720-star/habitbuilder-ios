@@ -25,9 +25,9 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
       <Leaf className={cn(iconSizes[size], "text-emerald-600 fill-emerald-600/20")} />
       {showText && (
         <span className={cn("font-display font-bold tracking-tight", textSizes[size])}>
-          <span className="text-foreground">Habit</span>
-          <span className="text-foreground">Builder</span>
-          <span className="text-emerald-600">.pro</span>
+          <span className="text-[#0a1628] dark:text-[#c5d0e6]">Habit</span>
+          <span className="text-emerald-600">Builder</span>
+          <span className="text-[#0a1628] dark:text-[#c5d0e6]">.pro</span>
         </span>
       )}
     </span>
@@ -39,8 +39,9 @@ export function LogoFooter({ className }: { className?: string }) {
     <span className={cn("flex items-center gap-1.5", className)} data-testid="logo-footer">
       <Leaf className="w-4 h-4 text-emerald-600 fill-emerald-600/20" />
       <span className="text-sm font-medium">
-        <span className="text-foreground/80">HabitBuilder</span>
-        <span className="text-emerald-600">.pro</span>
+        <span className="text-[#0a1628] dark:text-[#c5d0e6]">Habit</span>
+        <span className="text-emerald-600">Builder</span>
+        <span className="text-[#0a1628] dark:text-[#c5d0e6]">.pro</span>
       </span>
     </span>
   );
