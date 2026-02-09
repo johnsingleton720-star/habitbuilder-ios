@@ -156,7 +156,7 @@ interface AIPlan {
 }
 
 export default function Landing() {
-  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6/month or Premium at $15/month.");
+  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6 USD/month or Premium at $15 USD/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const activeGoal = habitGoals.find((g) => g.id === selectedGoal);
 
@@ -818,6 +818,7 @@ export default function Landing() {
                     <div className="mt-3">
                       <span className="text-4xl font-display font-bold text-primary">$6</span>
                       <span className="text-muted-foreground">/month</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
                     </div>
                   </div>
                   <ul className="space-y-2.5 flex-1">
@@ -862,6 +863,7 @@ export default function Landing() {
                     <div className="mt-3">
                       <span className="text-4xl font-display font-bold text-amber-500">$15</span>
                       <span className="text-muted-foreground">/month</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
                     </div>
                   </div>
                   <ul className="space-y-2.5 flex-1">
@@ -896,6 +898,9 @@ export default function Landing() {
 
           <p className="text-center text-sm text-muted-foreground mt-8">
             All plans start with a 2-day free trial. No credit card required to start.
+          </p>
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            Prices shown in USD. International payments accepted worldwide.
           </p>
         </div>
       </section>

@@ -489,7 +489,7 @@ export default function Account() {
                 <div>
                   <p className="font-medium">Current Plan</p>
                   <p className="text-sm text-muted-foreground">
-                    {isPremium ? "Premium ($15/month)" : isPro ? "Pro ($6/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
+                    {isPremium ? "Premium ($15 USD/month)" : isPro ? "Pro ($6 USD/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
                   </p>
                 </div>
                 <Badge 
@@ -596,7 +596,7 @@ export default function Account() {
                       {showChangePlan && (
                         <div className="p-4 rounded-lg border space-y-3">
                           <p className="font-medium text-sm">
-                            {isPro ? "Upgrade to Premium ($15/month)" : "Switch to Pro ($6/month)"}
+                            {isPro ? "Upgrade to Premium ($15 USD/month)" : "Switch to Pro ($6 USD/month)"}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {isPro

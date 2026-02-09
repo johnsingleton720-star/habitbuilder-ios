@@ -865,12 +865,13 @@ export async function registerRoutes(
       }
 
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
         success_url: `${baseUrl}/?payment=success`,
         cancel_url: `${baseUrl}/?payment=cancelled`,
         customer: customerId,
+        allow_promotion_codes: true,
+        locale: 'auto',
         metadata: {
           userId: userId,
           tier: tier || 'pro',

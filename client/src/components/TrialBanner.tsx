@@ -36,7 +36,7 @@ export function TrialBanner() {
             Free trial: <span className="text-amber-600 dark:text-amber-400">{timeText}</span> remaining
           </p>
           <p className="text-xs text-muted-foreground">
-            Unlock full access for just $6/month
+            Unlock full access for just $6 USD/month
           </p>
         </div>
       </div>

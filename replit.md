@@ -38,8 +38,10 @@ The core system enables personalized habit coaching:
 -   **Habit Customization**: Users can personalize habits with custom icons, colors, and assign them to categories.
 
 ### Payment System
--   **Subscription Tiers**: Free, Pro ($6/month), and Premium ($15/month) tiers.
+-   **Subscription Tiers**: Free, Pro ($6 USD/month), and Premium ($15 USD/month) tiers.
 -   **Integration**: Stripe for subscription management and webhooks.
+-   **International Payments**: Stripe auto-selects best payment methods per region (cards, Apple Pay, Google Pay, regional methods). Checkout uses `locale: 'auto'` for localized language. Prices displayed in USD with "Prices in USD" notes across all pricing pages.
+-   **Promo Codes**: Enabled via `allow_promotion_codes: true` in checkout.
 -   **Trial System**: 2-day free trial with limited features.
 
 ### Customer Feedback System
