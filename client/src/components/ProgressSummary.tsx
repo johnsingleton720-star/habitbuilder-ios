@@ -29,13 +29,18 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
     return plan.completed || activeTasks.every(t => t.completed);
   };
 
-  const habitsWithTodayPlans = habits.filter(h => {
+  const todayDayName = format(new Date(), "EEEE").toLowerCase();
+  const habitsScheduledToday = habits.filter(h => {
+    const scheduleDays = h.schedule?.days as string[] | undefined;
+    if (scheduleDays && scheduleDays.length > 0) {
+      return scheduleDays.includes(todayDayName);
+    }
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
   });
 
-  const todayCompletions = habitsWithTodayPlans.filter(h => getHabitDayComplete(h, todayStr)).length;
-  const todayTotal = habitsWithTodayPlans.length || habits.length;
+  const todayCompletions = habitsScheduledToday.filter(h => getHabitDayComplete(h, todayStr)).length;
+  const todayTotal = habitsScheduledToday.length;
   const todayPercent = todayTotal > 0 ? Math.round((todayCompletions / todayTotal) * 100) : 0;
 
   const totalSessions = habits.reduce((sum, h) => 
@@ -44,47 +49,54 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
 
   const longestStreak = Math.max(...habits.map(h => h.longestStreak || 0), 0);
 
+  const isHabitScheduledForDate = (habit: Habit, dateStr: string) => {
+    const scheduleDays = habit.schedule?.days as string[] | undefined;
+    const hasSchedule = scheduleDays && scheduleDays.length > 0;
+    const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
+    if (hasSchedule) {
+      return scheduleDays.includes(dayName);
+    }
+    const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+    return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
+  };
+
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dateStr = format(date, "yyyy-MM-dd");
-    const completedCount = habits.filter(h => getHabitDayComplete(h, dateStr)).length;
-    const totalCount = habits.filter(h => {
-      const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
-      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
-    }).length;
+    const scheduledHabitsForDay = habits.filter(h => isHabitScheduledForDate(h, dateStr));
+    const completedCount = scheduledHabitsForDay.filter(h => getHabitDayComplete(h, dateStr)).length;
+    const totalCount = scheduledHabitsForDay.length;
     return {
       date,
       dateStr,
       dayLetter: format(date, "EEEEE"),
       isToday: dateStr === todayStr,
       completed: completedCount,
-      total: totalCount || habits.length,
+      total: totalCount,
       allComplete: totalCount > 0 && completedCount === totalCount,
     };
   });
 
   const getHabitsForDate = (dateStr: string) => {
-    return habits.map(habit => {
-      const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-      const plan = dailyPlans.find(p => p.date === dateStr);
-      const isComplete = getHabitDayComplete(habit, dateStr);
-      const scheduleDays = habit.schedule?.days as string[] | undefined;
-      const hasSchedule = scheduleDays && scheduleDays.length > 0;
-      const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
-      const isScheduled = !hasSchedule || scheduleDays!.includes(dayName);
-      const hasTasks = plan && plan.tasks.length > 0;
-      return {
-        habit,
-        plan,
-        isComplete,
-        isScheduled,
-        hasTasks,
-        completedTasks: plan ? plan.tasks.filter(t => t.completed).length : 0,
-        skippedTasks: plan ? plan.tasks.filter(t => t.skipped).length : 0,
-        totalTasks: plan ? plan.tasks.filter(t => !t.skipped).length : 0,
-      };
-    }).filter(h => h.isScheduled || h.hasTasks);
+    return habits
+      .filter(habit => isHabitScheduledForDate(habit, dateStr))
+      .map(habit => {
+        const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+        const plan = dailyPlans.find(p => p.date === dateStr);
+        const isComplete = getHabitDayComplete(habit, dateStr);
+        const hasTasks = plan && plan.tasks.length > 0;
+        return {
+          habit,
+          plan,
+          isComplete,
+          isScheduled: true,
+          hasTasks,
+          completedTasks: plan ? plan.tasks.filter(t => t.completed).length : 0,
+          skippedTasks: plan ? plan.tasks.filter(t => t.skipped).length : 0,
+          totalTasks: plan ? plan.tasks.filter(t => !t.skipped).length : 0,
+        };
+      });
   };
 
   const selectedDateHabits = selectedDate ? getHabitsForDate(selectedDate) : [];
