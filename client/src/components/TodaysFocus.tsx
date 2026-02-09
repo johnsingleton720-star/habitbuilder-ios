@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +73,11 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
 
   const getNextHabit = () => {
     if (remainingHabits.length === 0) return null;
+
+    const stackNext = completedToday.find(h => h.linkedHabitId && remainingHabits.some(r => r.id === h.linkedHabitId));
+    if (stackNext) {
+      return remainingHabits.find(r => r.id === stackNext.linkedHabitId) || null;
+    }
     
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -89,6 +94,15 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
   };
 
   const nextHabit = getNextHabit();
+
+  const isStackedNext = (() => {
+    if (!nextHabit) return false;
+    return completedToday.some(h => h.linkedHabitId === nextHabit.id);
+  })();
+
+  const stackParent = isStackedNext
+    ? completedToday.find(h => h.linkedHabitId === nextHabit?.id)
+    : null;
 
   const getHabitTodayProgress = (habit: HabitResponse) => {
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
@@ -204,8 +218,22 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
             animate={{ opacity: 1, y: 0 }}
           >
             <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-amber-500" />
-              Up next
+              {isStackedNext ? (
+                <>
+                  <Link2 className="w-4 h-4 text-primary" />
+                  Next in stack
+                  {stackParent && (
+                    <span className="font-normal text-muted-foreground">
+                      (after {stackParent.title})
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  Up next
+                </>
+              )}
             </p>
             <Link href={`/habit/${nextHabit.id}`}>
               <motion.div
@@ -301,6 +329,7 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
                     {otherRemaining.map((habit) => {
                       const taskProgress = getHabitTodayProgress(habit);
                       const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
+                      const isInStack = habits.some(h => h.linkedHabitId === habit.id) || !!habit.linkedHabitId;
                       return (
                         <Link key={habit.id} href={`/habit/${habit.id}`}>
                           <div
@@ -309,6 +338,7 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
+                                {isInStack && <Link2 className="w-3 h-3 text-primary flex-shrink-0" />}
                                 <span className="font-medium text-sm truncate text-gray-900 dark:text-white">{habit.title}</span>
                                 {!habit.setupComplete && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">Setup</Badge>

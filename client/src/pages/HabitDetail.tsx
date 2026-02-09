@@ -1054,6 +1054,61 @@ export default function HabitDetail() {
                       </motion.div>
                     ))}
                   </AnimatePresence>
+
+                  {/* Next in Stack Prompt - shown when all tasks are done and habit has a linked habit */}
+                  {(() => {
+                    const linkedHabit = habit.linkedHabitId ? allHabits?.find(h => h.id === habit.linkedHabitId) : null;
+                    if (!linkedHabit) return null;
+
+                    const anyCompleted = currentPlan.tasks.some(t => t.completed);
+                    const allResolved = currentPlan.tasks.length > 0 && currentPlan.tasks.every(t => t.completed || t.skipped);
+                    const dayDone = allResolved && anyCompleted;
+                    if (!dayDone) return null;
+
+                    const linkedPlans = (linkedHabit.dailyPlans || []) as DailyPlan[];
+                    const linkedTodayPlan = linkedPlans.find(p => p.date === todayStr);
+                    const linkedActiveTasks = linkedTodayPlan ? linkedTodayPlan.tasks.filter(t => !t.skipped) : [];
+                    const linkedDone = linkedActiveTasks.length > 0 && linkedActiveTasks.every(t => t.completed);
+
+                    if (linkedDone) return null;
+
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <ArrowRight className="w-5 h-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-muted-foreground" data-testid="text-next-in-stack">Next in your stack</p>
+                                <p className="font-semibold truncate" data-testid="text-stacked-habit-title">{linkedHabit.title}</p>
+                                {linkedTodayPlan && linkedActiveTasks.length > 0 ? (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {linkedActiveTasks.filter(t => t.completed).length}/{linkedActiveTasks.length} tasks done
+                                  </p>
+                                ) : !linkedTodayPlan && linkedHabit.setupComplete ? (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    Not scheduled today
+                                  </p>
+                                ) : null}
+                              </div>
+                              <Link href={`/habit/${linkedHabit.id}`}>
+                                <Button className="gap-1.5" data-testid="button-go-to-stacked-habit">
+                                  <Play className="w-4 h-4" />
+                                  {linkedTodayPlan ? "Start" : "View"}
+                                </Button>
+                              </Link>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
               )}
             </CardContent>
