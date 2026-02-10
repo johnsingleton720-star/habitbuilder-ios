@@ -44,10 +44,10 @@ async function getCredentials() {
 }
 
 export async function getResendClient() {
-  const { apiKey, fromEmail } = await getCredentials();
+  const { apiKey } = await getCredentials();
   return {
     client: new Resend(apiKey),
-    fromEmail
+    fromEmail: 'HabitBuilder.pro <admin@habitbuilder.pro>'
   };
 }
 
