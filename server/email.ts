@@ -169,31 +169,30 @@ export async function sendAdminBulkEmail(params: {
 
   const results = { sent: 0, failed: 0, errors: [] as string[] };
 
-  const batchSize = 50;
-  for (let i = 0; i < params.toEmails.length; i += batchSize) {
-    const batch = params.toEmails.slice(i, i + batchSize);
-    const promises = batch.map(async (email) => {
-      try {
-        const sendResult = await client.emails.send({
-          from: fromEmail,
-          to: email,
-          subject: params.subject,
-          html,
-        });
-        console.log(`Email sent to ${email}:`, JSON.stringify(sendResult));
-        if (sendResult.error) {
-          results.failed++;
-          results.errors.push(`${email}: ${sendResult.error.message}`);
-        } else {
-          results.sent++;
-        }
-      } catch (err: any) {
-        console.error(`Email error for ${email}:`, err.message);
+  for (let i = 0; i < params.toEmails.length; i++) {
+    const email = params.toEmails[i];
+    try {
+      const sendResult = await client.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: params.subject,
+        html,
+      });
+      console.log(`Email sent to ${email}:`, JSON.stringify(sendResult));
+      if (sendResult.error) {
         results.failed++;
-        results.errors.push(`${email}: ${err.message}`);
+        results.errors.push(`${email}: ${sendResult.error.message}`);
+      } else {
+        results.sent++;
       }
-    });
-    await Promise.all(promises);
+    } catch (err: any) {
+      console.error(`Email error for ${email}:`, err.message);
+      results.failed++;
+      results.errors.push(`${email}: ${err.message}`);
+    }
+    if (i < params.toEmails.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+    }
   }
 
   return results;
