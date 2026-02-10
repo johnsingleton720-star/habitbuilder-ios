@@ -249,10 +249,10 @@ export default function Landing() {
               <span>AI-powered habit coaching</span>
             </div>
             
-            <h2 className="font-display text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
+            <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
               Build habits that <br />
               <span className="text-gradient">actually stick.</span>
-            </h2>
+            </h1>
             
             <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
               Your personal AI coach creates custom action plans, guides you through daily sessions, and keeps you motivated with streaks and achievements.
