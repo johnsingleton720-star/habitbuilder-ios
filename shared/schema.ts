@@ -235,6 +235,7 @@ export const accountabilityPartners = pgTable("accountability_partners", {
   userId: varchar("user_id").notNull().references(() => users.id),
   partnerEmail: text("partner_email").notNull(),
   partnerName: text("partner_name"),
+  partnerUserId: varchar("partner_user_id"),
   status: text("status").default("pending"), // pending, accepted, declined
   inviteToken: text("invite_token"),
   habitIds: jsonb("habit_ids").$type<number[]>().default([]), // Which habits to share

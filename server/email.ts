@@ -77,10 +77,15 @@ export async function sendAccountabilityInviteEmail(params: {
   inviterName: string;
   inviterEmail: string;
   habitTitles: string[];
+  inviteToken?: string;
 }) {
   const habitList = params.habitTitles.length > 0
     ? params.habitTitles.map(h => `<li>${escapeHtml(h)}</li>`).join('')
     : '<li>All habits</li>';
+
+  const acceptUrl = params.inviteToken
+    ? `https://habitbuilder.pro/accept-invite/${params.inviteToken}`
+    : 'https://habitbuilder.pro';
 
   const html = wrapEmail(`
     <h2 style="color: #1a1a2e; margin-bottom: 16px;">You've been invited as an Accountability Partner!</h2>
@@ -93,10 +98,13 @@ export async function sendAccountabilityInviteEmail(params: {
       As their accountability partner, you'll receive progress updates and help them stay on track with their goals.
     </p>
     <div style="text-align: center; margin: 32px 0;">
-      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
-        Check Out HabitBuilder.pro
+      <a href="${acceptUrl}" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Accept Invitation
       </a>
     </div>
+    <p style="color: #888; font-size: 13px; text-align: center;">
+      Or copy this link: ${escapeHtml(acceptUrl)}
+    </p>
   `);
 
   return sendEmail({

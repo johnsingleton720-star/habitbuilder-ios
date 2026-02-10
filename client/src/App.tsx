@@ -30,8 +30,9 @@ import BlogArticle from "@/pages/BlogArticle";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 import { CookieConsent } from "@/components/CookieConsent";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import AcceptInvite from "@/pages/AcceptInvite";
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/accept-invite"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -70,6 +71,7 @@ function Router() {
         <Route path="/blog/:slug" component={BlogArticle} />
         <Route path="/blog" component={BlogList} />
         <Route path="/privacy" component={PrivacyPolicy} />
+        <Route path="/accept-invite/:token" component={AcceptInvite} />
         <Route component={Landing} />
       </Switch>
     );
@@ -102,6 +104,7 @@ function Router() {
       <Route path="/progress/:view" component={Progress} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/accountability" component={Accountability} />
+      <Route path="/accept-invite/:token" component={AcceptInvite} />
       <Route path="/account" component={Account} />
       <Route path="/community" component={Community} />
       <Route path="/community/post/:id" component={Community} />

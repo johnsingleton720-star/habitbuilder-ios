@@ -498,7 +498,25 @@ export async function registerRoutes(
 
   app.delete(api.habits.delete.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
-    await storage.deleteHabit(Number(req.params.id), userId);
+    const habitId = Number(req.params.id);
+    await storage.deleteHabit(habitId, userId);
+
+    // Clean up deleted habit from accountability partner shared lists
+    try {
+      const partnerRows = await db.select().from(accountabilityPartners)
+        .where(eq(accountabilityPartners.userId, userId));
+      for (const p of partnerRows) {
+        if (p.habitIds && p.habitIds.includes(habitId)) {
+          const updated = p.habitIds.filter(id => id !== habitId);
+          await db.update(accountabilityPartners)
+            .set({ habitIds: updated })
+            .where(eq(accountabilityPartners.id, p.id));
+        }
+      }
+    } catch (cleanupErr) {
+      console.error("Error cleaning up accountability habit references:", cleanupErr);
+    }
+
     res.status(204).send();
   });
 
@@ -4415,6 +4433,7 @@ Be specific, practical, and personalized. Include realistic time estimates and X
           inviterName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'A HabitBuilder user',
           inviterEmail: user?.email || '',
           habitTitles: sharedTitles,
+          inviteToken,
         });
       } catch (emailErr) {
         console.error("Failed to send invite email (partner still created):", emailErr);
@@ -4493,6 +4512,150 @@ Be specific, practical, and personalized. Include realistic time estimates and X
     } catch (error) {
       console.error("Error removing accountability partner:", error);
       res.status(500).json({ error: "Failed to remove partner" });
+    }
+  });
+
+  // Accept an accountability partner invite via token (public - no auth required for initial lookup)
+  app.get("/api/accountability-partners/invite/:token", async (req: any, res) => {
+    try {
+      const { token } = req.params;
+      const [invite] = await db.select().from(accountabilityPartners)
+        .where(eq(accountabilityPartners.inviteToken, token));
+      
+      if (!invite) {
+        return res.status(404).json({ error: "Invitation not found or already used" });
+      }
+
+      const inviter = await storage.getUser(invite.userId);
+      const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() : 'A HabitBuilder user';
+
+      let sharedHabitTitles: string[] = [];
+      if (invite.habitIds && invite.habitIds.length > 0) {
+        const inviterHabits = await storage.getHabits(invite.userId);
+        sharedHabitTitles = inviterHabits
+          .filter(h => invite.habitIds!.includes(h.id))
+          .map(h => h.title);
+      }
+
+      res.json({
+        id: invite.id,
+        status: invite.status,
+        inviterName,
+        partnerEmail: invite.partnerEmail,
+        sharedHabitTitles,
+      });
+    } catch (error) {
+      console.error("Error looking up invite:", error);
+      res.status(500).json({ error: "Failed to look up invitation" });
+    }
+  });
+
+  // Accept or decline invite (requires auth so we can link partner user ID)
+  app.post("/api/accountability-partners/invite/:token/respond", isAuthenticated, async (req: any, res) => {
+    try {
+      const { token } = req.params;
+      const { action } = req.body; // "accept" or "decline"
+      const userId = req.user!.claims.sub;
+
+      if (!["accept", "decline"].includes(action)) {
+        return res.status(400).json({ error: "Action must be 'accept' or 'decline'" });
+      }
+
+      const [invite] = await db.select().from(accountabilityPartners)
+        .where(eq(accountabilityPartners.inviteToken, token));
+
+      if (!invite) {
+        return res.status(404).json({ error: "Invitation not found" });
+      }
+
+      if (invite.status !== "pending") {
+        return res.status(400).json({ error: `Invitation already ${invite.status}` });
+      }
+
+      if (invite.userId === userId) {
+        return res.status(400).json({ error: "You cannot accept your own invitation" });
+      }
+
+      const newStatus = action === "accept" ? "accepted" : "declined";
+
+      await db.update(accountabilityPartners)
+        .set({ 
+          status: newStatus, 
+          partnerUserId: action === "accept" ? userId : null,
+        })
+        .where(eq(accountabilityPartners.id, invite.id));
+
+      res.json({ success: true, status: newStatus });
+    } catch (error) {
+      console.error("Error responding to invite:", error);
+      res.status(500).json({ error: "Failed to respond to invitation" });
+    }
+  });
+
+  // Get invites shared with the current user (incoming partnerships)
+  app.get("/api/accountability-partners/shared-with-me", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Find partnerships where this user is the partner (by partnerUserId or by email)
+      const byUserId = await db.select().from(accountabilityPartners)
+        .where(and(
+          eq(accountabilityPartners.partnerUserId, userId),
+          eq(accountabilityPartners.status, "accepted")
+        ));
+
+      const byEmail = user.email ? await db.select().from(accountabilityPartners)
+        .where(and(
+          eq(accountabilityPartners.partnerEmail, user.email),
+          eq(accountabilityPartners.status, "accepted"),
+          sql`${accountabilityPartners.partnerUserId} IS NULL`
+        )) : [];
+
+      // Auto-link any email-matched ones to this userId
+      for (const p of byEmail) {
+        await db.update(accountabilityPartners)
+          .set({ partnerUserId: userId })
+          .where(eq(accountabilityPartners.id, p.id));
+      }
+
+      const allIncoming = [...byUserId, ...byEmail];
+
+      // Enrich with inviter info and shared habits
+      const enriched = await Promise.all(allIncoming.map(async (p) => {
+        const inviter = await storage.getUser(p.userId);
+        const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() : 'A user';
+        
+        let sharedHabits: { id: number; title: string; currentStreak: number; totalTimeSpent: number }[] = [];
+        if (p.habitIds && p.habitIds.length > 0) {
+          const inviterHabits = await storage.getHabits(p.userId);
+          sharedHabits = inviterHabits
+            .filter(h => p.habitIds!.includes(h.id))
+            .map(h => ({
+              id: h.id,
+              title: h.title,
+              currentStreak: h.currentStreak || 0,
+              totalTimeSpent: h.totalTimeSpent || 0,
+            }));
+        }
+
+        return {
+          id: p.id,
+          inviterName,
+          inviterEmail: inviter?.email || '',
+          sharedHabits,
+          createdAt: p.createdAt,
+        };
+      }));
+
+      res.json(enriched);
+    } catch (error) {
+      console.error("Error fetching shared-with-me:", error);
+      res.status(500).json({ error: "Failed to fetch shared partnerships" });
     }
   });
 
