@@ -3672,23 +3672,43 @@ Return JSON with:
         messages: [
           {
             role: "system",
-            content: `You are a habit coaching assistant. Generate a brief, actionable habit plan for the user's goal. Return ONLY valid JSON with this structure:
+            content: `You are an expert habit coaching AI. Generate a comprehensive, detailed habit plan for the user's goal. Return ONLY valid JSON with this structure:
 {
-  "title": "Short plan title",
+  "title": "Compelling plan title",
   "summary": "1-2 sentence summary of the approach",
-  "daily": ["action 1", "action 2", "action 3"],
-  "weekly": ["milestone 1", "milestone 2", "milestone 3"],
-  "insight": "One motivational insight or tip"
+  "daily": [
+    {"task": "Specific daily action", "duration": "5 min", "xp": 25},
+    {"task": "Another daily action", "duration": "10 min", "xp": 35},
+    {"task": "Third daily action", "duration": "15 min", "xp": 50}
+  ],
+  "weekly": [
+    {"task": "Weekly milestone or review task", "duration": "20 min", "xp": 75},
+    {"task": "Another weekly goal", "duration": "15 min", "xp": 60}
+  ],
+  "monthly": [
+    {"task": "Monthly assessment or challenge", "xp": 150},
+    {"task": "Big picture review", "xp": 100}
+  ],
+  "insight": "One motivational insight backed by psychology or science",
+  "tips": ["Expert tip 1", "Expert tip 2", "Expert tip 3"],
+  "resources": [
+    {"name": "Resource name", "type": "article", "searchQuery": "specific search terms"},
+    {"name": "Resource name", "type": "book", "searchQuery": "book title author"},
+    {"name": "Resource name", "type": "video", "searchQuery": "specific video search"}
+  ],
+  "coachMessage": "A personalized encouraging message from the AI coach about starting this journey, 2-3 sentences",
+  "stackSuggestion": "Suggest a complementary habit that pairs well with this one and explain why"
 }
-Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead (e.g. 'a language learning app'). Do not generate any harmful, violent, or explicit content.`
+Be specific, practical, and personalized. Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls.`
           },
           {
             role: "user",
-            content: `Create a habit plan for: ${habitGoal.trim()}`
+            content: `Create a detailed habit plan for: ${habitGoal.trim()}`
           }
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1200,
+        response_format: { type: "json_object" },
       });
 
       const content = response.choices[0]?.message?.content;
@@ -3698,6 +3718,22 @@ Keep each item under 80 characters. Be specific and practical. IMPORTANT: Never 
 
       const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const plan = JSON.parse(cleaned);
+      
+      if (plan.resources && Array.isArray(plan.resources)) {
+        plan.resources = plan.resources.map((r: any) => {
+          const query = r.searchQuery || r.name || '';
+          let url = '';
+          if (r.type === 'video') {
+            url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+          } else if (r.type === 'book') {
+            url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
+          } else {
+            url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+          }
+          return { ...r, url };
+        });
+      }
+      
       res.json(plan);
     } catch (error) {
       console.error("Error generating demo plan:", error);

@@ -36,6 +36,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://habitbuilder.pro/blog/how-to-break-bad-habits</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://habitbuilder.pro/blog/21-day-habit-challenge</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://habitbuilder.pro/blog/daily-habits-for-success</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://habitbuilder.pro/blog/how-to-stay-motivated</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://habitbuilder.pro/community</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>

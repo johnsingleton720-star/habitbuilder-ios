@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -148,12 +148,30 @@ const habitGoals = [
   },
 ];
 
+interface DemoTask {
+  task: string;
+  duration?: string;
+  xp: number;
+}
+
+interface DemoResource {
+  name: string;
+  type: string;
+  searchQuery: string;
+  url?: string;
+}
+
 interface AIPlan {
   title: string;
   summary: string;
-  daily: string[];
-  weekly: string[];
+  daily: DemoTask[] | string[];
+  weekly: DemoTask[] | string[];
+  monthly?: DemoTask[];
   insight: string;
+  tips?: string[];
+  resources?: DemoResource[];
+  coachMessage?: string;
+  stackSuggestion?: string;
 }
 
 export default function Landing() {
@@ -335,6 +353,20 @@ export default function Landing() {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Our AI coach will create a personalized action plan in seconds. Pick a popular goal or type your own.
             </p>
+            <div className="flex items-center justify-center gap-4 flex-wrap text-sm text-muted-foreground pt-2">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>No sign-up needed</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-primary" />
+                <span>Results in seconds</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-primary" />
+                <span>100% personalized</span>
+              </div>
+            </div>
           </div>
 
           <div className="max-w-2xl mx-auto mb-8">
@@ -437,37 +469,104 @@ export default function Landing() {
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6 mb-6 mt-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
+                    <div className="grid md:grid-cols-3 gap-4 mb-6 mt-6">
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2 mb-3">
                           <Target className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-sm">Daily Actions</span>
                         </div>
-                        {aiPlan.daily?.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5 text-sm">
-                            <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
+                        {aiPlan.daily?.map((item, i) => {
+                          const isObj = typeof item === 'object' && item !== null;
+                          const task = isObj ? (item as DemoTask).task : item as string;
+                          const duration = isObj ? (item as DemoTask).duration : null;
+                          const xp = isObj ? (item as DemoTask).xp : null;
+                          return (
+                            <div key={i} className="flex items-start gap-2 text-sm p-2.5 rounded-lg bg-primary/5 dark:bg-primary/10">
+                              <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span>{task}</span>
+                                {(duration || xp) && (
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    {duration && (
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />{duration}
+                                      </span>
+                                    )}
+                                    {xp && (
+                                      <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
+                                        <Star className="w-3 h-3" />+{xp} XP
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <BarChart3 className="w-4 h-4 text-accent" />
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Calendar className="w-4 h-4 text-accent" />
                           <span className="font-semibold text-sm">Weekly Goals</span>
                         </div>
-                        {aiPlan.weekly?.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5 text-sm">
-                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
+                        {aiPlan.weekly?.map((item, i) => {
+                          const isObj = typeof item === 'object' && item !== null;
+                          const task = isObj ? (item as DemoTask).task : item as string;
+                          const duration = isObj ? (item as DemoTask).duration : null;
+                          const xp = isObj ? (item as DemoTask).xp : null;
+                          return (
+                            <div key={i} className="flex items-start gap-2 text-sm p-2.5 rounded-lg bg-accent/5 dark:bg-accent/10">
+                              <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span>{task}</span>
+                                {(duration || xp) && (
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    {duration && (
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />{duration}
+                                      </span>
+                                    )}
+                                    {xp && (
+                                      <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
+                                        <Star className="w-3 h-3" />+{xp} XP
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
+                      {aiPlan.monthly && aiPlan.monthly.length > 0 && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2 mb-3">
+                            <TrendingUp className="w-4 h-4 text-emerald-600" />
+                            <span className="font-semibold text-sm">Monthly Milestones</span>
+                          </div>
+                          {aiPlan.monthly.map((item, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm p-2.5 rounded-lg bg-emerald-500/5 dark:bg-emerald-500/10">
+                              <Trophy className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span>{typeof item === 'object' ? item.task : item}</span>
+                                {typeof item === 'object' && item.xp && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
+                                      <Star className="w-3 h-3" />+{item.xp} XP
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {aiPlan.insight && (
-                      <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 mb-6">
+                      <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 mb-4">
                         <div className="flex items-start gap-2.5">
-                          <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          <Lightbulb className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                           <div>
                             <span className="font-semibold text-sm">AI Insight</span>
                             <p className="text-sm text-muted-foreground mt-1">{aiPlan.insight}</p>
@@ -476,9 +575,77 @@ export default function Landing() {
                       </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t">
+                    {aiPlan.tips && aiPlan.tips.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-sm">Expert Tips</span>
+                        </div>
+                        <div className="grid sm:grid-cols-3 gap-2">
+                          {aiPlan.tips.map((tip, i) => (
+                            <div key={i} className="text-xs text-muted-foreground p-3 rounded-lg border border-border/50 bg-muted/30">
+                              {tip}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {aiPlan.resources && aiPlan.resources.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <BookOpen className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-sm">Recommended Resources</span>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {aiPlan.resources.map((r, i) => {
+                            const typeIcon = r.type === 'video' ? Video : r.type === 'book' ? BookOpen : FileText;
+                            const TypeIcon = typeIcon;
+                            return (
+                              <a
+                                key={i}
+                                href={r.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg border border-border/50 bg-muted/30 hover-elevate transition-colors"
+                                data-testid={`link-demo-resource-${i}`}
+                              >
+                                <TypeIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                <span className="truncate">{r.name}</span>
+                                <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid sm:grid-cols-2 gap-3 mb-4">
+                      {aiPlan.coachMessage && (
+                        <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MessageCircle className="w-4 h-4 text-primary" />
+                            <span className="font-semibold text-xs">AI Coach Chat</span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Premium</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground italic">"{aiPlan.coachMessage}"</p>
+                        </div>
+                      )}
+                      {aiPlan.stackSuggestion && (
+                        <div className="p-3 rounded-lg border border-accent/20 bg-accent/5 dark:bg-accent/10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Layers className="w-4 h-4 text-accent" />
+                            <span className="font-semibold text-xs">Habit Stacking</span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Premium</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{aiPlan.stackSuggestion}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t">
                       <p className="text-sm text-muted-foreground">
-                        This plan was generated just for you. Sign up to get <span className="font-semibold text-foreground">guided daily sessions, progress tracking, and deeper coaching</span>.
+                        Sign up to unlock <span className="font-semibold text-foreground">guided sessions, XP leveling, streaks, AI coach chat, and more</span>.
                       </p>
                       <Button onClick={scrollToLogin} className="shrink-0" data-testid="button-ai-plan-signup">
                         Start Building This Habit
