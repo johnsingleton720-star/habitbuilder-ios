@@ -37,6 +37,13 @@ interface PartnerWithProgress extends AccountabilityPartner {
   sharedHabits?: { habitId: number; title: string; streak: number; lastActive: string }[];
 }
 
+interface SharedWithMeItem {
+  partnerId: number;
+  inviterName: string;
+  inviterEmail: string;
+  habits: { habitId: number; title: string; streak: number; lastActive: string | null }[];
+}
+
 export default function Accountability() {
   usePageTitle("Accountability");
   const { isPremium, canUseFeature } = useSubscription();
@@ -53,6 +60,11 @@ export default function Accountability() {
 
   const { data: habits } = useQuery<Habit[]>({
     queryKey: ["/api/habits"],
+    enabled: isPremium,
+  });
+
+  const { data: sharedWithMe, isLoading: isLoadingShared } = useQuery<SharedWithMeItem[]>({
+    queryKey: ["/api/accountability-partners/shared-with-me"],
     enabled: isPremium,
   });
 
@@ -276,6 +288,14 @@ export default function Accountability() {
       <Tabs defaultValue="partners" className="space-y-4">
         <TabsList>
           <TabsTrigger value="partners" data-testid="tab-partners">My Partners</TabsTrigger>
+          <TabsTrigger value="shared" data-testid="tab-shared">
+            Shared With Me
+            {sharedWithMe && sharedWithMe.length > 0 && (
+              <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                {sharedWithMe.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="progress" data-testid="tab-progress">Shared Progress</TabsTrigger>
         </TabsList>
 
@@ -372,6 +392,77 @@ export default function Accountability() {
                   <UserPlus className="w-4 h-4 mr-2" />
                   Invite Your First Partner
                 </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="shared" className="space-y-4">
+          {isLoadingShared ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : sharedWithMe && sharedWithMe.length > 0 ? (
+            <div className="grid gap-4">
+              {sharedWithMe.map((item) => (
+                <Card key={item.partnerId}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base" data-testid={`text-sharer-name-${item.partnerId}`}>
+                          {item.inviterName}
+                        </CardTitle>
+                        <CardDescription>{item.inviterEmail}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {item.habits.length > 0 ? (
+                      <div className="space-y-3">
+                        {item.habits.map((habit) => (
+                          <div
+                            key={habit.habitId}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                            data-testid={`shared-habit-${habit.habitId}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Trophy className="w-5 h-5 text-primary" />
+                              <span className="font-medium">{habit.title}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Flame className="w-4 h-4 text-orange-500" />
+                                <span>{habit.streak} day streak</span>
+                              </div>
+                              {habit.lastActive && (
+                                <span className="text-xs text-muted-foreground">
+                                  Last active: {new Date(habit.lastActive).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No shared habits from this partner yet
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Share2 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No Shared Progress Yet</h3>
+                <p className="text-muted-foreground">
+                  When someone invites you as their accountability partner and shares their progress, it will appear here.
+                </p>
               </CardContent>
             </Card>
           )}
