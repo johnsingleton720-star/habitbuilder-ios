@@ -11,6 +11,7 @@ import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages } from "@shared/schema";
 import crypto from "crypto";
 import { checkContentSafety } from "./contentSafety";
+import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
 
 function getUserToday(timezone?: string | null): string {
   const tz = timezone || "UTC";
@@ -3178,6 +3179,94 @@ Return JSON with:
     }
   });
 
+  // Admin: Send bulk emails to users
+  const adminEmailSchema = z.object({
+    subject: z.string().min(1, "Subject is required").max(200),
+    body: z.string().min(1, "Email body is required").max(10000),
+    recipientFilter: z.enum(["all", "free", "pro", "premium"]).default("all"),
+    singleEmail: z.string().email().optional(),
+  });
+
+  app.post("/api/admin/emails/send", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const parseResult = adminEmailSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+
+      const { subject, body, recipientFilter, singleEmail } = parseResult.data;
+
+      let toEmails: string[] = [];
+
+      if (singleEmail) {
+        toEmails = [singleEmail];
+      } else {
+        const allUsers = await db.select({ email: users.email, tier: users.subscriptionTier }).from(users);
+        toEmails = allUsers
+          .filter(u => u.email && !u.email.endsWith('@example.com') && !u.email.endsWith('@test.com'))
+          .filter(u => recipientFilter === "all" || u.tier === recipientFilter)
+          .map(u => u.email!);
+      }
+
+      if (toEmails.length === 0) {
+        return res.status(400).json({ error: "No recipients found for the selected filter" });
+      }
+
+      const results = await sendAdminBulkEmail({ toEmails, subject, body });
+
+      res.json({
+        success: true,
+        totalRecipients: toEmails.length,
+        sent: results.sent,
+        failed: results.failed,
+        errors: results.errors.slice(0, 10),
+      });
+    } catch (error) {
+      console.error("Error sending admin email:", error);
+      res.status(500).json({ error: "Failed to send emails" });
+    }
+  });
+
+  app.get("/api/admin/emails/recipients", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const filter = (req.query.filter as string) || "all";
+      const allUsers = await db.select({
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        tier: users.subscriptionTier,
+      }).from(users);
+
+      const filtered = allUsers
+        .filter(u => u.email && !u.email.endsWith('@example.com') && !u.email.endsWith('@test.com'))
+        .filter(u => filter === "all" || u.tier === filter);
+
+      res.json({
+        count: filtered.length,
+        recipients: filtered.map(u => ({
+          email: u.email,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+          tier: u.tier,
+        })),
+      });
+    } catch (error) {
+      console.error("Error fetching email recipients:", error);
+      res.status(500).json({ error: "Failed to fetch recipients" });
+    }
+  });
+
   // Admin: Fix all habits with reversed daily plan dates
   app.post("/api/admin/fix-habit-dates", isAuthenticated, async (req: any, res) => {
     try {
@@ -4309,9 +4398,23 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         habitIds,
       }).returning();
       
-      // In a production app, you would send an email here
-      // For now, we'll just return the partner record
-      
+      try {
+        const userHabits = await storage.getHabits(userId);
+        const sharedTitles = habitIds.length > 0
+          ? userHabits.filter(h => habitIds.includes(h.id)).map(h => h.title)
+          : userHabits.map(h => h.title);
+
+        await sendAccountabilityInviteEmail({
+          toEmail: email,
+          partnerName: name || undefined,
+          inviterName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'A HabitBuilder user',
+          inviterEmail: user?.email || '',
+          habitTitles: sharedTitles,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send invite email (partner still created):", emailErr);
+      }
+
       res.json(partner);
     } catch (error) {
       console.error("Error inviting accountability partner:", error);
@@ -4333,13 +4436,28 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         return res.status(404).json({ error: "Partner not found" });
       }
       
-      // Get user's habits to include in update
+      const user = await storage.getUser(userId);
       const userHabits = await storage.getHabits(userId);
-      const sharedHabits = userHabits.filter(h => partner.habitIds?.includes(h.id));
-      
-      // In production, this would send an email
-      // For now, we'll just confirm the action
-      
+      const sharedHabits = partner.habitIds && partner.habitIds.length > 0
+        ? userHabits.filter(h => partner.habitIds!.includes(h.id))
+        : userHabits;
+
+      try {
+        await sendProgressUpdateEmail({
+          toEmail: partner.partnerEmail,
+          partnerName: partner.partnerName || undefined,
+          senderName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Your partner',
+          habits: sharedHabits.map(h => ({
+            title: h.title,
+            streak: h.currentStreak || 0,
+            timeSpent: h.totalTimeSpent || 0,
+          })),
+        });
+      } catch (emailErr) {
+        console.error("Failed to send progress update email:", emailErr);
+        return res.status(500).json({ error: "Failed to send email. Please try again." });
+      }
+
       res.json({ 
         success: true, 
         message: `Update sent to ${partner.partnerEmail}`,

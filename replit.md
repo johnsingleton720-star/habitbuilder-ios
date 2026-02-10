@@ -103,11 +103,20 @@ The core system enables personalized habit coaching:
 
 ## External Dependencies
 
+### Email System (Resend)
+-   **Integration**: Resend via Replit Connectors (server/email.ts)
+-   **Accountability Invites**: Real emails sent when Premium users invite accountability partners
+-   **Progress Updates**: Real emails sent when users share habit progress with partners
+-   **Admin Email Dashboard**: `/admin/email` - Admin can compose and send emails to users, filtered by subscription tier (all/free/pro/premium) or to individual emails
+-   **HTML Escaping**: All user-provided content is sanitized before inserting into email HTML
+-   **Admin API**: `POST /api/admin/emails/send`, `GET /api/admin/emails/recipients`
+
 ### Third-Party Services
 -   **Database**: PostgreSQL (Replit-managed)
 -   **Authentication**: Replit Auth
 -   **Payments**: Stripe
 -   **AI Services**: OpenAI (via Replit AI Integrations)
+-   **Email**: Resend (via Replit Connectors)
 
 ### Key Environment Variables
 -   `DATABASE_URL`

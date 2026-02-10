@@ -215,10 +215,16 @@ export default function AdminFeedback() {
               Back to Dashboard
             </Button>
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="font-display text-2xl font-bold text-foreground">Customer Feedback</h1>
             <p className="text-muted-foreground text-sm">Manage and respond to user feedback</p>
           </div>
+          <Link href="/admin/email">
+            <Button variant="outline" size="sm" data-testid="link-admin-email">
+              <Mail className="w-4 h-4 mr-1" />
+              Email Dashboard
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}

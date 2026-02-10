@@ -19,6 +19,7 @@ import HabitDetail from "@/pages/HabitDetail";
 import Account from "@/pages/Account";
 import Progress from "@/pages/Progress";
 import AdminFeedback from "@/pages/AdminFeedback";
+import AdminEmail from "@/pages/AdminEmail";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
@@ -109,6 +110,7 @@ function Router() {
       <Route path="/community/profile/:userId" component={Community} />
       <Route path="/coach" component={CoachChat} />
       <Route path="/admin/feedback" component={AdminFeedback} />
+      <Route path="/admin/email" component={AdminEmail} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
     </Switch>

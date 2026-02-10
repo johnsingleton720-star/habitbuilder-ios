@@ -1,6 +1,15 @@
 // Resend email integration via Replit connector
 import { Resend } from 'resend';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 let connectionSettings: any;
 
 async function getCredentials() {
@@ -64,4 +73,149 @@ export async function sendEmail({
   });
 
   return result;
+}
+
+const EMAIL_HEADER = `
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h1 style="color: #0a1628; font-size: 24px; margin: 0;">
+      <span style="color: #0a1628;">Habit</span><span style="color: #059669;">Builder</span><span style="color: #0a1628;">.pro</span>
+    </h1>
+  </div>
+`;
+
+const EMAIL_FOOTER = `
+  <p style="color: #888; font-size: 12px; text-align: center; margin-top: 32px;">
+    Sent via <a href="https://habitbuilder.pro" style="color: #059669;">HabitBuilder.pro</a> - Build habits that actually stick
+  </p>
+`;
+
+function wrapEmail(content: string) {
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+      ${EMAIL_HEADER}
+      ${content}
+      ${EMAIL_FOOTER}
+    </div>
+  `;
+}
+
+export async function sendAccountabilityInviteEmail(params: {
+  toEmail: string;
+  partnerName?: string;
+  inviterName: string;
+  inviterEmail: string;
+  habitTitles: string[];
+}) {
+  const habitList = params.habitTitles.length > 0
+    ? params.habitTitles.map(h => `<li>${escapeHtml(h)}</li>`).join('')
+    : '<li>All habits</li>';
+
+  const html = wrapEmail(`
+    <h2 style="color: #1a1a2e; margin-bottom: 16px;">You've been invited as an Accountability Partner!</h2>
+    <p style="color: #444; line-height: 1.6;">
+      <strong>${escapeHtml(params.inviterName)}</strong> (${escapeHtml(params.inviterEmail)}) wants you to be their accountability partner on HabitBuilder.pro.
+    </p>
+    <p style="color: #444; line-height: 1.6;">They're working on:</p>
+    <ul style="color: #444; line-height: 1.8;">${habitList}</ul>
+    <p style="color: #444; line-height: 1.6;">
+      As their accountability partner, you'll receive progress updates and help them stay on track with their goals.
+    </p>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Check Out HabitBuilder.pro
+      </a>
+    </div>
+  `);
+
+  return sendEmail({
+    to: params.toEmail,
+    subject: `${params.inviterName} invited you as an Accountability Partner`,
+    html,
+  });
+}
+
+export async function sendProgressUpdateEmail(params: {
+  toEmail: string;
+  partnerName?: string;
+  senderName: string;
+  habits: { title: string; streak: number; timeSpent: number }[];
+}) {
+  const habitRows = params.habits.map(h => `
+    <tr>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${escapeHtml(h.title)}</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center;">${h.streak} days</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center;">${Math.floor(h.timeSpent / 60)}h ${h.timeSpent % 60}m</td>
+    </tr>
+  `).join('');
+
+  const html = wrapEmail(`
+    <h2 style="color: #1a1a2e; margin-bottom: 16px;">Progress Update from ${escapeHtml(params.senderName)}</h2>
+    <p style="color: #444; line-height: 1.6;">
+      ${params.partnerName ? `Hey ${escapeHtml(params.partnerName)}!` : 'Hey!'} Here's a progress update from your accountability partner <strong>${escapeHtml(params.senderName)}</strong>:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+      <thead>
+        <tr style="background: #f5f5f5;">
+          <th style="padding: 8px 12px; text-align: left;">Habit</th>
+          <th style="padding: 8px 12px; text-align: center;">Streak</th>
+          <th style="padding: 8px 12px; text-align: center;">Time Invested</th>
+        </tr>
+      </thead>
+      <tbody>${habitRows}</tbody>
+    </table>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Start Your Own Journey
+      </a>
+    </div>
+  `);
+
+  return sendEmail({
+    to: params.toEmail,
+    subject: `${params.senderName}'s Habit Progress Update`,
+    html,
+  });
+}
+
+export async function sendAdminBulkEmail(params: {
+  toEmails: string[];
+  subject: string;
+  body: string;
+}) {
+  const { client, fromEmail } = await getResendClient();
+
+  const html = wrapEmail(`
+    <div style="color: #333; line-height: 1.7; font-size: 15px;">
+      ${escapeHtml(params.body).replace(/\n/g, '<br/>')}
+    </div>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Open HabitBuilder.pro
+      </a>
+    </div>
+  `);
+
+  const results = { sent: 0, failed: 0, errors: [] as string[] };
+
+  const batchSize = 50;
+  for (let i = 0; i < params.toEmails.length; i += batchSize) {
+    const batch = params.toEmails.slice(i, i + batchSize);
+    const promises = batch.map(async (email) => {
+      try {
+        await client.emails.send({
+          from: fromEmail,
+          to: email,
+          subject: params.subject,
+          html,
+        });
+        results.sent++;
+      } catch (err: any) {
+        results.failed++;
+        results.errors.push(`${email}: ${err.message}`);
+      }
+    });
+    await Promise.all(promises);
+  }
+
+  return results;
 }

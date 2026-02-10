@@ -723,16 +723,28 @@ export default function Account() {
                 Share Feedback
               </Button>
               {user?.isAdmin && (
-                <Link href="/admin/feedback">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-2 text-muted-foreground"
-                    data-testid="button-admin-feedback"
-                  >
-                    <Settings className="w-4 h-4" />
-                    View All Feedback (Admin)
-                  </Button>
-                </Link>
+                <>
+                  <Link href="/admin/feedback">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2 text-muted-foreground"
+                      data-testid="button-admin-feedback"
+                    >
+                      <Settings className="w-4 h-4" />
+                      View All Feedback (Admin)
+                    </Button>
+                  </Link>
+                  <Link href="/admin/email">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2 text-muted-foreground"
+                      data-testid="button-admin-email"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Email Dashboard (Admin)
+                    </Button>
+                  </Link>
+                </>
               )}
             </CardContent>
           </Card>
