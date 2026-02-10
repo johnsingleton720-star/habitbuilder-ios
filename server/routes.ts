@@ -4630,24 +4630,24 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         const inviter = await storage.getUser(p.userId);
         const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() : 'A user';
         
-        let sharedHabits: { id: number; title: string; currentStreak: number; totalTimeSpent: number }[] = [];
+        let habits: { habitId: number; title: string; streak: number; lastActive: string | null }[] = [];
         if (p.habitIds && p.habitIds.length > 0) {
           const inviterHabits = await storage.getHabits(p.userId);
-          sharedHabits = inviterHabits
+          habits = inviterHabits
             .filter(h => p.habitIds!.includes(h.id))
             .map(h => ({
-              id: h.id,
+              habitId: h.id,
               title: h.title,
-              currentStreak: h.currentStreak || 0,
-              totalTimeSpent: h.totalTimeSpent || 0,
+              streak: h.currentStreak || 0,
+              lastActive: h.createdAt ? h.createdAt.toISOString() : null,
             }));
         }
 
         return {
-          id: p.id,
+          partnerId: p.id,
           inviterName,
           inviterEmail: inviter?.email || '',
-          sharedHabits,
+          habits,
           createdAt: p.createdAt,
         };
       }));

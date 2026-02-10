@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { Users, Check, X, Loader2, AlertCircle, LogIn } from "lucide-react";
 import { useRoute } from "wouter";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useAuth } from "@/hooks/use-auth";
 
 interface InviteInfo {
   id: number;
@@ -21,6 +22,7 @@ export default function AcceptInvite() {
   const [, params] = useRoute("/accept-invite/:token");
   const token = params?.token || "";
   const [responded, setResponded] = useState<"accepted" | "declined" | null>(null);
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   const { data: invite, isLoading, error } = useQuery<InviteInfo>({
     queryKey: ["/api/accountability-partners/invite", token],
@@ -167,37 +169,57 @@ export default function AcceptInvite() {
 
           {respondMutation.error && (
             <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm" data-testid="text-respond-error">
-              {respondMutation.error instanceof Error && respondMutation.error.message.includes("Unauthorized")
-                ? "Please sign in first to accept this invitation."
-                : "Something went wrong. Please try again."}
+              Something went wrong. Please try again.
             </div>
           )}
 
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => respondMutation.mutate("decline")}
-              disabled={respondMutation.isPending}
-              data-testid="button-decline-invite"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Decline
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() => respondMutation.mutate("accept")}
-              disabled={respondMutation.isPending}
-              data-testid="button-accept-invite"
-            >
-              {respondMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4 mr-2" />
-              )}
-              Accept
-            </Button>
-          </div>
+          {isAuthLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : !user ? (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-primary/10 text-sm text-center">
+                Sign in or create an account to accept this invitation.
+              </div>
+              <Button
+                className="w-full"
+                asChild
+                data-testid="button-sign-in-to-accept"
+              >
+                <a href={`/api/login?returnTo=${encodeURIComponent(`/accept-invite/${token}`)}`}>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In to Accept
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => respondMutation.mutate("decline")}
+                disabled={respondMutation.isPending}
+                data-testid="button-decline-invite"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Decline
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => respondMutation.mutate("accept")}
+                disabled={respondMutation.isPending}
+                data-testid="button-accept-invite"
+              >
+                {respondMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 mr-2" />
+                )}
+                Accept
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
