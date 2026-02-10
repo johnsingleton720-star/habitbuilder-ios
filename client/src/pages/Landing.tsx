@@ -869,6 +869,23 @@ export default function Landing() {
             </p>
           </div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Crown className="w-5 h-5 text-amber-500" />
+                <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
+              </p>
+            </div>
+          </motion.div>
+
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
