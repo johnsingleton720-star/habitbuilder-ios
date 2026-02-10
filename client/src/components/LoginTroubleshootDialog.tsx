@@ -56,7 +56,7 @@ export function LoginTroubleshootDialog({ trigger }: LoginTroubleshootDialogProp
                 <p className="font-medium text-sm">Forgot your password?</p>
                 <p className="text-xs text-muted-foreground">
                   If you signed up with email and password, you can reset it on Replit:{" "}
-                  <a href="https://replit.com/forgot-password" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-reset-password">
+                  <a href="https://replit.com/forgot" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-reset-password">
                     Reset your password here
                   </a>
                 </p>

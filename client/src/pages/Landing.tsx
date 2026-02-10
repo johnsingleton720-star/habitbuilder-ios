@@ -289,7 +289,7 @@ export default function Landing() {
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <LoginTroubleshootDialog />
-              <a href="https://replit.com/forgot-password" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline" data-testid="link-forgot-password">
+              <a href="https://replit.com/forgot" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline" data-testid="link-forgot-password">
                 Forgot your password?
               </a>
             </div>
