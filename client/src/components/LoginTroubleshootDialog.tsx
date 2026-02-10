@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, RefreshCw, Trash2, Globe, Mail } from "lucide-react";
+import { HelpCircle, RefreshCw, Trash2, Globe, Mail, KeyRound } from "lucide-react";
 
 interface LoginTroubleshootDialogProps {
   trigger?: React.ReactNode;
@@ -47,6 +47,19 @@ export function LoginTroubleshootDialog({ trigger }: LoginTroubleshootDialogProp
               <div>
                 <p className="font-medium text-sm">Clear your browser cookies</p>
                 <p className="text-xs text-muted-foreground">On iPhone: Settings &gt; Safari &gt; Clear History and Website Data</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <KeyRound className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Forgot your password?</p>
+                <p className="text-xs text-muted-foreground">
+                  If you signed up with email and password, you can reset it on Replit:{" "}
+                  <a href="https://replit.com/forgot-password" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-reset-password">
+                    Reset your password here
+                  </a>
+                </p>
               </div>
             </div>
 
