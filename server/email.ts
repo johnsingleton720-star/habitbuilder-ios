@@ -174,14 +174,21 @@ export async function sendAdminBulkEmail(params: {
     const batch = params.toEmails.slice(i, i + batchSize);
     const promises = batch.map(async (email) => {
       try {
-        await client.emails.send({
+        const sendResult = await client.emails.send({
           from: fromEmail,
           to: email,
           subject: params.subject,
           html,
         });
-        results.sent++;
+        console.log(`Email sent to ${email}:`, JSON.stringify(sendResult));
+        if (sendResult.error) {
+          results.failed++;
+          results.errors.push(`${email}: ${sendResult.error.message}`);
+        } else {
+          results.sent++;
+        }
       } catch (err: any) {
+        console.error(`Email error for ${email}:`, err.message);
         results.failed++;
         results.errors.push(`${email}: ${err.message}`);
       }

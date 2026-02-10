@@ -3218,7 +3218,12 @@ Return JSON with:
         return res.status(400).json({ error: "No recipients found for the selected filter" });
       }
 
+      console.log(`Admin email: sending to ${toEmails.length} recipients, subject: "${subject}"`);
+      console.log(`Admin email: recipients:`, toEmails);
+
       const results = await sendAdminBulkEmail({ toEmails, subject, body });
+
+      console.log(`Admin email result: sent=${results.sent}, failed=${results.failed}, errors:`, results.errors);
 
       res.json({
         success: true,
