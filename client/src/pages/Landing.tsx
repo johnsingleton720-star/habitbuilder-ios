@@ -177,8 +177,6 @@ interface AIPlan {
 export default function Landing() {
   usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6 USD/month or Premium at $15 USD/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
-  const activeGoal = habitGoals.find((g) => g.id === selectedGoal);
-
   const [customGoal, setCustomGoal] = useState("");
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -398,11 +396,30 @@ export default function Landing() {
               return (
                 <button
                   key={goal.id}
-                  onClick={() => {
+                  onClick={async () => {
+                    if (isSelected) {
+                      setSelectedGoal(null);
+                      setAiPlan(null);
+                      setAiError(null);
+                      return;
+                    }
+                    setSelectedGoal(goal.id);
                     setAiPlan(null);
                     setAiError(null);
-                    setSelectedGoal(isSelected ? null : goal.id);
+                    setCustomGoal("");
+                    setAiLoading(true);
+                    try {
+                      const response = await apiRequest("POST", "/api/demo-plan", { habitGoal: goal.label });
+                      const plan = await response.json();
+                      setAiPlan(plan);
+                    } catch (err: any) {
+                      const errorData = err?.message || "Something went wrong. Please try again.";
+                      setAiError(errorData);
+                    } finally {
+                      setAiLoading(false);
+                    }
                   }}
+                  disabled={aiLoading}
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
                     isSelected
                       ? "border-primary bg-primary/5 dark:bg-primary/10 toggle-elevated"
@@ -643,6 +660,18 @@ export default function Landing() {
                       )}
                     </div>
 
+                    <div className="bg-accent/5 dark:bg-accent/10 rounded-lg p-4 mb-4 border border-accent/20">
+                      <div className="flex items-start gap-2.5">
+                        <MessageCircle className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-semibold text-sm">Your full plan goes deeper</span>
+                          <p className="text-sm text-muted-foreground mt-1" data-testid="text-interview-note">
+                            When you sign up, your AI coach conducts a personal interview to understand your schedule, experience level, obstacles, and motivations. Every task, tip, and resource is then tailored specifically to you — not a generic template.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t">
                       <p className="text-sm text-muted-foreground">
                         Sign up to unlock <span className="font-semibold text-foreground">guided sessions, XP leveling, streaks, AI coach chat, and more</span>.
@@ -657,81 +686,6 @@ export default function Landing() {
               </motion.div>
             )}
 
-            {activeGoal && !aiPlan && !aiLoading && (
-              <motion.div
-                key={activeGoal.id}
-                initial={{ opacity: 0, y: 20, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, y: -10, height: 0 }}
-                transition={{ duration: 0.35 }}
-                data-testid="preview-plan-container"
-              >
-                <Card className="overflow-visible">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3 mb-6">
-                      <div className={`p-2 rounded-lg ${activeGoal.bgColor} shrink-0`}>
-                        <activeGoal.icon className={`w-6 h-6 ${activeGoal.color}`} />
-                      </div>
-                      <div>
-                        <h3 className="font-display text-xl font-bold" data-testid="text-plan-title">
-                          {activeGoal.plan.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">{activeGoal.plan.summary}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6 mb-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Target className="w-4 h-4 text-primary" />
-                          <span className="font-semibold text-sm">Daily Actions</span>
-                        </div>
-                        {activeGoal.plan.daily.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5 text-sm" data-testid={`text-daily-action-${i}`}>
-                            <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <BarChart3 className="w-4 h-4 text-accent" />
-                          <span className="font-semibold text-sm">Weekly Goals</span>
-                        </div>
-                        {activeGoal.plan.weekly.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5 text-sm" data-testid={`text-weekly-goal-${i}`}>
-                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 mb-6">
-                      <div className="flex items-start gap-2.5">
-                        <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                        <div>
-                          <span className="font-semibold text-sm">AI Insight</span>
-                          <p className="text-sm text-muted-foreground mt-1" data-testid="text-ai-insight">
-                            {activeGoal.plan.insight}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t">
-                      <p className="text-sm text-muted-foreground">
-                        This is just a preview. Sign up to get a <span className="font-semibold text-foreground">fully personalized plan</span> based on your schedule, experience, and goals.
-                      </p>
-                      <Button onClick={scrollToLogin} className="shrink-0" data-testid="button-preview-signup">
-                        Get My Full Plan
-                        <ArrowRight className="ml-2 w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
           </AnimatePresence>
 
           {!selectedGoal && !aiPlan && !aiLoading && !aiError && (
