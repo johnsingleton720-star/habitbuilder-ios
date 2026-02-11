@@ -45,8 +45,7 @@ import { defaultSharingSettings } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 interface PartnerWithProgress extends AccountabilityPartner {
-  sharedHabits?: { habitId: number; title: string; streak: number; lastActive: string }[];
-  partnerSharedHabits?: SharedHabitDetail[];
+  mySharedHabits?: { habitId: number; title: string }[];
 }
 
 interface SharedHabitDetail {
@@ -314,7 +313,6 @@ export default function Accountability() {
   const [inviteName, setInviteName] = useState("");
   const [selectedHabits, setSelectedHabits] = useState<number[]>([]);
   const [settingsPartnerId, setSettingsPartnerId] = useState<number | null>(null);
-  const [sharedSettingsPartnerId, setSharedSettingsPartnerId] = useState<number | null>(null);
 
   const { data: partners, isLoading: isLoadingPartners } = useQuery<PartnerWithProgress[]>({
     queryKey: ["/api/accountability-partners"],
@@ -400,6 +398,14 @@ export default function Accountability() {
       });
       return;
     }
+    if (selectedHabits.length === 0) {
+      toast({
+        title: "Select Habits",
+        description: "Please select at least one habit to share with your partner.",
+        variant: "destructive",
+      });
+      return;
+    }
     invitePartnerMutation.mutate({
       email: inviteEmail,
       name: inviteName,
@@ -420,10 +426,6 @@ export default function Accountability() {
     return partners?.find(p => p.id === settingsPartnerId) || null;
   };
 
-  const getSharedSettingsItem = () => {
-    if (sharedSettingsPartnerId === null) return null;
-    return sharedWithMe?.find(s => s.partnerId === sharedSettingsPartnerId) || null;
-  };
 
   if (!isPremium) {
     return (
@@ -460,7 +462,6 @@ export default function Accountability() {
   }
 
   const settingsPartner = getSettingsPartner();
-  const sharedSettingsItem = getSharedSettingsItem();
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
@@ -585,27 +586,6 @@ export default function Accountability() {
         </DialogContent>
       </Dialog>
 
-      {/* Sharing Settings Dialog - for partner managing what THEY share back */}
-      <Dialog open={sharedSettingsPartnerId !== null} onOpenChange={(open) => !open && setSharedSettingsPartnerId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              What You Share Back
-            </DialogTitle>
-          </DialogHeader>
-          {sharedSettingsItem && habits && (
-            <SharingSettingsDialog
-              partnerId={sharedSettingsItem.partnerId}
-              currentSettings={sharedSettingsItem.partnerSharingSettings || defaultSharingSettings}
-              currentHabitIds={sharedSettingsItem.partnerHabitIds || []}
-              allHabits={habits}
-              isPartnerSide={true}
-              onClose={() => setSharedSettingsPartnerId(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Tabs defaultValue="partners" className="space-y-4">
         <TabsList>
@@ -663,9 +643,9 @@ export default function Accountability() {
                                   {partner.status === "declined" && <X className="w-3 h-3 mr-1" />}
                                   {partner.status}
                                 </Badge>
-                                {partner.habitIds && partner.habitIds.length > 0 && (
+                                {partner.mySharedHabits && partner.mySharedHabits.length > 0 && (
                                   <span className="text-xs text-muted-foreground">
-                                    Sharing {partner.habitIds.length} habit(s)
+                                    Sharing {partner.mySharedHabits.length} habit(s)
                                   </span>
                                 )}
                               </div>
@@ -719,21 +699,27 @@ export default function Accountability() {
                               {((partner.sharingSettings as SharingSettings) || defaultSharingSettings).showActionPlans && <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate text-xs">Plans</Badge>}
                             </div>
                             
-                            {partner.partnerSharedHabits && partner.partnerSharedHabits.length > 0 && (
+                            {partner.mySharedHabits && partner.mySharedHabits.length > 0 && (
                               <div className="mt-3">
                                 <p className="text-sm font-medium mb-2 flex items-center gap-2">
                                   <Share2 className="w-4 h-4 text-primary" />
-                                  Their Progress
+                                  Habits You're Sharing
                                 </p>
-                                <div className="space-y-2">
-                                  {partner.partnerSharedHabits.map((habit) => (
-                                    <SharedHabitCard 
-                                      key={habit.habitId} 
-                                      habit={habit} 
-                                      settings={(partner.partnerSharingSettings as SharingSettings) || defaultSharingSettings}
-                                    />
+                                <div className="flex flex-wrap gap-2">
+                                  {partner.mySharedHabits.map((habit) => (
+                                    <Badge key={habit.habitId} variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
+                                      {habit.title}
+                                    </Badge>
                                   ))}
                                 </div>
+                              </div>
+                            )}
+                            {(!partner.mySharedHabits || partner.mySharedHabits.length === 0) && partner.status === "accepted" && (
+                              <div className="mt-3">
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <EyeOff className="w-4 h-4" />
+                                  No habits shared yet. Use Sharing settings to select habits to share.
+                                </p>
                               </div>
                             )}
                           </div>
@@ -783,15 +769,7 @@ export default function Accountability() {
                           <CardDescription>{item.inviterEmail}</CardDescription>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSharedSettingsPartnerId(item.partnerId)}
-                        data-testid={`button-partner-sharing-settings-${item.partnerId}`}
-                      >
-                        <Settings className="w-4 h-4 mr-1" />
-                        Share Back
-                      </Button>
+                      
                     </div>
                   </CardHeader>
                   <CardContent>

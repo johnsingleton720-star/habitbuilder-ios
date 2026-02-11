@@ -91,13 +91,15 @@ The core system enables personalized habit coaching:
 -   Supports theme switching with localStorage persistence.
 
 ### Accountability Partners (Premium)
--   **Bidirectional Sharing**: Both inviter and partner independently control what they share with each other.
--   **Privacy Controls**: Per-partnership `sharingSettings` JSON with toggles: showStreaks, showCompletions, showNotes, showActionPlans, showTimeSpent.
--   **Auto-Refresh**: Queries poll every 30 seconds so partner progress appears automatically without page refresh.
+-   **Explicit Sharing**: Users must select specific habits to share when inviting a partner. At least 1 habit required. Empty selection = nothing shared.
+-   **My Partners Tab**: Shows YOUR shared habits (as name badges) with that partner. Does NOT show the partner's habits.
+-   **Shared With Me Tab**: Shows habits that OTHER users shared with you via their invite. Only explicitly selected habits are visible.
+-   **Privacy Controls**: Per-partnership `sharingSettings` JSON with toggles: showStreaks, showCompletions, showNotes, showActionPlans, showTimeSpent. Configurable via Sharing settings button.
+-   **Auto-Refresh**: Queries poll every 30 seconds so updates appear automatically without page refresh.
 -   **Rich Progress Display**: Shared With Me tab shows real habit data - completion timelines, session notes, time invested, streak stats - filtered by sharer's privacy settings.
--   **Partner Shared-Back Data**: Inviter's "My Partners" tab shows partner's shared-back habits with full progress detail.
--   **API**: `PATCH /api/accountability-partners/:id/sharing-settings` (inviter controls), `PATCH /api/accountability-partners/:id/partner-sharing-settings` (partner controls).
--   **Database Columns**: `sharing_settings`, `partner_sharing_settings`, `partner_habit_ids` on `accountability_partners` table.
+-   **No Implicit Sharing**: Partner does NOT see your habits unless you explicitly invite them. No "share back" feature - each direction requires a separate invite.
+-   **API**: `PATCH /api/accountability-partners/:id/sharing-settings` (update what you share with a partner).
+-   **Database Columns**: `sharing_settings`, `habit_ids` on `accountability_partners` table.
 
 ### Community Forum (Tiered Access)
 -   **Pro Users**: Read-only access - can view forums and read posts, but cannot engage

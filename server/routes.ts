@@ -4366,41 +4366,14 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         .where(eq(accountabilityPartners.userId, userId))
         .orderBy(accountabilityPartners.createdAt);
       
-      const enrichedPartners = await Promise.all(partners.map(async (p) => {
-        let partnerSharedHabits: any[] = [];
-        if (p.status === "accepted" && p.partnerUserId) {
-          const partnerSettings = (p.partnerSharingSettings as any) || { showStreaks: true, showCompletions: true, showNotes: false, showActionPlans: false, showTimeSpent: true };
-          const partnerHabits = await storage.getHabits(p.partnerUserId);
-          const pHabitIds = p.partnerHabitIds as number[] | null;
-          const filteredHabits = (pHabitIds && pHabitIds.length > 0)
-            ? partnerHabits.filter(h => pHabitIds.includes(h.id))
-            : partnerHabits;
-
-          partnerSharedHabits = filteredHabits.map(h => {
-            const result: any = { habitId: h.id, title: h.title };
-            if (partnerSettings.showStreaks) {
-              result.streak = h.currentStreak || 0;
-              result.longestStreak = h.longestStreak || 0;
-            }
-            if (partnerSettings.showCompletions && h.progress) {
-              const progressEntries = (h.progress as any[]) || [];
-              result.recentProgress = progressEntries.slice(-7).map((entry: any) => ({
-                date: entry.date, tasksCompleted: entry.tasksCompleted, totalTasks: entry.totalTasks, mood: entry.mood,
-              }));
-              result.totalSessions = progressEntries.length;
-            }
-            if (partnerSettings.showNotes && h.progress) {
-              const progressEntries = (h.progress as any[]) || [];
-              result.recentNotes = progressEntries.filter((e: any) => e.notes?.trim()).slice(-5).map((e: any) => ({ date: e.date, notes: e.notes }));
-            }
-            if (partnerSettings.showTimeSpent) {
-              result.totalTimeSpent = h.totalTimeSpent || 0;
-            }
-            return result;
-          });
-        }
-        return { ...p, partnerSharedHabits };
-      }));
+      const userHabits = await storage.getHabits(userId);
+      const enrichedPartners = partners.map((p) => {
+        const myHabitIds = (p.habitIds as number[]) || [];
+        const mySharedHabits = myHabitIds.length > 0
+          ? userHabits.filter(h => myHabitIds.includes(h.id)).map(h => ({ habitId: h.id, title: h.title }))
+          : [];
+        return { ...p, mySharedHabits };
+      });
 
       res.json(enrichedPartners);
     } catch (error) {
@@ -4461,7 +4434,7 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         const userHabits = await storage.getHabits(userId);
         const sharedTitles = habitIds.length > 0
           ? userHabits.filter(h => habitIds.includes(h.id)).map(h => h.title)
-          : userHabits.map(h => h.title);
+          : [];
 
         await sendAccountabilityInviteEmail({
           toEmail: email,
@@ -4764,7 +4737,7 @@ Be specific, practical, and personalized. Include realistic time estimates and X
           const inviterHabits = await storage.getHabits(p.userId);
           const filteredHabits = (p.habitIds && p.habitIds.length > 0)
             ? inviterHabits.filter(h => p.habitIds!.includes(h.id))
-            : inviterHabits;
+            : [];
           habits = filteredHabits.map(h => {
               const result: any = {
                 habitId: h.id,
