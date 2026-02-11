@@ -78,9 +78,19 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
     };
   });
 
+  const sortByScheduleTime = (a: Habit, b: Habit) => {
+    const timeA = a.schedule?.time;
+    const timeB = b.schedule?.time;
+    if (timeA && timeB) return timeA.localeCompare(timeB);
+    if (timeA) return -1;
+    if (timeB) return 1;
+    return 0;
+  };
+
   const getHabitsForDate = (dateStr: string) => {
     return habits
       .filter(habit => isHabitScheduledForDate(habit, dateStr))
+      .sort(sortByScheduleTime)
       .map(habit => {
         const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
         const plan = dailyPlans.find(p => p.date === dateStr);

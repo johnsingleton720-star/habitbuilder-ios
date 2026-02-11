@@ -50,7 +50,16 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
     });
   };
 
-  const scheduledHabits = getScheduledHabits();
+  const sortByScheduleTime = (a: HabitResponse, b: HabitResponse) => {
+    const timeA = a.schedule?.time;
+    const timeB = b.schedule?.time;
+    if (timeA && timeB) return timeA.localeCompare(timeB);
+    if (timeA) return -1;
+    if (timeB) return 1;
+    return 0;
+  };
+
+  const scheduledHabits = getScheduledHabits().sort(sortByScheduleTime);
   
   const isHabitCompleted = (h: HabitResponse) => {
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
