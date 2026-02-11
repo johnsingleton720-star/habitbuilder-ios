@@ -886,7 +886,7 @@ export async function registerRoutes(
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
-        success_url: `${baseUrl}/?payment=success`,
+        success_url: `${baseUrl}/?payment=success&tier=${encodeURIComponent(tier || 'pro')}`,
         cancel_url: `${baseUrl}/?payment=cancelled`,
         customer: customerId,
         allow_promotion_codes: true,

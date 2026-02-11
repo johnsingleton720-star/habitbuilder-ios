@@ -47,6 +47,16 @@ function Router() {
     const payment = params.get('payment');
     
     if (payment === 'success') {
+      const tier = params.get('tier');
+      const value = tier === 'premium' ? 15.0 : 6.0;
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-17945383806/BU3-CMnypfYbEP6mg-1C',
+          'value': value,
+          'currency': 'USD',
+          'transaction_id': '',
+        });
+      }
       toast({
         title: "Payment successful!",
         description: "Welcome to HabitBuilder.pro. Start building better habits today!",
