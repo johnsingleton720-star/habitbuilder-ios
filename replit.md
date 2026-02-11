@@ -90,6 +90,15 @@ The core system enables personalized habit coaching:
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.
 
+### Accountability Partners (Premium)
+-   **Bidirectional Sharing**: Both inviter and partner independently control what they share with each other.
+-   **Privacy Controls**: Per-partnership `sharingSettings` JSON with toggles: showStreaks, showCompletions, showNotes, showActionPlans, showTimeSpent.
+-   **Auto-Refresh**: Queries poll every 30 seconds so partner progress appears automatically without page refresh.
+-   **Rich Progress Display**: Shared With Me tab shows real habit data - completion timelines, session notes, time invested, streak stats - filtered by sharer's privacy settings.
+-   **Partner Shared-Back Data**: Inviter's "My Partners" tab shows partner's shared-back habits with full progress detail.
+-   **API**: `PATCH /api/accountability-partners/:id/sharing-settings` (inviter controls), `PATCH /api/accountability-partners/:id/partner-sharing-settings` (partner controls).
+-   **Database Columns**: `sharing_settings`, `partner_sharing_settings`, `partner_habit_ids` on `accountability_partners` table.
+
 ### Community Forum (Tiered Access)
 -   **Pro Users**: Read-only access - can view forums and read posts, but cannot engage
 -   **Premium Users**: Full access - can post, comment, like, message, and manage their profile

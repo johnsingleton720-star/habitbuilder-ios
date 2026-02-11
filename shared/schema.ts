@@ -229,6 +229,22 @@ export const insertHabitTemplateSchema = createInsertSchema(habitTemplates).omit
 export type HabitTemplate = typeof habitTemplates.$inferSelect;
 export type InsertHabitTemplate = z.infer<typeof insertHabitTemplateSchema>;
 
+export interface SharingSettings {
+  showStreaks: boolean;
+  showCompletions: boolean;
+  showNotes: boolean;
+  showActionPlans: boolean;
+  showTimeSpent: boolean;
+}
+
+export const defaultSharingSettings: SharingSettings = {
+  showStreaks: true,
+  showCompletions: true,
+  showNotes: false,
+  showActionPlans: false,
+  showTimeSpent: true,
+};
+
 // Accountability partners
 export const accountabilityPartners = pgTable("accountability_partners", {
   id: serial("id").primaryKey(),
@@ -239,6 +255,9 @@ export const accountabilityPartners = pgTable("accountability_partners", {
   status: text("status").default("pending"), // pending, accepted, declined
   inviteToken: text("invite_token"),
   habitIds: jsonb("habit_ids").$type<number[]>().default([]), // Which habits to share
+  sharingSettings: jsonb("sharing_settings").$type<SharingSettings>().default(defaultSharingSettings),
+  partnerSharingSettings: jsonb("partner_sharing_settings").$type<SharingSettings>().default(defaultSharingSettings),
+  partnerHabitIds: jsonb("partner_habit_ids").$type<number[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

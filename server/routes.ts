@@ -4366,7 +4366,43 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         .where(eq(accountabilityPartners.userId, userId))
         .orderBy(accountabilityPartners.createdAt);
       
-      res.json(partners);
+      const enrichedPartners = await Promise.all(partners.map(async (p) => {
+        let partnerSharedHabits: any[] = [];
+        if (p.status === "accepted" && p.partnerUserId) {
+          const partnerSettings = (p.partnerSharingSettings as any) || { showStreaks: true, showCompletions: true, showNotes: false, showActionPlans: false, showTimeSpent: true };
+          const partnerHabits = await storage.getHabits(p.partnerUserId);
+          const pHabitIds = p.partnerHabitIds as number[] | null;
+          const filteredHabits = (pHabitIds && pHabitIds.length > 0)
+            ? partnerHabits.filter(h => pHabitIds.includes(h.id))
+            : partnerHabits;
+
+          partnerSharedHabits = filteredHabits.map(h => {
+            const result: any = { habitId: h.id, title: h.title };
+            if (partnerSettings.showStreaks) {
+              result.streak = h.currentStreak || 0;
+              result.longestStreak = h.longestStreak || 0;
+            }
+            if (partnerSettings.showCompletions && h.progress) {
+              const progressEntries = (h.progress as any[]) || [];
+              result.recentProgress = progressEntries.slice(-7).map((entry: any) => ({
+                date: entry.date, tasksCompleted: entry.tasksCompleted, totalTasks: entry.totalTasks, mood: entry.mood,
+              }));
+              result.totalSessions = progressEntries.length;
+            }
+            if (partnerSettings.showNotes && h.progress) {
+              const progressEntries = (h.progress as any[]) || [];
+              result.recentNotes = progressEntries.filter((e: any) => e.notes?.trim()).slice(-5).map((e: any) => ({ date: e.date, notes: e.notes }));
+            }
+            if (partnerSettings.showTimeSpent) {
+              result.totalTimeSpent = h.totalTimeSpent || 0;
+            }
+            return result;
+          });
+        }
+        return { ...p, partnerSharedHabits };
+      }));
+
+      res.json(enrichedPartners);
     } catch (error) {
       console.error("Error fetching accountability partners:", error);
       res.status(500).json({ error: "Failed to fetch partners" });
@@ -4592,7 +4628,102 @@ Be specific, practical, and personalized. Include realistic time estimates and X
     }
   });
 
-  // Get invites shared with the current user (incoming partnerships)
+  const sharingSettingsSchema = z.object({
+    sharingSettings: z.object({
+      showStreaks: z.boolean(),
+      showCompletions: z.boolean(),
+      showNotes: z.boolean(),
+      showActionPlans: z.boolean(),
+      showTimeSpent: z.boolean(),
+    }).optional(),
+    habitIds: z.array(z.number()).optional(),
+  });
+
+  // Update sharing settings for a partnership (inviter side)
+  app.patch("/api/accountability-partners/:id/sharing-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const partnerId = parseInt(req.params.id);
+
+      const parseResult = sharingSettingsSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+      const { sharingSettings, habitIds } = parseResult.data;
+
+      const [partner] = await db.select().from(accountabilityPartners)
+        .where(and(eq(accountabilityPartners.id, partnerId), eq(accountabilityPartners.userId, userId)));
+
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+
+      if (habitIds && habitIds.length > 0) {
+        const userHabits = await storage.getHabits(userId);
+        const userHabitIds = userHabits.map(h => h.id);
+        if (habitIds.some(id => !userHabitIds.includes(id))) {
+          return res.status(400).json({ error: "You can only share habits you own" });
+        }
+      }
+
+      const updates: any = {};
+      if (sharingSettings) updates.sharingSettings = sharingSettings;
+      if (habitIds !== undefined) updates.habitIds = habitIds;
+
+      await db.update(accountabilityPartners)
+        .set(updates)
+        .where(eq(accountabilityPartners.id, partnerId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating sharing settings:", error);
+      res.status(500).json({ error: "Failed to update sharing settings" });
+    }
+  });
+
+  // Update partner-side sharing settings (partner controls what THEY share back)
+  app.patch("/api/accountability-partners/:id/partner-sharing-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const partnerId = parseInt(req.params.id);
+
+      const parseResult = sharingSettingsSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0].message });
+      }
+      const { sharingSettings, habitIds } = parseResult.data;
+
+      const [partner] = await db.select().from(accountabilityPartners)
+        .where(and(eq(accountabilityPartners.id, partnerId), eq(accountabilityPartners.partnerUserId, userId)));
+
+      if (!partner) {
+        return res.status(404).json({ error: "Partnership not found" });
+      }
+
+      if (habitIds && habitIds.length > 0) {
+        const userHabits = await storage.getHabits(userId);
+        const userHabitIds = userHabits.map(h => h.id);
+        if (habitIds.some(id => !userHabitIds.includes(id))) {
+          return res.status(400).json({ error: "You can only share habits you own" });
+        }
+      }
+
+      const updates: any = {};
+      if (sharingSettings) updates.partnerSharingSettings = sharingSettings;
+      if (habitIds !== undefined) updates.partnerHabitIds = habitIds;
+
+      await db.update(accountabilityPartners)
+        .set(updates)
+        .where(eq(accountabilityPartners.id, partnerId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating partner sharing settings:", error);
+      res.status(500).json({ error: "Failed to update sharing settings" });
+    }
+  });
+
+  // Get invites shared with the current user (incoming partnerships) - with rich progress data
   app.get("/api/accountability-partners/shared-with-me", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -4602,7 +4733,6 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         return res.status(404).json({ error: "User not found" });
       }
 
-      // Find partnerships where this user is the partner (by partnerUserId or by email)
       const byUserId = await db.select().from(accountabilityPartners)
         .where(and(
           eq(accountabilityPartners.partnerUserId, userId),
@@ -4616,7 +4746,6 @@ Be specific, practical, and personalized. Include realistic time estimates and X
           sql`${accountabilityPartners.partnerUserId} IS NULL`
         )) : [];
 
-      // Auto-link any email-matched ones to this userId
       for (const p of byEmail) {
         await db.update(accountabilityPartners)
           .set({ partnerUserId: userId })
@@ -4625,22 +4754,64 @@ Be specific, practical, and personalized. Include realistic time estimates and X
 
       const allIncoming = [...byUserId, ...byEmail];
 
-      // Enrich with inviter info and shared habits
       const enriched = await Promise.all(allIncoming.map(async (p) => {
         const inviter = await storage.getUser(p.userId);
         const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() : 'A user';
-        
-        let habits: { habitId: number; title: string; streak: number; lastActive: string | null }[] = [];
-        if (p.habitIds && p.habitIds.length > 0) {
+        const settings = (p.sharingSettings as any) || { showStreaks: true, showCompletions: true, showNotes: false, showActionPlans: false, showTimeSpent: true };
+
+        let habits: any[] = [];
+        {
           const inviterHabits = await storage.getHabits(p.userId);
-          habits = inviterHabits
-            .filter(h => p.habitIds!.includes(h.id))
-            .map(h => ({
-              habitId: h.id,
-              title: h.title,
-              streak: h.currentStreak || 0,
-              lastActive: h.createdAt ? h.createdAt.toISOString() : null,
-            }));
+          const filteredHabits = (p.habitIds && p.habitIds.length > 0)
+            ? inviterHabits.filter(h => p.habitIds!.includes(h.id))
+            : inviterHabits;
+          habits = filteredHabits.map(h => {
+              const result: any = {
+                habitId: h.id,
+                title: h.title,
+              };
+
+              if (settings.showStreaks) {
+                result.streak = h.currentStreak || 0;
+                result.longestStreak = h.longestStreak || 0;
+              }
+
+              if (settings.showCompletions && h.progress) {
+                const progressEntries = (h.progress as any[]) || [];
+                result.recentProgress = progressEntries.slice(-7).map(entry => ({
+                  date: entry.date,
+                  tasksCompleted: entry.tasksCompleted,
+                  totalTasks: entry.totalTasks,
+                  mood: entry.mood,
+                }));
+                result.totalSessions = progressEntries.length;
+              }
+
+              if (settings.showNotes && h.progress) {
+                const progressEntries = (h.progress as any[]) || [];
+                result.recentNotes = progressEntries
+                  .filter((entry: any) => entry.notes && entry.notes.trim())
+                  .slice(-5)
+                  .map((entry: any) => ({
+                    date: entry.date,
+                    notes: entry.notes,
+                  }));
+              }
+
+              if (settings.showTimeSpent) {
+                result.totalTimeSpent = h.totalTimeSpent || 0;
+              }
+
+              if (settings.showActionPlans && h.dailyPlans) {
+                const plans = (h.dailyPlans as any[]) || [];
+                result.currentPlan = plans.length > 0 ? {
+                  totalTasks: plans.reduce((sum: number, p: any) => sum + (p.tasks?.length || 0), 0),
+                  planDuration: h.planDuration,
+                } : null;
+              }
+
+              return result;
+            });
         }
 
         return {
@@ -4648,6 +4819,9 @@ Be specific, practical, and personalized. Include realistic time estimates and X
           inviterName,
           inviterEmail: inviter?.email || '',
           habits,
+          sharingSettings: settings,
+          partnerSharingSettings: (p.partnerSharingSettings as any) || { showStreaks: true, showCompletions: true, showNotes: false, showActionPlans: false, showTimeSpent: true },
+          partnerHabitIds: p.partnerHabitIds || [],
           createdAt: p.createdAt,
         };
       }));
