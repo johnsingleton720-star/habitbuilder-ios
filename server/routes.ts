@@ -4913,21 +4913,57 @@ Be specific, practical, and personalized. Include realistic time estimates and X
       const avgStress = entries.filter(e => e.stress).reduce((sum, e) => sum + (e.stress || 0), 0) / 
         (entries.filter(e => e.stress).length || 1);
       
-      // Find habit correlations
-      const habitMoodMap = new Map<number, { good: number; bad: number; total: number }>();
+      // Find habit correlations - union of manually tagged habits AND auto-detected from dailyPlans completion
+      // Use per-habit per-date sets to avoid double-counting
+      const habitMoodMap = new Map<number, { good: number; bad: number; total: number; countedDates: Set<string> }>();
       
+      const ensureHabit = (habitId: number) => {
+        if (!habitMoodMap.has(habitId)) {
+          habitMoodMap.set(habitId, { good: 0, bad: 0, total: 0, countedDates: new Set() });
+        }
+        return habitMoodMap.get(habitId)!;
+      };
+      
+      // Build mood entries by date for quick lookup
+      const moodByDate = new Map<string, typeof entries[0]>();
+      for (const entry of entries) {
+        moodByDate.set(entry.date, entry);
+      }
+      
+      // Source 1: Auto-correlate from dailyPlans completion on mood entry dates
+      for (const habit of userHabits) {
+        const dailyPlans = (habit.dailyPlans || []) as { date: string; completed: boolean; tasks: { completed?: boolean; skipped?: boolean }[] }[];
+        for (const plan of dailyPlans) {
+          const moodEntry = moodByDate.get(plan.date);
+          if (!moodEntry) continue;
+          
+          const activeTasks = plan.tasks.filter(t => !t.skipped);
+          const isCompleted = plan.completed || (activeTasks.length > 0 && activeTasks.every(t => t.completed));
+          if (!isCompleted) continue;
+          
+          const stats = ensureHabit(habit.id);
+          if (!stats.countedDates.has(plan.date)) {
+            stats.countedDates.add(plan.date);
+            stats.total++;
+            if (moodValues[moodEntry.mood] >= 4) stats.good++;
+            else stats.bad++;
+          }
+        }
+      }
+      
+      // Source 2: Manually tagged habit IDs from mood entries (fills gaps for habits without dailyPlans)
       for (const entry of entries) {
         const habitIds = (entry.habitIds as number[]) || [];
         const isGoodMood = moodValues[entry.mood] >= 4;
         
         for (const habitId of habitIds) {
-          if (!habitMoodMap.has(habitId)) {
-            habitMoodMap.set(habitId, { good: 0, bad: 0, total: 0 });
+          const stats = ensureHabit(habitId);
+          if (!stats.countedDates.has(entry.date)) {
+            stats.countedDates.add(entry.date);
+            stats.total++;
+            if (isGoodMood) stats.good++;
+            else stats.bad++;
           }
-          const stats = habitMoodMap.get(habitId)!;
-          stats.total++;
-          if (isGoodMood) stats.good++;
-          else stats.bad++;
         }
       }
       
@@ -4991,13 +5027,25 @@ Be specific, practical, and personalized. Include realistic time estimates and X
       
       const moodValues: Record<string, number> = { great: 5, good: 4, okay: 3, bad: 2, terrible: 1 };
       
+      // Build set of dates where this habit was completed (from dailyPlans)
+      const completedDates = new Set<string>();
+      const dailyPlans = (habit.dailyPlans || []) as { date: string; completed: boolean; tasks: { completed?: boolean; skipped?: boolean }[] }[];
+      for (const plan of dailyPlans) {
+        const activeTasks = plan.tasks.filter(t => !t.skipped);
+        const isCompleted = plan.completed || (activeTasks.length > 0 && activeTasks.every(t => t.completed));
+        if (isCompleted) completedDates.add(plan.date);
+      }
+      
+      // Correlate mood entries with habit using both manual tags AND dailyPlans completion (deduplicated by date)
       const habitEntries: typeof allEntries = [];
       const nonHabitEntries: typeof allEntries = [];
+      const countedDates = new Set<string>();
       for (const e of allEntries) {
         const ids = (e.habitIds as number[]) || [];
-        if (ids.includes(habitId)) {
+        if ((ids.includes(habitId) || completedDates.has(e.date)) && !countedDates.has(e.date)) {
+          countedDates.add(e.date);
           habitEntries.push(e);
-        } else {
+        } else if (!countedDates.has(e.date)) {
           nonHabitEntries.push(e);
         }
       }
