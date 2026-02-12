@@ -123,6 +123,7 @@ export function MoodTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
       queryClient.invalidateQueries({ queryKey: ["/api/mood/insights"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mood/report"] });
       toast({
         title: "Mood logged!",
         description: "Your mood has been recorded for today.",
