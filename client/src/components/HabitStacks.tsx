@@ -227,22 +227,20 @@ function StackItem({
           )}
         </button>
         <div className="flex items-center gap-1">
-          {!plan && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onGeneratePlan}
-              disabled={isGenerating}
-              data-testid={`button-generate-plan-${stack.id}`}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 mr-1" />
-              )}
-              AI Tips
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGeneratePlan}
+            disabled={isGenerating}
+            data-testid={`button-generate-plan-${stack.id}`}
+          >
+            {isGenerating ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 mr-1" />
+            )}
+            {plan ? "Refresh AI Tips" : "AI Tips"}
+          </Button>
           <Button variant="ghost" size="sm" onClick={onEdit} data-testid={`button-edit-stack-${stack.id}`}>
             Edit
           </Button>

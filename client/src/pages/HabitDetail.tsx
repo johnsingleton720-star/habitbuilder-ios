@@ -397,6 +397,7 @@ export default function HabitDetail() {
                     <Button
                       variant="outline"
                       onClick={() => {
+                        setNewPlanDuration(habit.planDuration || "weekly");
                         setShowPlanTypeChanger(true);
                       }}
                       className="flex-1 gap-2"
@@ -406,6 +407,58 @@ export default function HabitDetail() {
                       Start Fresh
                     </Button>
                   </div>
+
+                  <AnimatePresence>
+                    {showPlanTypeChanger && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 p-4 bg-muted/30 rounded-lg space-y-3">
+                          <p className="text-sm text-muted-foreground text-left">
+                            Choose a plan duration and regenerate with fresh tasks based on your original interview answers.
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                            <Select value={newPlanDuration} onValueChange={setNewPlanDuration}>
+                              <SelectTrigger className="w-full sm:w-48" data-testid="select-fresh-plan-duration">
+                                <SelectValue placeholder="Select plan type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="daily" data-testid="option-fresh-daily">Daily (1 day)</SelectItem>
+                                <SelectItem value="weekly" data-testid="option-fresh-weekly">Weekly (7 days)</SelectItem>
+                                <SelectItem value="monthly" data-testid="option-fresh-monthly">Monthly (30 days)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => regeneratePlanMutation.mutate(newPlanDuration)}
+                                disabled={regeneratePlanMutation.isPending || !newPlanDuration}
+                                data-testid="button-regenerate-fresh"
+                              >
+                                {regeneratePlanMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Sparkles className="w-4 h-4 mr-1" />
+                                )}
+                                Generate New Plan
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowPlanTypeChanger(false)}
+                                data-testid="button-cancel-fresh"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </CardContent>
             </Card>
