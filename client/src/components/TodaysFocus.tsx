@@ -317,9 +317,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
             {stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).map((stack) => {
               const uPlan = (stack as any).unifiedPlan;
               const taskCount = uPlan?.tasks?.length || 0;
-              const stackHabitIds = (stack.habitIds || []) as number[];
-              const stackHabits = habits.filter(h => stackHabitIds.includes(h.id));
-              const isRoutineCompleted = stackHabits.length > 0 && stackHabits.every(h => isHabitCompleted(h));
+              const isRoutineCompleted = (stack as any).lastRoutineCompletedDate === todayStr;
               return (
                 <motion.div
                   key={`stack-${stack.id}`}

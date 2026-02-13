@@ -627,6 +627,7 @@ export const habitStacks = pgTable("habit_stacks", {
     tips: string[];
   }>(),
   unifiedPlan: jsonb("unified_plan").$type<UnifiedPlan>(),
+  lastRoutineCompletedDate: text("last_routine_completed_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -1276,6 +1276,10 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         });
       }
 
+      await storage.updateHabitStack(stackId, userId, {
+        lastRoutineCompletedDate: date,
+      });
+
       res.json({ success: true, tasksCompleted, totalTasks, timeSpent });
     } catch (error) {
       console.error("Error completing routine:", error);
