@@ -110,15 +110,21 @@ export default function StackDetail() {
     if (!unifiedPlan?.tasks) return [];
     const resources: { habitTitle: string; habitId: number; taskTitle: string; resource: any }[] = [];
     for (const task of unifiedPlan.tasks) {
-      if (task.resources && Array.isArray(task.resources)) {
-        for (const r of task.resources) {
-          resources.push({
-            habitTitle: task.habitTitle || "Habit",
-            habitId: task.habitId,
-            taskTitle: task.title,
-            resource: r,
-          });
+      const taskResources = [...(task.resources || [])];
+      if (task.steps) {
+        for (const step of task.steps) {
+          if ((step as any).resources && Array.isArray((step as any).resources)) {
+            taskResources.push(...(step as any).resources);
+          }
         }
+      }
+      for (const r of taskResources) {
+        resources.push({
+          habitTitle: task.habitTitle || "Habit",
+          habitId: task.habitId,
+          taskTitle: task.title,
+          resource: r,
+        });
       }
     }
     return resources;

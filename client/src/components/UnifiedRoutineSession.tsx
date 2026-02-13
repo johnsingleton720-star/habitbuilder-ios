@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -427,7 +427,17 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
   const nextTask = currentTaskIndex < tasks.length - 1 ? tasks[currentTaskIndex + 1] : null;
   const isTransitioningHabits = nextTask && currentTask && nextTask.habitId !== currentTask.habitId;
   const currentSteps = currentTask?.steps || [];
-  const currentResources = currentTask?.resources || [];
+  const currentResources = useMemo(() => {
+    const taskResources = currentTask?.resources || [];
+    if (taskResources.length > 0) return taskResources;
+    const stepResources: any[] = [];
+    for (const step of (currentTask?.steps || [])) {
+      if ((step as any).resources && Array.isArray((step as any).resources)) {
+        stepResources.push(...(step as any).resources);
+      }
+    }
+    return stepResources;
+  }, [currentTask]);
   const allCurrentStepsComplete = currentSteps.length > 0 && currentSteps.every(s => completedSteps.includes(s.id));
 
   return (

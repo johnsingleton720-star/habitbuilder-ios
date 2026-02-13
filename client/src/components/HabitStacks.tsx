@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3 } from "lucide-react";
+import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Link } from "wouter";
@@ -247,124 +247,144 @@ function StackItem({
 
   return (
     <div
-      className="border rounded-lg p-3 space-y-2"
+      className="border rounded-lg p-4 space-y-3"
       data-testid={`stack-item-${stack.id}`}
     >
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <button
-          className="flex items-center gap-2 cursor-pointer min-w-0"
-          onClick={() => setExpanded(!expanded)}
-          data-testid={`button-expand-stack-${stack.id}`}
-        >
-          <Layers className="w-4 h-4 text-primary shrink-0" />
-          <span className="font-medium text-sm truncate">{stack.name}</span>
-          <Badge variant="secondary" className="text-[10px] shrink-0">
-            {order.length} habits
-          </Badge>
-          {expanded ? (
-            <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          )}
-        </button>
-        <div className="flex items-center gap-1 flex-wrap">
-          {isUnified ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onGenerateUnifiedPlan}
-              disabled={isGenerating}
-              data-testid={`button-generate-unified-${stack.id}`}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 mr-1" />
-              )}
-              {unifiedPlan ? "Refresh Plan" : "Generate Plan"}
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onGeneratePlan}
-              disabled={isGenerating}
-              data-testid={`button-generate-plan-${stack.id}`}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 mr-1" />
-              )}
-              {plan ? "Refresh AI Tips" : "AI Tips"}
-            </Button>
-          )}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <button
+            className="flex items-center gap-2 cursor-pointer min-w-0"
+            onClick={() => setExpanded(!expanded)}
+            data-testid={`button-expand-stack-${stack.id}`}
+          >
+            <Layers className="w-4 h-4 text-primary shrink-0" />
+            <span className="font-semibold text-sm truncate">{stack.name}</span>
+            {expanded ? (
+              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            )}
+          </button>
+
+          <div className="flex items-center gap-1.5 flex-wrap mt-1.5 ml-6">
+            {order.map((item: any, idx: number) => {
+              const habit = habits.find(h => h.id === item.habitId);
+              return (
+                <span key={item.habitId} className="flex items-center gap-1.5">
+                  <Link href={`/habit/${item.habitId}`}>
+                    <Badge variant="outline" className="text-[10px] cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
+                      {habit?.title || item.habitTitle}
+                    </Badge>
+                  </Link>
+                  {idx < order.length - 1 && (
+                    <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                  )}
+                </span>
+              );
+            })}
+            {stack.scheduledTime && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground ml-1">
+                <Clock className="w-3 h-3" />
+                {stack.scheduledTime}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
           <Link href={`/stack/${stack.id}`}>
-            <Button variant="ghost" size="sm" data-testid={`button-view-stack-${stack.id}`}>
-              <BarChart3 className="w-3.5 h-3.5 mr-1" />
-              Details
+            <Button variant="ghost" size="icon" data-testid={`button-view-stack-${stack.id}`}>
+              <BarChart3 className="w-4 h-4" />
             </Button>
           </Link>
-          <Button variant="ghost" size="sm" onClick={onEdit} data-testid={`button-edit-stack-${stack.id}`}>
-            Edit
+          <Button variant="ghost" size="icon" onClick={onEdit} data-testid={`button-edit-stack-${stack.id}`}>
+            <Edit className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-            data-testid={`button-delete-stack-${stack.id}`}
-          >
-            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+          <Button variant="ghost" size="icon" onClick={onDelete} data-testid={`button-delete-stack-${stack.id}`}>
+            <Trash2 className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {order.map((item: any, idx: number) => {
-          const habit = habits.find(h => h.id === item.habitId);
-          return (
-            <span key={item.habitId} className="flex items-center gap-1.5">
-              <Link href={`/habit/${item.habitId}`}>
-                <span className="text-xs text-foreground hover:underline cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
-                  {habit?.title || item.habitTitle}
-                </span>
-              </Link>
-              {idx < order.length - 1 && (
-                <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
-              )}
-            </span>
-          );
-        })}
-        {stack.scheduledTime && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground ml-2">
-            <Clock className="w-3 h-3" />
-            {stack.scheduledTime}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center gap-2 p-1 bg-muted/50 rounded-lg">
         <button
           className={cn(
-            "text-[10px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
-            !isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+            "flex-1 text-xs py-1.5 px-3 rounded-md cursor-pointer transition-all font-medium",
+            !isUnified ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
           )}
           onClick={() => onTogglePlanMode("separate")}
           data-testid={`button-mode-separate-${stack.id}`}
         >
-          Separate Plans
+          Individual Plans
         </button>
         <button
           className={cn(
-            "text-[10px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
-            isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+            "flex-1 text-xs py-1.5 px-3 rounded-md cursor-pointer transition-all font-medium flex items-center justify-center gap-1.5",
+            isUnified ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
           )}
           onClick={() => onTogglePlanMode("unified")}
           data-testid={`button-mode-unified-${stack.id}`}
         >
-          Unified Routine
+          <Crown className="w-3 h-3 text-primary" />
+          Guided Routine
         </button>
       </div>
+
+      {isUnified && !unifiedPlan && (
+        <Button
+          className="w-full gap-2"
+          onClick={onGenerateUnifiedPlan}
+          disabled={isGenerating}
+          data-testid={`button-generate-unified-${stack.id}`}
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4" />
+          )}
+          {isGenerating ? "Creating Your Guided Routine..." : "Create Guided Routine"}
+        </Button>
+      )}
+
+      {isUnified && unifiedPlan && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGenerateUnifiedPlan}
+            disabled={isGenerating}
+            className="gap-1.5 text-xs"
+            data-testid={`button-generate-unified-${stack.id}`}
+          >
+            {isGenerating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            Refresh Routine
+          </Button>
+        </div>
+      )}
+
+      {!isUnified && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGeneratePlan}
+            disabled={isGenerating}
+            className="gap-1.5 text-xs"
+            data-testid={`button-generate-plan-${stack.id}`}
+          >
+            {isGenerating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {plan ? "Refresh AI Tips" : "Generate AI Tips"}
+          </Button>
+        </div>
+      )}
 
       <AnimatePresence>
         {expanded && !isUnified && plan && (

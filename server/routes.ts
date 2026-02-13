@@ -1128,24 +1128,33 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       }
       if (!plan.tasks) plan.tasks = [];
 
+      const addUrlToResource = (r: any) => {
+        const query = r.searchQuery || r.name || '';
+        let url = '';
+        if (r.type === 'book') {
+          url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
+        } else if (r.type === 'video') {
+          url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        } else {
+          url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+        }
+        return { ...r, url };
+      };
+
       for (const task of plan.tasks) {
         if (task.habitId) task.habitId = Number(task.habitId);
         if (!task.steps) task.steps = [];
-        if (task.resources && Array.isArray(task.resources)) {
-          task.resources = task.resources.map((r: any) => {
-            const query = r.searchQuery || r.name || '';
-            let url = '';
-            if (r.type === 'book') {
-              url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
-            } else if (r.type === 'video') {
-              url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-            } else if (r.type === 'course') {
-              url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-            } else {
-              url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-            }
-            return { ...r, url };
-          });
+        if (!task.resources) task.resources = [];
+
+        for (const step of task.steps) {
+          if (step.resources && Array.isArray(step.resources)) {
+            task.resources.push(...step.resources);
+            delete step.resources;
+          }
+        }
+
+        if (task.resources.length > 0) {
+          task.resources = task.resources.map(addUrlToResource);
         }
       }
       

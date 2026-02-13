@@ -56,19 +56,25 @@ function extractResources(stacks: HabitStack[] | undefined, habits: Habit[] | un
       const unifiedPlan = stack.unifiedPlan as any;
       if (unifiedPlan?.tasks) {
         for (const task of unifiedPlan.tasks) {
-          if (task.resources) {
-            for (const r of task.resources) {
-              resources.push({
-                name: r.name,
-                type: r.type || "resource",
-                searchQuery: r.searchQuery,
-                description: r.description,
-                url: r.url,
-                habitTitle: task.habitTitle || stack.name,
-                habitId: task.habitId || 0,
-                taskId: task.id,
-              });
+          const taskResources = [...(task.resources || [])];
+          if (task.steps) {
+            for (const step of task.steps) {
+              if (step.resources && Array.isArray(step.resources)) {
+                taskResources.push(...step.resources);
+              }
             }
+          }
+          for (const r of taskResources) {
+            resources.push({
+              name: r.name,
+              type: r.type || "resource",
+              searchQuery: r.searchQuery,
+              description: r.description,
+              url: r.url,
+              habitTitle: task.habitTitle || stack.name,
+              habitId: task.habitId || 0,
+              taskId: task.id,
+            });
           }
         }
       }
