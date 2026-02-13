@@ -9,10 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Layers } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Layers, ExternalLink, BookOpen, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import type { HabitStack, UnifiedPlanTask } from "@shared/schema";
+import type { HabitStack, UnifiedPlanTask, UnifiedPlanStep, UnifiedPlanTransition } from "@shared/schema";
 
 interface UnifiedRoutineSessionProps {
   stack: HabitStack;
@@ -20,7 +20,7 @@ interface UnifiedRoutineSessionProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Phase = "checklist" | "tasks" | "complete";
+type Phase = "checklist" | "transition" | "tasks" | "complete";
 
 interface ChecklistItem {
   id: number;
@@ -62,20 +62,62 @@ const HABIT_COLORS = [
   "bg-red-500",
 ];
 
+const HABIT_COLORS_LIGHT = [
+  "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800",
+  "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800",
+  "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800",
+  "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800",
+  "bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-800",
+  "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800",
+  "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800",
+  "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800",
+];
+
+const HABIT_TEXT_COLORS = [
+  "text-emerald-700 dark:text-emerald-300",
+  "text-blue-700 dark:text-blue-300",
+  "text-purple-700 dark:text-purple-300",
+  "text-orange-700 dark:text-orange-300",
+  "text-pink-700 dark:text-pink-300",
+  "text-cyan-700 dark:text-cyan-300",
+  "text-yellow-700 dark:text-yellow-300",
+  "text-red-700 dark:text-red-300",
+];
+
 function getHabitColor(habitId: number, habitIds: number[]): string {
   const index = habitIds.indexOf(habitId);
   return HABIT_COLORS[index % HABIT_COLORS.length];
 }
 
+function getHabitLightColor(habitId: number, habitIds: number[]): string {
+  const index = habitIds.indexOf(habitId);
+  return HABIT_COLORS_LIGHT[index % HABIT_COLORS_LIGHT.length];
+}
+
+function getHabitTextColor(habitId: number, habitIds: number[]): string {
+  const index = habitIds.indexOf(habitId);
+  return HABIT_TEXT_COLORS[index % HABIT_TEXT_COLORS.length];
+}
+
+const RESOURCE_ICONS: Record<string, typeof BookOpen> = {
+  article: BookOpen,
+  book: BookOpen,
+  video: Play,
+  course: BookOpen,
+  blog: BookOpen,
+  tool: ExternalLink,
+};
+
 export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRoutineSessionProps) {
   const [phase, setPhase] = useState<Phase>("checklist");
   const [checklist, setChecklist] = useState(ROUTINE_CHECKLIST);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [taskNotes, setTaskNotes] = useState("");
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [skippedTasks, setSkippedTasks] = useState<string[]>([]);
   const [allTaskNotes, setAllTaskNotes] = useState<TaskNote[]>([]);
-  const [sessionStartTime] = useState<Date>(new Date());
 
   const [taskTimerRunning, setTaskTimerRunning] = useState(false);
   const [taskTimeElapsed, setTaskTimeElapsed] = useState(0);
@@ -83,16 +125,27 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
 
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
+  const [showResources, setShowResources] = useState(false);
+  const [showSteps, setShowSteps] = useState(true);
+  const [pendingTransition, setPendingTransition] = useState<UnifiedPlanTransition | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
   const unifiedPlan = (stack as any)?.unifiedPlan;
   const tasks: UnifiedPlanTask[] = unifiedPlan?.tasks || [];
+  const transitions: UnifiedPlanTransition[] = unifiedPlan?.transitions || [];
   const currentTask = tasks[currentTaskIndex];
   const today = format(new Date(), "yyyy-MM-dd");
 
   const uniqueHabitIds = Array.from(new Set(tasks.map(t => t.habitId)));
+
+  const totalStepsAllTasks = tasks.reduce((sum, t) => sum + Math.max(1, (t.steps?.length || 0)), 0);
+  const completedStepsCount = completedSteps.length;
+  const overallProgress = totalStepsAllTasks > 0 ? (completedStepsCount / totalStepsAllTasks) * 100 : 0;
+
+  const currentHabitTasksCount = currentTask ? tasks.filter(t => t.habitId === currentTask.habitId).length : 0;
+  const currentHabitTaskIndex = currentTask ? tasks.filter(t => t.habitId === currentTask.habitId && t.order <= currentTask.order).length : 0;
 
   const completeRoutineMutation = useMutation({
     mutationFn: async ({ finalNotes, finalCompletedCount }: { finalNotes: TaskNote[]; finalCompletedCount: number }) => {
@@ -157,7 +210,9 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
       setPhase("checklist");
       setChecklist(ROUTINE_CHECKLIST.map(c => ({ ...c, checked: false })));
       setCurrentTaskIndex(0);
+      setCurrentStepIndex(0);
       setCompletedTasks([]);
+      setCompletedSteps([]);
       setSkippedTasks([]);
       setAllTaskNotes([]);
       setTaskNotes("");
@@ -166,6 +221,9 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
       setTaskTimerStartTime(null);
       setSessionSummary(null);
       setShowEndEarlyConfirm(false);
+      setShowResources(false);
+      setShowSteps(true);
+      setPendingTransition(null);
     }
   }, [open]);
 
@@ -173,6 +231,9 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     setTaskTimeElapsed(0);
     setTaskTimerRunning(false);
     setTaskTimerStartTime(null);
+    setCurrentStepIndex(0);
+    setShowResources(false);
+    setShowSteps(true);
   }, [currentTaskIndex]);
 
   useEffect(() => {
@@ -216,7 +277,13 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     }
   };
 
-  const handleCompleteTask = () => {
+  const toggleStep = (stepId: string) => {
+    setCompletedSteps(prev =>
+      prev.includes(stepId) ? prev.filter(s => s !== stepId) : [...prev, stepId]
+    );
+  };
+
+  const moveToNextTask = () => {
     if (!currentTask) return;
     setTaskTimerRunning(false);
 
@@ -239,6 +306,18 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     }
 
     if (currentTaskIndex < tasks.length - 1) {
+      const nextTask = tasks[currentTaskIndex + 1];
+      if (nextTask.habitId !== currentTask.habitId) {
+        const transition = transitions.find(
+          t => t.fromHabitId === currentTask.habitId && t.toHabitId === nextTask.habitId
+        );
+        if (transition) {
+          setPendingTransition(transition);
+          setPhase("transition");
+          setCurrentTaskIndex(prev => prev + 1);
+          return;
+        }
+      }
       setCurrentTaskIndex(prev => prev + 1);
     } else {
       const finalNotes = [...allTaskNotes, currentTaskNote];
@@ -267,6 +346,18 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     setTaskNotes("");
 
     if (currentTaskIndex < tasks.length - 1) {
+      const nextTask = tasks[currentTaskIndex + 1];
+      if (currentTask && nextTask.habitId !== currentTask.habitId) {
+        const transition = transitions.find(
+          t => t.fromHabitId === currentTask.habitId && t.toHabitId === nextTask.habitId
+        );
+        if (transition) {
+          setPendingTransition(transition);
+          setPhase("transition");
+          setCurrentTaskIndex(prev => prev + 1);
+          return;
+        }
+      }
       setCurrentTaskIndex(prev => prev + 1);
     } else {
       const finalNotes = currentTaskNote && (taskTimeElapsed > 0 || taskNotes.trim())
@@ -303,13 +394,16 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     onOpenChange(false);
   };
 
+  const handleContinueAfterTransition = () => {
+    setPendingTransition(null);
+    setPhase("tasks");
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const totalSessionTime = allTaskNotes.reduce((sum, n) => sum + n.timeSpent, 0) + taskTimeElapsed;
 
   const getHabitStats = () => {
     const stats: Record<number, { title: string; completed: number; total: number; time: number }> = {};
@@ -332,6 +426,9 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
 
   const nextTask = currentTaskIndex < tasks.length - 1 ? tasks[currentTaskIndex + 1] : null;
   const isTransitioningHabits = nextTask && currentTask && nextTask.habitId !== currentTask.habitId;
+  const currentSteps = currentTask?.steps || [];
+  const currentResources = currentTask?.resources || [];
+  const allCurrentStepsComplete = currentSteps.length > 0 && currentSteps.every(s => completedSteps.includes(s.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -345,12 +442,13 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
             </div>
             <div className="min-w-0">
               <span className="truncate block">{stack.name}</span>
-              <span className="text-xs font-normal text-muted-foreground">Unified Routine</span>
+              <span className="text-xs font-normal text-muted-foreground">Guided Routine</span>
             </div>
           </DialogTitle>
         </DialogHeader>
 
         <AnimatePresence mode="wait">
+          {/* ==================== CHECKLIST PHASE ==================== */}
           {phase === "checklist" && (
             <motion.div
               key="checklist"
@@ -360,21 +458,33 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
               className="space-y-4"
             >
               <p className="text-muted-foreground">
-                Your routine has <strong>{tasks.length} tasks</strong> across{" "}
+                Your routine has <strong>{tasks.length} guided steps</strong> across{" "}
                 <strong>{uniqueHabitIds.length} habits</strong>.
                 {unifiedPlan?.totalDuration && (
                   <> Estimated time: <strong>~{unifiedPlan.totalDuration} min</strong>.</>
                 )}
               </p>
 
+              {unifiedPlan?.overview && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <p className="text-sm leading-relaxed">{unifiedPlan.overview}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="flex flex-wrap gap-1.5">
                 {uniqueHabitIds.map((habitId) => {
-                  const task = tasks.find(t => t.habitId === habitId);
+                  const habitTasks = tasks.filter(t => t.habitId === habitId);
+                  const task = habitTasks[0];
                   const color = getHabitColor(habitId, uniqueHabitIds);
                   return (
                     <Badge key={habitId} variant="outline" className="gap-1.5 text-xs">
                       <div className={cn("w-2 h-2 rounded-full", color)} />
-                      {task?.habitTitle || "Habit"}
+                      {task?.habitTitle || "Habit"} ({habitTasks.length} steps)
                     </Badge>
                   );
                 })}
@@ -391,7 +501,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                   {checklist.map((item) => (
                     <label
                       key={item.id}
-                      className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors hover-elevate"
+                      className="flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors hover-elevate"
                       data-testid={`checklist-item-${item.id}`}
                     >
                       <Checkbox
@@ -425,41 +535,104 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                   data-testid="button-begin-routine"
                 >
                   <Play className="w-4 h-4" />
-                  Start Routine
+                  Begin Routine
                 </Button>
               </div>
             </motion.div>
           )}
 
+          {/* ==================== TRANSITION PHASE ==================== */}
+          {phase === "transition" && pendingTransition && (
+            <motion.div
+              key="transition"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-5 py-4"
+            >
+              <div className="text-center space-y-3">
+                <div className="flex items-center justify-center gap-3">
+                  <Badge variant="outline" className="gap-1.5">
+                    <div className={cn("w-2 h-2 rounded-full", getHabitColor(pendingTransition.fromHabitId, uniqueHabitIds))} />
+                    {pendingTransition.fromHabitTitle}
+                  </Badge>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  <Badge variant="outline" className="gap-1.5">
+                    <div className={cn("w-2 h-2 rounded-full", getHabitColor(pendingTransition.toHabitId, uniqueHabitIds))} />
+                    {pendingTransition.toHabitTitle}
+                  </Badge>
+                </div>
+
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", duration: 0.6 }}
+                  className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mx-auto"
+                >
+                  <ArrowRight className="w-6 h-6 text-primary" />
+                </motion.div>
+
+                <h3 className="text-lg font-display font-bold">Switching Gears</h3>
+              </div>
+
+              <Card className={cn("border", getHabitLightColor(pendingTransition.toHabitId, uniqueHabitIds))}>
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-sm leading-relaxed">{pendingTransition.message}</p>
+                  {pendingTransition.tip && (
+                    <div className="flex items-start gap-2 pt-2 border-t">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground italic">{pendingTransition.tip}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Button
+                onClick={handleContinueAfterTransition}
+                className="w-full gap-2 h-12 text-base font-semibold"
+                data-testid="button-continue-after-transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+                Continue to {pendingTransition.toHabitTitle}
+              </Button>
+            </motion.div>
+          )}
+
+          {/* ==================== TASKS PHASE ==================== */}
           {phase === "tasks" && currentTask && (
             <motion.div
               key={`task-${currentTaskIndex}`}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
+              className="space-y-3"
             >
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-xs">
                     Step {currentTaskIndex + 1} of {tasks.length}
                   </Badge>
-                  <Badge variant="outline" className="gap-1">
+                  <Badge variant="outline" className="gap-1 text-xs">
                     <div className={cn("w-2 h-2 rounded-full", getHabitColor(currentTask.habitId, uniqueHabitIds))} />
-                    {currentTask.habitTitle}
+                    {currentTask.habitTitle} ({currentHabitTaskIndex}/{currentHabitTasksCount})
                   </Badge>
                 </div>
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 text-xs">
                   <Clock className="w-3 h-3" />
                   {currentTask.duration}m
                 </Badge>
               </div>
 
-              <Progress value={((currentTaskIndex + 1) / tasks.length) * 100} className="h-2" />
+              <div className="space-y-1">
+                <Progress value={overallProgress} className="h-1.5" />
+                <p className="text-[10px] text-muted-foreground text-right">
+                  {Math.round(overallProgress)}% overall
+                </p>
+              </div>
 
-              <Card>
-                <CardContent className="p-5 space-y-3">
-                  <h3 className="text-lg font-display font-bold" data-testid="text-current-routine-task">
+              <Card className={cn("border", getHabitLightColor(currentTask.habitId, uniqueHabitIds))}>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className={cn("text-lg font-display font-bold", getHabitTextColor(currentTask.habitId, uniqueHabitIds))} data-testid="text-current-routine-task">
                     {currentTask.title}
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-current-routine-description">
@@ -468,8 +641,124 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                 </CardContent>
               </Card>
 
+              {currentTask.coachingTip && (
+                <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                  <Lightbulb className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-0.5">Coaching Tip</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">{currentTask.coachingTip}</p>
+                  </div>
+                </div>
+              )}
+
+              {currentSteps.length > 0 && (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setShowSteps(prev => !prev)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground w-full"
+                    data-testid="button-toggle-steps"
+                  >
+                    {showSteps ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    Sub-steps ({completedSteps.filter(s => currentSteps.some(cs => cs.id === s)).length}/{currentSteps.length})
+                  </button>
+                  {showSteps && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      className="space-y-1.5"
+                    >
+                      {currentSteps.map((step, i) => {
+                        const isStepDone = completedSteps.includes(step.id);
+                        return (
+                          <div
+                            key={step.id}
+                            className={cn(
+                              "rounded-md border p-3 transition-colors",
+                              isStepDone ? "bg-muted/40 border-muted" : "hover-elevate"
+                            )}
+                          >
+                            <label className="flex items-start gap-2.5 cursor-pointer" data-testid={`step-${step.id}`}>
+                              <Checkbox
+                                checked={isStepDone}
+                                onCheckedChange={() => toggleStep(step.id)}
+                                className="mt-0.5"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className={cn(
+                                  "text-sm font-medium transition-colors",
+                                  isStepDone && "line-through text-muted-foreground"
+                                )}>
+                                  {step.title}
+                                  {step.duration > 0 && (
+                                    <span className="text-muted-foreground font-normal ml-1">({step.duration}m)</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{step.description}</p>
+                                {step.coachingTip && !isStepDone && (
+                                  <div className="flex items-start gap-1.5 mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+                                    <Lightbulb className="w-3 h-3 mt-0.5 shrink-0" />
+                                    <span className="italic">{step.coachingTip}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {currentResources.length > 0 && (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setShowResources(prev => !prev)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground w-full"
+                    data-testid="button-toggle-resources"
+                  >
+                    {showResources ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    Resources ({currentResources.length})
+                  </button>
+                  {showResources && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      className="space-y-1.5"
+                    >
+                      {currentResources.map((resource, i) => {
+                        const ResourceIcon = RESOURCE_ICONS[resource.type] || ExternalLink;
+                        const url = (resource as any).url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
+                        return (
+                          <a
+                            key={i}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2.5 p-2.5 rounded-md border hover-elevate transition-colors group"
+                            data-testid={`resource-${i}`}
+                          >
+                            <ResourceIcon className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium group-hover:text-primary transition-colors flex items-center gap-1">
+                                {resource.name}
+                                <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
+                            </div>
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              {resource.type}
+                            </Badge>
+                          </a>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <Button
@@ -501,12 +790,12 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                 </CardContent>
               </Card>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Notes (optional)</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Notes (optional)</label>
                 <Textarea
                   value={taskNotes}
                   onChange={(e) => setTaskNotes(e.target.value)}
-                  placeholder="How did this task go?"
+                  placeholder="How did this step go? Any observations?"
                   className="resize-none text-sm"
                   rows={2}
                   data-testid="input-routine-task-notes"
@@ -514,13 +803,13 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
               </div>
 
               {nextTask && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 rounded-md bg-muted/30">
                   <ArrowRight className="w-3 h-3 shrink-0" />
                   <span>
                     Next: <strong>{nextTask.title}</strong>
                     {isTransitioningHabits && (
                       <span className="ml-1">
-                        (switching to <span className="text-primary">{nextTask.habitTitle}</span>)
+                        (switching to <span className={getHabitTextColor(nextTask.habitId, uniqueHabitIds)}>{nextTask.habitTitle}</span>)
                       </span>
                     )}
                   </span>
@@ -528,7 +817,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
               )}
 
               <Button
-                onClick={handleCompleteTask}
+                onClick={moveToNextTask}
                 className="w-full gap-2 h-12 text-base font-semibold"
                 data-testid="button-finish-routine-task"
               >
@@ -547,7 +836,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                   Skip
                 </Button>
                 {showEndEarlyConfirm ? (
-                  <div className="flex-1 flex items-center gap-2 p-2 rounded-lg border border-destructive/30 bg-destructive/5">
+                  <div className="flex-1 flex items-center gap-2 p-2 rounded-md border border-destructive/30 bg-destructive/5">
                     <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
                     <span className="text-xs">End now?</span>
                     <Button
@@ -583,6 +872,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
             </motion.div>
           )}
 
+          {/* ==================== COMPLETE PHASE ==================== */}
           {phase === "complete" && (
             <motion.div
               key="complete"
@@ -598,168 +888,131 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                   className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto shadow-xl shadow-primary/20"
                 >
                   <motion.div
-                    animate={{ rotate: [0, 10, -10, 10, 0], scale: [1, 1.1, 1] }}
-                    transition={{ repeat: 2, duration: 0.5 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
                   >
-                    <PartyPopper className="w-8 h-8 text-primary" />
+                    <PartyPopper className="w-7 h-7 text-primary" />
                   </motion.div>
                 </motion.div>
 
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1, 0.5],
-                      x: Math.cos(i * 60 * Math.PI / 180) * 50,
-                      y: Math.sin(i * 60 * Math.PI / 180) * 50,
-                    }}
-                    transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
-                    className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-r from-primary to-accent"
-                  />
-                ))}
-              </div>
-
-              <div className="text-center">
-                <motion.h3
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-xl font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+                  className="mt-3"
                 >
-                  Routine Complete!
-                </motion.h3>
-                <p className="text-sm text-muted-foreground mt-1">{stack.name}</p>
+                  <h3 className="text-xl font-display font-bold" data-testid="text-routine-complete-title">Routine Complete!</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You completed <strong>{completedTasks.length}</strong> of <strong>{tasks.length}</strong> steps
+                  </p>
+                </motion.div>
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="grid grid-cols-3 gap-2"
-              >
-                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <p className="text-xl font-bold text-primary">{completedTasks.length}/{tasks.length}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Tasks Done</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <p className="text-xl font-bold text-primary">
-                    {totalSessionTime >= 60 ? `${Math.floor(totalSessionTime / 60)}m` : `${totalSessionTime}s`}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Total Time</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <p className="text-xl font-bold text-primary">{uniqueHabitIds.length}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Habits</p>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-2"
-              >
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Per Habit Breakdown</p>
-                {getHabitStats().map((stat) => (
-                  <div key={stat.habitId} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", getHabitColor(stat.habitId, uniqueHabitIds))} />
-                      <span className="text-sm font-medium truncate">{stat.title}</span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant="outline" className="text-[10px]">
-                        {stat.completed}/{stat.total}
-                      </Badge>
-                      {stat.time > 0 && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {stat.time >= 60 ? `${Math.floor(stat.time / 60)}m` : `${stat.time}s`}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
+              <div className="grid grid-cols-3 gap-2 text-center">
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-primary" />
-                      AI Session Review
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {generateSummaryMutation.isPending ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Analyzing your routine...
-                      </div>
-                    ) : sessionSummary ? (
-                      <div className="space-y-3">
-                        <p className="text-sm">{sessionSummary.summary}</p>
-
-                        {sessionSummary.insights && sessionSummary.insights.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Insights</p>
-                            <ul className="space-y-1.5">
-                              {sessionSummary.insights.map((insight, i) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <Lightbulb className="w-3 h-3 text-yellow-500 mt-1 flex-shrink-0" />
-                                  {insight}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tips</p>
-                            <ul className="space-y-1.5">
-                              {sessionSummary.performanceTips.map((tip, i) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                                  {tip}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        <div className="pt-2 border-t">
-                          <p className="text-sm italic text-primary">{sessionSummary.encouragement}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Great job completing your routine!
-                      </p>
-                    )}
+                  <CardContent className="p-3">
+                    <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-completed-count">
+                      {completedTasks.length}/{tasks.length}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Steps Done</p>
                   </CardContent>
                 </Card>
-              </motion.div>
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-habits-count">
+                      {uniqueHabitIds.length}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Habits</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-time">
+                      {Math.round(allTaskNotes.reduce((s, n) => s + n.timeSpent, 0) / 60)}m
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Time</p>
+                  </CardContent>
+                </Card>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-              >
-                <Button
-                  onClick={handleFinishSession}
-                  size="lg"
-                  className="w-full gap-2 rounded-xl shadow-lg shadow-primary/20"
-                  data-testid="button-finish-routine"
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Per-Habit Breakdown</p>
+                {getHabitStats().map((stat) => (
+                  <div key={stat.habitId} className="flex items-center gap-2 text-sm">
+                    <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", getHabitColor(stat.habitId, uniqueHabitIds))} />
+                    <span className="font-medium truncate flex-1">{stat.title}</span>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                      {stat.completed}/{stat.total} steps
+                    </span>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                      {Math.round(stat.time / 60)}m
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {generateSummaryMutation.isPending && (
+                <div className="flex items-center gap-3 p-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">Your AI coach is reviewing your routine...</p>
+                    <p className="text-xs text-muted-foreground">Analyzing performance across all habits</p>
+                  </div>
+                </div>
+              )}
+
+              {sessionSummary && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                 >
-                  <Check className="w-5 h-5" />
-                  Done
-                </Button>
-              </motion.div>
+                  <Card>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Brain className="w-4 h-4 text-primary" />
+                        AI Coach Summary
+                      </div>
+                      <p className="text-sm leading-relaxed" data-testid="text-routine-ai-summary">{sessionSummary.summary}</p>
+                      {sessionSummary.insights && sessionSummary.insights.length > 0 && (
+                        <div className="space-y-1.5">
+                          {sessionSummary.insights.map((insight, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                              <Sparkles className="w-3 h-3 text-primary mt-0.5 shrink-0" />
+                              <span>{insight}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
+                        <div className="space-y-1.5 pt-2 border-t">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
+                          {sessionSummary.performanceTips.map((tip, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                              <Lightbulb className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
+                              <span>{tip}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {sessionSummary.encouragement && (
+                        <p className="text-sm italic text-muted-foreground pt-2 border-t" data-testid="text-routine-encouragement">
+                          {sessionSummary.encouragement}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              <Button
+                onClick={handleFinishSession}
+                className="w-full h-12 gap-2 text-base font-semibold"
+                data-testid="button-close-routine-session"
+              >
+                <Check className="w-5 h-5" />
+                Done
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
