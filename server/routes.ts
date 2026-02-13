@@ -1122,9 +1122,14 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       plan.generatedAt = new Date().toISOString();
 
       if (!plan.transitions) plan.transitions = [];
+      for (const tr of plan.transitions) {
+        if (tr.fromHabitId) tr.fromHabitId = Number(tr.fromHabitId);
+        if (tr.toHabitId) tr.toHabitId = Number(tr.toHabitId);
+      }
       if (!plan.tasks) plan.tasks = [];
 
       for (const task of plan.tasks) {
+        if (task.habitId) task.habitId = Number(task.habitId);
         if (!task.steps) task.steps = [];
         if (task.resources && Array.isArray(task.resources)) {
           task.resources = task.resources.map((r: any) => {
@@ -1169,11 +1174,13 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       if (taskBreakdown && Array.isArray(taskBreakdown)) {
         for (const t of taskBreakdown) {
-          if (!habitTimeMap[t.habitId]) habitTimeMap[t.habitId] = 0;
-          if (!habitTaskMap[t.habitId]) habitTaskMap[t.habitId] = { completed: 0, total: 0 };
-          habitTimeMap[t.habitId] += Math.max(0, Math.round((t.timeSpent || 0) / 60));
-          habitTaskMap[t.habitId].total++;
-          if (t.completed) habitTaskMap[t.habitId].completed++;
+          const hid = Number(t.habitId);
+          if (!hid || isNaN(hid)) continue;
+          if (!habitTimeMap[hid]) habitTimeMap[hid] = 0;
+          if (!habitTaskMap[hid]) habitTaskMap[hid] = { completed: 0, total: 0 };
+          habitTimeMap[hid] += Math.max(0, Math.round((t.timeSpent || 0) / 60));
+          habitTaskMap[hid].total++;
+          if (t.completed) habitTaskMap[hid].completed++;
         }
       }
 
