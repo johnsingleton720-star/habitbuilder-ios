@@ -24,6 +24,7 @@ import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
 import CoachChat from "@/pages/CoachChat";
+import StackDetail from "@/pages/StackDetail";
 import PublicTemplates from "@/pages/PublicTemplates";
 import BlogList from "@/pages/BlogList";
 import BlogArticle from "@/pages/BlogArticle";
@@ -111,6 +112,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/habit/:id" component={HabitDetail} />
+      <Route path="/stack/:id" component={StackDetail} />
       <Route path="/progress/:view" component={Progress} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/accountability" component={Accountability} />

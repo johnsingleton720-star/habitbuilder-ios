@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Link } from "wouter";
 import type { HabitStack, Habit } from "@shared/schema";
@@ -241,6 +241,12 @@ function StackItem({
             )}
             {plan ? "Refresh AI Tips" : "AI Tips"}
           </Button>
+          <Link href={`/stack/${stack.id}`}>
+            <Button variant="ghost" size="sm" data-testid={`button-view-stack-${stack.id}`}>
+              <BarChart3 className="w-3.5 h-3.5 mr-1" />
+              Details
+            </Button>
+          </Link>
           <Button variant="ghost" size="sm" onClick={onEdit} data-testid={`button-edit-stack-${stack.id}`}>
             Edit
           </Button>
