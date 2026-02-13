@@ -10,6 +10,8 @@ import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
+import { GamificationDisplay } from "@/components/GamificationDisplay";
+import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2 } from "lucide-react";
@@ -237,16 +239,45 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {/* Daily Quote */}
-        <motion.section 
+        {/* Gamification - XP, Levels, Daily Challenges */}
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
+          <GamificationDisplay />
+        </motion.section>
+
+        {/* Mood Tracker */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+        >
+          <MoodTracker />
+        </motion.section>
+
+        {/* Daily Quote */}
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           <DailyQuote />
         </motion.section>
 
-        {/* Habits Section */}
+        {/* Achievements (compact) */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <AchievementsDisplay compact />
+          </motion.section>
+        )}
+
+        {/* Habits Section - Bottom, Collapsible */}
         <section className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -314,17 +345,6 @@ export default function Dashboard() {
             </motion.div>
           )}
         </section>
-
-        {/* Achievements (compact) */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <AchievementsDisplay compact />
-          </motion.section>
-        )}
 
         {/* Habit Stacks Section (Premium) */}
         {features.hasHabitStacking && habitStacks && habitStacks.length > 0 && (
