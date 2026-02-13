@@ -818,6 +818,185 @@ export async function registerRoutes(
     }
   });
 
+  // ==========================================
+  // HABIT STACKS (Premium feature)
+  // ==========================================
+
+  app.get("/api/habit-stacks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stacks = await storage.getHabitStacks(userId);
+      res.json(stacks);
+    } catch (error) {
+      console.error("Error fetching habit stacks:", error);
+      res.status(500).json({ error: "Failed to fetch habit stacks" });
+    }
+  });
+
+  app.get("/api/habit-stacks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const stack = await storage.getHabitStack(stackId, userId);
+      if (!stack) return res.status(404).json({ error: "Stack not found" });
+      res.json(stack);
+    } catch (error) {
+      console.error("Error fetching habit stack:", error);
+      res.status(500).json({ error: "Failed to fetch habit stack" });
+    }
+  });
+
+  app.post("/api/habit-stacks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium');
+      if (!isPremium) {
+        return res.status(403).json({ error: "Habit stacking requires a Premium subscription" });
+      }
+
+      const { name, description, habitIds, scheduledTime, icon, color } = req.body;
+      if (!name || !habitIds || !Array.isArray(habitIds) || habitIds.length < 2) {
+        return res.status(400).json({ error: "A stack needs a name and at least 2 habits" });
+      }
+
+      const userHabits = await storage.getHabits(userId);
+      const validIds = habitIds.filter((id: number) => userHabits.some(h => h.id === id && !h.archived));
+      if (validIds.length < 2) {
+        return res.status(400).json({ error: "At least 2 active habits are required" });
+      }
+
+      const habitOrder = validIds.map((id: number, index: number) => {
+        const habit = userHabits.find(h => h.id === id);
+        return { habitId: id, habitTitle: habit?.title || "", order: index };
+      });
+
+      const stack = await storage.createHabitStack(userId, {
+        name,
+        description: description || null,
+        habitIds: validIds,
+        habitOrder,
+        scheduledTime: scheduledTime || null,
+        icon: icon || "Layers",
+        color: color || "primary",
+      });
+
+      res.json(stack);
+    } catch (error) {
+      console.error("Error creating habit stack:", error);
+      res.status(500).json({ error: "Failed to create habit stack" });
+    }
+  });
+
+  app.patch("/api/habit-stacks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const existing = await storage.getHabitStack(stackId, userId);
+      if (!existing) return res.status(404).json({ error: "Stack not found" });
+
+      const { name, description, habitIds, habitOrder, scheduledTime, icon, color } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (description !== undefined) updates.description = description;
+      if (scheduledTime !== undefined) updates.scheduledTime = scheduledTime;
+      if (icon !== undefined) updates.icon = icon;
+      if (color !== undefined) updates.color = color;
+      if (habitIds !== undefined) {
+        updates.habitIds = habitIds;
+        if (habitOrder) {
+          updates.habitOrder = habitOrder;
+        } else {
+          const userHabits = await storage.getHabits(userId);
+          updates.habitOrder = habitIds.map((id: number, index: number) => {
+            const habit = userHabits.find(h => h.id === id);
+            return { habitId: id, habitTitle: habit?.title || "", order: index };
+          });
+        }
+      }
+
+      const updated = await storage.updateHabitStack(stackId, userId, updates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating habit stack:", error);
+      res.status(500).json({ error: "Failed to update habit stack" });
+    }
+  });
+
+  app.delete("/api/habit-stacks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const existing = await storage.getHabitStack(stackId, userId);
+      if (!existing) return res.status(404).json({ error: "Stack not found" });
+
+      await storage.deleteHabitStack(stackId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting habit stack:", error);
+      res.status(500).json({ error: "Failed to delete habit stack" });
+    }
+  });
+
+  app.post("/api/habit-stacks/:id/generate-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const stack = await storage.getHabitStack(stackId, userId);
+      if (!stack) return res.status(404).json({ error: "Stack not found" });
+
+      const userHabits = await storage.getHabits(userId);
+      const stackHabits = (stack.habitOrder as any[]).map((item: any) => {
+        const habit = userHabits.find(h => h.id === item.habitId);
+        return habit;
+      }).filter(Boolean);
+
+      if (stackHabits.length < 2) {
+        return res.status(400).json({ error: "Need at least 2 valid habits in the stack" });
+      }
+
+      const habitDescriptions = stackHabits.map((h: any, i: number) =>
+        `${i + 1}. "${h.title}" - ${h.description || h.goal || "No description"} (${h.totalTimeSpent || 0} minutes spent so far, streak: ${h.currentStreak || 0} days)`
+      ).join("\n");
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are an expert habit coach specializing in habit stacking. 
+Generate a structured plan for transitioning smoothly between habits in a stack.
+Return valid JSON with this structure:
+{
+  "overview": "Brief description of why these habits work well together",
+  "totalDuration": <estimated total minutes>,
+  "transitions": [
+    { "fromHabitId": <id>, "toHabitId": <id>, "note": "How to transition smoothly between these habits" }
+  ],
+  "tips": ["Tip 1", "Tip 2", "Tip 3"]
+}
+SAFETY: Never generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.`
+        }, {
+          role: "user",
+          content: `Create a habit stacking plan for this stack called "${stack.name}":\n\n${habitDescriptions}\n\nThe user wants to do these habits in sequence. Generate transition advice between each pair of consecutive habits and overall tips.`
+        }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const planContent = response.choices[0]?.message?.content;
+      if (!planContent) {
+        return res.status(500).json({ error: "Failed to generate plan" });
+      }
+
+      const plan = JSON.parse(planContent);
+      const updated = await storage.updateHabitStack(stackId, userId, { stackPlan: plan });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error generating stack plan:", error);
+      res.status(500).json({ error: "Failed to generate stack plan" });
+    }
+  });
+
   // Motivational Quote Endpoint - Real quotes from famous people
   const realQuotes = [
     { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },

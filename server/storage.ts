@@ -1,4 +1,4 @@
-import { habits, users, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry } from "@shared/schema";
+import { habits, users, habitStacks, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry, type HabitStack, type InsertHabitStack } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -26,6 +26,11 @@ export interface IStorage {
   linkHabit(id: number, userId: string, linkedHabitId: number): Promise<Habit | undefined>;
   unlinkHabit(id: number, userId: string): Promise<Habit | undefined>;
   getUser(userId: string): Promise<User | undefined>;
+  getHabitStacks(userId: string): Promise<HabitStack[]>;
+  getHabitStack(id: number, userId: string): Promise<HabitStack | undefined>;
+  createHabitStack(userId: string, stack: InsertHabitStack): Promise<HabitStack>;
+  updateHabitStack(id: number, userId: string, updates: Partial<InsertHabitStack>): Promise<HabitStack | undefined>;
+  deleteHabitStack(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -82,6 +87,29 @@ export class DatabaseStorage implements IStorage {
   async getUser(userId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     return user;
+  }
+
+  async getHabitStacks(userId: string): Promise<HabitStack[]> {
+    return await db.select().from(habitStacks).where(eq(habitStacks.userId, userId));
+  }
+
+  async getHabitStack(id: number, userId: string): Promise<HabitStack | undefined> {
+    const [stack] = await db.select().from(habitStacks).where(and(eq(habitStacks.id, id), eq(habitStacks.userId, userId)));
+    return stack;
+  }
+
+  async createHabitStack(userId: string, stack: InsertHabitStack): Promise<HabitStack> {
+    const [created] = await db.insert(habitStacks).values({ ...stack, userId }).returning();
+    return created;
+  }
+
+  async updateHabitStack(id: number, userId: string, updates: Partial<InsertHabitStack>): Promise<HabitStack | undefined> {
+    const [updated] = await db.update(habitStacks).set({ ...updates, updatedAt: new Date() }).where(and(eq(habitStacks.id, id), eq(habitStacks.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteHabitStack(id: number, userId: string): Promise<void> {
+    await db.delete(habitStacks).where(and(eq(habitStacks.id, id), eq(habitStacks.userId, userId)));
   }
 }
 
