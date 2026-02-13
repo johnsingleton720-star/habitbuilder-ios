@@ -651,6 +651,45 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                 </div>
               )}
 
+              {currentResources.length > 0 && (
+                <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-semibold">Recommended Resources</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {currentResources.map((resource, i) => {
+                        const ResourceIcon = RESOURCE_ICONS[resource.type] || ExternalLink;
+                        const url = resource.url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
+                        return (
+                          <a
+                            key={i}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2.5 p-2.5 rounded-md bg-background border hover-elevate transition-colors group"
+                            data-testid={`resource-${i}`}
+                          >
+                            <ResourceIcon className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium group-hover:text-primary transition-colors flex items-center gap-1">
+                                {resource.name}
+                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
+                            </div>
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              {resource.type}
+                            </Badge>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {currentSteps.length > 0 && (
                 <div className="space-y-1">
                   <button
@@ -703,54 +742,6 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                               </div>
                             </label>
                           </div>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </div>
-              )}
-
-              {currentResources.length > 0 && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setShowResources(prev => !prev)}
-                    className="flex items-center gap-2 text-sm font-semibold w-full"
-                    data-testid="button-toggle-resources"
-                  >
-                    <BookOpen className="w-4 h-4 text-primary" />
-                    Recommended Resources ({currentResources.length})
-                    {showResources ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />}
-                  </button>
-                  {showResources && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      className="space-y-1.5"
-                    >
-                      {currentResources.map((resource, i) => {
-                        const ResourceIcon = RESOURCE_ICONS[resource.type] || ExternalLink;
-                        const url = resource.url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
-                        return (
-                          <a
-                            key={i}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-start gap-2.5 p-2.5 rounded-md border hover-elevate transition-colors group"
-                            data-testid={`resource-${i}`}
-                          >
-                            <ResourceIcon className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium group-hover:text-primary transition-colors flex items-center gap-1">
-                                {resource.name}
-                                <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
-                            </div>
-                            <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {resource.type}
-                            </Badge>
-                          </a>
                         );
                       })}
                     </motion.div>
