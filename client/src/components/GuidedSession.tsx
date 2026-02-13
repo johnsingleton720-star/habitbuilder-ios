@@ -16,10 +16,18 @@ import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
 import { VoiceNote } from "./VoiceNote";
 
+interface NextInStackInfo {
+  habitId: number;
+  habitTitle: string;
+  transitionNote?: string;
+}
+
 interface GuidedSessionProps {
   habit: Habit;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  nextInStack?: NextInStackInfo | null;
+  onStartNextInStack?: (habitId: number) => void;
 }
 
 type Phase = "checklist" | "tasks" | "complete";
@@ -51,7 +59,7 @@ const INITIAL_CHECKLIST: ChecklistItem[] = [
   { id: 3, text: "I'm focused and ready to begin", checked: false },
 ];
 
-export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps) {
+export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartNextInStack }: GuidedSessionProps) {
   const [phase, setPhase] = useState<Phase>("checklist");
   const [checklist, setChecklist] = useState(INITIAL_CHECKLIST);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
@@ -794,15 +802,53 @@ export function GuidedSession({ habit, open, onOpenChange }: GuidedSessionProps)
                 </Card>
               </motion.div>
 
+              {nextInStack && onStartNextInStack && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.75 }}
+                >
+                  <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <ArrowRight className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Next in your stack</p>
+                          <p className="text-sm font-semibold truncate">{nextInStack.habitTitle}</p>
+                        </div>
+                      </div>
+                      {nextInStack.transitionNote && (
+                        <p className="text-xs text-muted-foreground italic pl-10">{nextInStack.transitionNote}</p>
+                      )}
+                      <Button
+                        onClick={() => {
+                          handleFinishSession();
+                          onStartNextInStack(nextInStack.habitId);
+                        }}
+                        size="lg"
+                        className="w-full gap-2 rounded-xl"
+                        data-testid="button-start-next-in-stack"
+                      >
+                        <Play className="w-4 h-4" />
+                        Start {nextInStack.habitTitle}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: nextInStack ? 0.95 : 0.8 }}
               >
                 <Button
                   onClick={handleFinishSession}
                   size="lg"
-                  className="w-full gap-2 rounded-xl shadow-lg shadow-primary/20"
+                  variant={nextInStack ? "outline" : "default"}
+                  className={cn("w-full gap-2 rounded-xl", !nextInStack && "shadow-lg shadow-primary/20")}
                   data-testid="button-finish-session"
                 >
                   <Check className="w-5 h-5" />

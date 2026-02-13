@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,21 @@ export default function HabitDetail() {
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();
   const { features } = useSubscription();
+  const [, navigate] = useLocation();
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.habitId === habitId) {
+        setSessionOpen(true);
+      }
+    };
+    window.addEventListener('auto-start-session', handler);
+    return () => window.removeEventListener('auto-start-session', handler);
+  }, [habitId]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
@@ -1149,6 +1161,23 @@ export default function HabitDetail() {
           habit={habit}
           open={sessionOpen}
           onOpenChange={setSessionOpen}
+          nextInStack={(() => {
+            const myStack = habitStacks?.find(s => (s.habitIds as number[])?.includes(habitId));
+            if (!myStack) return null;
+            const order = (myStack.habitOrder || []) as any[];
+            const myIdx = order.findIndex((o: any) => o.habitId === habitId);
+            if (myIdx < 0 || myIdx >= order.length - 1) return null;
+            const next = order[myIdx + 1];
+            const plan = myStack.stackPlan as any;
+            const transition = plan?.transitions?.find((t: any) => t.fromHabitId === habitId && t.toHabitId === next.habitId);
+            return { habitId: next.habitId, habitTitle: next.habitTitle, transitionNote: transition?.note };
+          })()}
+          onStartNextInStack={(nextId) => {
+            navigate(`/habit/${nextId}`);
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('auto-start-session', { detail: { habitId: nextId } }));
+            }, 500);
+          }}
         />
       )}
 
