@@ -120,7 +120,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-5xl space-y-8">
+      <div className="mx-auto max-w-5xl space-y-6">
         
         {/* Header */}
         <header className="flex items-center justify-between">
@@ -207,25 +207,25 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
-        {/* Daily Quote Hero Section */}
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <DailyQuote />
-        </motion.section>
-
-        {/* Today's Focus - What to work on now */}
+        {/* Today's Focus - Most important: what to do NOW */}
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
           >
             <TodaysFocus habits={activeHabits || []} />
           </motion.section>
         )}
+
+        {/* Quick Tasks */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <QuickTasks />
+        </motion.section>
 
         {/* Progress Summary */}
         {habits && habits.length > 0 && (
@@ -238,75 +238,14 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {/* Achievements (compact) */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <AchievementsDisplay compact />
-          </motion.section>
-        )}
-
-        {/* Gamification - XP, Levels, Daily Challenges */}
-        <motion.section
+        {/* Daily Quote */}
+        <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <GamificationDisplay />
+          <DailyQuote />
         </motion.section>
-
-        {/* Quick Tasks */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <QuickTasks />
-        </motion.section>
-
-        {/* Mood Tracker - Premium Feature */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-        >
-          <MoodTracker />
-        </motion.section>
-
-        {/* Habit Stacks Section (Premium) */}
-        {features.hasHabitStacking && habitStacks && habitStacks.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-          >
-            <Card data-testid="card-dashboard-stacks">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Link2 className="w-4 h-4 text-primary" />
-                  Your Habit Stacks
-                </CardTitle>
-                <CardDescription>
-                  Linked habits that flow into each other
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {habitStacks.map(({ from, to }) => (
-                  <Link key={from.id} href={`/habit/${from.id}`}>
-                    <div className="flex items-center gap-2 p-2 rounded-lg hover-elevate cursor-pointer" data-testid={`stack-${from.id}-${to.id}`}>
-                      <span className="text-sm font-medium truncate">{from.title}</span>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium truncate">{to.title}</span>
-                    </div>
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.section>
-        )}
 
         {/* Habits Section */}
         <section className="space-y-6">
@@ -336,7 +275,7 @@ export default function Dashboard() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-20 text-center bg-white/50 rounded-3xl border border-dashed border-border"
+              className="flex flex-col items-center justify-center py-20 text-center bg-card/50 rounded-3xl border border-dashed border-border"
             >
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Plus className="w-8 h-8 text-muted-foreground" />
@@ -357,6 +296,67 @@ export default function Dashboard() {
             </div>
           )}
         </section>
+
+        {/* Gamification - XP, Levels, Daily Challenges */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <GamificationDisplay />
+        </motion.section>
+
+        {/* Achievements (compact) */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <AchievementsDisplay compact />
+          </motion.section>
+        )}
+
+        {/* Mood Tracker */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <MoodTracker />
+        </motion.section>
+
+        {/* Habit Stacks Section (Premium) */}
+        {features.hasHabitStacking && habitStacks && habitStacks.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+          >
+            <Card data-testid="card-dashboard-stacks">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Link2 className="w-4 h-4 text-primary" />
+                  Your Habit Stacks
+                </CardTitle>
+                <CardDescription>
+                  Linked habits that flow into each other
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {habitStacks.map(({ from, to }) => (
+                  <Link key={from.id} href={`/habit/${from.id}`}>
+                    <div className="flex items-center gap-2 p-2 rounded-lg hover-elevate cursor-pointer" data-testid={`stack-${from.id}-${to.id}`}>
+                      <span className="text-sm font-medium truncate">{from.title}</span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm font-medium truncate">{to.title}</span>
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.section>
+        )}
       </div>
 
       <HabitFormDialog 

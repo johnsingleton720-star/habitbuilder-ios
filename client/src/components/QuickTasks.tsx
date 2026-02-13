@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import type { QuickTask } from "@shared/schema";
+import { useCompletionCelebration } from "./CompletionCelebration";
 
 export function QuickTasks() {
   const { toast } = useToast();
   const [newTitle, setNewTitle] = useState("");
   const today = format(new Date(), "yyyy-MM-dd");
+  const { celebrate, CelebrationOverlay } = useCompletionCelebration();
+  const lastToggleEvent = useRef<{ clientX?: number; clientY?: number } | undefined>(undefined);
 
   const { data: tasks = [] } = useQuery<QuickTask[]>({
     queryKey: ["/api/quick-tasks"],
@@ -39,8 +42,11 @@ export function QuickTasks() {
     mutationFn: async ({ id, completed }: { id: number; completed: boolean }) => {
       return await apiRequest("PATCH", `/api/quick-tasks/${id}`, { completed });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      if (variables.completed) {
+        celebrate(lastToggleEvent.current);
+      }
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update task", description: error.message, variant: "destructive" });
@@ -123,9 +129,12 @@ export function QuickTasks() {
               >
                 <Checkbox
                   checked={!!task.completed}
-                  onCheckedChange={(checked) =>
-                    toggleMutation.mutate({ id: task.id, completed: !!checked })
-                  }
+                  onCheckedChange={(checked) => {
+                    toggleMutation.mutate({ id: task.id, completed: !!checked });
+                  }}
+                  onClick={(e) => {
+                    lastToggleEvent.current = { clientX: e.clientX, clientY: e.clientY };
+                  }}
                   data-testid={`checkbox-quick-task-${task.id}`}
                 />
                 <span
@@ -157,6 +166,7 @@ export function QuickTasks() {
           </p>
         )}
       </CardContent>
+      <CelebrationOverlay />
     </Card>
   );
 }
