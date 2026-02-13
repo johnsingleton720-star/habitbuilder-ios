@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { startEmailScheduler } from './emailScheduler';
 
 const app = express();
 const httpServer = createServer(app);
@@ -129,6 +130,7 @@ app.use((req, res, next) => {
 (async () => {
   await initStripe();
   await registerRoutes(httpServer, app);
+  startEmailScheduler();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -335,11 +335,11 @@ export async function registerRoutes(
           
           for (const habit of userHabits) {
             if (habit.currentStreak && habit.currentStreak > maxStreak) maxStreak = habit.currentStreak;
-            const plan = habit.actionPlan as any;
-            if (plan?.daily) {
-              const dailyTasks = Array.isArray(plan.daily) ? plan.daily : [];
-              for (const task of dailyTasks.slice(0, 2)) {
-                todayTasks.push({ habitTitle: habit.title, taskTitle: typeof task === 'string' ? task : task.title || task.task || 'Check your plan' });
+            const plans = habit.dailyPlans as any[];
+            if (plans && Array.isArray(plans)) {
+              for (const plan of plans.slice(0, 2)) {
+                const taskTitle = typeof plan === 'string' ? plan : plan.title || plan.task || 'Check your plan';
+                todayTasks.push({ habitTitle: habit.title, taskTitle });
               }
             }
           }

@@ -103,9 +103,10 @@ The core system enables personalized habit coaching:
 -   Includes completion celebration micro-animation (particle burst effect via `CompletionCelebration.tsx`).
 
 ### Email Notifications
--   **Daily Morning Reminders**: Sends daily email with today's tasks and streak info. Opt-out via Account settings.
--   **Weekly Progress Digest**: Sunday summary with sessions completed, time invested, streaks, completion rate. Opt-out via Account settings.
--   **Admin Trigger**: `POST /api/admin/send-daily-reminders` to batch-send daily reminders.
+-   **Automatic Scheduler**: `server/emailScheduler.ts` runs every 15 minutes, checking each user's timezone and preferred reminder time.
+-   **Daily Morning Reminders**: Automatically sent at each user's preferred time (default 8:00 AM) in their timezone. Includes today's tasks and streak info. Opt-out via Account settings.
+-   **Weekly Progress Digest**: Automatically sent on Sundays at 9:00 AM in user's timezone. Includes sessions completed, time invested, streaks, completion rate. Opt-out via Account settings.
+-   **Admin Trigger**: `POST /api/admin/send-daily-reminders` still available for manual batch-send.
 -   **User Preferences**: `PATCH /api/user/email-preferences` with `dailyReminderEnabled`, `weeklyDigestEnabled`, `dailyReminderTime`.
 -   **Database Columns**: `daily_reminder_enabled`, `weekly_digest_enabled`, `daily_reminder_time`, `last_daily_reminder_sent`, `last_weekly_digest_sent` on users table.
 
