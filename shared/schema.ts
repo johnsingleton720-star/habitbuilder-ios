@@ -574,6 +574,7 @@ export interface UnifiedPlanResource {
   type: string;
   searchQuery: string;
   description: string;
+  url?: string;
 }
 
 export interface UnifiedPlanTask {

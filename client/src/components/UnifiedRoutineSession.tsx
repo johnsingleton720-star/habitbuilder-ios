@@ -125,7 +125,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
 
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
-  const [showResources, setShowResources] = useState(false);
+  const [showResources, setShowResources] = useState(true);
   const [showSteps, setShowSteps] = useState(true);
   const [pendingTransition, setPendingTransition] = useState<UnifiedPlanTransition | null>(null);
 
@@ -711,14 +711,15 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
               )}
 
               {currentResources.length > 0 && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <button
                     onClick={() => setShowResources(prev => !prev)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground w-full"
+                    className="flex items-center gap-2 text-sm font-semibold w-full"
                     data-testid="button-toggle-resources"
                   >
-                    {showResources ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    Resources ({currentResources.length})
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    Recommended Resources ({currentResources.length})
+                    {showResources ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />}
                   </button>
                   {showResources && (
                     <motion.div
@@ -728,7 +729,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                     >
                       {currentResources.map((resource, i) => {
                         const ResourceIcon = RESOURCE_ICONS[resource.type] || ExternalLink;
-                        const url = (resource as any).url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
+                        const url = resource.url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
                         return (
                           <a
                             key={i}
