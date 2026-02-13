@@ -561,6 +561,21 @@ export interface StackTask {
   transitionNote?: string;
 }
 
+export interface UnifiedPlanStep {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  coachingTip?: string;
+}
+
+export interface UnifiedPlanResource {
+  name: string;
+  type: string;
+  searchQuery: string;
+  description: string;
+}
+
 export interface UnifiedPlanTask {
   id: string;
   title: string;
@@ -570,12 +585,25 @@ export interface UnifiedPlanTask {
   habitTitle: string;
   order: number;
   completed?: boolean;
+  steps: UnifiedPlanStep[];
+  coachingTip?: string;
+  resources?: UnifiedPlanResource[];
+}
+
+export interface UnifiedPlanTransition {
+  fromHabitId: number;
+  toHabitId: number;
+  fromHabitTitle: string;
+  toHabitTitle: string;
+  message: string;
+  tip?: string;
 }
 
 export interface UnifiedPlan {
   overview: string;
   totalDuration: number;
   tasks: UnifiedPlanTask[];
+  transitions: UnifiedPlanTransition[];
   tips: string[];
   generatedAt: string;
 }

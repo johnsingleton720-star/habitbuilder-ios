@@ -1044,33 +1044,73 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: `You are an expert habit coach. Generate a UNIFIED daily routine plan that combines all habits into one seamless flow.
-Instead of separate plans for each habit, create ONE combined routine with interleaved tasks that flow naturally.
-Return valid JSON with this structure:
+          content: `You are an expert habit coach trained in BJ Fogg's Tiny Habits, James Clear's Atomic Habits, and Charles Duhigg's habit loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow.
+
+Instead of giving one task per habit, break EACH habit into 2-4 actionable micro-steps with specific coaching guidance. Think of yourself as a personal coach walking them through every moment of their routine.
+
+Return valid JSON with this exact structure:
 {
-  "overview": "Brief description of how this unified routine works",
+  "overview": "Brief motivational description of this unified routine and why the habits are sequenced this way",
   "totalDuration": <estimated total minutes>,
   "tasks": [
     {
-      "id": "<unique-id>",
-      "title": "Task title",
-      "description": "What to do and why",
-      "duration": <minutes>,
+      "id": "task-1",
+      "title": "Specific micro-step title",
+      "description": "Detailed coaching instruction — what to do, how to do it, and WHY it matters for habit formation. Be specific with techniques, timings, and sensory cues. 2-3 sentences minimum.",
+      "duration": <minutes for this specific step>,
       "habitId": <which habit this belongs to>,
       "habitTitle": "Name of the habit",
-      "order": <sequence number starting from 1>
+      "order": 1,
+      "steps": [
+        {
+          "id": "step-1-1",
+          "title": "Sub-step name",
+          "description": "Granular instruction for this part of the micro-step",
+          "duration": <minutes>,
+          "coachingTip": "A quick expert insight — technique, psychology, or common mistake to avoid"
+        }
+      ],
+      "coachingTip": "Expert coaching insight for this task — could be about technique, mindset, habit science, or a motivational nudge. Make it specific and actionable, not generic.",
+      "resources": [
+        {
+          "name": "Resource Name",
+          "type": "article|book|video|course|blog|tool",
+          "searchQuery": "specific search terms to find this resource",
+          "description": "Why this resource is helpful for this specific step"
+        }
+      ]
     }
   ],
-  "tips": ["Tip 1", "Tip 2", "Tip 3"]
+  "transitions": [
+    {
+      "fromHabitId": <habit id being completed>,
+      "toHabitId": <habit id starting next>,
+      "fromHabitTitle": "Habit being completed",
+      "toHabitTitle": "Habit starting next",
+      "message": "A warm, coaching transition message (e.g., 'Great work on your walk! Now let's shift gears to caring for your plants. Take a deep breath and notice how the movement energized you.')",
+      "tip": "A quick tip about why this transition order is effective for habit formation"
+    }
+  ],
+  "tips": ["Overall routine tip 1", "Routine tip 2", "Routine tip 3"]
 }
-Create 5-10 tasks that weave all the habits together into a natural daily routine flow.
+
+RULES:
+1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps. Total should be 6-16 tasks across all habits.
+2. Each task's "steps" array should have 1-3 sub-steps with specific, granular instructions.
+3. Each task MUST have a "coachingTip" — make it specific to that step, not generic.
+4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). Use searchQuery, NOT URLs.
+5. Create a "transition" entry for every habit change in the sequence. Make transitions warm and encouraging.
+6. Descriptions should read like a coach talking directly to the user: "Now I want you to..." or "Focus on..." or "Notice how..."
+7. Sequence tasks so they flow naturally — warm-ups before intense work, wind-downs at the end.
+8. NEVER recommend competing habit tracking apps (Habitica, Streaks, Fabulous, etc.).
 SAFETY: Never generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.`
         }, {
           role: "user",
-          content: `Create a unified daily routine plan for the stack "${stack.name}" (scheduled: ${stack.scheduledTime || "flexible"}):\n\n${habitDescriptions}\n\nCombine these habits into one flowing routine where tasks transition naturally between habits.`
+          content: `Create a deeply guided unified daily routine plan for the stack "${stack.name}" (scheduled: ${stack.scheduledTime || "flexible"}):\n\n${habitDescriptions}\n\nBreak each habit into 2-4 coaching-driven micro-steps with sub-steps, tips, and resources. Create smooth transitions between habits. Make it feel like having a personal coach guiding them through every moment.`
         }],
         response_format: { type: "json_object" },
         temperature: 0.7,
+        max_tokens: 4000,
       });
 
       const planContent = response.choices[0]?.message?.content;
@@ -1080,6 +1120,29 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       const plan = JSON.parse(planContent);
       plan.generatedAt = new Date().toISOString();
+
+      if (!plan.transitions) plan.transitions = [];
+      if (!plan.tasks) plan.tasks = [];
+
+      for (const task of plan.tasks) {
+        if (!task.steps) task.steps = [];
+        if (task.resources && Array.isArray(task.resources)) {
+          task.resources = task.resources.map((r: any) => {
+            const query = r.searchQuery || r.name || '';
+            let url = '';
+            if (r.type === 'book') {
+              url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
+            } else if (r.type === 'video') {
+              url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+            } else if (r.type === 'course') {
+              url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            } else {
+              url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            }
+            return { ...r, url };
+          });
+        }
+      }
       
       const updated = await storage.updateHabitStack(stackId, userId, { 
         unifiedPlan: plan,
