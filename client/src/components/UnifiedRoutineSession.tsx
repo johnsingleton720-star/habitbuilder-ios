@@ -206,21 +206,36 @@ async function downloadResourceTemplate(resource: any, habitTitle: string, taskT
       continue;
     }
 
-    const checkboxMatch = trimmedLine.match(/^(\[ \]|☐|\[\]|□)\s*(.+)/);
-    const bulletMatch = trimmedLine.match(/^[-•]\s*(.+)/);
-    const numberedMatch = trimmedLine.match(/^(\d+[.)]\s*)(.+)/);
+    const checkboxMatch = trimmedLine.match(/^(\[ \]|☐|\[\]|□)\s*(.*)/);
+    const bulletMatch = trimmedLine.match(/^[-•]\s*(.*)/);
+    const numberedMatch = trimmedLine.match(/^(\d+[.)]\s*)(.*)/);
 
     if (checkboxMatch) {
-      addCheckbox("task", margin, yPos, checkboxMatch[2].substring(0, 70));
-      yPos -= 18;
+      const label = checkboxMatch[2].trim();
+      addCheckbox("task", margin, yPos, label ? label.substring(0, 50) : "");
+      addTextField("task_note", margin + (label ? Math.min(label.length * 5.5 + 20, 280) : 20), yPos, contentWidth - (label ? Math.min(label.length * 5.5 + 20, 280) : 20));
+      yPos -= 22;
     } else if (bulletMatch) {
+      const label = bulletMatch[1].trim();
       page.drawCircle({ x: margin + 5, y: yPos - 5, size: 3, color: rgb(0.13, 0.55, 0.13) });
-      drawText(bulletMatch[1].substring(0, 80), margin + 12, yPos - 8, 9);
-      yPos -= 14;
+      if (label) {
+        drawText(label.substring(0, 30), margin + 12, yPos - 8, 9);
+        addTextField("bullet_note", margin + 12 + Math.min(label.length * 5.5, 180) + 5, yPos, contentWidth - 12 - Math.min(label.length * 5.5, 180) - 5);
+      } else {
+        addTextField("bullet_note", margin + 12, yPos, contentWidth - 12);
+      }
+      yPos -= 22;
     } else if (numberedMatch) {
-      drawText(numberedMatch[1], margin, yPos - 8, 10, rgb(0.13, 0.55, 0.13), boldFont);
-      drawText(numberedMatch[2].substring(0, 75), margin + 15, yPos - 8, 9);
-      yPos -= 14;
+      const numLabel = numberedMatch[1];
+      const label = numberedMatch[2].trim();
+      drawText(numLabel, margin, yPos - 8, 10, rgb(0.13, 0.55, 0.13), boldFont);
+      if (label) {
+        drawText(label.substring(0, 30), margin + 15, yPos - 8, 9);
+        addTextField("num_note", margin + 15 + Math.min(label.length * 5.5, 180) + 5, yPos, contentWidth - 15 - Math.min(label.length * 5.5, 180) - 5);
+      } else {
+        addTextField("num_note", margin + 15, yPos, contentWidth - 15);
+      }
+      yPos -= 22;
     } else if (trimmedLine.includes('[') && trimmedLine.includes(']')) {
       const cleanLabel = trimmedLine.replace(/\[[^\]]+\]/g, '').trim();
       if (cleanLabel) drawText(cleanLabel.substring(0, 40), margin, yPos - 8, 9);
