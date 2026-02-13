@@ -56,6 +56,32 @@ export default function StackDetail() {
     },
   });
 
+  const generateUnifiedPlanMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/habit-stacks/${stackId}/generate-unified-plan`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks", stackId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
+      toast({ title: "Unified routine plan created", description: "Your stack now has a combined daily routine." });
+    },
+    onError: () => {
+      toast({ title: "Could not generate unified plan", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const togglePlanModeMutation = useMutation({
+    mutationFn: async (planMode: string) => {
+      const res = await apiRequest("PATCH", `/api/habit-stacks/${stackId}/plan-mode`, { planMode });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks", stackId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
+    },
+  });
+
   const totalTimeInvested = useMemo(() => {
     return stackHabits.reduce((sum, h) => sum + (h.totalTimeSpent || 0), 0);
   }, [stackHabits]);
@@ -74,6 +100,9 @@ export default function StackDetail() {
   }, [stackHabits]);
 
   const stackPlan = stack?.stackPlan as any;
+  const unifiedPlan = (stack as any)?.unifiedPlan as any;
+  const planMode = (stack as any)?.planMode || "separate";
+  const isUnified = planMode === "unified";
 
   if (stackLoading) {
     return (
@@ -261,121 +290,268 @@ export default function StackDetail() {
         <TabsContent value="plan" className="space-y-4 mt-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h2 className="text-lg font-semibold">AI Stack Strategy</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              onClick={() => generatePlanMutation.mutate()}
-              disabled={generatePlanMutation.isPending || stackHabits.length < 2}
-              data-testid="button-generate-stack-plan"
-            >
-              {generatePlanMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="flex items-center gap-2">
+              {isUnified ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => generateUnifiedPlanMutation.mutate()}
+                  disabled={generateUnifiedPlanMutation.isPending || stackHabits.length < 2}
+                  data-testid="button-generate-unified-plan"
+                >
+                  {generateUnifiedPlanMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {unifiedPlan ? "Refresh Routine" : "Generate Routine"}
+                </Button>
               ) : (
-                <RefreshCw className="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => generatePlanMutation.mutate()}
+                  disabled={generatePlanMutation.isPending || stackHabits.length < 2}
+                  data-testid="button-generate-stack-plan"
+                >
+                  {generatePlanMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {stackPlan ? "Refresh Tips" : "Generate Tips"}
+                </Button>
               )}
-              {stackPlan ? "Refresh Plan" : "Generate Plan"}
-            </Button>
+            </div>
           </div>
 
-          {stackPlan ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
+          <div className="flex items-center gap-2">
+            <button
+              className={cn(
+                "text-xs px-3 py-1 rounded-full border cursor-pointer transition-colors",
+                !isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+              )}
+              onClick={() => togglePlanModeMutation.mutate("separate")}
+              data-testid="button-plan-mode-separate"
             >
+              Separate Plans
+            </button>
+            <button
+              className={cn(
+                "text-xs px-3 py-1 rounded-full border cursor-pointer transition-colors",
+                isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+              )}
+              onClick={() => togglePlanModeMutation.mutate("unified")}
+              data-testid="button-plan-mode-unified"
+            >
+              Unified Routine
+            </button>
+          </div>
+
+          {isUnified ? (
+            unifiedPlan ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" /> Routine Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-sm text-muted-foreground" data-testid="text-unified-overview">{unifiedPlan.overview}</p>
+                    {unifiedPlan.totalDuration && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <Badge variant="secondary">
+                          <Clock className="w-3 h-3 mr-1" />
+                          ~{unifiedPlan.totalDuration} min total
+                        </Badge>
+                        <Badge variant="secondary">
+                          {unifiedPlan.tasks?.length || 0} tasks
+                        </Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {unifiedPlan.tasks && unifiedPlan.tasks.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ListTodo className="w-4 h-4 text-primary" /> Routine Tasks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-2">
+                      {unifiedPlan.tasks.map((task: any, i: number) => (
+                        <div key={task.id || i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-primary">{i + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <p className="font-medium text-sm" data-testid={`text-unified-task-${i}`}>{task.title}</p>
+                              <Badge variant="outline" className="text-[10px] shrink-0">{task.duration}m</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                            <p className="text-[10px] text-primary/70 mt-1">{task.habitTitle}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {unifiedPlan.tips && unifiedPlan.tips.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-500" /> Tips
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-2">
+                      {unifiedPlan.tips.map((tip: string, i: number) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-xs text-muted-foreground mt-0.5 shrink-0">{i + 1}.</span>
+                          <p className="text-sm">{tip}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            ) : (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" /> Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-sm text-muted-foreground" data-testid="text-stack-overview">{stackPlan.overview}</p>
-                  {stackPlan.totalDuration && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <Badge variant="secondary">
-                        <Clock className="w-3 h-3 mr-1" />
-                        ~{stackPlan.totalDuration} min estimated
-                      </Badge>
-                    </div>
+                <CardContent className="p-8 text-center space-y-3">
+                  <Layers className="w-10 h-10 text-muted-foreground mx-auto" />
+                  <p className="font-medium">Unified Routine Mode</p>
+                  <p className="text-sm text-muted-foreground">
+                    {stackHabits.length < 2
+                      ? "Add at least 2 habits to generate a unified routine."
+                      : "Generate a unified routine that combines all your habits into one flowing daily plan."}
+                  </p>
+                  {stackHabits.length >= 2 && (
+                    <Button
+                      onClick={() => generateUnifiedPlanMutation.mutate()}
+                      disabled={generateUnifiedPlanMutation.isPending}
+                      className="gap-1"
+                      data-testid="button-generate-unified-empty"
+                    >
+                      {generateUnifiedPlanMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Generate Unified Routine
+                    </Button>
                   )}
                 </CardContent>
               </Card>
-
-              {stackPlan.transitions && stackPlan.transitions.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-primary" /> Transitions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0 space-y-3">
-                    {stackPlan.transitions.map((t: any, i: number) => {
-                      const fromHabit = allHabits?.find(h => h.id === t.fromHabitId);
-                      const toHabit = allHabits?.find(h => h.id === t.toHabitId);
-                      return (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className="shrink-0 mt-1 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <ArrowRight className="w-3 h-3 text-primary" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              {fromHabit?.title || "Habit"} → {toHabit?.title || "Habit"}
-                            </p>
-                            <p className="text-sm mt-0.5" data-testid={`text-transition-${i}`}>{t.note}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              )}
-
-              {stackPlan.tips && stackPlan.tips.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-yellow-500" /> Tips
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0 space-y-2">
-                    {stackPlan.tips.map((tip: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="text-xs text-muted-foreground mt-0.5 shrink-0">{i + 1}.</span>
-                        <p className="text-sm" data-testid={`text-tip-${i}`}>{tip}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </motion.div>
+            )
           ) : (
-            <Card>
-              <CardContent className="p-8 text-center space-y-3">
-                <Sparkles className="w-10 h-10 text-muted-foreground mx-auto" />
-                <p className="text-muted-foreground">
-                  {stackHabits.length < 2
-                    ? "Add at least 2 habits to your stack to generate an AI plan."
-                    : "Generate an AI strategy for your habit stack to get personalized transition advice and tips."}
-                </p>
-                {stackHabits.length >= 2 && (
-                  <Button
-                    onClick={() => generatePlanMutation.mutate()}
-                    disabled={generatePlanMutation.isPending}
-                    className="gap-1"
-                    data-testid="button-generate-stack-plan-empty"
-                  >
-                    {generatePlanMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
+            stackPlan ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" /> Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-sm text-muted-foreground" data-testid="text-stack-overview">{stackPlan.overview}</p>
+                    {stackPlan.totalDuration && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <Badge variant="secondary">
+                          <Clock className="w-3 h-3 mr-1" />
+                          ~{stackPlan.totalDuration} min estimated
+                        </Badge>
+                      </div>
                     )}
-                    Generate AI Plan
-                  </Button>
+                  </CardContent>
+                </Card>
+
+                {stackPlan.transitions && stackPlan.transitions.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ArrowRight className="w-4 h-4 text-primary" /> Transitions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-3">
+                      {stackPlan.transitions.map((t: any, i: number) => {
+                        const fromHabit = allHabits?.find(h => h.id === t.fromHabitId);
+                        const toHabit = allHabits?.find(h => h.id === t.toHabitId);
+                        return (
+                          <div key={i} className="flex items-start gap-3">
+                            <div className="shrink-0 mt-1 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                              <ArrowRight className="w-3 h-3 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {fromHabit?.title || "Habit"} → {toHabit?.title || "Habit"}
+                              </p>
+                              <p className="text-sm mt-0.5" data-testid={`text-transition-${i}`}>{t.note}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+
+                {stackPlan.tips && stackPlan.tips.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-500" /> Tips
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-2">
+                      {stackPlan.tips.map((tip: string, i: number) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-xs text-muted-foreground mt-0.5 shrink-0">{i + 1}.</span>
+                          <p className="text-sm" data-testid={`text-tip-${i}`}>{tip}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center space-y-3">
+                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">
+                    {stackHabits.length < 2
+                      ? "Add at least 2 habits to your stack to generate an AI plan."
+                      : "Generate AI transition tips for your habit stack."}
+                  </p>
+                  {stackHabits.length >= 2 && (
+                    <Button
+                      onClick={() => generatePlanMutation.mutate()}
+                      disabled={generatePlanMutation.isPending}
+                      className="gap-1"
+                      data-testid="button-generate-stack-plan-empty"
+                    >
+                      {generatePlanMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Generate AI Tips
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )
           )}
         </TabsContent>
 

@@ -561,6 +561,25 @@ export interface StackTask {
   transitionNote?: string;
 }
 
+export interface UnifiedPlanTask {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  habitId: number;
+  habitTitle: string;
+  order: number;
+  completed?: boolean;
+}
+
+export interface UnifiedPlan {
+  overview: string;
+  totalDuration: number;
+  tasks: UnifiedPlanTask[];
+  tips: string[];
+  generatedAt: string;
+}
+
 export const habitStacks = pgTable("habit_stacks", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -571,12 +590,14 @@ export const habitStacks = pgTable("habit_stacks", {
   habitIds: jsonb("habit_ids").$type<number[]>().default([]),
   habitOrder: jsonb("habit_order").$type<StackTask[]>().default([]),
   scheduledTime: text("scheduled_time"),
+  planMode: text("plan_mode").default("separate"),
   stackPlan: jsonb("stack_plan").$type<{
     overview: string;
     totalDuration: number;
     transitions: { fromHabitId: number; toHabitId: number; note: string }[];
     tips: string[];
   }>(),
+  unifiedPlan: jsonb("unified_plan").$type<UnifiedPlan>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

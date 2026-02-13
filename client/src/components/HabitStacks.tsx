@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Link } from "wouter";
 import type { HabitStack, Habit } from "@shared/schema";
@@ -25,6 +26,7 @@ export function HabitStacks() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editStack, setEditStack] = useState<HabitStack | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [generatingStackId, setGeneratingStackId] = useState<number | null>(null);
 
   const { data: stacks, isLoading } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -43,15 +45,45 @@ export function HabitStacks() {
 
   const generatePlan = useMutation({
     mutationFn: async (id: number) => {
+      setGeneratingStackId(id);
       const res = await apiRequest("POST", `/api/habit-stacks/${id}/generate-plan`);
       return res.json();
     },
     onSuccess: () => {
+      setGeneratingStackId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
       toast({ title: "AI plan generated", description: "Your stack now has transition tips and advice." });
     },
     onError: () => {
+      setGeneratingStackId(null);
       toast({ title: "Failed to generate plan", variant: "destructive" });
+    },
+  });
+
+  const generateUnifiedPlan = useMutation({
+    mutationFn: async (id: number) => {
+      setGeneratingStackId(id);
+      const res = await apiRequest("POST", `/api/habit-stacks/${id}/generate-unified-plan`);
+      return res.json();
+    },
+    onSuccess: () => {
+      setGeneratingStackId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
+      toast({ title: "Unified routine plan created", description: "Your stack now has a combined daily routine." });
+    },
+    onError: () => {
+      setGeneratingStackId(null);
+      toast({ title: "Failed to generate unified plan", variant: "destructive" });
+    },
+  });
+
+  const togglePlanMode = useMutation({
+    mutationFn: async ({ id, planMode }: { id: number; planMode: string }) => {
+      const res = await apiRequest("PATCH", `/api/habit-stacks/${id}/plan-mode`, { planMode });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
     },
   });
 
@@ -158,7 +190,9 @@ export function HabitStacks() {
                     onEdit={() => setEditStack(stack)}
                     onDelete={() => deleteStack.mutate(stack.id)}
                     onGeneratePlan={() => generatePlan.mutate(stack.id)}
-                    isGenerating={generatePlan.isPending}
+                    onGenerateUnifiedPlan={() => generateUnifiedPlan.mutate(stack.id)}
+                    onTogglePlanMode={(mode) => togglePlanMode.mutate({ id: stack.id, planMode: mode })}
+                    isGenerating={generatingStackId === stack.id}
                   />
                 ))
               )}
@@ -191,6 +225,8 @@ function StackItem({
   onEdit,
   onDelete,
   onGeneratePlan,
+  onGenerateUnifiedPlan,
+  onTogglePlanMode,
   isGenerating,
 }: {
   stack: HabitStack;
@@ -198,11 +234,16 @@ function StackItem({
   onEdit: () => void;
   onDelete: () => void;
   onGeneratePlan: () => void;
+  onGenerateUnifiedPlan: () => void;
+  onTogglePlanMode: (mode: string) => void;
   isGenerating: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const order = (stack.habitOrder as any[]) || [];
   const plan = stack.stackPlan as any;
+  const unifiedPlan = (stack as any).unifiedPlan as any;
+  const planMode = (stack as any).planMode || "separate";
+  const isUnified = planMode === "unified";
 
   return (
     <div
@@ -226,21 +267,38 @@ function StackItem({
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           )}
         </button>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onGeneratePlan}
-            disabled={isGenerating}
-            data-testid={`button-generate-plan-${stack.id}`}
-          >
-            {isGenerating ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5 mr-1" />
-            )}
-            {plan ? "Refresh AI Tips" : "AI Tips"}
-          </Button>
+        <div className="flex items-center gap-1 flex-wrap">
+          {isUnified ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onGenerateUnifiedPlan}
+              disabled={isGenerating}
+              data-testid={`button-generate-unified-${stack.id}`}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+              )}
+              {unifiedPlan ? "Refresh Plan" : "Generate Plan"}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onGeneratePlan}
+              disabled={isGenerating}
+              data-testid={`button-generate-plan-${stack.id}`}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+              )}
+              {plan ? "Refresh AI Tips" : "AI Tips"}
+            </Button>
+          )}
           <Link href={`/stack/${stack.id}`}>
             <Button variant="ghost" size="sm" data-testid={`button-view-stack-${stack.id}`}>
               <BarChart3 className="w-3.5 h-3.5 mr-1" />
@@ -285,8 +343,31 @@ function StackItem({
         )}
       </div>
 
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          className={cn(
+            "text-[10px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
+            !isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+          )}
+          onClick={() => onTogglePlanMode("separate")}
+          data-testid={`button-mode-separate-${stack.id}`}
+        >
+          Separate Plans
+        </button>
+        <button
+          className={cn(
+            "text-[10px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
+            isUnified ? "bg-primary/10 border-primary/30 text-primary font-medium" : "border-border text-muted-foreground"
+          )}
+          onClick={() => onTogglePlanMode("unified")}
+          data-testid={`button-mode-unified-${stack.id}`}
+        >
+          Unified Routine
+        </button>
+      </div>
+
       <AnimatePresence>
-        {expanded && plan && (
+        {expanded && !isUnified && plan && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -325,6 +406,54 @@ function StackItem({
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-foreground">Tips:</p>
                   {plan.tips.map((tip: string, idx: number) => (
+                    <p key={idx} className="text-xs text-muted-foreground flex gap-1.5">
+                      <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
+                      {tip}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {expanded && isUnified && unifiedPlan && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 pt-2 border-t space-y-2">
+              {unifiedPlan.overview && (
+                <p className="text-xs text-muted-foreground">{unifiedPlan.overview}</p>
+              )}
+              {unifiedPlan.totalDuration && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  ~{unifiedPlan.totalDuration} minutes total
+                </p>
+              )}
+              {unifiedPlan.tasks && unifiedPlan.tasks.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Routine Tasks:</p>
+                  {unifiedPlan.tasks.map((task: any, idx: number) => (
+                    <div key={task.id || idx} className="text-xs bg-muted/50 rounded p-2 space-y-0.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">{task.title}</span>
+                        <Badge variant="outline" className="text-[9px] shrink-0">{task.duration}m</Badge>
+                      </div>
+                      <p className="text-muted-foreground">{task.description}</p>
+                      <p className="text-[10px] text-muted-foreground/70">{task.habitTitle}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {unifiedPlan.tips && unifiedPlan.tips.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-foreground">Tips:</p>
+                  {unifiedPlan.tips.map((tip: string, idx: number) => (
                     <p key={idx} className="text-xs text-muted-foreground flex gap-1.5">
                       <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
                       {tip}

@@ -997,6 +997,101 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     }
   });
 
+  // Toggle stack plan mode (separate vs unified)
+  app.patch("/api/habit-stacks/:id/plan-mode", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const { planMode } = req.body;
+      if (!["separate", "unified"].includes(planMode)) {
+        return res.status(400).json({ error: "planMode must be 'separate' or 'unified'" });
+      }
+      const updated = await storage.updateHabitStack(stackId, userId, { planMode });
+      if (!updated) return res.status(404).json({ error: "Stack not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating plan mode:", error);
+      res.status(500).json({ error: "Failed to update plan mode" });
+    }
+  });
+
+  // Generate unified plan for a stack - AI creates one cohesive routine plan
+  app.post("/api/habit-stacks/:id/generate-unified-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const stack = await storage.getHabitStack(stackId, userId);
+      if (!stack) return res.status(404).json({ error: "Stack not found" });
+
+      const userHabits = await storage.getHabits(userId);
+      const stackHabits = (stack.habitOrder as any[]).map((item: any) => {
+        const habit = userHabits.find(h => h.id === item.habitId);
+        return habit;
+      }).filter(Boolean);
+
+      if (stackHabits.length < 2) {
+        return res.status(400).json({ error: "Need at least 2 valid habits in the stack" });
+      }
+
+      const habitDescriptions = stackHabits.map((h: any, i: number) => {
+        const plan = h.actionPlan as any;
+        const todayTasks = plan?.dailyPlans?.[0]?.tasks || [];
+        const taskList = todayTasks.map((t: any) => `  - ${t.title} (${t.duration || 5}min)`).join("\n");
+        return `${i + 1}. "${h.title}" - ${h.description || h.goal || "No description"}\n   Current tasks:\n${taskList || "   - No tasks yet"}`;
+      }).join("\n\n");
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are an expert habit coach. Generate a UNIFIED daily routine plan that combines all habits into one seamless flow.
+Instead of separate plans for each habit, create ONE combined routine with interleaved tasks that flow naturally.
+Return valid JSON with this structure:
+{
+  "overview": "Brief description of how this unified routine works",
+  "totalDuration": <estimated total minutes>,
+  "tasks": [
+    {
+      "id": "<unique-id>",
+      "title": "Task title",
+      "description": "What to do and why",
+      "duration": <minutes>,
+      "habitId": <which habit this belongs to>,
+      "habitTitle": "Name of the habit",
+      "order": <sequence number starting from 1>
+    }
+  ],
+  "tips": ["Tip 1", "Tip 2", "Tip 3"]
+}
+Create 5-10 tasks that weave all the habits together into a natural daily routine flow.
+SAFETY: Never generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.`
+        }, {
+          role: "user",
+          content: `Create a unified daily routine plan for the stack "${stack.name}" (scheduled: ${stack.scheduledTime || "flexible"}):\n\n${habitDescriptions}\n\nCombine these habits into one flowing routine where tasks transition naturally between habits.`
+        }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const planContent = response.choices[0]?.message?.content;
+      if (!planContent) {
+        return res.status(500).json({ error: "Failed to generate plan" });
+      }
+
+      const plan = JSON.parse(planContent);
+      plan.generatedAt = new Date().toISOString();
+      
+      const updated = await storage.updateHabitStack(stackId, userId, { 
+        unifiedPlan: plan,
+        planMode: "unified"
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error generating unified plan:", error);
+      res.status(500).json({ error: "Failed to generate unified plan" });
+    }
+  });
+
   // Motivational Quote Endpoint - Real quotes from famous people
   const realQuotes = [
     { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },

@@ -26,8 +26,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
-import type { Habit, HabitTemplate } from "@shared/schema";
+import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useQuery } from "@tanstack/react-query";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -46,6 +47,11 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features } = useSubscription();
+
+  const { data: habitStacks } = useQuery<HabitStack[]>({
+    queryKey: ["/api/habit-stacks"],
+    enabled: features.hasHabitStacking,
+  });
 
   const activeHabits = habits?.filter(h => !h.archived);
   
@@ -212,7 +218,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
           >
-            <TodaysFocus habits={activeHabits || []} />
+            <TodaysFocus habits={activeHabits || []} stacks={habitStacks} />
           </motion.section>
         )}
 

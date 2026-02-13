@@ -2,16 +2,17 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
-import type { DailyPlan } from "@shared/schema";
+import type { DailyPlan, HabitStack } from "@shared/schema";
 
 interface TodaysFocusProps {
   habits: HabitResponse[];
+  stacks?: HabitStack[];
 }
 
 function getTimeOfDayIcon() {
@@ -21,7 +22,7 @@ function getTimeOfDayIcon() {
   return Moon;
 }
 
-export function TodaysFocus({ habits }: TodaysFocusProps) {
+export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const dayName = format(today, "EEEE").toLowerCase();
@@ -307,6 +308,62 @@ export function TodaysFocus({ habits }: TodaysFocusProps) {
             </Link>
           </motion.div>
         ) : null}
+
+        {/* Unified routine stacks */}
+        {stacks && stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).length > 0 && (
+          <div className="space-y-2">
+            {stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).map((stack) => {
+              const uPlan = (stack as any).unifiedPlan;
+              const taskCount = uPlan?.tasks?.length || 0;
+              return (
+                <Link key={`stack-${stack.id}`} href={`/stack/${stack.id}`}>
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                    data-testid={`focus-stack-${stack.id}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-primary shrink-0" />
+                        <h4 className="font-display font-bold text-base truncate text-gray-900 dark:text-white">{stack.name}</h4>
+                        <Badge variant="secondary" className="text-[10px] shrink-0">Routine</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {stack.scheduledTime && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {taskCount} tasks
+                        </span>
+                        {uPlan.totalDuration && (
+                          <span className="text-xs text-muted-foreground">
+                            ~{uPlan.totalDuration}m
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3">
+                      <Button
+                        size="sm"
+                        className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`button-start-routine-${stack.id}`}
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        Start
+                      </Button>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </motion.div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         {/* Collapsible remaining habits */}
         {otherRemaining.length > 0 && (
