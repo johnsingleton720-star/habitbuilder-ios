@@ -15,7 +15,7 @@ import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2 } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -168,6 +168,13 @@ export default function Dashboard() {
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-coach-chat">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Coach Chat
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/resources">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-resources">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Resource Library
                   <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
                 </DropdownMenuItem>
               </Link>

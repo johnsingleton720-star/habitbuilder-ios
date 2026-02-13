@@ -32,6 +32,7 @@ import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 import { CookieConsent } from "@/components/CookieConsent";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AcceptInvite from "@/pages/AcceptInvite";
+import Resources from "@/pages/Resources";
 
 const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/accept-invite"];
 
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/coach" component={CoachChat} />
       <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/admin/email" component={AdminEmail} />
+      <Route path="/resources" component={Resources} />
       <Route path="/paywall" component={Paywall} />
       <Route component={NotFound} />
     </Switch>

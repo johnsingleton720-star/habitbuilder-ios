@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Clock, Play, Check, Layers, BarChart3, ListTodo, Lightbulb, RefreshCw, ArrowRight, Calendar, Trophy, TrendingUp, ChevronRight } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Clock, Play, Check, Layers, BarChart3, ListTodo, Lightbulb, RefreshCw, ArrowRight, Calendar, Trophy, TrendingUp, ChevronRight, BookOpen, ExternalLink, Download, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -105,6 +105,24 @@ export default function StackDetail() {
   const unifiedPlan = (stack as any)?.unifiedPlan as any;
   const planMode = (stack as any)?.planMode || "separate";
   const isUnified = planMode === "unified";
+
+  const allResources = useMemo(() => {
+    if (!unifiedPlan?.tasks) return [];
+    const resources: { habitTitle: string; habitId: number; taskTitle: string; resource: any }[] = [];
+    for (const task of unifiedPlan.tasks) {
+      if (task.resources && Array.isArray(task.resources)) {
+        for (const r of task.resources) {
+          resources.push({
+            habitTitle: task.habitTitle || "Habit",
+            habitId: task.habitId,
+            taskTitle: task.title,
+            resource: r,
+          });
+        }
+      }
+    }
+    return resources;
+  }, [unifiedPlan]);
 
   if (stackLoading) {
     return (
@@ -217,6 +235,11 @@ export default function StackDetail() {
           <TabsTrigger value="analytics" className="flex-1 gap-1" data-testid="tab-analytics">
             <BarChart3 className="w-4 h-4" /> Analytics
           </TabsTrigger>
+          {isUnified && allResources.length > 0 && (
+            <TabsTrigger value="resources" className="flex-1 gap-1" data-testid="tab-resources">
+              <BookOpen className="w-4 h-4" /> Resources
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="habits" className="space-y-3 mt-4">
@@ -682,6 +705,68 @@ export default function StackDetail() {
             </Card>
           )}
         </TabsContent>
+
+        {isUnified && allResources.length > 0 && (
+          <TabsContent value="resources" className="space-y-4 mt-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-lg font-semibold">Routine Resources</h2>
+              <Link href="/resources">
+                <Button variant="outline" size="sm" className="gap-1" data-testid="button-view-all-resources">
+                  <BookOpen className="w-4 h-4" /> Full Library
+                </Button>
+              </Link>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Educational resources from your routine — articles, books, videos, and more to deepen your practice.
+            </p>
+
+            {(() => {
+              const grouped: Record<string, typeof allResources> = {};
+              for (const r of allResources) {
+                if (!grouped[r.habitTitle]) grouped[r.habitTitle] = [];
+                grouped[r.habitTitle].push(r);
+              }
+              return Object.entries(grouped).map(([habitTitle, items]) => (
+                <Card key={habitTitle}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      {habitTitle}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 space-y-2">
+                    {items.map((item, i) => {
+                      const url = item.resource.url || `https://www.google.com/search?q=${encodeURIComponent(item.resource.searchQuery || item.resource.name)}`;
+                      return (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-md border hover-elevate">
+                          <BookOpen className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium" data-testid={`text-resource-name-${i}`}>{item.resource.name}</p>
+                              <Badge variant="secondary" className="text-[10px]">{item.resource.type}</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.resource.description}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1 italic">From: {item.taskTitle}</p>
+                          </div>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                          >
+                            <Button variant="ghost" size="icon" data-testid={`button-open-resource-${i}`}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              ));
+            })()}
+          </TabsContent>
+        )}
       </Tabs>
 
       {stack && isUnified && unifiedPlan && (
