@@ -233,6 +233,27 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/name", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { firstName, lastName } = req.body;
+      if (typeof firstName !== "string" || firstName.trim().length === 0) {
+        return res.status(400).json({ error: "First name is required" });
+      }
+      if (firstName.trim().length > 50 || (lastName && lastName.length > 50)) {
+        return res.status(400).json({ error: "Name is too long" });
+      }
+      const [updated] = await db.update(users)
+        .set({ firstName: firstName.trim(), lastName: (lastName || "").trim(), updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating name:", error);
+      res.status(500).json({ error: "Failed to update name" });
+    }
+  });
+
   app.patch("/api/user/timezone", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

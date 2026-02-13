@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe } from "lucide-react";
+import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -248,6 +248,24 @@ export default function Account() {
   const [isUploading, setIsUploading] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "90d">("7d");
+  const [editingName, setEditingName] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+
+  const updateNameMutation = useMutation({
+    mutationFn: async ({ firstName, lastName }: { firstName: string; lastName: string }) => {
+      const res = await apiRequest("PATCH", "/api/user/name", { firstName, lastName });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Name updated", description: "Your display name has been changed." });
+      setEditingName(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to update name", description: err.message, variant: "destructive" });
+    },
+  });
 
   interface AdminAnalytics {
     totalPageViews: number;
@@ -460,9 +478,68 @@ export default function Account() {
                     <Camera className="w-4 h-4" />
                   </Button>
                 </div>
-                <h1 className="font-display text-2xl font-bold mt-4" data-testid="text-user-name">
-                  {user?.firstName} {user?.lastName}
-                </h1>
+                {editingName ? (
+                  <div className="mt-4 w-full max-w-xs space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-first-name" className="text-xs text-muted-foreground">First Name</Label>
+                      <Input
+                        id="edit-first-name"
+                        value={editFirstName}
+                        onChange={(e) => setEditFirstName(e.target.value)}
+                        placeholder="First name"
+                        data-testid="input-edit-first-name"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-last-name" className="text-xs text-muted-foreground">Last Name</Label>
+                      <Input
+                        id="edit-last-name"
+                        value={editLastName}
+                        onChange={(e) => setEditLastName(e.target.value)}
+                        placeholder="Last name (optional)"
+                        data-testid="input-edit-last-name"
+                      />
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => updateNameMutation.mutate({ firstName: editFirstName, lastName: editLastName })}
+                        disabled={!editFirstName.trim() || updateNameMutation.isPending}
+                        data-testid="button-save-name"
+                      >
+                        {updateNameMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingName(false)}
+                        data-testid="button-cancel-edit-name"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-4">
+                    <h1 className="font-display text-2xl font-bold" data-testid="text-user-name">
+                      {user?.firstName} {user?.lastName}
+                    </h1>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditFirstName(user?.firstName || "");
+                        setEditLastName(user?.lastName || "");
+                        setEditingName(true);
+                      }}
+                      data-testid="button-edit-name"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
                 <p className="text-muted-foreground flex items-center gap-1.5" data-testid="text-user-email">
                   <Mail className="w-3.5 h-3.5" />
                   {user?.email}
