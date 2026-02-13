@@ -317,20 +317,39 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
             {stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).map((stack) => {
               const uPlan = (stack as any).unifiedPlan;
               const taskCount = uPlan?.tasks?.length || 0;
+              const stackHabitIds = (stack.habitIds || []) as number[];
+              const stackHabits = habits.filter(h => stackHabitIds.includes(h.id));
+              const isRoutineCompleted = stackHabits.length > 0 && stackHabits.every(h => isHabitCompleted(h));
               return (
                 <motion.div
                   key={`stack-${stack.id}`}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
-                  className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                  className={cn(
+                    "group flex items-center justify-between p-4 rounded-2xl shadow-sm transition-all cursor-pointer",
+                    isRoutineCompleted
+                      ? "bg-primary/5 dark:bg-primary/10 border-2 border-primary/30 dark:border-primary/40 opacity-75"
+                      : "bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 hover:shadow-lg"
+                  )}
                   data-testid={`focus-stack-${stack.id}`}
                   onClick={() => setRoutineSessionStack(stack)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-primary shrink-0" />
-                      <h4 className="font-display font-bold text-base truncate text-gray-900 dark:text-white">{stack.name}</h4>
-                      <Badge variant="secondary" className="text-[10px] shrink-0">Routine</Badge>
+                      {isRoutineCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      ) : (
+                        <Layers className="w-4 h-4 text-primary shrink-0" />
+                      )}
+                      <h4 className={cn(
+                        "font-display font-bold text-base truncate",
+                        isRoutineCompleted
+                          ? "line-through text-muted-foreground"
+                          : "text-gray-900 dark:text-white"
+                      )}>{stack.name}</h4>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                        {isRoutineCompleted ? "Done" : "Routine"}
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       {stack.scheduledTime && (
@@ -350,18 +369,22 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-3">
-                    <Button
-                      size="sm"
-                      className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRoutineSessionStack(stack);
-                      }}
-                      data-testid={`button-start-routine-${stack.id}`}
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                      Start
-                    </Button>
+                    {isRoutineCompleted ? (
+                      <span className="text-xs font-medium text-primary px-3">Completed</span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRoutineSessionStack(stack);
+                        }}
+                        data-testid={`button-start-routine-${stack.id}`}
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        Start
+                      </Button>
+                    )}
                     <Link href={`/stack/${stack.id}`} onClick={(e: any) => e.stopPropagation()}>
                       <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
                     </Link>
