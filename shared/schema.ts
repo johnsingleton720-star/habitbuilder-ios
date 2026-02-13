@@ -551,6 +551,47 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 // ==========================================
+// HABIT STACKS (Premium Only)
+// ==========================================
+
+export interface StackTask {
+  habitId: number;
+  habitTitle: string;
+  order: number;
+  transitionNote?: string;
+}
+
+export const habitStacks = pgTable("habit_stacks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").default("Layers"),
+  color: text("color").default("primary"),
+  habitIds: jsonb("habit_ids").$type<number[]>().default([]),
+  habitOrder: jsonb("habit_order").$type<StackTask[]>().default([]),
+  scheduledTime: text("scheduled_time"),
+  stackPlan: jsonb("stack_plan").$type<{
+    overview: string;
+    totalDuration: number;
+    transitions: { fromHabitId: number; toHabitId: number; note: string }[];
+    tips: string[];
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertHabitStackSchema = createInsertSchema(habitStacks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  userId: true,
+});
+
+export type HabitStack = typeof habitStacks.$inferSelect;
+export type InsertHabitStack = z.infer<typeof insertHabitStackSchema>;
+
+// ==========================================
 // AI COACH CHAT (Premium Only)
 // ==========================================
 
