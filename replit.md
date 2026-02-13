@@ -28,7 +28,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage
 -   **Primary Database**: PostgreSQL
--   **Key Tables**: `users`, `sessions`, `habits`, `conversations`, `messages`, `feedback`.
+-   **Key Tables**: `users`, `sessions`, `habits`, `conversations`, `messages`, `feedback`, `quick_tasks`.
 
 ### AI-Powered Habit System
 The core system enables personalized habit coaching:
@@ -43,7 +43,8 @@ The core system enables personalized habit coaching:
 -   **Integration**: Stripe for subscription management and webhooks.
 -   **International Payments**: Stripe auto-selects best payment methods per region (cards, Apple Pay, Google Pay, regional methods). Checkout uses `locale: 'auto'` for localized language. Prices displayed in USD with "Prices in USD" notes across all pricing pages.
 -   **Promo Codes**: Enabled via `allow_promotion_codes: true` in checkout.
--   **Trial System**: 2-day free trial with limited features.
+-   **Trial System**: 2-day free trial with expanded features. After trial, free tier allows 2 habits permanently with basic AI coaching, streaks, and templates.
+-   **Free Tier**: 2 habits, basic AI coaching, personalized plans, streaks, templates. No hard paywall - gentle upgrade prompts instead.
 
 ### Customer Feedback System
 -   Allows users to submit feedback (General, Bug, Feature Request, Support).
@@ -86,6 +87,27 @@ The core system enables personalized habit coaching:
 -   **Server-Side**: `getUserToday(timezone)` helper in `server/routes.ts` computes "today" in user's timezone for auto-skip logic, streak calculations, and daily challenges.
 -   **Settings**: Users can manually change timezone in Account page with a dropdown of common timezones.
 -   **API**: `PATCH /api/user/timezone` to update timezone.
+
+### Onboarding Wizard
+-   **3-step flow**: Welcome → Pick a Habit → AI generates first plan.
+-   Shows ONLY for new users when `user.onboardingComplete === false`.
+-   After completing, marks `onboardingComplete: true` via `PATCH /api/user/onboarding`.
+-   Component: `client/src/components/OnboardingWizard.tsx`.
+
+### Quick Tasks
+-   Personal checklist/to-do system on dashboard, separate from habit action plans.
+-   Add, toggle complete, and delete tasks per day.
+-   **API**: `GET/POST/PATCH/DELETE /api/quick-tasks` (date-filtered).
+-   **Database Table**: `quick_tasks` (id, user_id, title, completed, date, sort_order).
+-   Component: `client/src/components/QuickTasks.tsx`.
+-   Includes completion celebration micro-animation (particle burst effect via `CompletionCelebration.tsx`).
+
+### Email Notifications
+-   **Daily Morning Reminders**: Sends daily email with today's tasks and streak info. Opt-out via Account settings.
+-   **Weekly Progress Digest**: Sunday summary with sessions completed, time invested, streaks, completion rate. Opt-out via Account settings.
+-   **Admin Trigger**: `POST /api/admin/send-daily-reminders` to batch-send daily reminders.
+-   **User Preferences**: `PATCH /api/user/email-preferences` with `dailyReminderEnabled`, `weeklyDigestEnabled`, `dailyReminderTime`.
+-   **Database Columns**: `daily_reminder_enabled`, `weekly_digest_enabled`, `daily_reminder_time`, `last_daily_reminder_sent`, `last_weekly_digest_sent` on users table.
 
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.
