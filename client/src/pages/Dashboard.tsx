@@ -10,11 +10,9 @@ import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
-import { GamificationDisplay } from "@/components/GamificationDisplay";
-import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2 } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +39,7 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
+  const [habitsExpanded, setHabitsExpanded] = useState(false);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features } = useSubscription();
@@ -248,14 +247,30 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Habits Section */}
-        <section className="space-y-6">
+        <section className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-              Your Habits 
-              <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
-                {activeHabits?.length || 0}
-              </span>
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
+                Your Habits 
+                <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
+                  {activeHabits?.length || 0}
+                </span>
+              </h2>
+              {activeHabits && activeHabits.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setHabitsExpanded(!habitsExpanded)}
+                  data-testid="button-toggle-habits-view"
+                >
+                  {habitsExpanded ? (
+                    <Minimize2 className="w-4 h-4" />
+                  ) : (
+                    <Maximize2 className="w-4 h-4" />
+                  )}
+                </Button>
+              )}
+            </div>
             <div className="flex gap-2">
               <TemplateGallery onSelectTemplate={handleSelectTemplate} />
               <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
@@ -287,44 +302,29 @@ export default function Dashboard() {
               <Button onClick={() => setIsDialogOpen(true)}>Create First Habit</Button>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.div 
+              layout
+              className={habitsExpanded ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"}
+            >
               <AnimatePresence mode="popLayout">
                 {activeHabits?.map((habit) => (
                   <HabitCard key={habit.id} habit={habit} />
                 ))}
               </AnimatePresence>
-            </div>
+            </motion.div>
           )}
         </section>
-
-        {/* Gamification - XP, Levels, Daily Challenges */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <GamificationDisplay />
-        </motion.section>
 
         {/* Achievements (compact) */}
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
             <AchievementsDisplay compact />
           </motion.section>
         )}
-
-        {/* Mood Tracker */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <MoodTracker />
-        </motion.section>
 
         {/* Habit Stacks Section (Premium) */}
         {features.hasHabitStacking && habitStacks && habitStacks.length > 0 && (

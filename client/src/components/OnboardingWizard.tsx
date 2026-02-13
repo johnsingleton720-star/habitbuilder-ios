@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,9 +38,11 @@ export function OnboardingWizard() {
   const [selectedHabit, setSelectedHabit] = useState("");
   const [customHabit, setCustomHabit] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [createdHabitId, setCreatedHabitId] = useState<number | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const habitTitle = selectedHabit || customHabit.trim();
 
@@ -58,11 +61,13 @@ export function OnboardingWizard() {
       setStep(2);
       setIsCreating(true);
       try {
-        await apiRequest("POST", "/api/habits", {
+        const res = await apiRequest("POST", "/api/habits", {
           title: habitTitle,
           goal: `Build a consistent ${habitTitle} routine`,
           description: "Created during onboarding",
         });
+        const habit = await res.json();
+        setCreatedHabitId(habit.id);
         setIsComplete(true);
       } catch (error) {
         toast({
@@ -82,6 +87,10 @@ export function OnboardingWizard() {
     try {
       await apiRequest("PATCH", "/api/user/onboarding");
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      if (createdHabitId) {
+        navigate(`/habit/${createdHabitId}`);
+      }
     } catch (error) {
       toast({
         title: "Something went wrong",
@@ -240,11 +249,10 @@ export function OnboardingWizard() {
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-xl font-bold text-foreground">
-                      Your first habit is ready!
+                      Great choice!
                     </h2>
                     <p className="text-muted-foreground">
-                      "{habitTitle}" has been created. Let's build this routine
-                      together.
+                      "{habitTitle}" is ready. Next, your AI coach will ask a few quick questions to build your personalized plan.
                     </p>
                   </div>
                   <Button
@@ -256,11 +264,11 @@ export function OnboardingWizard() {
                     {isFinishing ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Finishing...
+                        Loading...
                       </>
                     ) : (
                       <>
-                        Go to Dashboard
+                        Start AI Interview
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
