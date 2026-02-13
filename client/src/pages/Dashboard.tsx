@@ -41,7 +41,7 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
-  const [habitsExpanded, setHabitsExpanded] = useState(false);
+  const [habitsCollapsed, setHabitsCollapsed] = useState(true);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features } = useSubscription();
@@ -280,28 +280,25 @@ export default function Dashboard() {
         {/* Habits Section - Bottom, Collapsible */}
         <section className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
+            <button
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
+              data-testid="button-toggle-habits-view"
+            >
               <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-                Your Habits 
+                Your Habits
                 <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
                   {activeHabits?.length || 0}
                 </span>
               </h2>
               {activeHabits && activeHabits.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setHabitsExpanded(!habitsExpanded)}
-                  data-testid="button-toggle-habits-view"
-                >
-                  {habitsExpanded ? (
-                    <Minimize2 className="w-4 h-4" />
-                  ) : (
-                    <Maximize2 className="w-4 h-4" />
-                  )}
-                </Button>
+                habitsCollapsed ? (
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                )
               )}
-            </div>
+            </button>
             <div className="flex gap-2">
               <TemplateGallery onSelectTemplate={handleSelectTemplate} />
               <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
@@ -311,39 +308,42 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-40 rounded-2xl bg-muted/50 animate-pulse border border-border/50" />
-              ))}
-            </div>
-          ) : activeHabits?.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-20 text-center bg-card/50 rounded-3xl border border-dashed border-border"
-            >
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Plus className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="font-display text-lg font-medium text-foreground">No habits yet</h3>
-              <p className="text-muted-foreground max-w-sm mt-2 mb-6">
-                Start building your routine by adding your first habit. Small steps lead to big changes.
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>Create First Habit</Button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              layout
-              className={habitsExpanded ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"}
-            >
-              <AnimatePresence mode="popLayout">
-                {activeHabits?.map((habit) => (
-                  <HabitCard key={habit.id} habit={habit} />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          )}
+          <AnimatePresence initial={false}>
+            {!habitsCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{ overflow: "hidden" }}
+              >
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-40 rounded-2xl bg-muted/50 animate-pulse border border-border/50" />
+                    ))}
+                  </div>
+                ) : activeHabits?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center bg-card/50 rounded-3xl border border-dashed border-border">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Plus className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-lg font-medium text-foreground">No habits yet</h3>
+                    <p className="text-muted-foreground max-w-sm mt-2 mb-6">
+                      Start building your routine by adding your first habit. Small steps lead to big changes.
+                    </p>
+                    <Button onClick={() => setIsDialogOpen(true)}>Create First Habit</Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activeHabits?.map((habit) => (
+                      <HabitCard key={habit.id} habit={habit} />
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         {/* Habit Stacks Section (Premium) */}
