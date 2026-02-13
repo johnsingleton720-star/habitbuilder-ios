@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, X, ListChecks, HelpCircle, Clock, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -118,16 +118,16 @@ export function QuickTasks() {
               {completedCount}/{tasks.length}
             </Badge>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6" data-testid="button-quick-tasks-info">
                 <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[240px] text-sm">
-              <p>Personal to-do items like errands, appointments, or one-off tasks — grocery store, bank, doctor visits, etc. Not related to your habits.</p>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverTrigger>
+            <PopoverContent side="bottom" className="max-w-[260px] text-sm p-3">
+              <p className="text-muted-foreground">Personal to-do items like errands, appointments, or one-off tasks — grocery store, bank, doctor visits, etc. These are separate from your habits.</p>
+            </PopoverContent>
+          </Popover>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
