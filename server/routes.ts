@@ -1098,7 +1098,7 @@ RULES:
 1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps. Total should be 6-16 tasks across all habits.
 2. Each task's "steps" array should have 1-3 sub-steps with specific, granular instructions.
 3. Each task MUST have a "coachingTip" — make it specific to that step, not generic.
-4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). Use searchQuery, NOT URLs.
+4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). For searchQuery, use specific names like 'Headspace Guide to Meditation beginner tutorial' for videos, or 'Atomic Habits James Clear' for books. Be very specific so search results find the actual resource.
 5. Create a "transition" entry for every habit change in the sequence. Make transitions warm and encouraging.
 6. Descriptions should read like a coach talking directly to the user: "Now I want you to..." or "Focus on..." or "Notice how..."
 7. Sequence tasks so they flow naturally — warm-ups before intense work, wind-downs at the end.
@@ -1130,11 +1130,20 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       const addUrlToResource = (r: any) => {
         const query = r.searchQuery || r.name || '';
+        const type = (r.type || '').toLowerCase();
         let url = '';
-        if (r.type === 'book') {
-          url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
-        } else if (r.type === 'video') {
+        if (type === 'video') {
           url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        } else if (type === 'book') {
+          url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
+        } else if (type === 'course') {
+          url = `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
+        } else if (type === 'blog' || type === 'article') {
+          url = `https://medium.com/search?q=${encodeURIComponent(query)}`;
+        } else if (type === 'podcast') {
+          url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
+        } else if (type === 'tool' || type === 'template') {
+          url = `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
         } else {
           url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
         }
@@ -3536,17 +3545,22 @@ CRITICAL RULES:
       const buildSearchUrl = (resource: any): string => {
         const query = resource.searchQuery || resource.name || '';
         if (!query) return '';
-        const type = resource.type || 'website';
-        if (type === 'book') {
-          return `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
-        }
-        if (type === 'course') {
+        const type = (resource.type || '').toLowerCase();
+        if (type === 'video') {
+          return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        } else if (type === 'book') {
+          return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
+        } else if (type === 'course') {
+          return `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
+        } else if (type === 'blog' || type === 'article') {
+          return `https://medium.com/search?q=${encodeURIComponent(query)}`;
+        } else if (type === 'podcast') {
+          return `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
+        } else if (type === 'tool' || type === 'template') {
+          return `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
+        } else {
           return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
         }
-        if (type === 'video' || type === 'podcast') {
-          return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-        }
-        return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       }
       
       const validatedResources = rawResources
@@ -4570,11 +4584,20 @@ Be specific, practical, and personalized. Include realistic time estimates and X
       if (plan.resources && Array.isArray(plan.resources)) {
         plan.resources = plan.resources.map((r: any) => {
           const query = r.searchQuery || r.name || '';
+          const type = (r.type || '').toLowerCase();
           let url = '';
-          if (r.type === 'video') {
+          if (type === 'video') {
             url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-          } else if (r.type === 'book') {
-            url = `https://www.google.com/search?q=${encodeURIComponent(query + ' book')}`;
+          } else if (type === 'book') {
+            url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
+          } else if (type === 'course') {
+            url = `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
+          } else if (type === 'blog' || type === 'article') {
+            url = `https://medium.com/search?q=${encodeURIComponent(query)}`;
+          } else if (type === 'podcast') {
+            url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
+          } else if (type === 'tool' || type === 'template') {
+            url = `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
           } else {
             url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
           }
