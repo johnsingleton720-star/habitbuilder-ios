@@ -51,6 +51,11 @@ export default function HabitDetail() {
     queryKey: ["/api/habits"],
   });
 
+  const { data: habitStacks } = useQuery<any[]>({
+    queryKey: ["/api/habit-stacks"],
+    enabled: features.hasHabitStacking,
+  });
+
   const linkHabitMutation = useMutation({
     mutationFn: async (linkedHabitId: number) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/link`, { linkedHabitId });
@@ -427,109 +432,7 @@ export default function HabitDetail() {
 
         {/* Habit Stacking (Premium Feature) */}
         {habit.setupComplete && (
-          <Card data-testid="card-habit-stacking">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Link2 className="w-4 h-4 text-primary" />
-                  Habit Stacking
-                </CardTitle>
-                {!features.hasHabitStacking && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Crown className="w-3 h-3" />
-                    Premium
-                  </Badge>
-                )}
-              </div>
-              <CardDescription>
-                Link habits together to build powerful routines
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {!features.hasHabitStacking ? (
-                <div className="text-center py-3">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Chain habits together with habit stacking. After completing one habit, seamlessly flow into the next.
-                  </p>
-                  <Link href="/paywall">
-                    <Button variant="outline" size="sm" data-testid="button-upgrade-stacking">
-                      <Crown className="w-4 h-4 mr-1" />
-                      Upgrade to Premium
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  {habit.linkedHabitId ? (
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-sm text-muted-foreground shrink-0">After this, do:</span>
-                        <Link href={`/habit/${habit.linkedHabitId}`}>
-                          <Button variant="ghost" size="sm" className="gap-1 font-medium" data-testid="link-stacked-habit">
-                            {allHabits?.find(h => h.id === habit.linkedHabitId)?.title || "Linked habit"}
-                            <ArrowRight className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => unlinkHabitMutation.mutate()}
-                        disabled={unlinkHabitMutation.isPending}
-                        data-testid="button-unlink-habit"
-                      >
-                        <Unlink className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        Choose a habit to do right after completing this one:
-                      </p>
-                      {allHabits && allHabits.filter(h => h.id !== habitId && h.setupComplete).length > 0 ? (
-                        <Select
-                          onValueChange={(val) => {
-                            const id = Number(val);
-                            if (!isNaN(id) && id > 0) {
-                              linkHabitMutation.mutate(id);
-                            }
-                          }}
-                          disabled={linkHabitMutation.isPending}
-                        >
-                          <SelectTrigger data-testid="select-link-habit">
-                            <SelectValue placeholder="Select a habit to link..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {allHabits
-                              .filter(h => h.id !== habitId && h.setupComplete)
-                              .map(h => (
-                                <SelectItem key={h.id} value={String(h.id)} data-testid={`select-habit-${h.id}`}>
-                                  {h.title}
-                                </SelectItem>
-                              ))
-                            }
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                          No other habits available to link. Create and set up another habit first.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {/* Show habits that link TO this one */}
-                  {allHabits?.some(h => h.linkedHabitId === habitId) && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
-                      <Link2 className="w-3 h-3" />
-                      <span>
-                        Follows: {allHabits.filter(h => h.linkedHabitId === habitId).map(h => h.title).join(", ")}
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <HabitStackInfo habitId={habitId} features={features} />
         )}
 
         {/* Progress Overview */}
@@ -1055,22 +958,33 @@ export default function HabitDetail() {
                     ))}
                   </AnimatePresence>
 
-                  {/* Next in Stack Prompt - shown when all tasks are done and habit has a linked habit */}
+                  {/* Next in Stack Prompt - shown when all tasks are done and habit is in a stack */}
                   {(() => {
-                    const linkedHabit = habit.linkedHabitId ? allHabits?.find(h => h.id === habit.linkedHabitId) : null;
-                    if (!linkedHabit) return null;
-
                     const anyCompleted = currentPlan.tasks.some(t => t.completed);
                     const allResolved = currentPlan.tasks.length > 0 && currentPlan.tasks.every(t => t.completed || t.skipped);
                     const dayDone = allResolved && anyCompleted;
                     if (!dayDone) return null;
 
-                    const linkedPlans = (linkedHabit.dailyPlans || []) as DailyPlan[];
+                    const myStack = habitStacks?.find(s => (s.habitIds as number[])?.includes(habitId));
+                    if (!myStack) return null;
+
+                    const order = (myStack.habitOrder || []) as any[];
+                    const myIdx = order.findIndex((o: any) => o.habitId === habitId);
+                    if (myIdx < 0 || myIdx >= order.length - 1) return null;
+
+                    const nextInStack = order[myIdx + 1];
+                    const nextHabit = allHabits?.find(h => h.id === nextInStack.habitId);
+                    if (!nextHabit) return null;
+
+                    const linkedPlans = (nextHabit.dailyPlans || []) as DailyPlan[];
                     const linkedTodayPlan = linkedPlans.find(p => p.date === todayStr);
                     const linkedActiveTasks = linkedTodayPlan ? linkedTodayPlan.tasks.filter(t => !t.skipped) : [];
                     const linkedDone = linkedActiveTasks.length > 0 && linkedActiveTasks.every(t => t.completed);
 
                     if (linkedDone) return null;
+
+                    const plan = myStack.stackPlan as any;
+                    const transition = plan?.transitions?.find((t: any) => t.fromHabitId === habitId && t.toHabitId === nextHabit.id);
 
                     return (
                       <motion.div
@@ -1085,19 +999,22 @@ export default function HabitDetail() {
                                 <ArrowRight className="w-5 h-5 text-primary" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-muted-foreground" data-testid="text-next-in-stack">Next in your stack</p>
-                                <p className="font-semibold truncate" data-testid="text-stacked-habit-title">{linkedHabit.title}</p>
+                                <p className="text-sm font-medium text-muted-foreground" data-testid="text-next-in-stack">Next in "{myStack.name}"</p>
+                                <p className="font-semibold truncate" data-testid="text-stacked-habit-title">{nextHabit.title}</p>
+                                {transition?.note && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 italic">{transition.note}</p>
+                                )}
                                 {linkedTodayPlan && linkedActiveTasks.length > 0 ? (
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {linkedActiveTasks.filter(t => t.completed).length}/{linkedActiveTasks.length} tasks done
                                   </p>
-                                ) : !linkedTodayPlan && linkedHabit.setupComplete ? (
+                                ) : !linkedTodayPlan && nextHabit.setupComplete ? (
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     Not scheduled today
                                   </p>
                                 ) : null}
                               </div>
-                              <Link href={`/habit/${linkedHabit.id}`}>
+                              <Link href={`/habit/${nextHabit.id}`}>
                                 <Button className="gap-1.5" data-testid="button-go-to-stacked-habit">
                                   <Play className="w-4 h-4" />
                                   {linkedTodayPlan ? "Start" : "View"}
@@ -1193,5 +1110,106 @@ export default function HabitDetail() {
         />
       )}
     </div>
+  );
+}
+
+function HabitStackInfo({ habitId, features }: { habitId: number; features: any }) {
+  const { data: stacks } = useQuery<any[]>({
+    queryKey: ["/api/habit-stacks"],
+    enabled: features.hasHabitStacking,
+  });
+
+  const myStacks = stacks?.filter(s => (s.habitIds as number[])?.includes(habitId)) || [];
+
+  return (
+    <Card data-testid="card-habit-stacking">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Link2 className="w-4 h-4 text-primary" />
+            Habit Stacking
+          </CardTitle>
+          {!features.hasHabitStacking && (
+            <Badge variant="secondary" className="gap-1">
+              <Crown className="w-3 h-3" />
+              Premium
+            </Badge>
+          )}
+        </div>
+        <CardDescription>
+          This habit's position in your stacks
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!features.hasHabitStacking ? (
+          <div className="text-center py-3">
+            <p className="text-sm text-muted-foreground mb-3">
+              Chain habits together with habit stacking. Build powerful routines that flow naturally.
+            </p>
+            <Link href="/account">
+              <Button variant="outline" size="sm" data-testid="button-upgrade-stacking">
+                <Crown className="w-4 h-4 mr-1" />
+                Upgrade to Premium
+              </Button>
+            </Link>
+          </div>
+        ) : myStacks.length === 0 ? (
+          <div className="text-center py-3">
+            <p className="text-sm text-muted-foreground">
+              This habit isn't in any stacks yet. Go to your Dashboard to create stacks.
+            </p>
+            <Link href="/">
+              <Button variant="outline" size="sm" className="mt-2" data-testid="link-go-to-stacks">
+                Go to Dashboard
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          myStacks.map((stack: any) => {
+            const order = (stack.habitOrder || []) as any[];
+            const myIndex = order.findIndex((o: any) => o.habitId === habitId);
+            const prevHabit = myIndex > 0 ? order[myIndex - 1] : null;
+            const nextHabit = myIndex < order.length - 1 ? order[myIndex + 1] : null;
+
+            return (
+              <div key={stack.id} className="p-3 bg-muted/50 rounded-lg space-y-2" data-testid={`stack-info-${stack.id}`}>
+                <p className="text-sm font-medium">{stack.name}</p>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-muted-foreground">
+                  {order.map((item: any, idx: number) => (
+                    <span key={item.habitId} className="flex items-center gap-1.5">
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded",
+                        item.habitId === habitId ? "bg-primary/10 text-primary font-medium" : ""
+                      )}>
+                        {item.habitTitle}
+                      </span>
+                      {idx < order.length - 1 && <ArrowRight className="w-3 h-3 shrink-0" />}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {prevHabit && (
+                    <Link href={`/habit/${prevHabit.habitId}`}>
+                      <Button variant="ghost" size="sm" className="text-xs gap-1" data-testid={`link-prev-habit-${prevHabit.habitId}`}>
+                        <ArrowLeft className="w-3 h-3" />
+                        {prevHabit.habitTitle}
+                      </Button>
+                    </Link>
+                  )}
+                  {nextHabit && (
+                    <Link href={`/habit/${nextHabit.habitId}`}>
+                      <Button variant="ghost" size="sm" className="text-xs gap-1" data-testid={`link-next-habit-${nextHabit.habitId}`}>
+                        {nextHabit.habitTitle}
+                        <ArrowRight className="w-3 h-3" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
   );
 }
