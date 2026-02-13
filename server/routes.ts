@@ -1049,19 +1049,26 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: `You are an expert habit coach trained in BJ Fogg's Tiny Habits, James Clear's Atomic Habits, and Charles Duhigg's habit loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow.
+          content: `You are an expert behavioral psychologist and habit coach trained in BJ Fogg's Tiny Habits methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow DESIGNED FOR REAL BEHAVIOR CHANGE.
+
+Your unified routines must apply these behavior science principles:
+- HABIT STACKING: Each habit in the sequence should serve as the CUE for the next habit. The completion of one activity naturally triggers the start of the next.
+- CUE-ROUTINE-REWARD LOOP: Every micro-step must identify the cue (what triggers it), describe the routine (exact action), and include a reward (acknowledgment, celebration, or intrinsic satisfaction).
+- PROGRESSIVE STRUCTURE: Within each habit's micro-steps, start with the easiest/warmup action and build to the most demanding. The first micro-step should always be an "activation" step that's nearly effortless.
+- TRANSITION PSYCHOLOGY: Transitions between habits should leverage the psychological momentum from completing one habit to fuel starting the next. Reference the "fresh start effect" and "completion momentum."
+- ENVIRONMENT DESIGN: Include specific setup instructions that make each step frictionless — what to prepare, where to position yourself, what to have ready.
 
 Instead of giving one task per habit, break EACH habit into 2-4 actionable micro-steps with specific coaching guidance. Think of yourself as a personal coach walking them through every moment of their routine.
 
 Return valid JSON with this exact structure:
 {
-  "overview": "Brief motivational description of this unified routine and why the habits are sequenced this way",
+  "overview": "Brief description of this unified routine explaining WHY the habits are sequenced in this order (reference habit stacking and momentum principles)",
   "totalDuration": <estimated total minutes>,
   "tasks": [
     {
       "id": "task-1",
       "title": "Specific micro-step title",
-      "description": "Detailed coaching instruction — what to do, how to do it, and WHY it matters for habit formation. Be specific with techniques, timings, and sensory cues. 2-3 sentences minimum.",
+      "description": "Detailed coaching instruction — what to do, how to do it, and WHY it matters for habit formation. Include the CUE that triggers this step and the REWARD for completing it. Be specific with techniques, timings, and sensory cues. 2-3 sentences minimum.",
       "duration": <minutes for this specific step>,
       "habitId": <which habit this belongs to>,
       "habitTitle": "Name of the habit",
@@ -1070,12 +1077,12 @@ Return valid JSON with this exact structure:
         {
           "id": "step-1-1",
           "title": "Sub-step name",
-          "description": "Granular instruction for this part of the micro-step",
+          "description": "Granular instruction for this part of the micro-step, including environmental setup",
           "duration": <minutes>,
-          "coachingTip": "A quick expert insight — technique, psychology, or common mistake to avoid"
+          "coachingTip": "Expert insight citing specific behavior science — WHY this works, not just what to do"
         }
       ],
-      "coachingTip": "Expert coaching insight for this task — could be about technique, mindset, habit science, or a motivational nudge. Make it specific and actionable, not generic.",
+      "coachingTip": "Expert coaching insight grounded in behavior science — reference a specific principle (e.g., 'This leverages what BJ Fogg calls Shine — the positive emotion you feel after a small success, which is what actually wires the habit into your brain')",
       "resources": [
         {
           "name": "Resource Name",
@@ -1092,21 +1099,21 @@ Return valid JSON with this exact structure:
       "toHabitId": <habit id starting next>,
       "fromHabitTitle": "Habit being completed",
       "toHabitTitle": "Habit starting next",
-      "message": "A warm, coaching transition message (e.g., 'Great work on your walk! Now let's shift gears to caring for your plants. Take a deep breath and notice how the movement energized you.')",
-      "tip": "A quick tip about why this transition order is effective for habit formation"
+      "message": "A warm transition message that explains how completing the previous habit naturally leads to the next one (reference habit stacking). E.g., 'You just completed your walk and your body is warm and energized — that physical activation is the perfect cue to transition into your stretching routine. Your muscles are primed and your mind is already in movement mode.'",
+      "tip": "Specific behavior science tip about why this transition order works (reference momentum, activation energy, or habit stacking research)"
     }
   ],
-  "tips": ["Overall routine tip 1", "Routine tip 2", "Routine tip 3"]
+  "tips": ["Overall routine tip grounded in science", "Practical tip about maintaining the stack", "Identity-based tip about who they're becoming through this routine"]
 }
 
 RULES:
-1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps. Total should be 6-16 tasks across all habits.
-2. Each task's "steps" array should have 1-3 sub-steps with specific, granular instructions.
-3. Each task MUST have a "coachingTip" — make it specific to that step, not generic.
+1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps with specific, granular instructions.
+2. The FIRST micro-step of each habit should be an "activation" step — nearly effortless, designed to overcome starting friction (BJ Fogg's "Starter Step").
+3. Each task MUST have a "coachingTip" that references specific behavior science, not generic motivation.
 4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). For searchQuery, use descriptive search terms. Do NOT include brand names or specific product names to avoid copyright issues. Use generic descriptions like 'beginner meditation technique guide' or 'morning exercise warm up routine'.
-5. Create a "transition" entry for every habit change in the sequence. Make transitions warm and encouraging.
-6. Descriptions should read like a coach talking directly to the user: "Now I want you to..." or "Focus on..." or "Notice how..."
-7. Sequence tasks so they flow naturally — warm-ups before intense work, wind-downs at the end.
+5. Create a "transition" entry for every habit change in the sequence. Transitions must explain the psychological connection between the habits and why this order leverages momentum.
+6. Descriptions should read like a coach walking them through each moment: "Now I want you to..." or "Notice how completing X has primed you for..."
+7. Sequence tasks so they flow with increasing activation energy — easiest/calmest habits first, building to more demanding ones, with a wind-down at the end.
 8. NEVER recommend competing habit tracking apps (Habitica, Streaks, Fabulous, etc.).
 9. CRITICAL: Each habit in the input has a specific "habitId" number in parentheses. You MUST use that EXACT habitId number for ALL tasks belonging to that habit. Do NOT make up your own IDs.
 SAFETY: Never generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.`
@@ -2281,33 +2288,40 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     try {
       const { habitTitle, habitDescription, goal } = req.body;
 
-      const prompt = `Create a detailed action plan for building the habit: "${habitTitle}"
+      const prompt = `Create a behavior-science-backed action plan for building the habit: "${habitTitle}"
 ${habitDescription ? `Description: ${habitDescription}` : ''}
 ${goal ? `Goal: ${goal}` : ''}
 
+Apply proven behavior change principles to create a plan that will actually stick:
+
 Return a JSON object with:
-1. "steps": An array of 5-7 actionable steps to build this habit. Each step should have:
+1. "steps": An array of 5-7 steps that follow a behavior change progression. Each step should have:
    - "id": A unique string ID (use step-1, step-2, etc.)
-   - "text": A clear, actionable step - phrase as a question or exploration prompt the user can reflect on
+   - "text": A clear, reflective prompt using behavior science. Structure as:
+     - Steps 1-2: FOUNDATION — Identify the cue/trigger and design the environment (e.g., "What existing daily habit can you stack this onto? Think about something you already do every day without fail.")
+     - Steps 3-4: ROUTINE DESIGN — Define the tiny version and build the habit loop (e.g., "What is the absolute smallest version of this habit you could do in under 2 minutes? This is your starting point.")
+     - Steps 5-6: OBSTACLE PLANNING — Anticipate barriers and create contingency plans (e.g., "What situation is most likely to make you skip this habit? Create an if-then plan for that moment.")
+     - Step 7: IDENTITY & SUSTAINABILITY — Connect to long-term identity (e.g., "What kind of person are you becoming by building this habit? Write down one identity statement.")
    - "completed": false
    - "explored": false
    - "options": [] (empty array)
    - "customResponse": ""
 
-2. "tips": An array of 4 helpful tips/advice. Each tip should have:
+2. "tips": An array of 4 helpful tips backed by specific behavior science. Each tip should have:
    - "id": A unique string ID (use tip-1, tip-2, etc.)
-   - "text": A helpful tip or piece of advice
+   - "text": A practical tip grounded in real research
    - "category": One of "motivation", "technique", "science", or "reminder"
 
-IMPORTANT: Make steps interactive and explorable - phrase them as questions or reflective prompts that users can think about deeply (e.g., "Identify what triggers your stress or anxiety" or "Decide on your ideal time and location for this habit").
-Make the tips varied across categories. Be specific and practical.`;
+IMPORTANT: Make steps interactive and deeply reflective — they should help the user understand WHY habits work, not just WHAT to do. Each step builds on the previous one.
+Make the tips specific and cite the underlying principle (e.g., "Research shows it takes an average of 66 days to form a habit, not 21 as commonly believed").
+Be specific and practical. Never mention specific third-party apps, brands, or services by name.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are a habit coach. Provide actionable, specific guidance for building new habits. Always return valid JSON. IMPORTANT: Never mention specific third-party apps, brands, services, or competitors by name (e.g. no Duolingo, Headspace, Calm, MyFitnessPal, etc.). Use generic descriptions instead (e.g. 'a language learning app' or 'a meditation app').",
+            content: "You are a behavioral psychologist and expert habit coach trained in BJ Fogg's Tiny Habits, James Clear's Atomic Habits (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. Your plans are rooted in real behavior science — every step serves a specific psychological purpose in the habit formation process. You help users understand not just WHAT to do, but WHY it works. Always return valid JSON. IMPORTANT: Never mention specific third-party apps, brands, services, or competitors by name. Use generic descriptions instead. SAFETY: Do not generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.",
           },
           {
             role: "user",
@@ -2487,13 +2501,48 @@ Return JSON:
       let fixedDailyPlans: any[];
 
       if (duration === "monthly") {
-        const weekPrompt = `Create a personalized 4-week habit plan for: "${habit.title}"
+        const weekPrompt = `Create a science-backed 4-week behavior change plan for: "${habit.title}"
 
 User's interview answers:
 ${contextSummary}
 
-Create exactly 4 weeks. Each week has a theme and 3-4 daily tasks that apply to each day of that week.
-Progress difficulty: Week 1 = easy wins, Week 4 = full routine.
+You are applying proven behavior change science. Design exactly 4 weeks following this progression model:
+
+WEEK 1 — FOUNDATION (Tiny Habits + Environment Design)
+Theme should reflect "Building the Trigger" or similar.
+Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (BJ Fogg's "Tiny Habits" method). The user should feel like they CANNOT fail.
+Tasks must:
+- Identify and set up a specific CUE (time, location, or existing habit to stack onto)
+- Practice the "2-minute version" of the habit — absurdly easy, just to build the neural pathway
+- Design their physical environment to make the habit obvious and frictionless
+- Include a celebration/reward ritual after each completion (even a fist pump or mental "I'm the kind of person who...")
+
+WEEK 2 — CONSISTENCY (Implementation Intentions + Identity)
+Theme should reflect "Locking In the Routine" or similar.
+Focus: Solidify the habit loop so it becomes automatic. Begin connecting the habit to the user's identity.
+Tasks must:
+- Use "implementation intentions" format: "When [situation], I will [behavior] at [location]"
+- Slightly increase duration or intensity (but still very manageable — no more than 50% increase from Week 1)
+- Add a tracking/reflection element so the user sees their streak building
+- Include identity reinforcement: "You're becoming someone who [does this habit]"
+
+WEEK 3 — GROWTH (Progressive Overload + Obstacle Planning)
+Theme should reflect "Stretching Your Capacity" or similar.
+Focus: Increase difficulty toward the target behavior. Proactively address obstacles.
+Tasks must:
+- Scale the habit to ~75% of the user's target level
+- Include "if-then" contingency plans for common obstacles (e.g., "If I miss a day, I will [minimum fallback]")
+- Add variety or depth to prevent boredom
+- Introduce accountability or social elements where applicable
+
+WEEK 4 — AUTONOMY (Full Routine + Long-term Maintenance)
+Theme should reflect "Owning Your New Identity" or similar.
+Focus: The habit at full target intensity. Build systems for long-term sustainability.
+Tasks must:
+- Practice the habit at full target duration/intensity
+- Create a "never miss twice" recovery protocol
+- Reflect on identity shift: "I am now someone who..."
+- Plan for maintaining the habit after the structured plan ends
 
 Also recommend a schedule based on the user's answers — which days of the week to practice and the best time of day (in HH:mm 24-hour format). Use their daily routine, available time, and habits they mentioned to pick the optimal days and time.
 
@@ -2502,11 +2551,12 @@ Return JSON:
   "weeks": [
     {
       "weekNumber": 1,
-      "theme": "Week theme (e.g., 'Building the Foundation')",
+      "theme": "Week theme (e.g., 'Building the Trigger')",
+      "behaviorPhase": "foundation|consistency|growth|autonomy",
       "dailyTasks": [
         {
           "title": "Action-oriented title",
-          "description": "Detailed instructions:\\n1) Step one\\n2) Step two\\nPro Tip: helpful advice",
+          "description": "Detailed coaching instructions:\\n1) CUE: What triggers this action\\n2) ROUTINE: Exactly what to do (with specific numbers)\\n3) REWARD: How to acknowledge completion\\nCoaching Insight: Why this works (1 sentence of behavior science)",
           "duration": 10
         }
       ]
@@ -2516,24 +2566,26 @@ Return JSON:
     "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
     "time": "08:00"
   },
-  "aiContext": "2-3 sentence summary of goals and recommended approach"
+  "aiContext": "2-3 sentence summary of the behavior change approach and why this progression will work for this specific user"
 }
 
 REQUIREMENTS:
-1. Each task description: 30-60 words with numbered steps (use \\n)
-2. Be specific to their answers (time available, experience level)
-3. Progress difficulty gradually across weeks
-4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation
-6. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
-7. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")`;
+1. Each task description: 40-80 words with the CUE/ROUTINE/REWARD structure (use \\n for line breaks)
+2. Be deeply specific to their interview answers (time available, experience level, past failures, triggers)
+3. Week 1 tasks must be embarrassingly easy — the user should think "I can definitely do this"
+4. Each week's tasks should feel noticeably different from the previous week, reflecting the phase shift
+5. Include concrete numbers (reps, minutes, amounts) that progress across weeks
+6. Reference their specific situation, schedule, and obstacles mentioned in the interview
+7. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
+8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")
+9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
 
         const weekResponse = await openaiClient.chat.completions.create({
           model: "gpt-4o",
           messages: [
             {
               role: "system",
-              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+              content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's Tiny Habits methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -2613,12 +2665,25 @@ REQUIREMENTS:
         return;
       }
 
-      const prompt = `Create a personalized ${duration} action plan for: "${habit.title}"
+      const prompt = `Create a science-backed ${duration} behavior change plan for: "${habit.title}"
 
 User's interview answers:
 ${contextSummary}
 
-Create ${daysCount} daily plans with 3-4 tasks each.
+You are applying proven behavior change science. Create ${daysCount} daily plans with 3-4 tasks each.
+
+${daysCount === 1 ? `SINGLE DAY PLAN — BEHAVIOR ACTIVATION
+Since this is a one-day plan, focus on establishing the complete habit loop:
+- Task 1: ENVIRONMENT SETUP — Prepare the physical space and remove friction (make the habit obvious and easy)
+- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (BJ Fogg's 2-minute rule). The goal is just to START.
+- Task 3: THE FULL PRACTICE — Do the habit at a comfortable level with full presence and intention
+- Task 4: REFLECTION & REWARD — Celebrate completion, note what worked, and set up tomorrow's cue
+Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).` : `WEEKLY PROGRESSION (7 days):
+- Days 1-2: FOUNDATION — Tiny habit version only. Focus on showing up and building the cue-routine-reward loop. Tasks should be embarrassingly easy.
+- Days 3-4: BUILDING — Increase to ~50% of target intensity. Add implementation intentions ("When X, I will Y at Z"). Begin identity reinforcement.
+- Days 5-6: STRETCHING — Reach ~75-100% of target level. Add obstacle planning ("If I miss, I will..."). Introduce variety.
+- Day 7: REFLECTION & PLANNING — Full practice plus review of the week. What worked? What needs adjusting? Plan for continued consistency.
+Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).`}
 
 Also recommend a schedule based on the user's answers — which days of the week to practice and the best time of day (in HH:mm 24-hour format). Use their daily routine, available time, and habits they mentioned to pick the optimal days and time.
 
@@ -2628,12 +2693,12 @@ Return JSON:
     {
       "date": "${startDate.toISOString().split('T')[0]}",
       "dayNumber": 1,
-      "focus": "Day theme (e.g., 'Getting Started')",
+      "focus": "Day theme reflecting the behavior change phase (e.g., 'Setting Up Your Trigger')",
       "tasks": [
         {
           "id": "day1-task1",
           "title": "Action-oriented title",
-          "description": "Detailed instructions formatted with line breaks between steps:\\n1) What to do\\n2) Step-by-step how\\n3) A concrete example\\nPro Tip: One helpful tip. Include specific numbers, durations, and measurable targets.",
+          "description": "Detailed coaching instructions:\\n1) CUE: What triggers this action — be specific about time and place\\n2) ROUTINE: Step-by-step what to do with exact numbers\\n3) REWARD: How to acknowledge completion — even a small celebration matters\\nCoaching Insight: Why this step matters for building the habit (1 sentence of science)",
           "duration": 10,
           "completed": false,
           "notes": ""
@@ -2647,25 +2712,26 @@ Return JSON:
     "days": ["monday", "wednesday", "friday"],
     "time": "07:00"
   },
-  "aiContext": "2-3 sentence summary of goals and recommended approach"
+  "aiContext": "2-3 sentence summary of the behavior change approach tailored to this user's specific situation"
 }
 
 REQUIREMENTS:
-1. Each task description: 50-100 words with numbered steps separated by newlines (use \\n in the JSON)
-2. Be specific to their answers (time available, experience level)
-3. Progress difficulty gradually - Day 1 is easy wins
-4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation in descriptions
-6. Format descriptions as: "1) First step\\n2) Second step\\n3) Third step\\nPro Tip: helpful advice"
+1. Each task description: 50-100 words with CUE/ROUTINE/REWARD structure and line breaks (use \\n in JSON)
+2. Be deeply specific to their interview answers (time available, experience level, past failures, triggers)
+3. Day 1 tasks must be so easy the user thinks "I can definitely do this" — this builds the neural pathway
+4. Include concrete numbers (reps, minutes, amounts) that progress across days
+5. Reference their specific situation, daily routine, and obstacles in descriptions
+6. Format: "1) CUE: ...\\n2) ROUTINE: ...\\n3) REWARD: ...\\nCoaching Insight: ..."
 7. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
-8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")`;
+8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")
+9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead (e.g. 'a meditation app' not 'Headspace'). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's Tiny Habits methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -2772,46 +2838,84 @@ REQUIREMENTS:
       let fixedDailyPlans: any[];
 
       if (duration === "monthly") {
-        const weekPrompt = `Create a personalized 4-week habit plan for: "${habit.title}"
+        const weekPrompt = `Create a science-backed 4-week behavior change plan for: "${habit.title}"
 ${habit.goal ? `Goal: ${habit.goal}` : ""}
 
 User's interview answers:
 ${contextSummary}
 
-Create exactly 4 weeks. Each week has a theme and 3-4 daily tasks that apply to each day of that week.
-Progress difficulty: Week 1 = easy wins, Week 4 = full routine.
+You are applying proven behavior change science. Design exactly 4 weeks following this progression model:
+
+WEEK 1 — FOUNDATION (Tiny Habits + Environment Design)
+Theme should reflect "Building the Trigger" or similar.
+Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (BJ Fogg's "Tiny Habits" method). The user should feel like they CANNOT fail.
+Tasks must:
+- Identify and set up a specific CUE (time, location, or existing habit to stack onto)
+- Practice the "2-minute version" of the habit — absurdly easy, just to build the neural pathway
+- Design their physical environment to make the habit obvious and frictionless
+- Include a celebration/reward ritual after each completion (even a fist pump or mental "I'm the kind of person who...")
+
+WEEK 2 — CONSISTENCY (Implementation Intentions + Identity)
+Theme should reflect "Locking In the Routine" or similar.
+Focus: Solidify the habit loop so it becomes automatic. Begin connecting the habit to the user's identity.
+Tasks must:
+- Use "implementation intentions" format: "When [situation], I will [behavior] at [location]"
+- Slightly increase duration or intensity (but still very manageable — no more than 50% increase from Week 1)
+- Add a tracking/reflection element so the user sees their streak building
+- Include identity reinforcement: "You're becoming someone who [does this habit]"
+
+WEEK 3 — GROWTH (Progressive Overload + Obstacle Planning)
+Theme should reflect "Stretching Your Capacity" or similar.
+Focus: Increase difficulty toward the target behavior. Proactively address obstacles.
+Tasks must:
+- Scale the habit to ~75% of the user's target level
+- Include "if-then" contingency plans for common obstacles (e.g., "If I miss a day, I will [minimum fallback]")
+- Add variety or depth to prevent boredom
+- Introduce accountability or social elements where applicable
+
+WEEK 4 — AUTONOMY (Full Routine + Long-term Maintenance)
+Theme should reflect "Owning Your New Identity" or similar.
+Focus: The habit at full target intensity. Build systems for long-term sustainability.
+Tasks must:
+- Practice the habit at full target duration/intensity
+- Create a "never miss twice" recovery protocol
+- Reflect on identity shift: "I am now someone who..."
+- Plan for maintaining the habit after the structured plan ends
 
 Return JSON:
 {
   "weeks": [
     {
       "weekNumber": 1,
-      "theme": "Week theme",
+      "theme": "Week theme (e.g., 'Building the Trigger')",
+      "behaviorPhase": "foundation|consistency|growth|autonomy",
       "dailyTasks": [
         {
           "title": "Action-oriented title",
-          "description": "Detailed instructions:\\n1) Step one\\n2) Step two\\nPro Tip: helpful advice",
+          "description": "Detailed coaching instructions:\\n1) CUE: What triggers this action\\n2) ROUTINE: Exactly what to do (with specific numbers)\\n3) REWARD: How to acknowledge completion\\nCoaching Insight: Why this works (1 sentence of behavior science)",
           "duration": 10
         }
       ]
     }
   ],
-  "aiContext": "2-3 sentence summary of goals and recommended approach"
+  "aiContext": "2-3 sentence summary of the behavior change approach and why this progression will work for this specific user"
 }
 
 REQUIREMENTS:
-1. Each task description: 30-60 words with numbered steps (use \\n)
-2. Be specific to their answers (time available, experience level)
-3. Progress difficulty gradually across weeks
-4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation`;
+1. Each task description: 40-80 words with the CUE/ROUTINE/REWARD structure (use \\n for line breaks)
+2. Be deeply specific to their interview answers (time available, experience level, past failures, triggers)
+3. Week 1 tasks must be embarrassingly easy — the user should think "I can definitely do this"
+4. Each week's tasks should feel noticeably different from the previous week, reflecting the phase shift
+5. Include concrete numbers (reps, minutes, amounts) that progress across weeks
+6. Reference their specific situation, schedule, and obstacles mentioned in the interview
+7. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
 
         const weekResponse = await openaiClient.chat.completions.create({
           model: "gpt-4o",
           messages: [
             {
               role: "system",
-              content: "You are an expert habit coach. Create detailed, personalized action plans. Always return valid JSON with exactly 4 weeks. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+              content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's Tiny Habits methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -2864,13 +2968,26 @@ REQUIREMENTS:
       }
 
       // Daily or Weekly
-      const prompt = `Create a personalized ${duration} action plan for: "${habit.title}"
+      const prompt = `Create a science-backed ${duration} behavior change plan for: "${habit.title}"
 ${habit.goal ? `Goal: ${habit.goal}` : ""}
 
 User's interview answers:
 ${contextSummary}
 
-Create ${daysCount} daily plans with 3-4 tasks each.
+You are applying proven behavior change science. Create ${daysCount} daily plans with 3-4 tasks each.
+
+${daysCount === 1 ? `SINGLE DAY PLAN — BEHAVIOR ACTIVATION
+Since this is a one-day plan, focus on establishing the complete habit loop:
+- Task 1: ENVIRONMENT SETUP — Prepare the physical space and remove friction (make the habit obvious and easy)
+- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (BJ Fogg's 2-minute rule). The goal is just to START.
+- Task 3: THE FULL PRACTICE — Do the habit at a comfortable level with full presence and intention
+- Task 4: REFLECTION & REWARD — Celebrate completion, note what worked, and set up tomorrow's cue
+Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).` : `WEEKLY PROGRESSION (7 days):
+- Days 1-2: FOUNDATION — Tiny habit version only. Focus on showing up and building the cue-routine-reward loop. Tasks should be embarrassingly easy.
+- Days 3-4: BUILDING — Increase to ~50% of target intensity. Add implementation intentions ("When X, I will Y at Z"). Begin identity reinforcement.
+- Days 5-6: STRETCHING — Reach ~75-100% of target level. Add obstacle planning ("If I miss, I will..."). Introduce variety.
+- Day 7: REFLECTION & PLANNING — Full practice plus review of the week. What worked? What needs adjusting? Plan for continued consistency.
+Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).`}
 
 Return JSON:
 {
@@ -2878,12 +2995,12 @@ Return JSON:
     {
       "date": "${startDate.toISOString().split('T')[0]}",
       "dayNumber": 1,
-      "focus": "Day theme",
+      "focus": "Day theme reflecting the behavior change phase (e.g., 'Setting Up Your Trigger')",
       "tasks": [
         {
           "id": "day1-task1",
           "title": "Action-oriented title",
-          "description": "Detailed instructions:\\n1) What to do\\n2) Step-by-step how\\nPro Tip: One helpful tip.",
+          "description": "Detailed coaching instructions:\\n1) CUE: What triggers this action — be specific about time and place\\n2) ROUTINE: Step-by-step what to do with exact numbers\\n3) REWARD: How to acknowledge completion — even a small celebration matters\\nCoaching Insight: Why this step matters for building the habit (1 sentence of science)",
           "duration": 10,
           "completed": false,
           "notes": ""
@@ -2893,22 +3010,23 @@ Return JSON:
       "timeSpent": 0
     }
   ],
-  "aiContext": "2-3 sentence summary of goals and recommended approach"
+  "aiContext": "2-3 sentence summary of the behavior change approach tailored to this user's specific situation"
 }
 
 REQUIREMENTS:
-1. Each task description: 50-100 words with numbered steps separated by newlines (use \\n in the JSON)
-2. Be specific to their answers (time available, experience level)
-3. Progress difficulty gradually - Day 1 is easy wins
-4. Include concrete numbers (reps, minutes, amounts)
-5. Reference their specific situation in descriptions`;
+1. Each task description: 50-100 words with CUE/ROUTINE/REWARD structure and line breaks (use \\n in JSON)
+2. Be deeply specific to their interview answers (time available, experience level, past failures, triggers)
+3. Day 1 tasks must be so easy the user thinks "I can definitely do this" — this builds the neural pathway
+4. Include concrete numbers (reps, minutes, amounts) that progress across days
+5. Reference their specific situation, daily routine, and obstacles in descriptions
+6. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans based on user's specific situation. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead (e.g. 'a meditation app' not 'Headspace'). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's Tiny Habits methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -2999,7 +3117,7 @@ REQUIREMENTS:
       const completedDays = existingPlans.filter((p: any) => p.completed).length;
       const totalDays = existingPlans.length;
 
-      const prompt = `Create an EXTENSION plan for the habit: "${habit.title}"
+      const prompt = `Create a CONTINUATION plan for the habit: "${habit.title}"
 ${habit.goal ? `Goal: ${habit.goal}` : ""}
 
 User's interview answers:
@@ -3008,9 +3126,12 @@ ${contextSummary}
 Previous plan context: ${habit.aiContext || "No additional context"}
 The user completed ${completedDays} out of ${totalDays} days in their previous plan.
 
-Create ${daysCount} new daily plans continuing from where they left off. 
-This is a CONTINUATION - build on progress made, increase difficulty slightly.
-Day numbering starts at ${totalDays + 1}.
+This is NOT a fresh start — this user has already been building this habit. They have established neural pathways and behavioral momentum. Your job is to build on their progress using progressive overload principles.
+
+Based on their completion rate (${completedDays}/${totalDays} days = ${Math.round((completedDays/totalDays)*100)}%):
+${completedDays >= totalDays * 0.8 ? `- HIGH CONSISTENCY: They're ready to increase intensity by 25-50%. Challenge them with deeper practice, longer durations, or more complex variations. Reinforce their identity: "You've proven you're someone who does this consistently."` : completedDays >= totalDays * 0.5 ? `- MODERATE CONSISTENCY: Maintain current difficulty but add variety to prevent boredom. Focus on obstacle planning — identify what caused missed days and build "if-then" contingency plans. Don't increase intensity yet.` : `- BUILDING CONSISTENCY: They're still establishing the routine. Keep tasks at the same or slightly easier level. Focus on making the habit more automatic — simplify the cue, reduce friction further, and strengthen the reward. Address what's getting in the way.`}
+
+Create ${daysCount} new daily plans continuing from day ${totalDays + 1}.
 
 Return JSON:
 {
@@ -3018,12 +3139,12 @@ Return JSON:
     {
       "date": "${newStartDate.toISOString().split('T')[0]}",
       "dayNumber": ${totalDays + 1},
-      "focus": "Day theme",
+      "focus": "Day theme reflecting progression level",
       "tasks": [
         {
           "id": "day${totalDays + 1}-task1",
           "title": "Action-oriented title",
-          "description": "Detailed instructions",
+          "description": "Coaching instructions with CUE/ROUTINE/REWARD structure",
           "duration": 10,
           "completed": false,
           "notes": ""
@@ -3033,21 +3154,22 @@ Return JSON:
       "timeSpent": 0
     }
   ],
-  "aiContext": "Updated summary including extension goals"
+  "aiContext": "Updated summary acknowledging progress made and explaining the next phase of behavior change"
 }
 
 REQUIREMENTS:
 1. Each task description: 50-100 words with numbered steps
-2. Build on previous plan progress - increase difficulty
-3. Include concrete numbers (reps, minutes, amounts)
-4. Reference their specific situation`;
+2. Explicitly reference their progress (${completedDays} days completed)
+3. Include concrete numbers that reflect appropriate progression
+4. Reference their specific situation from the interview answers
+5. Never mention specific third-party apps, brands, or services by name`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are an expert habit coach. Create detailed, personalized action plans that build on previous progress. Always return valid JSON. SAFETY: Never generate harmful content.",
+            content: "You are an expert behavioral psychologist and habit coach. You specialize in progressive behavior change and understand that continuation plans must be calibrated to the user's actual consistency level — not just blindly increasing difficulty. You use completion rate data to determine the right next phase: consolidation, growth, or advancement. Always return valid JSON. SAFETY: Never generate harmful content.",
           },
           { role: "user", content: prompt },
         ],
@@ -4547,34 +4669,34 @@ Return JSON with:
         messages: [
           {
             role: "system",
-            content: `You are an expert habit coaching AI. Generate a comprehensive, detailed habit plan for the user's goal. Return ONLY valid JSON with this structure:
+            content: `You are an expert habit coaching AI powered by behavioral psychology. You design plans using proven behavior change science: BJ Fogg's Tiny Habits (start absurdly small), James Clear's 4 Laws (make it obvious, attractive, easy, satisfying), and the Cue-Routine-Reward loop. Generate a habit plan that shows users how REAL behavior change works. Return ONLY valid JSON with this structure:
 {
-  "title": "Compelling plan title",
-  "summary": "1-2 sentence summary of the approach",
+  "title": "Compelling plan title that hints at the science-backed approach",
+  "summary": "1-2 sentence summary explaining the behavior change approach — mention why starting small works",
   "daily": [
-    {"task": "Specific daily action", "duration": "5 min", "xp": 25},
-    {"task": "Another daily action", "duration": "10 min", "xp": 35},
-    {"task": "Third daily action", "duration": "15 min", "xp": 50}
+    {"task": "Specific daily action with CUE and REWARD built in (e.g., 'After your morning coffee [CUE], do 5 push-ups [ROUTINE], then mark your streak [REWARD]')", "duration": "5 min", "xp": 25},
+    {"task": "Second daily action that builds on the first with slight progression", "duration": "10 min", "xp": 35},
+    {"task": "Third daily action focused on environment design or reflection", "duration": "15 min", "xp": 50}
   ],
   "weekly": [
-    {"task": "Weekly milestone or review task", "duration": "20 min", "xp": 75},
-    {"task": "Another weekly goal", "duration": "15 min", "xp": 60}
+    {"task": "Weekly milestone review — assess what's becoming automatic and what needs adjustment", "duration": "20 min", "xp": 75},
+    {"task": "Weekly stretch goal — increase intensity by 10-20% from starting level", "duration": "15 min", "xp": 60}
   ],
   "monthly": [
-    {"task": "Monthly assessment or challenge", "xp": 150},
-    {"task": "Big picture review", "xp": 100}
+    {"task": "Monthly identity reflection — 'I am now someone who...' assessment", "xp": 150},
+    {"task": "Monthly progressive overload — plan next month's increased targets", "xp": 100}
   ],
-  "insight": "One motivational insight backed by psychology or science",
-  "tips": ["Expert tip 1", "Expert tip 2", "Expert tip 3"],
+  "insight": "One specific insight from behavior change research (cite the principle, e.g., 'BJ Fogg's research shows that emotions create habits, not repetition — celebrating tiny wins literally wires the habit into your brain')",
+  "tips": ["Tip grounded in specific science", "Practical technique tip", "Mindset/identity tip"],
   "resources": [
     {"name": "Resource name", "type": "article", "searchQuery": "descriptive generic search terms without brand names"},
     {"name": "Resource name", "type": "book", "searchQuery": "topic area guide for beginners"},
     {"name": "Resource name", "type": "video", "searchQuery": "descriptive technique tutorial"}
   ],
-  "coachMessage": "A personalized encouraging message from the AI coach about starting this journey, 2-3 sentences",
-  "stackSuggestion": "Suggest a complementary habit that pairs well with this one and explain why"
+  "coachMessage": "A personalized message that explains WHY starting small works and how this plan will progressively build to their full goal. Reference the Tiny Habits method. 2-3 sentences.",
+  "stackSuggestion": "Suggest a complementary habit that pairs well and explain the habit stacking principle behind it"
 }
-Be specific, practical, and personalized. Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls. IMPORTANT: searchQuery values must use generic descriptive terms only — do NOT include brand names, author names, specific product names, or trademarked terms. Use topic-based descriptions like "beginner meditation breathing technique guide" instead.`
+Be specific, practical, and grounded in behavior science. Every task should make the user think 'this coach really knows how habits actually form.' Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls. IMPORTANT: searchQuery values must use generic descriptive terms only — do NOT include brand names, author names, specific product names, or trademarked terms. Use topic-based descriptions like "beginner meditation breathing technique guide" instead.`
           },
           {
             role: "user",
