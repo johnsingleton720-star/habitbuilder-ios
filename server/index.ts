@@ -7,6 +7,14 @@ import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { startEmailScheduler } from './emailScheduler';
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception (server kept running):', err.message);
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  console.error('Unhandled Rejection (server kept running):', reason?.message || reason);
+});
+
 const app = express();
 const httpServer = createServer(app);
 

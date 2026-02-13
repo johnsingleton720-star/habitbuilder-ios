@@ -34,17 +34,22 @@ export async function sendEmail({
   html: string;
   text?: string;
 }) {
-  const { client, fromEmail } = await getResendClient();
+  try {
+    const { client, fromEmail } = await getResendClient();
 
-  const result = await client.emails.send({
-    from: fromEmail,
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    html,
-    ...(text ? { text } : {}),
-  });
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      ...(text ? { text } : {}),
+    });
 
-  return result;
+    return result;
+  } catch (err: any) {
+    console.error('sendEmail failed:', err?.message || err);
+    throw err;
+  }
 }
 
 const EMAIL_HEADER = `
