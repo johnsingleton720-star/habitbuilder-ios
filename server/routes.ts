@@ -1037,8 +1037,13 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         const plan = h.actionPlan as any;
         const todayTasks = plan?.dailyPlans?.[0]?.tasks || [];
         const taskList = todayTasks.map((t: any) => `  - ${t.title} (${t.duration || 5}min)`).join("\n");
-        return `${i + 1}. "${h.title}" - ${h.description || h.goal || "No description"}\n   Current tasks:\n${taskList || "   - No tasks yet"}`;
+        return `${i + 1}. "${h.title}" (habitId: ${h.id}) - ${h.description || h.goal || "No description"}\n   Current tasks:\n${taskList || "   - No tasks yet"}`;
       }).join("\n\n");
+
+      const habitIdMap: Record<string, number> = {};
+      stackHabits.forEach((h: any) => {
+        habitIdMap[h.title.toLowerCase()] = h.id;
+      });
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o-mini",
@@ -1098,11 +1103,12 @@ RULES:
 1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps. Total should be 6-16 tasks across all habits.
 2. Each task's "steps" array should have 1-3 sub-steps with specific, granular instructions.
 3. Each task MUST have a "coachingTip" — make it specific to that step, not generic.
-4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). For searchQuery, use specific names like 'Headspace Guide to Meditation beginner tutorial' for videos, or 'Atomic Habits James Clear' for books. Be very specific so search results find the actual resource.
+4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). For searchQuery, use descriptive search terms. Do NOT include brand names or specific product names to avoid copyright issues. Use generic descriptions like 'beginner meditation technique guide' or 'morning exercise warm up routine'.
 5. Create a "transition" entry for every habit change in the sequence. Make transitions warm and encouraging.
 6. Descriptions should read like a coach talking directly to the user: "Now I want you to..." or "Focus on..." or "Notice how..."
 7. Sequence tasks so they flow naturally — warm-ups before intense work, wind-downs at the end.
 8. NEVER recommend competing habit tracking apps (Habitica, Streaks, Fabulous, etc.).
+9. CRITICAL: Each habit in the input has a specific "habitId" number in parentheses. You MUST use that EXACT habitId number for ALL tasks belonging to that habit. Do NOT make up your own IDs.
 SAFETY: Never generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.`
         }, {
           role: "user",
@@ -1131,27 +1137,31 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const addUrlToResource = (r: any) => {
         const query = r.searchQuery || r.name || '';
         const type = (r.type || '').toLowerCase();
-        let url = '';
-        if (type === 'video') {
-          url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-        } else if (type === 'book') {
-          url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
-        } else if (type === 'course') {
-          url = `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
-        } else if (type === 'blog' || type === 'article') {
-          url = `https://medium.com/search?q=${encodeURIComponent(query)}`;
-        } else if (type === 'podcast') {
-          url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
-        } else if (type === 'tool' || type === 'template') {
-          url = `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
-        } else {
-          url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-        }
+        let suffix = '';
+        if (type === 'video') suffix = ' video';
+        else if (type === 'book') suffix = ' book';
+        else if (type === 'course') suffix = ' course';
+        else if (type === 'podcast') suffix = ' podcast';
+        else if (type === 'tool' || type === 'template') suffix = ' free tool';
+        const url = `https://www.google.com/search?q=${encodeURIComponent(query + suffix)}`;
         return { ...r, url };
       };
 
+      const validHabitIds = new Set(stackHabits.map((h: any) => h.id));
+
       for (const task of plan.tasks) {
         if (task.habitId) task.habitId = Number(task.habitId);
+        if (!validHabitIds.has(task.habitId) && task.habitTitle) {
+          const matchedId = habitIdMap[task.habitTitle.toLowerCase()];
+          if (matchedId) {
+            task.habitId = matchedId;
+          } else {
+            const partialMatch = Object.entries(habitIdMap).find(([title]) => 
+              task.habitTitle.toLowerCase().includes(title) || title.includes(task.habitTitle.toLowerCase())
+            );
+            if (partialMatch) task.habitId = partialMatch[1];
+          }
+        }
         if (!task.steps) task.steps = [];
         if (!task.resources) task.resources = [];
 
@@ -1164,6 +1174,17 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
         if (task.resources.length > 0) {
           task.resources = task.resources.map(addUrlToResource);
+        }
+      }
+
+      for (const tr of plan.transitions) {
+        if (tr.fromHabitId && !validHabitIds.has(Number(tr.fromHabitId)) && tr.fromHabitTitle) {
+          const matched = habitIdMap[tr.fromHabitTitle.toLowerCase()];
+          if (matched) tr.fromHabitId = matched;
+        }
+        if (tr.toHabitId && !validHabitIds.has(Number(tr.toHabitId)) && tr.toHabitTitle) {
+          const matched = habitIdMap[tr.toHabitTitle.toLowerCase()];
+          if (matched) tr.toHabitId = matched;
         }
       }
       
@@ -3546,21 +3567,13 @@ CRITICAL RULES:
         const query = resource.searchQuery || resource.name || '';
         if (!query) return '';
         const type = (resource.type || '').toLowerCase();
-        if (type === 'video') {
-          return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-        } else if (type === 'book') {
-          return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
-        } else if (type === 'course') {
-          return `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
-        } else if (type === 'blog' || type === 'article') {
-          return `https://medium.com/search?q=${encodeURIComponent(query)}`;
-        } else if (type === 'podcast') {
-          return `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
-        } else if (type === 'tool' || type === 'template') {
-          return `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
-        } else {
-          return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-        }
+        let suffix = '';
+        if (type === 'video') suffix = ' video';
+        else if (type === 'book') suffix = ' book';
+        else if (type === 'course') suffix = ' course';
+        else if (type === 'podcast') suffix = ' podcast';
+        else if (type === 'tool' || type === 'template') suffix = ' free tool';
+        return `https://www.google.com/search?q=${encodeURIComponent(query + suffix)}`;
       }
       
       const validatedResources = rawResources
@@ -4585,22 +4598,13 @@ Be specific, practical, and personalized. Include realistic time estimates and X
         plan.resources = plan.resources.map((r: any) => {
           const query = r.searchQuery || r.name || '';
           const type = (r.type || '').toLowerCase();
-          let url = '';
-          if (type === 'video') {
-            url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-          } else if (type === 'book') {
-            url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=stripbooks`;
-          } else if (type === 'course') {
-            url = `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`;
-          } else if (type === 'blog' || type === 'article') {
-            url = `https://medium.com/search?q=${encodeURIComponent(query)}`;
-          } else if (type === 'podcast') {
-            url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' podcast')}`;
-          } else if (type === 'tool' || type === 'template') {
-            url = `https://www.google.com/search?q=${encodeURIComponent(query + ' free tool')}`;
-          } else {
-            url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-          }
+          let suffix = '';
+          if (type === 'video') suffix = ' video';
+          else if (type === 'book') suffix = ' book';
+          else if (type === 'course') suffix = ' course';
+          else if (type === 'podcast') suffix = ' podcast';
+          else if (type === 'tool' || type === 'template') suffix = ' free tool';
+          const url = `https://www.google.com/search?q=${encodeURIComponent(query + suffix)}`;
           return { ...r, url };
         });
       }

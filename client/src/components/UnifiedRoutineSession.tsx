@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Layers, ExternalLink, BookOpen, CheckCircle, ChevronDown, ChevronUp, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { useToast } from "@/hooks/use-toast";
 import type { HabitStack, UnifiedPlanTask, UnifiedPlanStep, UnifiedPlanTransition } from "@shared/schema";
 
 interface UnifiedRoutineSessionProps {
@@ -127,21 +129,141 @@ function generateResourceTemplate(resource: any, habitTitle: string): string {
   return `${header}RESOURCE NOTES\n\nDate: ${new Date().toLocaleDateString()}\n\nSummary:\n\n\nKey Points:\n1. \n2. \n3. \n\nNotes:\n- \n- \n\nAction Items:\n- [ ] \n- [ ] \n`;
 }
 
-function downloadResourceTemplate(resource: any, habitTitle: string) {
+async function downloadResourceTemplate(resource: any, habitTitle: string, taskTitle?: string) {
   const content = generateResourceTemplate(resource, habitTitle);
-  const blob = new Blob([content], { type: "text/plain" });
+  const title = resource.name || "Resource Template";
+
+  const pdfDoc = await PDFDocument.create();
+  const form = pdfDoc.getForm();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const margin = 40;
+  const contentWidth = pageWidth - (margin * 2);
+
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let yPos = pageHeight - margin;
+  let fieldCount = 0;
+
+  const getUniqueFieldName = (base: string) => `${base}_${fieldCount++}`;
+
+  const ensureSpace = (neededSpace: number) => {
+    if (yPos - neededSpace < margin + 30) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      yPos = pageHeight - margin;
+    }
+  };
+
+  const drawText = (text: string, x: number, y: number, size: number = 10, color = rgb(0, 0, 0), useFont = font) => {
+    page.drawText(text, { x, y, size, font: useFont, color });
+  };
+
+  const addTextField = (name: string, x: number, y: number, width: number, height: number = 18, multiline: boolean = false) => {
+    const textField = form.createTextField(getUniqueFieldName(name));
+    textField.addToPage(page, { x, y: y - height, width, height, borderWidth: 1, borderColor: rgb(0.7, 0.7, 0.7) });
+    if (multiline) textField.enableMultiline();
+    textField.setFontSize(10);
+  };
+
+  const addCheckbox = (name: string, x: number, y: number, label: string) => {
+    const checkbox = form.createCheckBox(getUniqueFieldName(name));
+    checkbox.addToPage(page, { x, y: y - 12, width: 12, height: 12, borderWidth: 1, borderColor: rgb(0.5, 0.5, 0.5) });
+    drawText(label, x + 16, y - 10, 9);
+  };
+
+  page.drawRectangle({
+    x: 0, y: pageHeight - 60, width: pageWidth, height: 60,
+    color: rgb(0.13, 0.55, 0.13)
+  });
+  drawText(title.substring(0, 60), margin, pageHeight - 35, 16, rgb(1, 1, 1), boldFont);
+  drawText(`${habitTitle}${taskTitle ? ' - ' + taskTitle : ''}`.substring(0, 80), margin, pageHeight - 52, 10, rgb(1, 1, 1));
+  yPos = pageHeight - 80;
+
+  drawText("Date:", margin, yPos, 9, rgb(0.4, 0.4, 0.4), boldFont);
+  addTextField("date", margin + 30, yPos + 5, 80);
+  drawText("Name:", margin + 130, yPos, 9, rgb(0.4, 0.4, 0.4), boldFont);
+  addTextField("name", margin + 170, yPos + 5, 150);
+  yPos -= 35;
+
+  page.drawRectangle({ x: margin, y: yPos - 50, width: contentWidth, height: 55, color: rgb(0.96, 0.98, 0.96), borderWidth: 1, borderColor: rgb(0.7, 0.82, 0.7) });
+  drawText("My Goal for This Resource:", margin + 10, yPos - 5, 11, rgb(0.13, 0.39, 0.13), boldFont);
+  addTextField("session_goal", margin + 10, yPos - 10, contentWidth - 20, 35, true);
+  yPos -= 65;
+
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) { yPos -= 8; continue; }
+    ensureSpace(25);
+
+    if (trimmedLine.endsWith(':') && trimmedLine.length < 60 && !trimmedLine.startsWith('[')) {
+      yPos -= 5;
+      page.drawRectangle({ x: margin, y: yPos - 15, width: contentWidth, height: 18, color: rgb(0.94, 0.97, 0.94) });
+      drawText(trimmedLine, margin + 5, yPos - 10, 11, rgb(0.13, 0.39, 0.13), boldFont);
+      yPos -= 22;
+      continue;
+    }
+
+    const checkboxMatch = trimmedLine.match(/^(\[ \]|☐|\[\]|□)\s*(.+)/);
+    const bulletMatch = trimmedLine.match(/^[-•]\s*(.+)/);
+    const numberedMatch = trimmedLine.match(/^(\d+[.)]\s*)(.+)/);
+
+    if (checkboxMatch) {
+      addCheckbox("task", margin, yPos, checkboxMatch[2].substring(0, 70));
+      yPos -= 18;
+    } else if (bulletMatch) {
+      page.drawCircle({ x: margin + 5, y: yPos - 5, size: 3, color: rgb(0.13, 0.55, 0.13) });
+      drawText(bulletMatch[1].substring(0, 80), margin + 12, yPos - 8, 9);
+      yPos -= 14;
+    } else if (numberedMatch) {
+      drawText(numberedMatch[1], margin, yPos - 8, 10, rgb(0.13, 0.55, 0.13), boldFont);
+      drawText(numberedMatch[2].substring(0, 75), margin + 15, yPos - 8, 9);
+      yPos -= 14;
+    } else if (trimmedLine.includes('[') && trimmedLine.includes(']')) {
+      const cleanLabel = trimmedLine.replace(/\[[^\]]+\]/g, '').trim();
+      if (cleanLabel) drawText(cleanLabel.substring(0, 40), margin, yPos - 8, 9);
+      addTextField("input", margin + (cleanLabel ? 150 : 0), yPos, cleanLabel ? contentWidth - 150 : contentWidth);
+      yPos -= 25;
+    } else {
+      drawText(trimmedLine.substring(0, 90), margin, yPos - 8, 9);
+      yPos -= 12;
+    }
+  }
+
+  ensureSpace(100);
+  yPos -= 10;
+  page.drawRectangle({ x: margin, y: yPos - 90, width: contentWidth, height: 95, color: rgb(1, 0.98, 0.96), borderWidth: 1, borderColor: rgb(0.86, 0.78, 0.7) });
+  drawText("Reflection", margin + 10, yPos - 10, 11, rgb(0.59, 0.39, 0.2), boldFont);
+  drawText("What did I learn?", margin + 10, yPos - 28, 9, rgb(0.3, 0.3, 0.3));
+  addTextField("learned", margin + 10, yPos - 30, contentWidth - 20, 22, true);
+  drawText("How will I apply this?", margin + 10, yPos - 62, 9, rgb(0.3, 0.3, 0.3));
+  addTextField("apply", margin + 10, yPos - 64, contentWidth - 20, 22, true);
+  yPos -= 110;
+
+  ensureSpace(60);
+  page.drawRectangle({ x: margin, y: yPos - 50, width: contentWidth, height: 55, color: rgb(0.96, 1, 0.96), borderWidth: 1, borderColor: rgb(0.7, 0.82, 0.7) });
+  drawText("Action Items:", margin + 5, yPos - 10, 10, rgb(0.13, 0.39, 0.13), boldFont);
+  addTextField("action_items", margin + 5, yPos - 15, contentWidth - 10, 35, true);
+
+  const lastPage = pdfDoc.getPages()[pdfDoc.getPageCount() - 1];
+  lastPage.drawText("Created with HabitBuilder.pro", { x: margin, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
+  lastPage.drawText(new Date().toLocaleDateString(), { x: pageWidth - margin - 60, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
+
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${(resource.name || "resource").replace(/\s+/g, "-").toLowerCase()}-template.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`;
+  link.click();
   URL.revokeObjectURL(url);
 }
 
 export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRoutineSessionProps) {
   const [phase, setPhase] = useState<Phase>("checklist");
+  const { toast } = useToast();
   const [checklist, setChecklist] = useState(ROUTINE_CHECKLIST);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -743,14 +865,15 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1.5 text-xs h-7"
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
-                                  downloadResourceTemplate(resource, currentTask?.habitTitle || "");
+                                  await downloadResourceTemplate(resource, currentTask?.habitTitle || "", currentTask?.title);
+                                  toast({ title: "PDF Downloaded", description: "You can type directly into the form fields in any PDF reader!" });
                                 }}
                                 data-testid={`button-download-resource-${i}`}
                               >
                                 <Download className="w-3 h-3" />
-                                Download Template
+                                Download PDF
                               </Button>
                               <Button
                                 variant="ghost"
