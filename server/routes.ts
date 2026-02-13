@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq, and } from "drizzle-orm";
+import { sql, eq, and, isNotNull } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -291,6 +291,82 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/email-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { dailyReminderEnabled, weeklyDigestEnabled, dailyReminderTime } = req.body;
+      const updates: any = { updatedAt: new Date() };
+      if (typeof dailyReminderEnabled === 'boolean') updates.dailyReminderEnabled = dailyReminderEnabled;
+      if (typeof weeklyDigestEnabled === 'boolean') updates.weeklyDigestEnabled = weeklyDigestEnabled;
+      if (dailyReminderTime) updates.dailyReminderTime = dailyReminderTime;
+      const [updated] = await db.update(users).set(updates).where(eq(users.id, userId)).returning();
+      res.json({ dailyReminderEnabled: updated.dailyReminderEnabled, weeklyDigestEnabled: updated.weeklyDigestEnabled, dailyReminderTime: updated.dailyReminderTime });
+    } catch (error) {
+      console.error("Error updating email preferences:", error);
+      res.status(500).json({ error: "Failed to update email preferences" });
+    }
+  });
+
+  app.post("/api/admin/send-daily-reminders", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const adminUser = await db.query.users.findFirst({ where: eq(users.id, userId) });
+      if (!adminUser?.isAdmin) return res.status(403).json({ error: "Admin only" });
+
+      const { sendDailyReminderEmail } = await import('./email');
+      const eligibleUsers = await db.query.users.findMany({
+        where: and(eq(users.dailyReminderEnabled, true), isNotNull(users.email)),
+      });
+
+      let sent = 0, failed = 0;
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (const u of eligibleUsers) {
+        if (!u.email) continue;
+        if (u.lastDailyReminderSent === today) continue;
+        
+        try {
+          const userHabits = await db.query.habits.findMany({
+            where: eq(habits.userId, u.id),
+          });
+          
+          const todayTasks: { habitTitle: string; taskTitle: string }[] = [];
+          let maxStreak = 0;
+          
+          for (const habit of userHabits) {
+            if (habit.currentStreak && habit.currentStreak > maxStreak) maxStreak = habit.currentStreak;
+            const plan = habit.actionPlan as any;
+            if (plan?.daily) {
+              const dailyTasks = Array.isArray(plan.daily) ? plan.daily : [];
+              for (const task of dailyTasks.slice(0, 2)) {
+                todayTasks.push({ habitTitle: habit.title, taskTitle: typeof task === 'string' ? task : task.title || task.task || 'Check your plan' });
+              }
+            }
+          }
+          
+          await sendDailyReminderEmail({
+            toEmail: u.email,
+            userName: u.firstName || '',
+            todayTasks: todayTasks.slice(0, 5),
+            currentStreak: maxStreak,
+          });
+          
+          await db.update(users).set({ lastDailyReminderSent: today }).where(eq(users.id, u.id));
+          sent++;
+        } catch (err) {
+          console.error(`Failed to send daily reminder to ${u.email}:`, err);
+          failed++;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
+      res.json({ sent, failed, total: eligibleUsers.length });
+    } catch (error) {
+      console.error("Error sending daily reminders:", error);
+      res.status(500).json({ error: "Failed to send reminders" });
+    }
+  });
+
   // ==========================================
   // QUICK TASKS
   // ==========================================
@@ -566,11 +642,18 @@ export async function registerRoutes(
       const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
       const isAdmin = user?.isAdmin === true;
       
-      // Trial users are limited to 3 habits
-      if (isInTrial && !hasPaidSubscription && !isAdmin && existingHabits.length >= 3) {
-        return res.status(403).json({ 
-          error: "Trial users can create up to 3 habits. Subscribe to Pro or Premium for unlimited habits." 
-        });
+      // Free users: max 2 habits, Trial users: max 3 habits, Pro/Premium/Admin: unlimited
+      if (!hasPaidSubscription && !isAdmin) {
+        if (isInTrial && existingHabits.length >= 3) {
+          return res.status(403).json({ 
+            error: "Trial users can create up to 3 habits. Subscribe to Pro or Premium for unlimited habits." 
+          });
+        }
+        if (!isInTrial && existingHabits.length >= 2) {
+          return res.status(403).json({ 
+            error: "Free users can have up to 2 habits. Upgrade to Pro ($6/mo) for unlimited habits." 
+          });
+        }
       }
       
       const input = api.habits.create.input.parse(req.body);

@@ -17,7 +17,7 @@ export function usePaymentStatus() {
     hasPaid: data?.hasPaid || false,
     isTrialActive: data?.isTrialActive || false,
     trialEndsAt: data?.trialEndsAt || null,
-    hasAccess: data?.hasPaid || data?.isTrialActive || false,
+    hasAccess: true,
     isLoading,
     refetch,
   };

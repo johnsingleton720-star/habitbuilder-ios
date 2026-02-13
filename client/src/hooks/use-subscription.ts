@@ -40,12 +40,12 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasHabitStacking: false, // Premium only
   },
   free: {
-    maxHabits: 0, // No access after trial expires
-    hasAiCoaching: false,
-    hasPersonalizedPlans: false,
+    maxHabits: 2,
+    hasAiCoaching: true,
+    hasPersonalizedPlans: true,
     hasSessionSummaries: false,
-    hasStreaksAchievements: false,
-    hasTemplates: false,
+    hasStreaksAchievements: true,
+    hasTemplates: true,
     hasEditableTemplates: false,
     hasDownloadablePdf: false,
     hasWeeklyReports: false,
@@ -118,7 +118,7 @@ export function useSubscription() {
       : 'free';
   
   const isAdmin = user?.isAdmin === true;
-  const isActive = hasPaidSubscription || isInTrial || isAdmin;
+  const isActive = true;
   const features = TIER_FEATURES[effectiveTier];
   
   // Admin users get access to ALL features regardless of tier
@@ -133,8 +133,11 @@ export function useSubscription() {
   };
   
   const getUpgradeMessage = (feature: keyof SubscriptionFeatures): string => {
-    if (effectiveTier === 'trial' || effectiveTier === 'free') {
-      return 'Subscribe to Pro to unlock this feature';
+    if (effectiveTier === 'free' && !features[feature]) {
+      return 'Upgrade to Pro ($6/mo) to unlock this feature';
+    }
+    if (effectiveTier === 'trial' && !features[feature]) {
+      return 'Subscribe to Pro to keep this feature after your trial';
     }
     if (effectiveTier === 'pro' && !features[feature]) {
       return 'Upgrade to Premium to unlock this feature';

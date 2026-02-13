@@ -1,13 +1,45 @@
 import { usePaymentStatus } from "@/hooks/use-payment";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles } from "lucide-react";
+import { Clock, Sparkles, Crown } from "lucide-react";
 import { Link } from "wouter";
 import { differenceInHours, differenceInMinutes } from "date-fns";
 
 export function TrialBanner() {
   const { isTrialActive, hasPaid, trialEndsAt } = usePaymentStatus();
+  const { trialExpired } = useSubscription();
 
-  if (hasPaid || !isTrialActive || !trialEndsAt) {
+  if (hasPaid) {
+    return null;
+  }
+
+  if (trialExpired) {
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border border-primary/20 px-4 py-3" data-testid="banner-free-upgrade">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+            <Crown className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              You're on the free plan (2 habits)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Upgrade to Pro for unlimited habits and more features
+            </p>
+          </div>
+        </div>
+        <Link href="/paywall">
+          <Button size="sm" className="gap-1.5" data-testid="button-upgrade">
+            <Sparkles className="h-3.5 w-3.5" />
+            Upgrade
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (!isTrialActive || !trialEndsAt) {
     return null;
   }
 

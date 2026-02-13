@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X } from "lucide-react";
+import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -999,6 +999,66 @@ export default function Account() {
           transition={{ delay: 0.38 }}
         >
           <TimezoneSettings user={user} />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.39 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-500" />
+                Email Notifications
+              </CardTitle>
+              <CardDescription>
+                Choose which emails you'd like to receive
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium" data-testid="label-daily-reminder">Daily Morning Reminders</Label>
+                  <p className="text-sm text-muted-foreground">Get a daily nudge with your tasks and streak info</p>
+                </div>
+                <Switch
+                  checked={user?.dailyReminderEnabled !== false}
+                  onCheckedChange={(checked) => {
+                    apiRequest("PATCH", "/api/user/email-preferences", { dailyReminderEnabled: checked })
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        toast({ title: checked ? "Daily reminders enabled" : "Daily reminders disabled" });
+                      })
+                      .catch(() => {
+                        toast({ title: "Failed to update preference", variant: "destructive" });
+                      });
+                  }}
+                  data-testid="switch-daily-reminder"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium" data-testid="label-weekly-digest">Weekly Progress Digest</Label>
+                  <p className="text-sm text-muted-foreground">Receive a Sunday summary of your progress</p>
+                </div>
+                <Switch
+                  checked={user?.weeklyDigestEnabled !== false}
+                  onCheckedChange={(checked) => {
+                    apiRequest("PATCH", "/api/user/email-preferences", { weeklyDigestEnabled: checked })
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        toast({ title: checked ? "Weekly digest enabled" : "Weekly digest disabled" });
+                      })
+                      .catch(() => {
+                        toast({ title: "Failed to update preference", variant: "destructive" });
+                      });
+                  }}
+                  data-testid="switch-weekly-digest"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div

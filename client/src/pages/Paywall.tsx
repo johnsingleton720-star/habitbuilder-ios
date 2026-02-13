@@ -119,15 +119,15 @@ export default function Paywall() {
           
           {trialExpired ? (
             <>
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
-                <Clock className="w-5 h-5 text-amber-500" />
-                <span className="text-amber-600 dark:text-amber-400 font-medium">Your trial has ended</span>
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-primary font-medium">Free plan - 2 habits included</span>
               </div>
               <h1 className="font-display text-4xl font-bold text-foreground mb-3">
-                Continue Your Habit Journey
+                Unlock Unlimited Habits
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                Subscribe now to keep building better habits with AI-powered coaching.
+                You can keep using 2 habits for free. Upgrade for unlimited habits, advanced AI coaching, and premium features.
               </p>
             </>
           ) : isInTrial ? (

@@ -205,3 +205,107 @@ export async function sendAdminBulkEmail(params: {
 
   return results;
 }
+
+export async function sendDailyReminderEmail(params: {
+  toEmail: string;
+  userName: string;
+  todayTasks: { habitTitle: string; taskTitle: string }[];
+  currentStreak: number;
+  unsubscribeNote?: string;
+}) {
+  const taskList = params.todayTasks.length > 0
+    ? params.todayTasks.map(t => `<li style="padding: 4px 0;"><strong>${escapeHtml(t.habitTitle)}</strong>: ${escapeHtml(t.taskTitle)}</li>`).join('')
+    : '<li style="padding: 4px 0; color: #888;">No specific tasks scheduled - check your dashboard!</li>';
+
+  const streakText = params.currentStreak > 0
+    ? `<p style="color: #059669; font-weight: 600; font-size: 18px; text-align: center; margin: 16px 0;">Current Streak: ${params.currentStreak} day${params.currentStreak !== 1 ? 's' : ''}</p>`
+    : '';
+
+  const html = wrapEmail(`
+    <h2 style="color: #1a1a2e; margin-bottom: 8px;">Good morning${params.userName ? ', ' + escapeHtml(params.userName) : ''}!</h2>
+    <p style="color: #444; line-height: 1.6;">Here's what's on your plate today:</p>
+    ${streakText}
+    <div style="background: #f8faf9; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="font-weight: 600; color: #333; margin-bottom: 8px;">Today's Focus:</p>
+      <ul style="color: #444; line-height: 1.8; margin: 0; padding-left: 20px;">${taskList}</ul>
+    </div>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Start Your Day
+      </a>
+    </div>
+    <p style="color: #999; font-size: 12px; text-align: center;">
+      To stop receiving daily reminders, visit your Account settings on HabitBuilder.pro.
+    </p>
+  `);
+
+  return sendEmail({
+    to: params.toEmail,
+    subject: params.currentStreak > 0 
+      ? `Keep your ${params.currentStreak}-day streak alive!`
+      : `Your habits are waiting for you today`,
+    html,
+  });
+}
+
+export async function sendWeeklyDigestEmail(params: {
+  toEmail: string;
+  userName: string;
+  weekStats: {
+    habitsWorkedOn: number;
+    sessionsCompleted: number;
+    totalMinutes: number;
+    longestStreak: number;
+    completionRate: number;
+  };
+  topHabit?: string;
+  moodSummary?: string;
+}) {
+  const stats = params.weekStats;
+  const html = wrapEmail(`
+    <h2 style="color: #1a1a2e; margin-bottom: 8px;">Your Weekly Progress Report</h2>
+    <p style="color: #444; line-height: 1.6;">
+      ${params.userName ? escapeHtml(params.userName) + ', here' : 'Here'}'s how your week went:
+    </p>
+    <div style="background: #f8faf9; border-radius: 8px; padding: 20px; margin: 16px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666;">Habits Worked On</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #1a1a2e;">${stats.habitsWorkedOn}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; border-top: 1px solid #e5e7eb;">Sessions Completed</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #1a1a2e; border-top: 1px solid #e5e7eb;">${stats.sessionsCompleted}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; border-top: 1px solid #e5e7eb;">Time Invested</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #1a1a2e; border-top: 1px solid #e5e7eb;">${Math.floor(stats.totalMinutes / 60)}h ${stats.totalMinutes % 60}m</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; border-top: 1px solid #e5e7eb;">Longest Streak</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #059669; border-top: 1px solid #e5e7eb;">${stats.longestStreak} days</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; border-top: 1px solid #e5e7eb;">Completion Rate</td>
+          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #1a1a2e; border-top: 1px solid #e5e7eb;">${stats.completionRate}%</td>
+        </tr>
+      </table>
+    </div>
+    ${params.topHabit ? `<p style="color: #444; line-height: 1.6;">Your top habit this week: <strong>${escapeHtml(params.topHabit)}</strong></p>` : ''}
+    ${params.moodSummary ? `<p style="color: #444; line-height: 1.6;">Mood trend: ${escapeHtml(params.moodSummary)}</p>` : ''}
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="https://habitbuilder.pro" style="background-color: #059669; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        View Full Analytics
+      </a>
+    </div>
+    <p style="color: #999; font-size: 12px; text-align: center;">
+      To stop receiving weekly digests, visit your Account settings on HabitBuilder.pro.
+    </p>
+  `);
+
+  return sendEmail({
+    to: params.toEmail,
+    subject: `Your Week in Review - ${stats.sessionsCompleted} sessions completed`,
+    html,
+  });
+}
