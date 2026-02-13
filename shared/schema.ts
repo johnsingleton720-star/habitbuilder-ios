@@ -343,6 +343,25 @@ export const insertMoodEntrySchema = createInsertSchema(moodEntries).omit({
 export type MoodEntry = typeof moodEntries.$inferSelect;
 export type InsertMoodEntry = z.infer<typeof insertMoodEntrySchema>;
 
+// Quick Tasks - personal checklist items separate from habit action plans
+export const quickTasks = pgTable("quick_tasks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  completed: boolean("completed").default(false),
+  date: text("date").notNull(), // ISO date string yyyy-MM-dd
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertQuickTaskSchema = createInsertSchema(quickTasks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type QuickTask = typeof quickTasks.$inferSelect;
+export type InsertQuickTask = z.infer<typeof insertQuickTaskSchema>;
+
 // Page views for visitor tracking (admin analytics)
 export const pageViews = pgTable("page_views", {
   id: serial("id").primaryKey(),

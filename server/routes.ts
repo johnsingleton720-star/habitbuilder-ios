@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks } from "@shared/schema";
 import crypto from "crypto";
 import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
@@ -254,6 +254,20 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/onboarding", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [updated] = await db.update(users)
+        .set({ onboardingComplete: true, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating onboarding:", error);
+      res.status(500).json({ error: "Failed to update onboarding" });
+    }
+  });
+
   app.patch("/api/user/timezone", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -274,6 +288,104 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error saving timezone:", error);
       res.status(500).json({ error: "Failed to save timezone" });
+    }
+  });
+
+  // ==========================================
+  // QUICK TASKS
+  // ==========================================
+
+  app.get("/api/quick-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+      const tasks = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)))
+        .orderBy(quickTasks.sortOrder);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching quick tasks:", error);
+      res.status(500).json({ error: "Failed to fetch quick tasks" });
+    }
+  });
+
+  app.post("/api/quick-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { title, date } = req.body;
+      if (!title || typeof title !== "string" || title.trim().length === 0) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      if (!date || typeof date !== "string") {
+        return res.status(400).json({ error: "Date is required" });
+      }
+      const existing = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+      const sortOrder = existing.length;
+      const [task] = await db.insert(quickTasks).values({
+        userId,
+        title: title.trim(),
+        date,
+        sortOrder,
+      }).returning();
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Error creating quick task:", error);
+      res.status(500).json({ error: "Failed to create quick task" });
+    }
+  });
+
+  app.patch("/api/quick-tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const taskId = Number(req.params.id);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ error: "Invalid task ID" });
+      }
+      const [existing] = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.id, taskId), eq(quickTasks.userId, userId)));
+      if (!existing) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      const updates: Record<string, any> = {};
+      if (typeof req.body.completed === "boolean") {
+        updates.completed = req.body.completed;
+      }
+      if (typeof req.body.title === "string" && req.body.title.trim().length > 0) {
+        updates.title = req.body.title.trim();
+      }
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+      const [updated] = await db.update(quickTasks)
+        .set(updates)
+        .where(and(eq(quickTasks.id, taskId), eq(quickTasks.userId, userId)))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating quick task:", error);
+      res.status(500).json({ error: "Failed to update quick task" });
+    }
+  });
+
+  app.delete("/api/quick-tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const taskId = Number(req.params.id);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ error: "Invalid task ID" });
+      }
+      const [existing] = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.id, taskId), eq(quickTasks.userId, userId)));
+      if (!existing) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      await db.delete(quickTasks)
+        .where(and(eq(quickTasks.id, taskId), eq(quickTasks.userId, userId)));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting quick task:", error);
+      res.status(500).json({ error: "Failed to delete quick task" });
     }
   });
 

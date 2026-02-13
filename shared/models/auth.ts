@@ -47,6 +47,16 @@ export const users = pgTable("users", {
   coachMessagesUsed: integer("coach_messages_used").default(0),
   coachMessagesResetAt: timestamp("coach_messages_reset_at"),
   
+  // Onboarding
+  onboardingComplete: boolean("onboarding_complete").default(false),
+  
+  // Email preferences
+  dailyReminderEnabled: boolean("daily_reminder_enabled").default(true),
+  weeklyDigestEnabled: boolean("weekly_digest_enabled").default(true),
+  dailyReminderTime: varchar("daily_reminder_time").default("08:00"), // HH:mm
+  lastDailyReminderSent: varchar("last_daily_reminder_sent"), // ISO date
+  lastWeeklyDigestSent: varchar("last_weekly_digest_sent"), // ISO date
+  
   // Gamification
   xpPoints: integer("xp_points").default(0),
   level: integer("level").default(1),

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useHabits } from "@/hooks/use-habits";
 import { HabitCard } from "@/components/HabitCard";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
 import { ProgressSummary } from "@/components/ProgressSummary";
@@ -11,6 +12,7 @@ import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
+import { QuickTasks } from "@/components/QuickTasks";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -256,11 +258,20 @@ export default function Dashboard() {
           <GamificationDisplay />
         </motion.section>
 
-        {/* Mood Tracker - Premium Feature */}
+        {/* Quick Tasks */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <QuickTasks />
+        </motion.section>
+
+        {/* Mood Tracker - Premium Feature */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
         >
           <MoodTracker />
         </motion.section>
@@ -357,6 +368,8 @@ export default function Dashboard() {
           goal: selectedTemplate.suggestedGoal || '',
         } : undefined}
       />
+
+      {user && !user.onboardingComplete && <OnboardingWizard />}
 
       {/* Streak Broken Modal */}
       {brokenStreak && (
