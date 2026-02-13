@@ -1283,21 +1283,27 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           role: "user",
           content: `Analyze my routine session for "${stackName}".`
         }],
+        response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 800,
       });
 
       const content = response.choices[0].message.content || "";
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      try {
+        const parsed = JSON.parse(content);
         return res.json(parsed);
+      } catch {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return res.json(parsed);
+        }
       }
 
       res.json({
-        summary: `You completed ${tasksCompleted} of ${totalTasks} tasks in ${timeSpent} minutes. Great routine session!`,
-        insights: [],
-        encouragement: "Keep up the consistent routine practice!"
+        summary: `You completed ${tasksCompleted} of ${totalTasks} guided steps in ${timeSpent} minutes across your "${stackName}" routine. Great work stacking your habits together!`,
+        insights: ["Your routine consistency is building strong neural pathways for all your habits simultaneously."],
+        encouragement: "Every time you complete your unified routine, you're reinforcing the habit stack as one powerful behavior chain!"
       });
     } catch (error) {
       console.error("Error generating routine summary:", error);
