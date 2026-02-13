@@ -1092,6 +1092,160 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     }
   });
 
+  app.post("/api/habit-stacks/:id/routine-complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const { date, tasksCompleted, totalTasks, timeSpent, taskBreakdown } = req.body;
+
+      const stack = await storage.getHabitStack(stackId, userId);
+      if (!stack) return res.status(404).json({ error: "Stack not found" });
+
+      const habitTimeMap: Record<number, number> = {};
+      const habitTaskMap: Record<number, { completed: number; total: number }> = {};
+
+      if (taskBreakdown && Array.isArray(taskBreakdown)) {
+        for (const t of taskBreakdown) {
+          if (!habitTimeMap[t.habitId]) habitTimeMap[t.habitId] = 0;
+          if (!habitTaskMap[t.habitId]) habitTaskMap[t.habitId] = { completed: 0, total: 0 };
+          habitTimeMap[t.habitId] += Math.max(0, Math.round((t.timeSpent || 0) / 60));
+          habitTaskMap[t.habitId].total++;
+          if (t.completed) habitTaskMap[t.habitId].completed++;
+        }
+      }
+
+      for (const habitIdStr of Object.keys(habitTimeMap)) {
+        const habitId = Number(habitIdStr);
+        const habit = await storage.getHabit(habitId);
+        if (!habit || habit.userId !== userId) continue;
+
+        const habitTime = habitTimeMap[habitId] || 0;
+        const taskStats = habitTaskMap[habitId] || { completed: 0, total: 0 };
+        if (habitTime <= 0 && taskStats.completed <= 0) continue;
+
+        const progress = [...(habit.progress || [])];
+        progress.push({
+          date,
+          tasksCompleted: taskStats.completed,
+          totalTasks: taskStats.total,
+          timeSpent: Math.max(1, habitTime),
+          goalTime: 0,
+          notes: `Completed via unified routine: ${stack.name}`,
+          mood: "good",
+        });
+
+        const dailyPlans = [...(habit.dailyPlans || [])];
+        const todayPlan = dailyPlans.find((p: any) => p.date === date);
+        if (todayPlan && taskStats.completed > 0) {
+          todayPlan.completed = true;
+          todayPlan.timeSpent = (todayPlan.timeSpent || 0) + Math.max(1, habitTime);
+        }
+
+        let currentStreak = 0;
+        const sortedPlans = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+        for (const plan of sortedPlans) {
+          if (plan.completed) {
+            currentStreak++;
+          } else if (plan.date <= date) {
+            break;
+          }
+        }
+
+        const newTotalTime = (habit.totalTimeSpent || 0) + Math.max(1, habitTime);
+        await storage.updateHabit(habitId, userId, {
+          dailyPlans,
+          progress,
+          totalTimeSpent: newTotalTime,
+          currentStreak: Math.max(habit.currentStreak || 0, currentStreak),
+        });
+      }
+
+      res.json({ success: true, tasksCompleted, totalTasks, timeSpent });
+    } catch (error) {
+      console.error("Error completing routine:", error);
+      res.status(500).json({ error: "Failed to record routine completion" });
+    }
+  });
+
+  app.post("/api/habit-stacks/:id/routine-summary", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stackId = Number(req.params.id);
+      const { stackName, tasksCompleted, totalTasks, timeSpent, notes, habits } = req.body;
+
+      const stack = await storage.getHabitStack(stackId, userId);
+      if (!stack) return res.status(404).json({ error: "Stack not found" });
+
+      if (!notes || notes.length === 0) {
+        return res.json({
+          summary: `You completed ${tasksCompleted} of ${totalTasks} tasks in ${timeSpent} minutes across your "${stackName}" routine. Well done!`,
+          insights: [],
+          encouragement: "Your unified routine is building great momentum across all your habits!"
+        });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const notesText = notes.map((n: { task: string; note: string; habit?: string }, i: number) =>
+        `Task ${i + 1} (${n.habit ? n.habit + " - " : ""}${n.task}): ${n.note}`
+      ).join('\n');
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are an expert habit coach. The user just completed a unified routine session called "${stackName}" combining these habits: ${habits?.join(", ") || "multiple habits"}.
+
+Session stats:
+- Completed ${tasksCompleted} of ${totalTasks} tasks (${totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0}% completion)
+- Time spent: ${timeSpent} minutes
+
+Their notes:
+${notesText}
+
+Provide a session analysis as JSON:
+{
+  "summary": "2-3 sentence warm summary referencing their actual routine and what they did",
+  "insights": ["2-3 specific observations about how the combined routine went"],
+  "encouragement": "A motivating sentence about their routine consistency",
+  "performanceTips": ["1-2 tips for improving their routine flow"],
+  "nextSteps": ["1-2 concrete next steps"]
+}
+Focus on how the habits work together as a routine, not individually. Be specific based on their notes.
+SAFETY: Never generate harmful, violent, or explicit content.`
+        }, {
+          role: "user",
+          content: `Analyze my routine session for "${stackName}".`
+        }],
+        temperature: 0.7,
+        max_tokens: 600,
+      });
+
+      const content = response.choices[0].message.content || "";
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json(parsed);
+      }
+
+      res.json({
+        summary: `You completed ${tasksCompleted} of ${totalTasks} tasks in ${timeSpent} minutes. Great routine session!`,
+        insights: [],
+        encouragement: "Keep up the consistent routine practice!"
+      });
+    } catch (error) {
+      console.error("Error generating routine summary:", error);
+      res.json({
+        summary: `You completed your "${stackName}" routine. Great work!`,
+        insights: [],
+        encouragement: "Every routine session builds stronger habits!"
+      });
+    }
+  });
+
   // Motivational Quote Endpoint - Real quotes from famous people
   const realQuotes = [
     { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
