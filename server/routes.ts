@@ -388,7 +388,7 @@ export async function registerRoutes(
   app.post("/api/quick-tasks", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-      const { title, date } = req.body;
+      const { title, date, scheduledTime } = req.body;
       if (!title || typeof title !== "string" || title.trim().length === 0) {
         return res.status(400).json({ error: "Title is required" });
       }
@@ -402,6 +402,7 @@ export async function registerRoutes(
         userId,
         title: title.trim(),
         date,
+        scheduledTime: scheduledTime || null,
         sortOrder,
       }).returning();
       res.status(201).json(task);
@@ -429,6 +430,12 @@ export async function registerRoutes(
       }
       if (typeof req.body.title === "string" && req.body.title.trim().length > 0) {
         updates.title = req.body.title.trim();
+      }
+      if (req.body.scheduledTime !== undefined) {
+        updates.scheduledTime = req.body.scheduledTime || null;
+      }
+      if (req.body.date !== undefined && typeof req.body.date === "string") {
+        updates.date = req.body.date;
       }
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });

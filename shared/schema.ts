@@ -350,6 +350,7 @@ export const quickTasks = pgTable("quick_tasks", {
   title: text("title").notNull(),
   completed: boolean("completed").default(false),
   date: text("date").notNull(), // ISO date string yyyy-MM-dd
+  scheduledTime: text("scheduled_time"), // HH:mm format, nullable
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });

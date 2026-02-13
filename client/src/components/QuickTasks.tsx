@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, X, ListChecks } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, X, ListChecks, HelpCircle, Clock, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, addDays, subDays, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import type { QuickTask } from "@shared/schema";
 import { useCompletionCelebration } from "./CompletionCelebration";
@@ -17,21 +18,33 @@ import { useCompletionCelebration } from "./CompletionCelebration";
 export function QuickTasks() {
   const { toast } = useToast();
   const [newTitle, setNewTitle] = useState("");
-  const today = format(new Date(), "yyyy-MM-dd");
+  const [newTime, setNewTime] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
   const { celebrate, CelebrationOverlay } = useCompletionCelebration();
   const lastToggleEvent = useRef<{ clientX?: number; clientY?: number } | undefined>(undefined);
 
   const { data: tasks = [] } = useQuery<QuickTask[]>({
-    queryKey: ["/api/quick-tasks"],
+    queryKey: ["/api/quick-tasks", dateStr],
+    queryFn: async () => {
+      const res = await fetch(`/api/quick-tasks?date=${dateStr}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch tasks");
+      return res.json();
+    },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (title: string) => {
-      return await apiRequest("POST", "/api/quick-tasks", { title, date: today });
+    mutationFn: async ({ title, scheduledTime }: { title: string; scheduledTime?: string }) => {
+      return await apiRequest("POST", "/api/quick-tasks", {
+        title,
+        date: dateStr,
+        scheduledTime: scheduledTime || null,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks", dateStr] });
       setNewTitle("");
+      setNewTime("");
     },
     onError: (error: Error) => {
       toast({ title: "Failed to add task", description: error.message, variant: "destructive" });
@@ -43,7 +56,7 @@ export function QuickTasks() {
       return await apiRequest("PATCH", `/api/quick-tasks/${id}`, { completed });
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks", dateStr] });
       if (variables.completed) {
         celebrate(lastToggleEvent.current);
       }
@@ -58,7 +71,7 @@ export function QuickTasks() {
       return await apiRequest("DELETE", `/api/quick-tasks/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks", dateStr] });
     },
     onError: (error: Error) => {
       toast({ title: "Failed to delete task", description: error.message, variant: "destructive" });
@@ -68,7 +81,7 @@ export function QuickTasks() {
   const handleAdd = () => {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
-    createMutation.mutate(trimmed);
+    createMutation.mutate({ title: trimmed, scheduledTime: newTime || undefined });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -80,10 +93,24 @@ export function QuickTasks() {
 
   const completedCount = tasks.filter(t => t.completed).length;
 
+  const getDateLabel = () => {
+    if (isToday(selectedDate)) return "Today";
+    if (isTomorrow(selectedDate)) return "Tomorrow";
+    if (isYesterday(selectedDate)) return "Yesterday";
+    return format(selectedDate, "EEE, MMM d");
+  };
+
+  const formatTime12h = (time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  };
+
   return (
     <Card data-testid="card-quick-tasks">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2 text-base flex-wrap">
           <ListChecks className="w-4 h-4 text-primary" />
           Quick Tasks
           {tasks.length > 0 && (
@@ -91,19 +118,75 @@ export function QuickTasks() {
               {completedCount}/{tasks.length}
             </Badge>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6" data-testid="button-quick-tasks-info">
+                <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-[240px] text-sm">
+              <p>Personal to-do items like errands, appointments, or one-off tasks — grocery store, bank, doctor visits, etc. Not related to your habits.</p>
+            </TooltipContent>
+          </Tooltip>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex gap-2">
+        <div className="flex items-center justify-center gap-2" data-testid="quick-tasks-date-nav">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+            data-testid="button-quick-tasks-prev-day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="flex items-center gap-1.5 min-w-[120px] justify-center">
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-sm font-medium" data-testid="text-quick-tasks-date">
+              {getDateLabel()}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+            data-testid="button-quick-tasks-next-day"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          {!isToday(selectedDate) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(new Date())}
+              data-testid="button-quick-tasks-today"
+            >
+              Today
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
           <Input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Add a task..."
-            className="flex-1"
+            className="flex-1 min-w-[140px]"
             disabled={createMutation.isPending}
             data-testid="input-quick-task"
           />
+          <div className="relative">
+            <Input
+              type="time"
+              value={newTime}
+              onChange={(e) => setNewTime(e.target.value)}
+              className="w-[120px] pl-7"
+              disabled={createMutation.isPending}
+              data-testid="input-quick-task-time"
+            />
+            <Clock className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
           <Button
             size="icon"
             variant="ghost"
@@ -146,10 +229,16 @@ export function QuickTasks() {
                 >
                   {task.title}
                 </span>
+                {task.scheduledTime && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid={`time-quick-task-${task.id}`}>
+                    <Clock className="w-3 h-3" />
+                    {formatTime12h(task.scheduledTime)}
+                  </span>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-6 w-6 invisible group-hover:visible"
                   onClick={() => deleteMutation.mutate(task.id)}
                   data-testid={`button-delete-quick-task-${task.id}`}
                 >
@@ -162,7 +251,7 @@ export function QuickTasks() {
 
         {tasks.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-2" data-testid="text-no-quick-tasks">
-            No tasks for today
+            No tasks for {getDateLabel().toLowerCase()}
           </p>
         )}
       </CardContent>
