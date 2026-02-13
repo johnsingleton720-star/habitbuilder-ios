@@ -43,8 +43,8 @@ The core system enables personalized habit coaching:
 -   **Integration**: Stripe for subscription management and webhooks.
 -   **International Payments**: Stripe auto-selects best payment methods per region (cards, Apple Pay, Google Pay, regional methods). Checkout uses `locale: 'auto'` for localized language. Prices displayed in USD with "Prices in USD" notes across all pricing pages.
 -   **Promo Codes**: Enabled via `allow_promotion_codes: true` in checkout.
--   **Trial System**: 2-day free trial with expanded features. After trial, free tier allows 2 habits permanently with basic AI coaching, streaks, and templates.
--   **Free Tier**: 2 habits, basic AI coaching, personalized plans, streaks, templates. No hard paywall - gentle upgrade prompts instead.
+-   **Trial System**: 2-day free trial with expanded features. After trial, free tier allows 1 habit permanently with basic AI coaching, streaks, and templates.
+-   **Free Tier**: 1 habit, basic AI coaching, personalized plans, streaks, templates. No hard paywall - gentle upgrade prompts instead.
 
 ### Customer Feedback System
 -   Allows users to submit feedback (General, Bug, Feature Request, Support).

@@ -40,7 +40,7 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasHabitStacking: false, // Premium only
   },
   free: {
-    maxHabits: 2,
+    maxHabits: 1,
     hasAiCoaching: true,
     hasPersonalizedPlans: true,
     hasSessionSummaries: false,

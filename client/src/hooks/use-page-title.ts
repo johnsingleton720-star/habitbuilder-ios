@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 const BASE_TITLE = "HabitBuilder.pro";
 const SITE_URL = "https://habitbuilder.pro";
-const DEFAULT_DESCRIPTION = "Build lasting habits with AI-powered coaching. Personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Start your free trial today.";
+const DEFAULT_DESCRIPTION = "Build lasting habits with AI-powered coaching. Personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Start with 1 habit free forever.";
 
 export function usePageTitle(pageTitle?: string, metaDescription?: string) {
   useEffect(() => {

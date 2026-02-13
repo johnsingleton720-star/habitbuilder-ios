@@ -175,7 +175,7 @@ interface AIPlan {
 }
 
 export default function Landing() {
-  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Free 2-day trial, then Pro at $6 USD/month or Premium at $15 USD/month.");
+  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. 1 habit free forever, Pro at $6 USD/month or Premium at $15 USD/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [customGoal, setCustomGoal] = useState("");
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
@@ -260,7 +260,7 @@ export default function Landing() {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button onClick={scrollToLogin} size="lg" data-testid="button-hero-cta">
-                Start Your Free Trial
+                Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button
@@ -280,7 +280,7 @@ export default function Landing() {
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                <span>2-day free trial</span>
+                <span>1 habit free forever</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
@@ -870,7 +870,7 @@ export default function Landing() {
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Start with a free trial, then pick the plan that works for you. Cancel anytime.
+              Start with 1 habit free forever, then upgrade for unlimited habits. Cancel anytime.
             </p>
           </div>
 
@@ -904,15 +904,15 @@ export default function Landing() {
                     <div className="inline-flex justify-center mb-3">
                       <Leaf className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Trial</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Try it for 2 days</p>
+                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Free forever</p>
                     <div className="mt-3">
                       <span className="text-4xl font-display font-bold">$0</span>
                     </div>
                   </div>
                   <ul className="space-y-2.5 flex-1">
                     {[
-                      "Up to 3 habits",
+                      "1 habit",
                       "AI coaching interview",
                       "Personalized action plans",
                       "Basic streaks & tracking",
@@ -935,7 +935,7 @@ export default function Landing() {
                     ))}
                   </ul>
                   <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
-                    Start Free Trial
+                    Get Started Free
                   </Button>
                 </CardContent>
               </Card>
@@ -1040,7 +1040,7 @@ export default function Landing() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8">
-            All plans start with a 2-day free trial. No credit card required to start.
+            1 habit free forever. No credit card required to start.
           </p>
           <p className="text-center text-xs text-muted-foreground mt-2">
             Prices shown in USD. International payments accepted worldwide.
@@ -1120,7 +1120,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-urgency">
-                Start Your Free Trial
+                Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>

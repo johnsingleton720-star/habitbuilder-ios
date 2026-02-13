@@ -649,16 +649,16 @@ export async function registerRoutes(
       const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
       const isAdmin = user?.isAdmin === true;
       
-      // Free users: max 2 habits, Trial users: max 3 habits, Pro/Premium/Admin: unlimited
+      // Free users: max 1 habit, Trial users: max 3 habits, Pro/Premium/Admin: unlimited
       if (!hasPaidSubscription && !isAdmin) {
         if (isInTrial && existingHabits.length >= 3) {
           return res.status(403).json({ 
             error: "Trial users can create up to 3 habits. Subscribe to Pro or Premium for unlimited habits." 
           });
         }
-        if (!isInTrial && existingHabits.length >= 2) {
+        if (!isInTrial && existingHabits.length >= 1) {
           return res.status(403).json({ 
-            error: "Free users can have up to 2 habits. Upgrade to Pro ($6/mo) for unlimited habits." 
+            error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits." 
           });
         }
       }

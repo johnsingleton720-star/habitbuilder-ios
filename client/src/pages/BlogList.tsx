@@ -123,13 +123,13 @@ export default function BlogList() {
           </h2>
           <p className="text-muted-foreground text-lg">
             HabitBuilder.pro's AI coach creates personalized action plans based on the science 
-            of habit formation. Start your free trial and see the difference.
+            of habit formation. Start free and see the difference.
           </p>
           <Button onClick={() => window.location.href = "/api/login"} size="lg" data-testid="button-blog-cta">
-            Start Your Free Trial
+            Get Started Free
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
-          <p className="text-sm text-muted-foreground">No credit card required. 2-day free trial.</p>
+          <p className="text-sm text-muted-foreground">No credit card required. 1 habit free forever.</p>
         </div>
       </section>
 

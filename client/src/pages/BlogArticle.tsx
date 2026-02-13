@@ -212,10 +212,10 @@ export default function BlogArticle() {
             Start building your habits with expert guidance.
           </p>
           <Button onClick={() => window.location.href = "/api/login"} size="lg" data-testid="button-article-cta">
-            Start Your Free Trial
+            Get Started Free
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
-          <p className="text-sm text-muted-foreground">No credit card required. 2-day free trial.</p>
+          <p className="text-sm text-muted-foreground">No credit card required. 1 habit free forever.</p>
         </div>
       </section>
 

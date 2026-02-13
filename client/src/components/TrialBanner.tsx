@@ -22,7 +22,7 @@ export function TrialBanner() {
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">
-              You're on the free plan (2 habits)
+              You're on the free plan (1 habit)
             </p>
             <p className="text-xs text-muted-foreground">
               Upgrade to Pro for unlimited habits and more features

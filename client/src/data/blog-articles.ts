@@ -155,7 +155,7 @@ export const blogArticles: BlogArticle[] = [
       }
     ],
     faqs: [
-      { question: "What's the best free habit tracker app?", answer: "For basic tracking, apps like Loop Habit Tracker (Android) and Streaks (iOS) are solid free options. For a more guided experience with AI coaching, HabitBuilder.pro offers a free trial that includes personalized action plans." },
+      { question: "What's the best free habit tracker app?", answer: "For basic tracking, apps like Loop Habit Tracker (Android) and Streaks (iOS) are solid free options. For a more guided experience with AI coaching, HabitBuilder.pro offers 1 habit free forever with personalized action plans." },
       { question: "Should I track every habit I have?", answer: "No. Track only the habits you're actively building or struggling with. Once a habit becomes truly automatic (you don't need to think about it), you can stop tracking it and focus on new habits." },
     ]
   },

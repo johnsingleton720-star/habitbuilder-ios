@@ -29,7 +29,7 @@ interface PricingData {
 }
 
 export default function Paywall() {
-  usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. Pro at $6 USD/month with unlimited AI-coached habits, or Premium at $15 USD/month with advanced analytics and community features. Start with a free 2-day trial.");
+  usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. 1 habit free forever. Pro at $6 USD/month for unlimited habits, or Premium at $15 USD/month with advanced analytics and community features.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();
@@ -121,13 +121,13 @@ export default function Paywall() {
             <>
               <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-primary font-medium">Free plan - 2 habits included</span>
+                <span className="text-primary font-medium">Free plan - 1 habit included</span>
               </div>
               <h1 className="font-display text-4xl font-bold text-foreground mb-3">
                 Unlock Unlimited Habits
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                You can keep using 2 habits for free. Upgrade for unlimited habits, advanced AI coaching, and premium features.
+                You can keep using 1 habit for free. Upgrade for unlimited habits, advanced AI coaching, and premium features.
               </p>
             </>
           ) : isInTrial ? (
