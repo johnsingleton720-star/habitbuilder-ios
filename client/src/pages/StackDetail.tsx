@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type { HabitStack, Habit } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
+import { UnifiedRoutineSession } from "@/components/UnifiedRoutineSession";
 
 export default function StackDetail() {
   usePageTitle("Stack Details");
@@ -23,6 +24,7 @@ export default function StackDetail() {
   const { toast } = useToast();
   const { features } = useSubscription();
   const [, navigate] = useLocation();
+  const [routineSessionOpen, setRoutineSessionOpen] = useState(false);
 
   const { data: stack, isLoading: stackLoading } = useQuery<HabitStack>({
     queryKey: ["/api/habit-stacks", stackId],
@@ -157,6 +159,17 @@ export default function StackDetail() {
                 <Clock className="w-3 h-3 mr-1" />
                 {stack.scheduledTime}
               </Badge>
+            )}
+            {isUnified && unifiedPlan && (
+              <Button
+                size="sm"
+                className="gap-1.5 rounded-xl shadow-md shadow-primary/20 ml-auto"
+                onClick={() => setRoutineSessionOpen(true)}
+                data-testid="button-start-unified-routine"
+              >
+                <Play className="w-3.5 h-3.5" />
+                Start Routine
+              </Button>
             )}
           </div>
         </div>
@@ -670,6 +683,14 @@ export default function StackDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      {stack && isUnified && unifiedPlan && (
+        <UnifiedRoutineSession
+          stack={stack}
+          open={routineSessionOpen}
+          onOpenChange={setRoutineSessionOpen}
+        />
+      )}
     </div>
   );
 }

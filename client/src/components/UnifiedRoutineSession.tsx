@@ -92,7 +92,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
   const currentTask = tasks[currentTaskIndex];
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const uniqueHabitIds = [...new Set(tasks.map(t => t.habitId))];
+  const uniqueHabitIds = Array.from(new Set(tasks.map(t => t.habitId)));
 
   const completeRoutineMutation = useMutation({
     mutationFn: async ({ finalNotes, finalCompletedCount }: { finalNotes: TaskNote[]; finalCompletedCount: number }) => {

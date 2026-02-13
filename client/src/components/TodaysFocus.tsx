@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
 import type { DailyPlan, HabitStack } from "@shared/schema";
+import { UnifiedRoutineSession } from "./UnifiedRoutineSession";
 
 interface TodaysFocusProps {
   habits: HabitResponse[];
@@ -28,6 +29,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
   const dayName = format(today, "EEEE").toLowerCase();
   const TimeIcon = getTimeOfDayIcon();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [routineSessionStack, setRoutineSessionStack] = useState<HabitStack | null>(null);
 
   const isPlanStillActive = (habit: HabitResponse) => {
     if (!habit.setupComplete) return true;
@@ -316,50 +318,55 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               const uPlan = (stack as any).unifiedPlan;
               const taskCount = uPlan?.tasks?.length || 0;
               return (
-                <Link key={`stack-${stack.id}`} href={`/stack/${stack.id}`}>
-                  <motion.div
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                    data-testid={`focus-stack-${stack.id}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-primary shrink-0" />
-                        <h4 className="font-display font-bold text-base truncate text-gray-900 dark:text-white">{stack.name}</h4>
-                        <Badge variant="secondary" className="text-[10px] shrink-0">Routine</Badge>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {stack.scheduledTime && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                          </span>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {taskCount} tasks
+                <motion.div
+                  key={`stack-${stack.id}`}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                  data-testid={`focus-stack-${stack.id}`}
+                  onClick={() => setRoutineSessionStack(stack)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-primary shrink-0" />
+                      <h4 className="font-display font-bold text-base truncate text-gray-900 dark:text-white">{stack.name}</h4>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">Routine</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      {stack.scheduledTime && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                         </span>
-                        {uPlan.totalDuration && (
-                          <span className="text-xs text-muted-foreground">
-                            ~{uPlan.totalDuration}m
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {taskCount} tasks
+                      </span>
+                      {uPlan.totalDuration && (
+                        <span className="text-xs text-muted-foreground">
+                          ~{uPlan.totalDuration}m
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 ml-3">
-                      <Button
-                        size="sm"
-                        className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
-                        onClick={(e) => e.stopPropagation()}
-                        data-testid={`button-start-routine-${stack.id}`}
-                      >
-                        <Play className="w-3.5 h-3.5" />
-                        Start
-                      </Button>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </motion.div>
-                </Link>
+                  </div>
+                  <div className="flex items-center gap-2 ml-3">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRoutineSessionStack(stack);
+                      }}
+                      data-testid={`button-start-routine-${stack.id}`}
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      Start
+                    </Button>
+                    <Link href={`/stack/${stack.id}`} onClick={(e: any) => e.stopPropagation()}>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                    </Link>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
@@ -471,6 +478,16 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
           </div>
         )}
       </CardContent>
+
+      {routineSessionStack && (
+        <UnifiedRoutineSession
+          stack={routineSessionStack}
+          open={!!routineSessionStack}
+          onOpenChange={(open) => {
+            if (!open) setRoutineSessionStack(null);
+          }}
+        />
+      )}
     </Card>
   );
 }

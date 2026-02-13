@@ -1239,7 +1239,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     } catch (error) {
       console.error("Error generating routine summary:", error);
       res.json({
-        summary: `You completed your "${stackName}" routine. Great work!`,
+        summary: `You completed your routine. Great work!`,
         insights: [],
         encouragement: "Every routine session builds stronger habits!"
       });
