@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Layers, ExternalLink, BookOpen, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Layers, ExternalLink, BookOpen, CheckCircle, ChevronDown, ChevronUp, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { HabitStack, UnifiedPlanTask, UnifiedPlanStep, UnifiedPlanTransition } from "@shared/schema";
@@ -108,6 +108,38 @@ const RESOURCE_ICONS: Record<string, typeof BookOpen> = {
   tool: ExternalLink,
 };
 
+function generateResourceTemplate(resource: any, habitTitle: string): string {
+  const type = (resource.type || "").toLowerCase();
+  const header = `${resource.name}\nHabit: ${habitTitle}\nDescription: ${resource.description}\n${"=".repeat(50)}\n\n`;
+
+  if (type.includes("article") || type.includes("blog") || type === "website") {
+    return `${header}NOTES & KEY TAKEAWAYS\n\nDate Read: ${new Date().toLocaleDateString()}\n\nKey Points:\n- \n- \n- \n\nMain Takeaways:\n1. \n2. \n3. \n\nHow I'll Apply This:\n- \n\nQuotes / Highlights:\n- \n`;
+  }
+  if (type.includes("book")) {
+    return `${header}READING NOTES & ACTION ITEMS\n\nDate Started: ${new Date().toLocaleDateString()}\nDate Finished: \n\nChapter Notes:\n\nChapter 1:\n- \n\nChapter 2:\n- \n\nKey Concepts:\n1. \n2. \n3. \n\nAction Items:\n- [ ] \n- [ ] \n- [ ] \n\nFavorite Quotes:\n- \n\nOverall Rating: /5\n`;
+  }
+  if (type.includes("video")) {
+    return `${header}WATCH NOTES & HIGHLIGHTS\n\nDate Watched: ${new Date().toLocaleDateString()}\n\nTimestamp Notes:\n00:00 - \n05:00 - \n10:00 - \n\nKey Points:\n1. \n2. \n3. \n\nAction Items:\n- [ ] \n- [ ] \n`;
+  }
+  if (type.includes("course")) {
+    return `${header}COURSE PROGRESS TRACKER\n\nDate Started: ${new Date().toLocaleDateString()}\n\nModule 1:\n- Status: Not Started / In Progress / Complete\n- Notes: \n\nModule 2:\n- Status: Not Started / In Progress / Complete\n- Notes: \n\nKey Skills Learned:\n1. \n2. \n3. \n\nPractice Exercises:\n- [ ] \n- [ ] \n`;
+  }
+  return `${header}RESOURCE NOTES\n\nDate: ${new Date().toLocaleDateString()}\n\nSummary:\n\n\nKey Points:\n1. \n2. \n3. \n\nNotes:\n- \n- \n\nAction Items:\n- [ ] \n- [ ] \n`;
+}
+
+function downloadResourceTemplate(resource: any, habitTitle: string) {
+  const content = generateResourceTemplate(resource, habitTitle);
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${(resource.name || "resource").replace(/\s+/g, "-").toLowerCase()}-template.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRoutineSessionProps) {
   const [phase, setPhase] = useState<Phase>("checklist");
   const [checklist, setChecklist] = useState(ROUTINE_CHECKLIST);
@@ -125,7 +157,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
 
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
-  const [showResources, setShowResources] = useState(true);
+  const [showResources, setShowResources] = useState(false);
   const [showSteps, setShowSteps] = useState(true);
   const [pendingTransition, setPendingTransition] = useState<UnifiedPlanTransition | null>(null);
 
@@ -202,6 +234,16 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
     },
     onSuccess: (data) => {
       setSessionSummary(data);
+    },
+  });
+
+  const saveResourceAsTemplate = useMutation({
+    mutationFn: async (data: { habitId: number; title: string; content: string; originalTitle: string; taskId?: string }) => {
+      const res = await apiRequest("POST", "/api/user-templates", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user-templates"] });
     },
   });
 
@@ -673,26 +715,69 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                         const ResourceIcon = RESOURCE_ICONS[resource.type] || ExternalLink;
                         const url = resource.url || `https://www.google.com/search?q=${encodeURIComponent(resource.searchQuery)}`;
                         return (
-                          <a
+                          <div
                             key={i}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-start gap-2.5 p-2.5 rounded-md bg-background border hover-elevate transition-colors group"
+                            className="rounded-md bg-background border overflow-visible"
                             data-testid={`resource-${i}`}
                           >
-                            <ResourceIcon className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium group-hover:text-primary transition-colors flex items-center gap-1">
-                                {resource.name}
-                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-start gap-2.5 p-2.5 hover-elevate transition-colors group"
+                            >
+                              <ResourceIcon className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium group-hover:text-primary transition-colors flex items-center gap-1">
+                                  {resource.name}
+                                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
+                              </div>
+                              <Badge variant="secondary" className="text-[10px] shrink-0">
+                                {resource.type}
+                              </Badge>
+                            </a>
+                            <div className="flex items-center gap-1 px-2.5 pb-2 pt-0.5">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 text-xs h-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadResourceTemplate(resource, currentTask?.habitTitle || "");
+                                }}
+                                data-testid={`button-download-resource-${i}`}
+                              >
+                                <Download className="w-3 h-3" />
+                                Download Template
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 text-xs h-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  saveResourceAsTemplate.mutate({
+                                    habitId: currentTask?.habitId || 0,
+                                    title: resource.name,
+                                    content: generateResourceTemplate(resource, currentTask?.habitTitle || ""),
+                                    originalTitle: resource.name,
+                                    taskId: currentTask?.id,
+                                  });
+                                }}
+                                disabled={saveResourceAsTemplate.isPending}
+                                data-testid={`button-save-resource-${i}`}
+                              >
+                                {saveResourceAsTemplate.isPending ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <FileText className="w-3 h-3" />
+                                )}
+                                Save to Library
+                              </Button>
                             </div>
-                            <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {resource.type}
-                            </Badge>
-                          </a>
+                          </div>
                         );
                       })}
                     </div>

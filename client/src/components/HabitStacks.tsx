@@ -12,11 +12,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3, Edit } from "lucide-react";
+import { Layers, Plus, ArrowRight, Sparkles, GripVertical, Trash2, Crown, Loader2, ChevronDown, ChevronUp, Clock, BarChart3, Edit, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Link } from "wouter";
 import type { HabitStack, Habit } from "@shared/schema";
+
+const STACK_COLORS: { id: string; label: string; border: string; bg: string; accent: string; text: string; dot: string }[] = [
+  { id: "primary", label: "Default", border: "border-border", bg: "", accent: "bg-primary/10", text: "text-primary", dot: "bg-primary" },
+  { id: "emerald", label: "Forest", border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", accent: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
+  { id: "blue", label: "Ocean", border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50/50 dark:bg-blue-950/20", accent: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", dot: "bg-blue-500" },
+  { id: "purple", label: "Lavender", border: "border-purple-300 dark:border-purple-700", bg: "bg-purple-50/50 dark:bg-purple-950/20", accent: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300", dot: "bg-purple-500" },
+  { id: "orange", label: "Sunset", border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50/50 dark:bg-orange-950/20", accent: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", dot: "bg-orange-500" },
+  { id: "pink", label: "Rose", border: "border-pink-300 dark:border-pink-700", bg: "bg-pink-50/50 dark:bg-pink-950/20", accent: "bg-pink-100 dark:bg-pink-900/40", text: "text-pink-700 dark:text-pink-300", dot: "bg-pink-500" },
+  { id: "cyan", label: "Sky", border: "border-cyan-300 dark:border-cyan-700", bg: "bg-cyan-50/50 dark:bg-cyan-950/20", accent: "bg-cyan-100 dark:bg-cyan-900/40", text: "text-cyan-700 dark:text-cyan-300", dot: "bg-cyan-500" },
+  { id: "amber", label: "Honey", border: "border-amber-300 dark:border-amber-700", bg: "bg-amber-50/50 dark:bg-amber-950/20", accent: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300", dot: "bg-amber-500" },
+];
+
+function getStackColor(colorId: string | null | undefined) {
+  return STACK_COLORS.find(c => c.id === colorId) || STACK_COLORS[0];
+}
 
 export function HabitStacks() {
   const { toast } = useToast();
@@ -244,10 +259,11 @@ function StackItem({
   const unifiedPlan = (stack as any).unifiedPlan as any;
   const planMode = (stack as any).planMode || "separate";
   const isUnified = planMode === "unified";
+  const colorTheme = getStackColor(stack.color);
 
   return (
     <div
-      className="border rounded-lg p-4 space-y-3"
+      className={cn("border rounded-lg p-4 space-y-3", colorTheme.border, colorTheme.bg)}
       data-testid={`stack-item-${stack.id}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -257,7 +273,7 @@ function StackItem({
             onClick={() => setExpanded(!expanded)}
             data-testid={`button-expand-stack-${stack.id}`}
           >
-            <Layers className="w-4 h-4 text-primary shrink-0" />
+            <Layers className={cn("w-4 h-4 shrink-0", colorTheme.text)} />
             <span className="font-semibold text-sm truncate">{stack.name}</span>
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -720,6 +736,7 @@ function EditStackDialog({
   const [description, setDescription] = useState(stack.description || "");
   const [selectedIds, setSelectedIds] = useState<number[]>((stack.habitIds as number[]) || []);
   const [scheduledTime, setScheduledTime] = useState(stack.scheduledTime || "");
+  const [color, setColor] = useState(stack.color || "primary");
 
   const updateStack = useMutation({
     mutationFn: async () => {
@@ -728,6 +745,7 @@ function EditStackDialog({
         description: description || undefined,
         habitIds: selectedIds,
         scheduledTime: scheduledTime || undefined,
+        color,
       });
       return res.json();
     },
@@ -799,6 +817,33 @@ function EditStackDialog({
               onChange={(e) => setScheduledTime(e.target.value)}
               data-testid="input-edit-stack-time"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5" />
+              Card Color
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {STACK_COLORS.map((c) => {
+                const isSelected = color === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border cursor-pointer transition-all",
+                      c.border, c.bg,
+                      isSelected ? "ring-2 ring-primary ring-offset-1 font-medium" : "opacity-70"
+                    )}
+                    onClick={() => setColor(c.id)}
+                    data-testid={`color-${c.id}`}
+                  >
+                    <span className={cn("w-3 h-3 rounded-full", c.dot)} />
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-2">
