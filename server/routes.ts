@@ -4567,14 +4567,14 @@ Return JSON with:
   "insight": "One motivational insight backed by psychology or science",
   "tips": ["Expert tip 1", "Expert tip 2", "Expert tip 3"],
   "resources": [
-    {"name": "Resource name", "type": "article", "searchQuery": "specific search terms"},
-    {"name": "Resource name", "type": "book", "searchQuery": "book title author"},
-    {"name": "Resource name", "type": "video", "searchQuery": "specific video search"}
+    {"name": "Resource name", "type": "article", "searchQuery": "descriptive generic search terms without brand names"},
+    {"name": "Resource name", "type": "book", "searchQuery": "topic area guide for beginners"},
+    {"name": "Resource name", "type": "video", "searchQuery": "descriptive technique tutorial"}
   ],
   "coachMessage": "A personalized encouraging message from the AI coach about starting this journey, 2-3 sentences",
   "stackSuggestion": "Suggest a complementary habit that pairs well with this one and explain why"
 }
-Be specific, practical, and personalized. Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls.`
+Be specific, practical, and personalized. Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls. IMPORTANT: searchQuery values must use generic descriptive terms only — do NOT include brand names, author names, specific product names, or trademarked terms. Use topic-based descriptions like "beginner meditation breathing technique guide" instead.`
           },
           {
             role: "user",
