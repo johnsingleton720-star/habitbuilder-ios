@@ -1051,25 +1051,25 @@ export default function Landing() {
       <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold">Loved by habit builders</h2>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold">What our early users say</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              See what our members are saying about their transformation.
+              Real feedback from our first beta testers.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {[
               {
-                quote: "I've tried so many habit apps, but this one finally made it click. The guided sessions keep me accountable, and I've maintained my morning routine for 3 months straight!",
+                quote: "I was skeptical about another habit app, but the AI interview actually understood what I was trying to do. Within a week, I had a morning routine that felt natural instead of forced.",
                 name: "Sarah M.",
-                role: "Marketing Manager",
-                streak: "90-day streak"
+                role: "Early Tester",
+                streak: "7-day streak"
               },
               {
-                quote: "The AI action plans are a game-changer. It broke down my goal of reading more into simple daily steps. Now I read 30 minutes every day without even thinking about it.",
+                quote: "What sold me was the guided sessions. Instead of just checking a box, it walks you through each step with coaching tips. After a week of using it, I genuinely look forward to my daily routine.",
                 name: "James K.",
-                role: "Software Developer",
-                streak: "45-day streak"
+                role: "Beta Tester",
+                streak: "10-day streak"
               }
             ].map((testimonial, i) => (
               <motion.div
@@ -1097,6 +1097,58 @@ export default function Landing() {
                     {testimonial.streak}
                   </Badge>
                 </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6" id="faq" aria-label="Frequently asked questions">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-faq-heading">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground text-lg">
+              Everything you need to know before getting started.
+            </p>
+          </div>
+          <div className="space-y-6">
+            {[
+              {
+                q: "Is HabitBuilder really free to start?",
+                a: "Yes! The free plan gives you 1 habit with full AI coaching, personalized action plans, streaks, and access to the template library. No credit card required. You can upgrade anytime if you want unlimited habits and advanced features."
+              },
+              {
+                q: "How does the AI coaching work?",
+                a: "When you create a habit, our AI conducts a short interview to understand your goals, schedule, and experience level. Based on your answers, it generates a personalized daily, weekly, and monthly action plan grounded in behavioral science. During guided sessions, you get step-by-step coaching with timers and tips."
+              },
+              {
+                q: "Can I cancel my subscription anytime?",
+                a: "Absolutely. You can cancel your Pro or Premium subscription at any time from your account settings. You'll keep access to your paid features until the end of your billing period, and your data is never deleted."
+              },
+              {
+                q: "Is my data private and secure?",
+                a: "Your privacy is a priority. All data is encrypted and stored securely. We use Stripe for payment processing, so we never see or store your card details. You can read our full Privacy Policy for more details."
+              },
+              {
+                q: "What's the difference between Pro and Premium?",
+                a: "Pro ($6/month) gives you unlimited habits, guided sessions, achievements, and weekly reports. Premium ($15/month) adds AI Coach Chat, advanced analytics, habit stacking with unified routines, accountability partners, voice notes, and CSV data export."
+              },
+              {
+                q: "Does it work on mobile?",
+                a: "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support."
+              },
+            ].map((faq, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="border border-border/50 rounded-lg p-6"
+                data-testid={`faq-item-${i}`}
+              >
+                <h3 className="font-display font-semibold text-lg mb-2">{faq.q}</h3>
+                <p className="text-muted-foreground leading-relaxed">{faq.a}</p>
               </motion.div>
             ))}
           </div>
@@ -1140,13 +1192,12 @@ export default function Landing() {
 
       <footer className="py-12 border-t border-border" role="contentinfo">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-start justify-between gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="space-y-4">
               <LogoFooter />
               <p className="text-xs text-muted-foreground max-w-md">
-                Build better habits with personalized AI coaching. Daily habit tracker, guided sessions, streak tracking, XP leveling system, and progress analytics. Available on web and mobile.
+                Build better habits with personalized AI coaching grounded in behavioral science. Daily plans, guided sessions, streak tracking, and progress analytics.
               </p>
-              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
               <InstallAppDialog 
                 trigger={
                   <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" data-testid="button-get-app-landing">
@@ -1156,15 +1207,38 @@ export default function Landing() {
                 }
               />
             </div>
-            <div className="flex flex-col items-start md:items-end gap-4">
-              <div className="flex items-center gap-4 flex-wrap">
-                <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link>
+            <div className="space-y-3">
+              <h4 className="font-display font-semibold text-sm">Explore</h4>
+              <div className="flex flex-col gap-2">
+                <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Habit Templates</Link>
                 <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>
-                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground" data-testid="link-privacy-policy">Privacy Policy</Link>
+                <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground">Pricing</a>
+                <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground">FAQ</a>
               </div>
-              <div>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-display font-semibold text-sm">Support</h4>
+              <div className="flex flex-col gap-2">
+                <a href="mailto:admin@habitbuilder.pro" className="text-sm text-muted-foreground hover:text-foreground" data-testid="link-contact-email">admin@habitbuilder.pro</a>
+                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground" data-testid="link-privacy-policy">Privacy Policy</Link>
+                <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground" data-testid="link-terms">Terms of Service</Link>
+              </div>
+              <div className="pt-2">
                 <p className="text-sm text-muted-foreground mb-2">Share the love:</p>
                 <SocialShare variant="compact" />
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Secured by Stripe</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>SSL Encrypted</span>
               </div>
             </div>
           </div>
