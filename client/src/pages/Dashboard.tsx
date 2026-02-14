@@ -218,12 +218,21 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
-        {/* Today's Focus - Most important: what to do NOW */}
+        {/* Daily Quote - Positive start */}
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+        >
+          <DailyQuote />
+        </motion.section>
+
+        {/* Today's Focus - What to do NOW */}
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
             <TodaysFocus habits={activeHabits || []} stacks={habitStacks} />
           </motion.section>
@@ -233,7 +242,7 @@ export default function Dashboard() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
         >
           <QuickTasks />
         </motion.section>
@@ -243,9 +252,20 @@ export default function Dashboard() {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <ProgressSummary habits={activeHabits || []} />
+          </motion.section>
+        )}
+
+        {/* Achievements (compact) - Show progress before challenges */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+          >
+            <AchievementsDisplay compact />
           </motion.section>
         )}
 
@@ -253,7 +273,7 @@ export default function Dashboard() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
           <GamificationDisplay />
         </motion.section>
@@ -262,30 +282,10 @@ export default function Dashboard() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
         >
           <MoodTracker />
         </motion.section>
-
-        {/* Daily Quote */}
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <DailyQuote />
-        </motion.section>
-
-        {/* Achievements (compact) */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-          >
-            <AchievementsDisplay compact />
-          </motion.section>
-        )}
 
         {/* Habits Section - Bottom, Collapsible */}
         <section className="space-y-4">
