@@ -31,10 +31,11 @@ import BlogArticle from "@/pages/BlogArticle";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 import { CookieConsent } from "@/components/CookieConsent";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import AcceptInvite from "@/pages/AcceptInvite";
 import Resources from "@/pages/Resources";
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/accept-invite"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -83,6 +84,7 @@ function Router() {
         <Route path="/blog/:slug" component={BlogArticle} />
         <Route path="/blog" component={BlogList} />
         <Route path="/privacy" component={PrivacyPolicy} />
+        <Route path="/terms" component={TermsOfService} />
         <Route path="/accept-invite/:token" component={AcceptInvite} />
         <Route component={Landing} />
       </Switch>
