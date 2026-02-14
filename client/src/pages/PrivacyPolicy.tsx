@@ -170,7 +170,7 @@ export default function PrivacyPolicy() {
               If you have questions about this Privacy Policy or wish to exercise your data rights, please contact us at:
             </p>
             <p className="text-muted-foreground">
-              <strong>Email:</strong> privacy@habitbuilder.pro
+              <strong>Email:</strong> admin@habitbuilder.pro
             </p>
           </section>
         </div>
