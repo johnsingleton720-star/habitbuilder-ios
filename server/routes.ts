@@ -6308,7 +6308,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
         achievements: userAchievementsList,
         subscriptionTier: tierValue,
         isAdmin: isAdminUser,
-        selectedColor: user.colorTheme || 'nature',
+        selectedColor: user.accentColor || null,
       });
     } catch (error) {
       console.error("Error fetching gamification stats:", error);
@@ -6496,7 +6496,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
         return res.status(403).json({ error: "This color has not been unlocked yet" });
       }
       
-      await db.update(users).set({ colorTheme: color, updatedAt: new Date() }).where(eq(users.id, userId));
+      await db.update(users).set({ accentColor: color, updatedAt: new Date() }).where(eq(users.id, userId));
       res.json({ success: true, color });
     } catch (error) {
       console.error("Error setting accent color:", error);

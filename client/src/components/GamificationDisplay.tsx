@@ -265,6 +265,16 @@ export function GamificationDisplay() {
     ? Math.min(100, (stats.weeklyXpEarned / stats.weeklyXpGoal) * 100)
     : 0;
 
+  const activeAccentColor = isPremium && stats.selectedColor && stats.levelRewards
+    ? Object.values(stats.levelRewards).find(r => r.color === stats.selectedColor)?.colorValue
+    : null;
+
+  const accentStyle = activeAccentColor ? {
+    '--accent-color': activeAccentColor,
+    '--accent-color-light': activeAccentColor.replace(')', ', 0.15)').replace('hsl(', 'hsla('),
+    '--accent-color-medium': activeAccentColor.replace(')', ', 0.25)').replace('hsl(', 'hsla('),
+  } as React.CSSProperties : {};
+
   return (
     <>
     <CelebrationAnimation
@@ -274,13 +284,24 @@ export function GamificationDisplay() {
       subtitle={celebration.subtitle}
       onComplete={() => setCelebration(prev => ({ ...prev, show: false }))}
     />
-    <div className="space-y-4">
-      <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+    <div className="space-y-4" style={accentStyle}>
+      <Card
+        className={cn(!activeAccentColor && "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", "border-primary/20")}
+        style={activeAccentColor ? {
+          background: `linear-gradient(to bottom right, ${activeAccentColor.replace(')', ', 0.12)').replace('hsl(', 'hsla(')}, ${activeAccentColor.replace(')', ', 0.04)').replace('hsl(', 'hsla(')}, transparent)`,
+          borderColor: activeAccentColor.replace(')', ', 0.25)').replace('hsl(', 'hsla('),
+        } : undefined}
+      >
         <CardContent className="pt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-primary" />
+              <div
+                className={cn("w-12 h-12 rounded-full flex items-center justify-center", !activeAccentColor && "bg-primary/20")}
+                style={activeAccentColor ? {
+                  backgroundColor: activeAccentColor.replace(')', ', 0.2)').replace('hsl(', 'hsla('),
+                } : undefined}
+              >
+                <Trophy className={cn("w-6 h-6", !activeAccentColor && "text-primary")} style={activeAccentColor ? { color: activeAccentColor } : undefined} />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -393,13 +414,34 @@ export function GamificationDisplay() {
               </div>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-primary" data-testid="text-level-progress">{Math.round(stats.levelProgress)}%</span>
+              <span
+                className={cn("text-2xl font-bold", !activeAccentColor && "text-primary")}
+                style={activeAccentColor ? { color: activeAccentColor } : undefined}
+                data-testid="text-level-progress"
+              >
+                {Math.round(stats.levelProgress)}%
+              </span>
               <p className="text-xs text-muted-foreground">to Level {stats.level + 1}</p>
             </div>
           </div>
           
           <div className="space-y-1">
-            <Progress value={stats.levelProgress} className="h-2" />
+            <div className="relative">
+              <Progress value={stats.levelProgress} className="h-2" />
+              {activeAccentColor && (
+                <div
+                  className="absolute inset-0 rounded-full overflow-hidden pointer-events-none"
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${stats.levelProgress}%`,
+                      backgroundColor: activeAccentColor,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground text-center">
               {stats.xpToNextLevel > 0 
                 ? `${stats.xpToNextLevel.toLocaleString()} XP to next level`
@@ -418,7 +460,20 @@ export function GamificationDisplay() {
                   {stats.weeklyXpEarned} / {stats.weeklyXpGoal} XP
                 </span>
               </div>
-              <Progress value={weeklyProgress} className="h-2" />
+              <div className="relative">
+                <Progress value={weeklyProgress} className="h-2" />
+                {activeAccentColor && (
+                  <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${weeklyProgress}%`,
+                        backgroundColor: activeAccentColor,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
               {weeklyProgress >= 100 ? (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 text-center" data-testid="text-weekly-xp-complete">
                   Weekly goal reached! Outstanding work.

@@ -63,6 +63,7 @@ export const users = pgTable("users", {
   dailyChallengesCompleted: integer("daily_challenges_completed").default(0),
   weeklyXpGoal: integer("weekly_xp_goal").default(500),
   lastDailyChallengeDate: varchar("last_daily_challenge_date"), // ISO date string
+  accentColor: varchar("accent_color"), // Premium reward color, separate from colorTheme
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
