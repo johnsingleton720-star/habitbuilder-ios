@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq, and, isNotNull } from "drizzle-orm";
+import { sql, eq, and, isNotNull, gte } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -6065,6 +6065,21 @@ Be specific, practical, and grounded in behavior science. Every task should make
     { level: 12, minXp: 10000, title: "Habit Hero" },
   ];
 
+  const LEVEL_REWARDS: Record<number, { color: string; colorName: string; colorValue: string }> = {
+    1: { color: "nature", colorName: "Nature Green", colorValue: "hsl(166, 72%, 40%)" },
+    2: { color: "ocean", colorName: "Ocean Blue", colorValue: "hsl(200, 80%, 45%)" },
+    3: { color: "sunset", colorName: "Sunset Orange", colorValue: "hsl(25, 90%, 55%)" },
+    4: { color: "lavender", colorName: "Lavender Purple", colorValue: "hsl(270, 60%, 60%)" },
+    5: { color: "forest", colorName: "Deep Forest", colorValue: "hsl(150, 50%, 35%)" },
+    6: { color: "ruby", colorName: "Ruby Red", colorValue: "hsl(350, 75%, 50%)" },
+    7: { color: "amber", colorName: "Golden Amber", colorValue: "hsl(40, 90%, 50%)" },
+    8: { color: "cyan", colorName: "Electric Cyan", colorValue: "hsl(185, 80%, 45%)" },
+    9: { color: "rose", colorName: "Rose Pink", colorValue: "hsl(330, 70%, 55%)" },
+    10: { color: "emerald", colorName: "Emerald Elite", colorValue: "hsl(155, 75%, 40%)" },
+    11: { color: "platinum", colorName: "Platinum Silver", colorValue: "hsl(220, 15%, 65%)" },
+    12: { color: "champion_gold", colorName: "Champion Gold", colorValue: "hsl(45, 95%, 55%)" },
+  };
+
   function calculateLevel(xp: number): { level: number; title: string; xpToNext: number; progress: number } {
     let currentLevel = XP_LEVELS[0];
     for (const lvl of XP_LEVELS) {
@@ -6079,6 +6094,14 @@ Be specific, practical, and grounded in behavior science. Every task should make
       : 100;
     
     return { level: currentLevel.level, title: currentLevel.title, xpToNext, progress };
+  }
+
+  function getStreakMultiplier(maxStreak: number): { multiplier: number; label: string } {
+    if (maxStreak >= 30) return { multiplier: 3.0, label: "3x" };
+    if (maxStreak >= 14) return { multiplier: 2.5, label: "2.5x" };
+    if (maxStreak >= 7) return { multiplier: 2.0, label: "2x" };
+    if (maxStreak >= 3) return { multiplier: 1.5, label: "1.5x" };
+    return { multiplier: 1.0, label: "1x" };
   }
 
   async function updateChallengeProgress(userId: string, event: {
@@ -6140,10 +6163,18 @@ Be specific, practical, and grounded in behavior science. Every task should make
 
           if (completed) {
             const user = await storage.getUser(userId);
+            const userHabits = await storage.getHabits(userId);
+            let maxStreak = 0;
+            for (const habit of userHabits) {
+              maxStreak = Math.max(maxStreak, habit.currentStreak || 0, habit.longestStreak || 0);
+            }
+            const { multiplier } = getStreakMultiplier(maxStreak);
+            const baseXp = challenge.xpReward;
+            const earnedXp = Math.round(baseXp * multiplier);
             const currentXp = user?.xpPoints || 0;
             await db.update(users)
               .set({
-                xpPoints: currentXp + challenge.xpReward,
+                xpPoints: currentXp + earnedXp,
                 dailyChallengesCompleted: (user?.dailyChallengesCompleted || 0) + 1,
                 updatedAt: new Date(),
               })
@@ -6225,7 +6256,36 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const todayGami = getUserToday(user?.timezone);
       const todaysChallenges = await db.select().from(dailyChallenges)
         .where(and(eq(dailyChallenges.userId, userId), eq(dailyChallenges.date, todayGami)));
-      
+
+      const userHabits = await storage.getHabits(userId);
+      let maxStreak = 0;
+      for (const habit of userHabits) {
+        maxStreak = Math.max(maxStreak, habit.currentStreak || 0, habit.longestStreak || 0);
+      }
+      const multiplierInfo = getStreakMultiplier(maxStreak);
+
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - mondayOffset);
+      const weekStart = monday.toISOString().split('T')[0];
+
+      const weekChallenges = await db.select().from(dailyChallenges)
+        .where(and(
+          eq(dailyChallenges.userId, userId),
+          eq(dailyChallenges.completed, true),
+          gte(dailyChallenges.date, weekStart)
+        ));
+      const weeklyXpEarned = weekChallenges.reduce((sum, c) => sum + (c.xpReward || 0), 0);
+
+      const unlockedColors = Object.entries(LEVEL_REWARDS)
+        .filter(([lvl]) => parseInt(lvl) <= levelInfo.level)
+        .map(([lvl, reward]) => ({ level: parseInt(lvl), ...reward }));
+
+      const userAchievementsList = await db.select().from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+
       res.json({
         xpPoints,
         level: levelInfo.level,
@@ -6236,6 +6296,13 @@ Be specific, practical, and grounded in behavior science. Every task should make
         weeklyXpGoal: user.weeklyXpGoal || 500,
         todaysChallenges,
         xpLevels: XP_LEVELS,
+        streakMultiplier: multiplierInfo.multiplier,
+        streakMultiplierLabel: multiplierInfo.label,
+        maxStreak,
+        weeklyXpEarned,
+        levelRewards: LEVEL_REWARDS,
+        unlockedColors,
+        achievements: userAchievementsList,
       });
     } catch (error) {
       console.error("Error fetching gamification stats:", error);
@@ -6373,22 +6440,61 @@ Be specific, practical, and grounded in behavior science. Every task should make
         .returning();
       
       // Award XP if just completed
+      let xpAwarded = 0;
       if (completed && !challenge.completed) {
         const user = await storage.getUser(userId);
+        const userHabits = await storage.getHabits(userId);
+        let maxStreak = 0;
+        for (const habit of userHabits) {
+          maxStreak = Math.max(maxStreak, habit.currentStreak || 0, habit.longestStreak || 0);
+        }
+        const { multiplier } = getStreakMultiplier(maxStreak);
+        const earnedXp = Math.round(challenge.xpReward * multiplier);
         const currentXp = user?.xpPoints || 0;
         await db.update(users)
           .set({ 
-            xpPoints: currentXp + challenge.xpReward,
+            xpPoints: currentXp + earnedXp,
             dailyChallengesCompleted: (user?.dailyChallengesCompleted || 0) + 1,
             updatedAt: new Date(),
           })
           .where(eq(users.id, userId));
+        xpAwarded = earnedXp;
       }
       
-      res.json({ challenge: updated, completed, xpAwarded: completed ? challenge.xpReward : 0 });
+      res.json({ challenge: updated, completed, xpAwarded });
     } catch (error) {
       console.error("Error updating challenge:", error);
       res.status(500).json({ error: "Failed to update challenge" });
+    }
+  });
+
+  app.patch("/api/user/accent-color", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { color } = req.body;
+      
+      if (!color || typeof color !== 'string') {
+        return res.status(400).json({ error: "Color is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      
+      const xpPoints = user.xpPoints || 0;
+      const levelInfo = calculateLevel(xpPoints);
+      const unlockedColorIds = Object.entries(LEVEL_REWARDS)
+        .filter(([lvl]) => parseInt(lvl) <= levelInfo.level)
+        .map(([, reward]) => reward.color);
+      
+      if (!unlockedColorIds.includes(color)) {
+        return res.status(403).json({ error: "This color has not been unlocked yet" });
+      }
+      
+      await db.update(users).set({ colorTheme: color, updatedAt: new Date() }).where(eq(users.id, userId));
+      res.json({ success: true, color });
+    } catch (error) {
+      console.error("Error setting accent color:", error);
+      res.status(500).json({ error: "Failed to set accent color" });
     }
   });
 
