@@ -1,0 +1,75 @@
+Excellent — I’ve rerun the complete AI Visibility + AEO + SEO audit on https://habitbuilder.pro right now (February 15, 2026, mid-afternoon CST).
+You’ve made solid, visible progress since the last check:
+•  A full /blog index with 8 dated, well-titled articles (Jan 14 – Feb 17 2026)
+•  /templates expanded to 10 categorized plans
+•  /about page now exists (previously absent)
+•  sitemap.xml updated and clean (13 URLs, all February 2026 lastmod dates)
+•  Google is indexing the new pages (snippets and excerpts appear in search results)
+These are meaningful steps. However, the highest-leverage Phase 1 items (navigation menu, schema markup, full About page, and crawlability of individual blog posts) are still missing or only partially addressed. This explains why AI citation and broader visibility have not yet improved.
+Here’s the updated audit with direct before/after context.
+1. AI Visibility & Citation Check (Still Very Low — No Change)
+Core queries I tested today (“best AI habit tracker 2026”, “AI habit coach”, “AI powered habit builder”, “best habit tracking methods 2026”, etc.) return zero mentions of HabitBuilder.pro in any published roundups or answer-engine results.
+Dominant players remain:
+•  Pattrn (AI + analytics + mood correlation)
+•  ClickUp’s lists (Habitica, Coach.me, etc.)
+•  ChronoPlan, Reclaim.ai, Streaks, Habitify, Productive, Habitica
+Your own blog content does not yet surface in Perplexity-style answers or Google AI Overviews for overlapping topics (e.g., “how to build a morning routine” or “science of habit formation”), even though the titles are perfect.
+External footprint (unchanged from last audit)
+•  Mostly your own promotional posts on Instagram (@habitbuilder.pro / Johnny B Sharp), TikTok, Snapchat.
+•  One Reddit thread in r/beginnerfitness (someone asking if anyone has tried it — no reviews yet).
+•  Scamadviser still gives a high trust score.
+•  No third-party reviews, app-directory listings, news mentions, or backlinks from authority sites.
+Why visibility hasn’t moved
+Answer engines need strong entity signals + easily quotable, structured content + external validation. You now have more content, but the missing schema, navigation, author signals, and crawlability issues mean the pages are not yet “AI-friendly” to cite.
+2. On-Page AEO/SEO Health (Content Volume Up, Technical Foundation Still Weak)
+What improved
+•  Blog index: clean list of 8 posts with titles, publish dates, excerpts, read times, and relevant categories/tags — highly AEO-friendly.
+•  Templates page: 10 templates across Wellness & Mindfulness (5), Learning & Growth (2), Health & Fitness (3) — excellent for specific “how to” queries.
+•  Sitemap clean and updated; Google has fresh snippets for the new pages.
+•  Live AI demo on homepage remains a standout engagement feature.
+What is still missing / problematic
+•  No navigation menu on homepage, blog, templates, or about. Only “Back to Home” and Privacy Policy links. This hurts both user experience and crawlability.
+•  No structured data / JSON-LD on any page (homepage, blog index, templates, about — confirmed by direct source inspection). Still the #1 missed opportunity for AI citation.
+•  /about page exists but is a stub: just a heading and one-sentence description. No founder bio, photo, credentials, mission depth, or Person schema.
+•  Individual blog posts appear to be heavily JavaScript-rendered. Google indexes titles/excerpts, but full content extraction fails on direct crawls (tested two sample posts — returned insufficient content). This is a major crawlability red flag for both Google and AI engines in 2026.
+•  /community is in the sitemap but returns no content (likely 404 or placeholder).
+•  Internal linking is minimal — blog and templates are not prominently linked from the homepage hero or features section.
+Technical notes
+•  Site still feels like a single-page app (SPA) or client-side rendered → content not reliably available to all bots.
+•  Page speed should remain excellent, but crawlability is now the bottleneck.
+3. Content & E-E-A-T Signals (Modest Progress, Still Low)
+Progress
+•  Blog topics are excellent and timely (morning routines, habit stacking, science of habits, breaking bad habits, 21-day challenge, daily habits of successful people, staying motivated).
+•  Testimonials still present (Sarah M., James K.).
+•  Pricing and privacy language remain transparent.
+Remaining gaps
+•  No author names, bios, or boxes on blog posts or anywhere else.
+•  No inline sources or citations visible in crawlable portions (e.g., references to BJ Fogg, Atomic Habits, neuroscience studies).
+•  About page provides zero founder story or credentials → site still reads as “markety” rather than expert-led.
+•  No review-collection system or third-party validation.
+4. Updated Prioritized Actionable Roadmap
+Phase 1: Quick Wins (Do These in the Next 3–7 Days — Highest Leverage)
+1.  Add visible top navigation menu on every page (Home, Templates, Blog, About, Community, Pricing). This is non-negotiable for users and crawlers.
+2.  Implement JSON-LD schema (this single change often triggers the first AI citations).
+	•  Homepage: Organization + WebSite
+	•  Each blog post: Article (with author, datePublished, headline)
+	•  Blog index: Blog or CollectionPage
+	•  Templates: ItemList
+	•  About: Person + Organization
+	•  FAQ: FAQPage (if expanded) I can give you ready-to-paste code snippets if you tell me your tech stack (Next.js, plain HTML, etc.).
+3.  Flesh out the /about page (Johnny B Sharp photo + 200–300 word bio: why you built it in Dallas, any relevant background, mission). Add Person schema. Link it from nav.
+4.  Fix blog post crawlability — if using React/Next.js, enable server-side rendering (getStaticProps or SSR) or prerender the articles. Test with Google’s URL Inspection tool after changes.
+Phase 2: Content & On-Page (Next 2–4 Weeks)
+•  On every blog post: add author box, inline sources/citations, numbered steps, bullet lists, tables (e.g., “Paper vs App vs AI” comparison), and internal links to relevant templates.
+•  Turn popular templates into full HowTo pages with schema.
+•  Activate /community (even a simple Discord embed or forum) — it’s already in the sitemap.
+•  Add more testimonials and a post-streak review prompt.
+Phase 3: Authority & AI Citation Building (Ongoing)
+•  Same as before: Product Hunt launch, Reddit shares (r/getdisciplined, r/productivity, r/habits), outreach to “best of 2026” list authors, Google Business Profile (Dallas angle), guest posts.
+•  Share your own blog posts on social with the AI demo screenshots — build some initial signals.
+Expected Impact
+Sites that fixed schema + navigation + entity page in one go often see their first Perplexity / AI Overview citations within 2–6 weeks, especially with fresh, well-structured content like yours. The JS-rendering issue is the current blocker — fixing it will let Google and AI engines actually read the excellent blog material you’ve written.
+Bottom Line
+You’re now at ~70–75 % of a strong foundation (great content volume and sitemap), but the missing navigation, schema, full About page, and crawlability are still holding back both traditional SEO and AEO. These are the exact levers that turn “new site with good articles” into “AI-cited authority.”
+You’ve clearly been iterating fast — that’s exactly how successful launches happen. Knock out the four Phase 1 items above and reply with the updated URLs (or just say “done”) and I’ll re-audit immediately, plus provide any schema code or About-page draft you need.
+Which piece do you want to tackle first? I’m ready to give you the exact HTML/JSON-LD or copy suggestions right now. This product is genuinely differentiated — let’s get the engines to notice it. You’re close!
