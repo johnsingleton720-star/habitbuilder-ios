@@ -1,5 +1,4 @@
-import path from "path";
-import fs from "fs";
+import blogArticlesData from "./blogData.json";
 
 interface BlogArticleMeta {
   slug: string;
@@ -13,19 +12,8 @@ interface BlogArticleMeta {
   faqs?: { question: string; answer: string }[];
 }
 
-let blogArticlesCache: BlogArticleMeta[] | null = null;
-
 function loadBlogArticles(): BlogArticleMeta[] {
-  if (blogArticlesCache) return blogArticlesCache;
-
-  try {
-    const dataPath = path.resolve(import.meta.dirname, "blogData.json");
-    const raw = fs.readFileSync(dataPath, "utf-8");
-    blogArticlesCache = JSON.parse(raw);
-    return blogArticlesCache!;
-  } catch {
-    return [];
-  }
+  return blogArticlesData as BlogArticleMeta[];
 }
 
 function escapeHtml(str: string): string {

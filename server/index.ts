@@ -154,32 +154,32 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const url = req.path;
-    if (url.startsWith("/api") || url.startsWith("/vite-hmr") || url.includes(".")) {
-      return next();
-    }
-    const originalEnd = res.end;
-    res.end = function (this: Response, ...args: any[]) {
-      const chunk = args[0];
-      if (chunk && typeof chunk === "string" && chunk.includes("<!DOCTYPE html>")) {
-        try {
-          const injected = injectSeo(chunk, url);
-          args[0] = injected;
-          const contentLength = Buffer.byteLength(injected);
-          this.setHeader("Content-Length", contentLength);
-        } catch (e) {
-          console.error("SEO injection error:", e);
-        }
-      }
-      return originalEnd.apply(this, args as any);
-    } as any;
-    next();
-  });
-
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      const url = req.path;
+      if (url.startsWith("/api") || url.startsWith("/vite-hmr") || url.includes(".")) {
+        return next();
+      }
+      const originalEnd = res.end;
+      res.end = function (this: Response, ...args: any[]) {
+        const chunk = args[0];
+        if (chunk && typeof chunk === "string" && chunk.includes("<!DOCTYPE html>")) {
+          try {
+            const injected = injectSeo(chunk, url);
+            args[0] = injected;
+            const contentLength = Buffer.byteLength(injected);
+            this.setHeader("Content-Length", contentLength);
+          } catch (e) {
+            console.error("SEO injection error:", e);
+          }
+        }
+        return originalEnd.apply(this, args as any);
+      } as any;
+      next();
+    });
+
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
