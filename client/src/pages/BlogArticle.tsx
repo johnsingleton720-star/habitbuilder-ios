@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock, Tag, ChevronRight, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Tag, ChevronRight, User, Target, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -164,6 +164,33 @@ export default function BlogArticle() {
                 </div>
               </CardContent>
             </Card>
+          </section>
+
+          <section className="mt-8" aria-label="Related resources">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/templates" className="flex-1">
+                <Card className="hover-elevate h-full cursor-pointer">
+                  <CardContent className="pt-5 flex items-center gap-3">
+                    <Target className="w-5 h-5 text-primary shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Browse Habit Templates</p>
+                      <p className="text-xs text-muted-foreground">Find curated templates for any goal</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/blog" className="flex-1">
+                <Card className="hover-elevate h-full cursor-pointer">
+                  <CardContent className="pt-5 flex items-center gap-3">
+                    <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">More Articles</p>
+                      <p className="text-xs text-muted-foreground">Explore our full blog</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </section>
 
           <section className="mt-12 pt-8 border-t border-border" aria-label="Related articles">

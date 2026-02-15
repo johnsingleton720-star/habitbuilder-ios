@@ -14,6 +14,23 @@ export default function BlogList() {
   return (
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Habit Building Blog - HabitBuilder.pro",
+        "description": "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change.",
+        "url": "https://habitbuilder.pro/blog",
+        "mainEntity": {
+          "@type": "ItemList",
+          "itemListElement": blogArticles.map((article, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "url": `https://habitbuilder.pro/blog/${article.slug}`,
+            "name": article.title
+          }))
+        }
+      }) }} />
       
       <section className="pt-24 pb-2 px-6">
         <div className="max-w-3xl mx-auto">
