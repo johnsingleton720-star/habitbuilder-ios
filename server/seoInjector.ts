@@ -77,7 +77,7 @@ function getHomepageSeo(): { meta: string; schemas: string; noscript: string } {
       description: "AI-powered habit coaching application grounded in behavioral science by BJ Fogg, James Clear, and Charles Duhigg.",
       founder: {
         "@type": "Person",
-        name: "Johnny B Sharp",
+        name: "John Singleton",
         jobTitle: "Founder",
         address: { "@type": "PostalAddress", addressLocality: "Dallas", addressRegion: "TX", addressCountry: "US" }
       },
@@ -128,9 +128,9 @@ function getHomepageSeo(): { meta: string; schemas: string; noscript: string } {
 function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
   const meta = `
     <title>About HabitBuilder.pro - AI-Powered Habit Coaching | Meet the Founder</title>
-    <meta name="description" content="Learn about HabitBuilder.pro, founded by Johnny B Sharp in Dallas, Texas. Our AI-powered habit coaching app combines personalized plans with behavioral science from BJ Fogg, James Clear, and Charles Duhigg." />
+    <meta name="description" content="Learn about HabitBuilder.pro, founded by John Singleton in Dallas, Texas. Our AI-powered habit coaching app combines personalized plans with behavioral science from BJ Fogg, James Clear, and Charles Duhigg." />
     <meta property="og:title" content="About HabitBuilder.pro - Meet the Founder" />
-    <meta property="og:description" content="Built in Dallas, Texas by Johnny B Sharp. AI-powered habit coaching grounded in behavioral science." />
+    <meta property="og:description" content="Built in Dallas, Texas by John Singleton. AI-powered habit coaching grounded in behavioral science." />
     <meta property="og:url" content="${BASE_URL}/about" />
     <link rel="canonical" href="${BASE_URL}/about" />`;
 
@@ -143,7 +143,7 @@ function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
       description: "AI-powered habit coaching application that creates personalized action plans grounded in behavioral science.",
       founder: {
         "@type": "Person",
-        name: "Johnny B Sharp",
+        name: "John Singleton",
         jobTitle: "Founder & Developer",
         address: { "@type": "PostalAddress", addressLocality: "Dallas", addressRegion: "TX", addressCountry: "US" }
       },
@@ -153,7 +153,7 @@ function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
     jsonLdTag({
       "@context": "https://schema.org",
       "@type": "Person",
-      name: "Johnny B Sharp",
+      name: "John Singleton",
       jobTitle: "Founder & Developer",
       url: `${BASE_URL}/about`,
       worksFor: { "@type": "Organization", name: "HabitBuilder.pro", url: BASE_URL },
@@ -167,7 +167,7 @@ function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
     <h2>Our Mission</h2>
     <p>We believe everyone deserves a personal coach for building better habits. HabitBuilder.pro combines AI-powered personalization with proven behavioral science frameworks from researchers like BJ Fogg, James Clear, and Charles Duhigg.</p>
     <h2>Founder</h2>
-    <p>Johnny B Sharp - Founder &amp; Developer, based in Dallas, Texas. Johnny built HabitBuilder.pro from a simple idea: what if a habit tracker could actually coach you?</p>
+    <p>John Singleton - Founder &amp; Developer, based in Dallas, Texas. John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After years of cycling through productivity apps, he realized the missing piece was not tracking but guidance. Drawing on behavioral science from BJ Fogg, James Clear, and Charles Duhigg, he designed an AI coaching system that interviews you about your goals, understands your constraints, and generates a personalized action plan. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone.</p>
     <h2>The Science Behind It</h2>
     <ul>
       <li>Behavioral Science: Every feature grounded in research from BJ Fogg's Tiny Habits, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.</li>
@@ -239,7 +239,7 @@ function getBlogArticleSeo(slug: string): { meta: string; schemas: string; noscr
     <meta property="og:url" content="${BASE_URL}/blog/${escapeHtml(article.slug)}" />
     <meta property="og:type" content="article" />
     <meta property="article:published_time" content="${article.publishedDate}" />
-    <meta property="article:author" content="Johnny B Sharp" />
+    <meta property="article:author" content="John Singleton" />
     <meta property="article:section" content="${escapeHtml(article.category)}" />
     <link rel="canonical" href="${BASE_URL}/blog/${escapeHtml(article.slug)}" />`;
 
@@ -257,7 +257,7 @@ function getBlogArticleSeo(slug: string): { meta: string; schemas: string; noscr
       keywords: article.keywords.join(", "),
       author: [
         { "@type": "Organization", name: "HabitBuilder.pro", url: BASE_URL },
-        { "@type": "Person", name: "Johnny B Sharp", url: `${BASE_URL}/about`, jobTitle: "Founder" }
+        { "@type": "Person", name: "John Singleton", url: `${BASE_URL}/about`, jobTitle: "Founder" }
       ],
       publisher: {
         "@type": "Organization",

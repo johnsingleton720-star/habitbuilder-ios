@@ -275,7 +275,7 @@ export const blogArticles: BlogArticle[] = [
     title: "How to Stay Motivated When Building New Habits: Proven Strategies",
     excerpt: "Struggling to stay consistent with your new habits? Learn why motivation naturally fades and discover research-backed strategies to maintain momentum even when enthusiasm runs dry.",
     author: "HabitBuilder.pro Team",
-    publishedDate: "2026-02-18",
+    publishedDate: "2026-02-14",
     readTime: "7 min read",
     category: "Motivation",
     keywords: ["how to stay motivated", "habit motivation", "motivation tips", "stay consistent with habits", "keep going with habits"],

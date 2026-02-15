@@ -47,7 +47,7 @@ export default function BlogArticle() {
     "description": article.excerpt,
     "author": [
       { "@type": "Organization", "name": "HabitBuilder.pro", "url": "https://habitbuilder.pro" },
-      { "@type": "Person", "name": "Johnny B Sharp", "url": "https://habitbuilder.pro/about", "jobTitle": "Founder" }
+      { "@type": "Person", "name": "John Singleton", "url": "https://habitbuilder.pro/about", "jobTitle": "Founder" }
     ],
     "datePublished": article.publishedDate,
     "dateModified": article.publishedDate,

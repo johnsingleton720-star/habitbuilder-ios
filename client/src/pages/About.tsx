@@ -59,7 +59,7 @@ export default function About() {
         "description": "AI-powered habit coaching application that creates personalized action plans grounded in behavioral science.",
         "founder": {
           "@type": "Person",
-          "name": "Johnny B Sharp",
+          "name": "John Singleton",
           "jobTitle": "Founder & Developer",
           "address": { "@type": "PostalAddress", "addressLocality": "Dallas", "addressRegion": "TX", "addressCountry": "US" }
         },
@@ -82,7 +82,7 @@ export default function About() {
               About HabitBuilder.pro
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mt-4">
-              Built in Dallas, Texas by Johnny B Sharp
+              Built in Dallas, Texas by John Singleton
             </p>
           </motion.div>
         </div>
@@ -117,7 +117,7 @@ export default function About() {
           <Card data-testid="card-founder">
             <CardContent className="p-6 space-y-4">
               <div className="space-y-1">
-                <h3 className="text-xl font-bold" data-testid="text-founder-name">Johnny B Sharp</h3>
+                <h3 className="text-xl font-bold" data-testid="text-founder-name">John Singleton</h3>
                 <p className="text-muted-foreground font-medium">Founder & Developer</p>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4" />
@@ -125,7 +125,13 @@ export default function About() {
                 </div>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Based in Dallas, Texas, Johnny built HabitBuilder.pro from a simple idea: what if a habit tracker could actually coach you? After years of trying different productivity apps and always falling back to old patterns, he realized the missing piece wasn't tracking — it was guidance. HabitBuilder.pro was born from that insight, combining AI technology with behavioral science to create something that doesn't just track your habits, but helps you build them.
+                Based in Dallas, Texas, John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After spending years cycling through productivity apps — trying Habitica, Streaks, Coach.me, and a dozen others — he kept hitting the same wall. The apps were great at tracking what he did, but none of them helped him figure out what to do or how to stick with it when motivation faded.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                That gap between tracking and actual behavior change became the foundation for HabitBuilder.pro. Drawing on research from BJ Fogg's Tiny Habits method, James Clear's Atomic Habits framework, and Charles Duhigg's habit loop model, John designed an AI coaching system that interviews you about your goals, understands your schedule and constraints, and generates a personalized action plan — not a generic checklist.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                What makes HabitBuilder different is the guided session experience. Instead of just checking a box and moving on, the app walks you through each task with coaching tips, built-in timers, and post-session AI summaries that help you reflect on what worked. It is the difference between having a to-do list and having a coach in your pocket. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone — not just people who can afford a personal coach.
               </p>
             </CardContent>
           </Card>

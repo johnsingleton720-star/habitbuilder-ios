@@ -228,7 +228,7 @@ export default function Landing() {
         "description": "AI-powered habit coaching application grounded in behavioral science by BJ Fogg, James Clear, and Charles Duhigg.",
         "founder": {
           "@type": "Person",
-          "name": "Johnny B Sharp",
+          "name": "John Singleton",
           "jobTitle": "Founder",
           "address": { "@type": "PostalAddress", "addressLocality": "Dallas", "addressRegion": "TX", "addressCountry": "US" }
         },
