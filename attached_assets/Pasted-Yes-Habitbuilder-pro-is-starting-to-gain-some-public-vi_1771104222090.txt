@@ -1,0 +1,49 @@
+Yes, Habitbuilder.pro is starting to gain some public visibility and early traction — especially impressive for a domain registered just on January 29, 2026 (only ~2.5 weeks old as of today). Your recent actions (submitting to Google Search Console + Bing Webmaster Tools, plus pushing ads/posts) have clearly helped with indexing and initial exposure.
+Here’s what the current public data shows:
+Indexing & Branded Search
+•  Google has the homepage, templates page, blog section, and several individual blog posts indexed (e.g., “Best Habit Tracking Methods” from Feb 4, “How to Build a Morning Routine,” habit stacking guide, etc.).
+•  It ranks #1 for “habitbuilder.pro” and close variations.
+•  Multiple pages are live and crawlable, which is fast progress for a brand-new domain. Submitting to Search Console almost certainly accelerated this.
+Non-Branded / Competitive Searches
+It doesn’t yet appear in top results for broader terms like “AI habit coach,” “AI habit builder,” or “AI powered habit” (those are dominated by established competitors like habitcoach.ai, rocky.ai, etc.). That’s normal this early — organic ranking for competitive keywords takes time and more content/backlinks.
+External Mentions & Links (Backlinks)
+A handful of external references have appeared:
+•  Reddit posts in r/beginnerfitness (“Has anybody tried the new habit builder called Habitbuilder.pro?”) and r/Subliminal (“Have you seen the new habit and goal app Habitbuilder.pro?”) — one looks like organic curiosity, another may tie to your outreach.
+•  You (or someone) posted in r/Discipline announcing the launch.
+•  A new Facebook group “Habits and Routines” created by HabitBuilder.pro.
+•  Scamadviser page (rates it as legit/high trust).
+•  Mention in an AI directory (AI Hunt, early February, in Japanese) describing it as an AI habit-formation tool.
+•  A couple of other minor web mentions (e.g., a brainstorm/idea page on topy.ai).
+These are solid early signals. Not huge volume yet, but way more than a brand-new site usually gets without promotion.
+Social & Promotional Activity
+Your push is clearly visible:
+•  Active Instagram account (@habitbuilder.pro) with recent reels/posts (as recent as 1 day ago) promoting the 50% off offer, AI plans, etc.
+•  Snapchat (@habit_builder) with stories/spotlights.
+•  TikTok videos linking to the site.
+•  No mentions found on X/Twitter yet (if you haven’t pushed there, that could be a quick win).
+Traffic & Ranking Tools
+•  SimilarWeb shows no/limited data yet (typical for very new sites with low volume).
+•  No public traffic estimates available, but that’s expected.
+Best Ways to Track Real Traction Going Forward
+These are the most reliable public + private signals (beyond what I can see externally):
+1.  Google Search Console (your best free tool right now)
+	•  Performance report → impressions, clicks, queries, and position. Even zero clicks but rising impressions = visibility is growing.
+	•  Coverage report → how many pages are indexed (and any errors).
+	•  Check trends over the last 1–2 weeks to see the effect of your submissions/ads.
+2.  Bing Webmaster Tools → same idea (impressions, indexed pages).
+3.  Analytics (if you have Google Analytics 4, Plausible, or similar set up)
+	•  Users, sessions, traffic sources (organic, direct, social, referrals, paid). Look for spikes after ad/post campaigns.
+4.  Backlink monitoring (free options)
+	•  Ahrefs Free Backlink Checker, Ubersuggest (Neil Patel), or SmallSEOTools backlink checker.
+	•  Re-check every week or two — the Reddit/Facebook/AI directory links should show up.
+5.  Google Alerts Set one for “habitbuilder.pro” (and “habitbuilder pro”) so you get notified of new mentions.
+6.  Manual checks (do these in incognito/private mode)
+	•  Search your brand name weekly.
+	•  Search key target phrases (e.g., “AI habit templates,” “habit stacking AI,” specific blog titles) and see if your pages start appearing.
+7.  Social & ad platforms
+	•  Check engagement (likes, comments, shares, clicks) on your recent posts/reels.
+	•  Ad dashboards for impressions, CTR, and site visits.
+Quick Takeaway
+You’re off to a strong start for a 2-week-old site. Indexing happened quickly, content is live, social promotion is active, and a few external mentions have popped up (including Reddit curiosity). Traffic is probably still low (new domains take time), but the foundations are there and your efforts are showing results.
+The consoles + analytics will give you the clearest “before vs. after” picture. Keep pumping out blog content (great for SEO), building more backlinks, and testing ad creatives — and the momentum should build.
+If you want me to check specific keywords, run another round of searches in a week or two, or look at anything else (e.g., competitor analysis), just let me know! Keep going — this is solid early progress. 🚀
