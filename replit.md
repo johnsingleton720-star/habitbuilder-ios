@@ -54,8 +54,13 @@ The core system enables personalized habit coaching:
 -   **Admin Analytics**: Tracks page views, unique visitors, registrations, and free trial sign-ups with time range filters.
 -   **Advanced Analytics (Premium)**: Provides trend charts, habit performance breakdowns, AI-generated insights, and data export.
 
-### Achievements
+### Achievements & Gamification
 -   An achievement system rewards users for streaks, completions, time invested, and milestones.
+-   **Streak XP Multiplier (Pro+)**: 3-day streak = 1.5x, 7-day = 2x, 14-day = 2.5x, 30-day = 3x XP on challenge completions. Multiplier badge shown on dashboard.
+-   **Weekly XP Goal (Pro+)**: Progress bar tracking XP earned this week (Monday-based) vs goal (default 500 XP).
+-   **Unlockable Accent Colors (Premium)**: 12 level-based color rewards. Users can apply unlocked colors via dashboard. Backend validates level before allowing selection. `PATCH /api/user/accent-color`.
+-   **Achievement Celebration Pop-ups (Premium)**: Full-screen celebration modal with motivational context messages (behavioral psychology stats) when new achievements are earned.
+-   **Tier Gating**: Free users see basic level/XP. Pro adds multiplier badge + weekly goal. Premium adds unlockable colors + rich achievement celebrations.
 
 ### Habit Templates
 -   A library of pre-built habit templates is available for various categories.
