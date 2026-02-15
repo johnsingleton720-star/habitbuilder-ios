@@ -141,6 +141,7 @@ export function GamificationDisplay() {
     title: string;
     subtitle?: string;
   }>({ show: false, type: "challenge", title: "" });
+  const [localSelectedColor, setLocalSelectedColor] = useState<string | null>(null);
   
   const previousLevelRef = useRef<number | null>(null);
   const previousCompletedRef = useRef<number | null>(null);
@@ -149,6 +150,12 @@ export function GamificationDisplay() {
   const { data: stats, isLoading } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
   });
+
+  useEffect(() => {
+    if (stats?.selectedColor) {
+      setLocalSelectedColor(stats.selectedColor);
+    }
+  }, [stats?.selectedColor]);
 
   const isPro = stats ? (stats.subscriptionTier === 'pro' || stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
   const isPremium = stats ? (stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
@@ -164,7 +171,8 @@ export function GamificationDisplay() {
         description: "Your dashboard color has been changed.",
       });
     },
-    onError: () => {
+    onError: (_, color) => {
+      setLocalSelectedColor(stats?.selectedColor ?? null);
       toast({
         title: "Couldn't change color",
         description: "You may not have unlocked this color yet.",
@@ -265,8 +273,9 @@ export function GamificationDisplay() {
     ? Math.min(100, (stats.weeklyXpEarned / stats.weeklyXpGoal) * 100)
     : 0;
 
-  const activeAccentColor = isPremium && stats.selectedColor && stats.levelRewards
-    ? Object.values(stats.levelRewards).find(r => r.color === stats.selectedColor)?.colorValue
+  const effectiveSelectedColor = localSelectedColor ?? stats.selectedColor;
+  const activeAccentColor = isPremium && effectiveSelectedColor && stats.levelRewards
+    ? Object.values(stats.levelRewards).find(r => r.color === effectiveSelectedColor)?.colorValue
     : null;
 
   const accentStyle = activeAccentColor ? {
@@ -510,7 +519,7 @@ export function GamificationDisplay() {
               {Object.entries(stats.levelRewards || {}).map(([lvlStr, reward]) => {
                 const lvl = parseInt(lvlStr);
                 const isUnlocked = lvl <= stats.level;
-                const isSelected = stats.selectedColor === reward.color;
+                const isSelected = effectiveSelectedColor === reward.color;
                 
                 return (
                   <Tooltip key={lvl}>
@@ -527,6 +536,7 @@ export function GamificationDisplay() {
                         style={{ backgroundColor: reward.colorValue }}
                         onClick={() => {
                           if (isUnlocked && !isSelected) {
+                            setLocalSelectedColor(reward.color);
                             accentColorMutation.mutate(reward.color);
                           }
                         }}
