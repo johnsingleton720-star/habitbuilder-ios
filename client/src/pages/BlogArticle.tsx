@@ -1,43 +1,13 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock, Tag, ChevronRight } from "lucide-react";
-import { Logo, LogoFooter } from "@/components/Logo";
+import { ArrowLeft, ArrowRight, Clock, Tag, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link, useParams } from "wouter";
 import { getArticleBySlug, blogArticles } from "@/data/blog-articles";
-
-function PublicNav() {
-  return (
-    <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
-          <Logo />
-        </Link>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <Link href="/templates">
-            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
-              Templates
-            </Button>
-          </Link>
-          <Link href="/blog">
-            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
-              Blog
-            </Button>
-          </Link>
-          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
-            Sign In
-          </Button>
-          <Button onClick={() => window.location.href = "/api/login"} data-testid="button-nav-get-started">
-            Get Started Free
-          </Button>
-        </div>
-      </div>
-    </nav>
-  );
-}
+import { PublicNav } from "@/components/PublicNav";
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
@@ -75,8 +45,14 @@ export default function BlogArticle() {
     "@type": "BlogPosting",
     "headline": article.title,
     "description": article.excerpt,
-    "author": { "@type": "Organization", "name": article.author },
+    "author": [
+      { "@type": "Organization", "name": "HabitBuilder.pro", "url": "https://habitbuilder.pro" },
+      { "@type": "Person", "name": "Johnny B Sharp", "url": "https://habitbuilder.pro/about", "jobTitle": "Founder" }
+    ],
     "datePublished": article.publishedDate,
+    "dateModified": article.publishedDate,
+    "image": "https://habitbuilder.pro/icon-512.png",
+    "articleSection": article.category,
     "publisher": { "@type": "Organization", "name": "HabitBuilder.pro", "url": "https://habitbuilder.pro" },
     "mainEntityOfPage": `https://habitbuilder.pro/blog/${article.slug}`,
     "keywords": article.keywords.join(", "),
@@ -169,6 +145,27 @@ export default function BlogArticle() {
             </section>
           )}
 
+          <section className="mt-12 pt-8 border-t border-border" aria-label="About the author">
+            <Card>
+              <CardContent className="pt-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-1" data-testid="text-author-name">Written by the HabitBuilder.pro Team</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Our content is grounded in behavioral science research from experts like BJ Fogg, James Clear, and Charles Duhigg. Every article is designed to give you practical, evidence-based strategies for building lasting habits.
+                    </p>
+                    <Link href="/about" className="text-sm text-primary hover:underline mt-2 inline-block" data-testid="link-about-author">
+                      Learn more about us
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           <section className="mt-12 pt-8 border-t border-border" aria-label="Related articles">
             <div className="flex flex-col sm:flex-row items-stretch gap-3">
               {prevArticle && (
@@ -226,6 +223,7 @@ export default function BlogArticle() {
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link>
             <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>
             <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link>
+            <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link>
           </div>
         </div>
       </footer>

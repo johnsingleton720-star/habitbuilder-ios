@@ -34,8 +34,9 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import AcceptInvite from "@/pages/AcceptInvite";
 import Resources from "@/pages/Resources";
+import About from "@/pages/About";
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -86,6 +87,7 @@ function Router() {
         <Route path="/privacy" component={PrivacyPolicy} />
         <Route path="/terms" component={TermsOfService} />
         <Route path="/accept-invite/:token" component={AcceptInvite} />
+        <Route path="/about" component={About} />
         <Route component={Landing} />
       </Switch>
     );

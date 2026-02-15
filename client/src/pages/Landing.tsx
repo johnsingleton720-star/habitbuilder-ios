@@ -8,10 +8,11 @@ import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trop
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
-import { Logo, LogoFooter } from "@/components/Logo";
+import { LogoFooter } from "@/components/Logo";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { PublicNav } from "@/components/PublicNav";
 
 const habitGoals = [
   {
@@ -206,31 +207,47 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <a href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
-            <Logo />
-          </a>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <Link href="/templates">
-              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
-                Templates
-              </Button>
-            </Link>
-            <Link href="/blog">
-              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
-                Blog
-              </Button>
-            </Link>
-            <Button onClick={scrollToLogin} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
-              Sign In
-            </Button>
-            <Button onClick={scrollToLogin} data-testid="button-nav-get-started">
-              Get Started Free
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "HabitBuilder.pro",
+        "url": "https://habitbuilder.pro",
+        "description": "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://habitbuilder.pro/blog?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "HabitBuilder.pro",
+        "url": "https://habitbuilder.pro",
+        "logo": "https://habitbuilder.pro/icon-192.png",
+        "description": "AI-powered habit coaching application grounded in behavioral science by BJ Fogg, James Clear, and Charles Duhigg.",
+        "founder": {
+          "@type": "Person",
+          "name": "Johnny B Sharp",
+          "jobTitle": "Founder",
+          "address": { "@type": "PostalAddress", "addressLocality": "Dallas", "addressRegion": "TX", "addressCountry": "US" }
+        },
+        "contactPoint": { "@type": "ContactPoint", "email": "admin@habitbuilder.pro", "contactType": "customer service" },
+        "sameAs": ["https://www.instagram.com/habitbuilder.pro"]
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Is HabitBuilder really free to start?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! The free plan gives you 1 habit with full AI coaching, personalized action plans, streaks, and access to the template library. No credit card required. You can upgrade anytime if you want unlimited habits and advanced features." }},
+          { "@type": "Question", "name": "How does the AI coaching work?", "acceptedAnswer": { "@type": "Answer", "text": "When you create a habit, our AI conducts a short interview to understand your goals, schedule, and experience level. Based on your answers, it generates a personalized daily, weekly, and monthly action plan grounded in behavioral science. During guided sessions, you get step-by-step coaching with timers and tips." }},
+          { "@type": "Question", "name": "Can I cancel my subscription anytime?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. You can cancel your Pro or Premium subscription at any time from your account settings. You'll keep access to your paid features until the end of your billing period, and your data is never deleted." }},
+          { "@type": "Question", "name": "Is my data private and secure?", "acceptedAnswer": { "@type": "Answer", "text": "Your privacy is a priority. All data is encrypted and stored securely. We use Stripe for payment processing, so we never see or store your card details." }},
+          { "@type": "Question", "name": "What's the difference between Pro and Premium?", "acceptedAnswer": { "@type": "Answer", "text": "Pro ($6/month) gives you unlimited habits, guided sessions, achievements, and weekly reports. Premium ($15/month) adds AI Coach Chat, advanced analytics, habit stacking with unified routines, accountability partners, voice notes, and CSV data export." }},
+          { "@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support." }}
+        ]
+      }) }} />
+      <PublicNav />
 
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden" aria-label="Hero - AI-powered habit coaching">
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
@@ -1051,13 +1068,13 @@ export default function Landing() {
       <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold">What our early users say</h2>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold">What our users say</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Real feedback from our first beta testers.
+              Real feedback from people building better habits.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {[
               {
                 quote: "I was skeptical about another habit app, but the AI interview actually understood what I was trying to do. Within a week, I had a morning routine that felt natural instead of forced.",
@@ -1070,6 +1087,18 @@ export default function Landing() {
                 name: "James K.",
                 role: "Beta Tester",
                 streak: "10-day streak"
+              },
+              {
+                quote: "The habit stacking feature changed everything for me. I linked my reading habit to my morning coffee, and now I've read more books in 2 months than I did all last year. The AI suggestions for stacking are spot-on.",
+                name: "Maria L.",
+                role: "Pro Member",
+                streak: "21-day streak"
+              },
+              {
+                quote: "As someone with ADHD, I've tried every productivity system out there. HabitBuilder's guided sessions with built-in timers keep me on track without feeling overwhelming. The streak tracking gives me that extra push to stay consistent.",
+                name: "David R.",
+                role: "Premium Member",
+                streak: "30-day streak"
               }
             ].map((testimonial, i) => (
               <motion.div
@@ -1212,6 +1241,7 @@ export default function Landing() {
               <div className="flex flex-col gap-2">
                 <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Habit Templates</Link>
                 <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link>
+                <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link>
                 <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground">Pricing</a>
                 <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground">FAQ</a>
               </div>

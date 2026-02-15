@@ -1,42 +1,12 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, BookOpen, Clock, Tag } from "lucide-react";
-import { Logo, LogoFooter } from "@/components/Logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { blogArticles } from "@/data/blog-articles";
-
-function PublicNav() {
-  return (
-    <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-6 py-4" aria-label="Main navigation">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
-          <Logo />
-        </Link>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <Link href="/templates">
-            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-templates">
-              Templates
-            </Button>
-          </Link>
-          <Link href="/blog">
-            <Button variant="ghost" size="sm" className="font-medium text-muted-foreground" data-testid="link-nav-blog">
-              Blog
-            </Button>
-          </Link>
-          <Button onClick={() => window.location.href = "/api/login"} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
-            Sign In
-          </Button>
-          <Button onClick={() => window.location.href = "/api/login"} data-testid="button-nav-get-started">
-            Get Started Free
-          </Button>
-        </div>
-      </div>
-    </nav>
-  );
-}
+import { PublicNav } from "@/components/PublicNav";
 
 export default function BlogList() {
   usePageTitle("Habit Building Blog - Tips, Science, and Strategies", "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change. Learn proven techniques to build habits that stick.");
@@ -140,6 +110,7 @@ export default function BlogList() {
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link>
             <Link href="/blog" className="text-sm font-medium text-foreground">Blog</Link>
             <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link>
+            <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link>
           </div>
         </div>
       </footer>
