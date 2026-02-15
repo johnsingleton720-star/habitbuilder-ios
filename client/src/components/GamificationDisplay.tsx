@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { CelebrationAnimation } from "./CelebrationAnimation";
 import { ACHIEVEMENTS, getAchievementById } from "@/lib/achievements";
+import { APP_THEMES, applyThemeToDocument } from "./ThemeSelector";
 
 interface DailyChallenge {
   id: number;
@@ -166,13 +167,18 @@ export function GamificationDisplay() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Accent color updated!",
         description: "Your dashboard color has been changed.",
       });
     },
-    onError: (_, color) => {
-      setLocalSelectedColor(stats?.selectedColor ?? null);
+    onError: () => {
+      const previousColor = stats?.selectedColor ?? "nature";
+      setLocalSelectedColor(previousColor);
+      const revertTheme = APP_THEMES.find(t => t.id === previousColor) || APP_THEMES[0];
+      applyThemeToDocument(revertTheme);
+      localStorage.setItem("appColorTheme", revertTheme.id);
       toast({
         title: "Couldn't change color",
         description: "You may not have unlocked this color yet.",
@@ -537,6 +543,11 @@ export function GamificationDisplay() {
                         onClick={() => {
                           if (isUnlocked && !isSelected) {
                             setLocalSelectedColor(reward.color);
+                            const matchingTheme = APP_THEMES.find(t => t.id === reward.color);
+                            if (matchingTheme) {
+                              applyThemeToDocument(matchingTheme);
+                              localStorage.setItem("appColorTheme", reward.color);
+                            }
                             accentColorMutation.mutate(reward.color);
                           }
                         }}

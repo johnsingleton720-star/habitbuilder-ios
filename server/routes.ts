@@ -6496,7 +6496,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
         return res.status(403).json({ error: "This color has not been unlocked yet" });
       }
       
-      await db.update(users).set({ accentColor: color, updatedAt: new Date() }).where(eq(users.id, userId));
+      await db.update(users).set({ accentColor: color, colorTheme: color, updatedAt: new Date() }).where(eq(users.id, userId));
       res.json({ success: true, color });
     } catch (error) {
       console.error("Error setting accent color:", error);
