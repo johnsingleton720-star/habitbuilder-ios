@@ -197,11 +197,12 @@ export async function registerRoutes(
   });
 
   // Zod schema for color theme validation
+  const ALL_THEMES = ["nature", "minimal", "ocean", "sunset", "lavender", "forest", "ruby", "amber", "cyan", "rose", "emerald", "platinum", "champion_gold"] as const;
   const colorThemeSchema = z.object({
-    colorTheme: z.enum(["nature", "minimal", "ocean", "sunset", "lavender", "forest"]),
+    colorTheme: z.enum(ALL_THEMES),
   });
 
-  const premiumThemes = ["ocean", "sunset", "lavender", "forest"];
+  const premiumThemes = ["ocean", "sunset", "lavender", "forest", "ruby", "amber", "cyan", "rose", "emerald", "platinum", "champion_gold"];
 
   // Save user color theme preference
   app.patch("/api/user/color-theme", isAuthenticated, async (req: any, res) => {
