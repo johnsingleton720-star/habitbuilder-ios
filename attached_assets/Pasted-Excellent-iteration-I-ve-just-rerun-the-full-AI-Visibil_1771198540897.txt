@@ -1,0 +1,70 @@
+Excellent iteration — I’ve just rerun the full AI Visibility + AEO + SEO audit on https://habitbuilder.pro (February 15, 2026, late afternoon CST).
+You’ve made tangible progress:
+•  The /blog index is now live and well-structured with 8 dated posts (Jan 14–Feb 17 2026), excerpts, read times, categories, and tags.
+•  sitemap.xml is freshly updated (13 URLs, multiple February 2026 lastmod dates).
+•  Google has crawled and is showing post-specific snippets in search results (e.g., habit-stacking definitions, comparisons to Habitica/Streaks, science of habits, etc.). This is real forward momentum on indexing.
+However, a critical new issue surfaced: the individual blog post URLs (both the long slugs shown on the /blog index and the shortened ones in sitemap.xml) are not serving the actual articles. They load the homepage promo content instead. This creates broken links from your own blog index and explains why full post content isn’t reliably available to all crawlers/users. Google appears to have captured some content during earlier crawls (or via JS rendering), but the pages are currently inconsistent or falling back.
+Here’s the updated audit with direct comparisons to the previous run.
+1. AI Visibility & Citation Check (Still Very Low — No Improvement)
+Tested core queries today (“best AI habit tracker 2026”, “AI habit coach”, “AI powered habit builder”, “habit stacking AI”, “morning routine science 2026”, etc.):
+Zero mentions of HabitBuilder.pro in any roundups, Perplexity-style answers, or Google AI Overviews.
+Dominant players unchanged: Reclaim.ai, Pattrn, Habitica, Streaks, Habitify, ClickUp lists, etc.
+Your blog topics are perfectly aligned, but the broken post pages + missing schema/author signals mean the content isn’t citable yet.
+External footprint: still mostly your own Instagram/TikTok/Snapchat posts + one Reddit thread. No new reviews, listings, or third-party citations.
+2. On-Page AEO/SEO Health (Mixed: Indexing Progress, But Major Technical Regression)
+What improved
+•  Blog index: clean, AEO-friendly (titles, dates, excerpts, categories).
+•  Sitemap: recent lastmod dates on key pages.
+•  Google indexing: homepage, /blog, /templates, and partial post snippets are live.
+•  Main pages (homepage, templates) remain static-HTML friendly — content loads without heavy JS dependency.
+Critical issues that remain or worsened
+•  No top navigation menu anywhere (still only “Back to Home” and Privacy Policy).
+•  Blog post pages broken: Direct links from /blog and sitemap return homepage promo instead of the article. This is a high-priority routing/SSR issue (common in SPAs). Users and many bots see nothing useful.
+•  No JSON-LD schema on any page (homepage, blog index, templates, about — confirmed via source inspection).
+•  /about page: still a minimal stub (just headings + tagline). No bio, photo, credentials, or Person schema.
+•  /community page: pure placeholder (promo text only, no forum/Discord).
+•  Internal linking: minimal and now broken for blog content.
+•  Templates page: strong structure, but no schema or deep links.
+Technical notes
+•  robots.txt and sitemap are clean.
+•  Page speed should be excellent.
+•  Inconsistent rendering (Google got some post content; direct crawls often fallback) is now the biggest blocker.
+3. Content & E-E-A-T Signals (Content Volume Good, Signals Still Missing)
+Progress
+•  Blog topics are excellent and citation-ready in theory (science-backed, step-by-step, comparisons).
+•  Testimonials and FAQ unchanged (solid).
+Gaps
+•  No author boxes, bios, or inline sources visible on accessible pages.
+•  No founder story (the About stub doesn’t help).
+•  Site still reads more “product promo” than “expert-led behavioral science resource.”
+4. Updated Prioritized Actionable Roadmap
+Phase 0: Urgent Fix (Do This Today — Highest Leverage)
+Fix blog post routing.
+The individual articles are not loading. This single bug is undoing your content efforts.
+•  If using Next.js/React: ensure dynamic routes are server-rendered (getStaticProps / getServerSideProps or static export with proper slugs).
+•  Match sitemap slugs exactly (e.g., /blog/how-to-build-a-morning-routine).
+•  Test every post URL in an incognito window and Google’s URL Inspection tool. Once fixed, Google will re-crawl and your snippets will become full rich results.
+Phase 1: Quick Wins (Next 3–5 Days)
+1.  Add visible top navigation on every page (Home, Templates, Blog, About, Community, Pricing).
+2.  Implement JSON-LD schema (now even more important once posts load):
+	•  Homepage: Organization + WebSite
+	•  Blog index: Blog
+	•  Each post: Article (author, datePublished, headline)
+	•  About: Person I can paste exact ready-to-use JSON-LD snippets if you tell me your stack.
+3.  Flesh out /about (200–300 words + photo + credentials).
+4.  Activate /community (even a simple Discord link or basic forum).
+Phase 2: Content & On-Page (1–3 Weeks)
+•  Once posts load: add author boxes, inline citations (BJ Fogg, James Clear, studies), numbered steps, tables, and internal links to templates.
+•  Turn top templates into full HowTo pages with schema.
+•  Add review prompts and more testimonials.
+Phase 3: Authority Building (Ongoing)
+•  Same as before: Product Hunt, Reddit shares, outreach to “best of 2026” list authors, Google Business Profile (Dallas angle), guest posts.
+Bottom Line
+You’re making real moves — the blog index and sitemap updates are excellent, and Google is already sniffing the content. But the broken blog post pages are a show-stopper right now. Fixing that + navigation + schema + About page will unlock the next big jump in both traditional SEO and AEO.
+You’ve clearly been working fast — that’s how launches win. Knock out the routing fix and the three Phase 1 items, then reply “done” or drop the updated post URLs and I’ll re-audit immediately (and provide schema code or About copy if you want).
+Which piece do you want help with first? I can give you:
+•  Exact navigation HTML
+•  Ready-to-paste JSON-LD for all page types
+•  Suggested full About page text
+•  Debugging tips for the blog routing
+This product is differentiated and the content foundation is there. Let’s get the technical foundation solid so the engines (and users) can actually see it. You’re close — keep going!
