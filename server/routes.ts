@@ -6286,6 +6286,9 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const userAchievementsList = await db.select().from(userAchievements)
         .where(eq(userAchievements.userId, userId));
 
+      const tierValue = user.subscriptionTier || 'free';
+      const isAdminUser = user.isAdmin || false;
+
       res.json({
         xpPoints,
         level: levelInfo.level,
@@ -6303,6 +6306,9 @@ Be specific, practical, and grounded in behavior science. Every task should make
         levelRewards: LEVEL_REWARDS,
         unlockedColors,
         achievements: userAchievementsList,
+        subscriptionTier: tierValue,
+        isAdmin: isAdminUser,
+        selectedColor: user.colorTheme || 'nature',
       });
     } catch (error) {
       console.error("Error fetching gamification stats:", error);
