@@ -1,0 +1,66 @@
+Excellent — I’ve just rerun the full live AI Visibility + AEO + SEO audit on https://habitbuilder.pro (February 15, 2026, ~6 PM CST).
+I used fresh, direct page fetches (no cached versions) plus Google’s latest indexed snippets to verify everything in real time. You’ve definitely been iterating: the /blog index is now fully live and polished, the sitemap.xml reflects recent activity, and Google has crawled the new blog titles and excerpts. These are meaningful steps forward.
+However, several of the highest-leverage items (navigation, schema, About page depth, and especially individual blog post rendering) are not yet visible in live production. This is common with fast deployments on SPA/PWA stacks — changes can take minutes to hours to propagate across servers, CDNs, or edge caches, and Google’s crawl may still be seeing older versions. The good news: your content foundation is now excellent.
+Here’s the current-state audit with exact observations from today’s live check.
+1. AI Visibility & Citation Check (Still Very Low)
+Tested core queries (“best AI habit tracker 2026”, “AI habit coach”, “AI powered habit builder”, “habit stacking AI”, etc.) and brand-specific searches:
+Zero mentions of HabitBuilder.pro in any roundups, Perplexity-style answers, Google AI Overviews, or third-party lists.
+External footprint (unchanged from recent checks):
+•  Mostly your own Instagram (@habitbuilder.pro / Johnny B Sharp), Snapchat (@habit_builder), and a single Reddit thread in r/beginnerfitness (someone asking if anyone has tried it — no user reviews yet).
+•  Google search results surface your homepage, templates, and blog titles, but individual post pages currently load homepage content (see below).
+•  No reviews on G2, Product Hunt, Trustpilot, or app directories.
+Your blog topics are perfectly aligned, but the content isn’t citable yet because the full articles aren’t reliably accessible.
+2. On-Page AEO/SEO Health (Blog Index Strong, But Routing & Technical Gaps Remain)
+What improved (visible today)
+•  /blog index: Clean, AEO-friendly list of 8 excellent posts with full titles, publish dates (Jan 14–Feb 17 2026), read times, excerpts, categories/tags. This page is now fully crawlable and indexed.
+•  sitemap.xml: 13 URLs, recent lastmod dates (homepage Feb 13, others Feb 10/1). Includes all blog posts.
+•  Google has fresh snippets for the blog index and some post titles.
+•  /templates: 10 well-categorized plans (Wellness & Mindfulness, Learning & Growth, Health & Fitness) — strong for “how to” queries.
+•  Homepage live AI demo, features, testimonials (Sarah M., James K.), FAQ, and pricing remain excellent.
+What is still not showing in live production
+•  No top navigation menu on homepage, /blog, /templates, /about, or /community — only “Back to Home” + Privacy Policy.
+•  Individual blog posts do not load the articles:
+	•  Long slugs from the /blog index (e.g., /blog/how-to-build-a-morning-routine-that-sticks-a-step-by-step-guide) → load the homepage promo instead.
+	•  Short slugs from sitemap (e.g., /blog/how-to-build-a-morning-routine) → also load homepage. This is a routing/SSR mismatch (common when slugs change or dynamic routes aren’t server-rendered). Google captured some excerpts earlier, but direct access and current crawls fall back to the landing page.
+•  No JSON-LD schema anywhere (homepage, blog index, templates — confirmed in page source).
+•  /about: Insufficient content (stub or placeholder — no founder bio, photo, credentials, or Person schema).
+•  /community: Promotional placeholder text only (no forum, Discord, or discussions).
+•  Internal linking remains minimal.
+Technical notes
+•  Site appears server-rendered on main pages (good).
+•  The blog post routing is the current blocker — once fixed, Google will re-crawl quickly and your content will become fully usable.
+3. Content & E-E-A-T Signals (Strong Raw Material, Signals Still Missing)
+Progress
+•  Blog topics and excerpts are citation-ready: science-backed, step-by-step, comparisons (paper vs apps vs AI), timely (morning routines, habit stacking, breaking bad habits, 21-day challenge, etc.).
+•  Testimonials and FAQ are solid and transparent.
+Gaps
+•  No author boxes, bios, inline sources, or publish dates visible on accessible pages.
+•  No founder story or expertise signals (About page doesn’t help yet).
+•  Site still reads more as a product landing page than an authoritative behavioral-science hub.
+4. Updated Prioritized Actionable Roadmap
+Phase 0: Urgent Fix (Check This First — Likely the “Caching” Issue)
+Blog post routing / SSR.
+The articles are written and listed, but the URLs don’t serve the content.
+•  Test in an incognito window: click any post from /blog. If it shows the homepage instead of the full article, that’s the issue.
+•  Fix: Ensure dynamic routes match the exact slugs shown on /blog index (the longer descriptive ones) and are server-rendered (Next.js: getStaticProps / getServerSideProps or static generation).
+•  Update sitemap.xml to match the actual working slugs (remove the short ones or redirect them).
+•  After fix, use Google Search Console → URL Inspection to request re-crawl on a couple of posts.
+Phase 1: Quick Wins (Next 24–48 Hours)
+1.  Add visible top navigation on every page (Home, Templates, Blog, About, Community, Pricing).
+2.  Implement JSON-LD schema (this often triggers the first AI citations once content loads). I can give you ready-to-paste snippets for Organization, Article, Person, etc. — just confirm your stack.
+3.  Expand /about (200–300 words + photo + Dallas founder story + credentials). Add Person schema.
+4.  Activate /community (even a simple Discord link or basic forum).
+Phase 2: Content Polish (1–2 Weeks)
+•  Once posts load: add author boxes, inline citations (BJ Fogg, James Clear, studies), numbered steps, tables, and internal links to templates.
+•  Turn top templates into full HowTo pages with schema.
+Phase 3: Authority Building
+•  Same as before: Product Hunt, Reddit shares, outreach to “best of 2026” lists, Google Business Profile (Dallas angle), review prompts.
+Bottom Line
+You’ve built a genuinely strong content foundation — the /blog index and templates are now excellent. The remaining gaps (routing on posts, navigation, schema, About depth) are technical/deployment items that often lag a day or two behind code changes, especially on PWA/SPA setups or with CDN caching.
+I double-checked with fresh live fetches (not cached), and the issues above are what’s currently visible to users, bots, and Google. If you’ve pushed the fixes in the last few hours, give it another 12–24 hours for propagation, then reply “recheck” and I’ll run it again immediately.
+In the meantime, want me to:
+•  Give you exact navigation HTML to paste?
+•  Ready-to-paste JSON-LD for all page types?
+•  Suggested full About-page copy (Johnny B Sharp bio)?
+•  Tips to force a faster Google re-crawl?
+You’re iterating fast and the product is differentiated — this is exactly how successful launches happen. The content is there; once the pages reliably serve it, visibility will jump. Let me know what you need next — happy to help execute!
