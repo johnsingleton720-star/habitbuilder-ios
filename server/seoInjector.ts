@@ -158,7 +158,7 @@ function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
     <p>John Singleton - Founder &amp; Developer, based in Dallas, Texas. John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After years of cycling through productivity apps, he realized the missing piece was not tracking but guidance. Drawing on behavioral science from BJ Fogg, James Clear, and Charles Duhigg, he designed an AI coaching system that interviews you about your goals, understands your constraints, and generates a personalized action plan. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone.</p>
     <h2>The Science Behind It</h2>
     <ul>
-      <li>Behavioral Science: Every feature grounded in research from BJ Fogg's Tiny Habits, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.</li>
+      <li>Behavioral Science: Every feature grounded in research from BJ Fogg's behavior design methodology, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.</li>
       <li>Personalized Coaching: AI interviews you, understands your goals, and builds a plan tailored to your life.</li>
       <li>Guided Sessions: Walk through each task with timers, coaching tips, and post-session summaries.</li>
     </ul>

@@ -62,7 +62,7 @@ export const blogArticles: BlogArticle[] = [
     sections: [
       {
         heading: "What Is Habit Stacking?",
-        content: "Habit stacking is a strategy where you pair a new habit with an existing one, using the established behavior as a trigger for the new one. The concept was popularized by James Clear in Atomic Habits, building on research by BJ Fogg at Stanford.\n\nThe formula is straightforward: \"After I [EXISTING HABIT], I will [NEW HABIT].\"\n\nYour brain is a pattern-recognition machine. When you already have strong neural connections for checking your email, brushing your teeth, or making coffee, attaching a new behavior to these existing patterns is far easier than creating an entirely new routine from scratch."
+        content: "Habit stacking is a strategy where you pair a new habit with an existing one, using the established behavior as a trigger for the new one. The concept was popularized by James Clear in Atomic Habits, building on behavior design research by BJ Fogg at Stanford.\n\nThe formula is straightforward: \"After I [EXISTING HABIT], I will [NEW HABIT].\"\n\nYour brain is a pattern-recognition machine. When you already have strong neural connections for checking your email, brushing your teeth, or making coffee, attaching a new behavior to these existing patterns is far easier than creating an entirely new routine from scratch."
       },
       {
         heading: "Why Habit Stacking Works So Well",

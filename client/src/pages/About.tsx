@@ -15,7 +15,7 @@ export default function About() {
     {
       icon: Brain,
       title: "Behavioral Science",
-      description: "Every feature is grounded in proven research from BJ Fogg's Tiny Habits, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.",
+      description: "Every feature is grounded in proven research from BJ Fogg's behavior design methodology, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.",
     },
     {
       icon: Target,
