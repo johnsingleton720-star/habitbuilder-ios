@@ -179,22 +179,57 @@ function getBlogListSeo(): { meta: string; schemas: string; noscript: string } {
     <meta property="og:url" content="${BASE_URL}/blog" />
     <link rel="canonical" href="${BASE_URL}/blog" />`;
 
-  const schemas = jsonLdTag({
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Habit Building Blog - HabitBuilder.pro",
-    description: "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change.",
-    url: `${BASE_URL}/blog`,
-    mainEntity: {
-      "@type": "ItemList",
-      itemListElement: articles.map((a, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
+  const schemas = [
+    jsonLdTag({
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      name: "Habit Building Blog - HabitBuilder.pro",
+      description: "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change.",
+      url: `${BASE_URL}/blog`,
+      publisher: {
+        "@type": "Organization",
+        name: "HabitBuilder.pro",
+        url: BASE_URL,
+        logo: { "@type": "ImageObject", url: `${BASE_URL}/icon-192.png` }
+      },
+      blogPost: articles.map(a => ({
+        "@type": "BlogPosting",
+        headline: a.title,
+        description: a.excerpt,
         url: `${BASE_URL}/blog/${a.slug}`,
-        name: a.title
+        datePublished: a.publishedDate,
+        author: [
+          { "@type": "Organization", name: "HabitBuilder.pro" },
+          { "@type": "Person", name: "John Singleton", url: `${BASE_URL}/about` }
+        ]
       }))
-    }
-  });
+    }),
+    jsonLdTag({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Habit Building Blog - HabitBuilder.pro",
+      description: "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change.",
+      url: `${BASE_URL}/blog`,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: articles.length,
+        itemListElement: articles.map((a, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          url: `${BASE_URL}/blog/${a.slug}`,
+          name: a.title
+        }))
+      }
+    }),
+    jsonLdTag({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
+        { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` }
+      ]
+    })
+  ].join("\n");
 
   const articleLinks = articles.map(a =>
     `<li><a href="/blog/${escapeHtml(a.slug)}">${escapeHtml(a.title)}</a> - Published ${a.publishedDate} by ${escapeHtml(a.author)}</li>`
@@ -257,6 +292,16 @@ function getBlogArticleSeo(slug: string): { meta: string; schemas: string; noscr
     })
   ];
 
+  schemaList.push(jsonLdTag({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: article.title, item: `${BASE_URL}/blog/${article.slug}` }
+    ]
+  }));
+
   if (article.faqs && article.faqs.length > 0) {
     schemaList.push(jsonLdTag({
       "@context": "https://schema.org",
@@ -296,6 +341,19 @@ function getBlogArticleSeo(slug: string): { meta: string; schemas: string; noscr
 }
 
 function getTemplatesSeo(): { meta: string; schemas: string; noscript: string } {
+  const templateItems = [
+    { name: "Morning Routine", description: "Start your day with energy and focus", category: "Wellness & Mindfulness" },
+    { name: "Meditation Practice", description: "Cultivate mindfulness and inner peace", category: "Wellness & Mindfulness" },
+    { name: "Journaling", description: "Reflect on your day and process emotions", category: "Wellness & Mindfulness" },
+    { name: "Digital Detox", description: "Reduce screen time and be more present", category: "Wellness & Mindfulness" },
+    { name: "Gratitude Practice", description: "Cultivate appreciation and positivity", category: "Wellness & Mindfulness" },
+    { name: "Daily Exercise", description: "Build consistent physical activity habits", category: "Health & Fitness" },
+    { name: "Healthy Eating", description: "Make better food choices every day", category: "Health & Fitness" },
+    { name: "Sleep Hygiene", description: "Improve your sleep quality and consistency", category: "Health & Fitness" },
+    { name: "Reading Habit", description: "Expand your mind through daily reading", category: "Learning & Growth" },
+    { name: "Learning New Skills", description: "Dedicate time to learning something new", category: "Learning & Growth" },
+  ];
+
   const meta = `
     <title>Habit Templates for Every Goal | HabitBuilder.pro Template Library</title>
     <meta name="description" content="Browse curated habit templates for wellness, fitness, learning, and more. Each template comes with AI-powered coaching that creates a personalized action plan just for you." />
@@ -304,26 +362,47 @@ function getTemplatesSeo(): { meta: string; schemas: string; noscript: string } 
     <meta property="og:url" content="${BASE_URL}/templates" />
     <link rel="canonical" href="${BASE_URL}/templates" />`;
 
-  const schemas = jsonLdTag({
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Habit Templates - HabitBuilder.pro",
-    description: "Curated habit templates for wellness, fitness, learning, and personal growth with AI-powered coaching.",
-    url: `${BASE_URL}/templates`,
-    mainEntity: {
-      "@type": "ItemList",
+  const schemas = [
+    jsonLdTag({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Habit Templates - HabitBuilder.pro",
+      description: "Curated habit templates for wellness, fitness, learning, and personal growth with AI-powered coaching.",
+      url: `${BASE_URL}/templates`,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: templateItems.length,
+        itemListElement: templateItems.map((t, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: `${t.name} Template`,
+          description: `${t.description}. AI-powered coaching included. Category: ${t.category}.`,
+          url: `${BASE_URL}/templates`
+        }))
+      }
+    }),
+    jsonLdTag({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Wellness & Mindfulness Templates", description: "Build habits for mental health, stress reduction, and mindfulness" },
-        { "@type": "ListItem", position: 2, name: "Health & Fitness Templates", description: "Create sustainable routines for exercise, nutrition, and sleep" },
-        { "@type": "ListItem", position: 3, name: "Learning & Growth Templates", description: "Develop habits for knowledge, skills, and personal development" }
+        { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
+        { "@type": "ListItem", position: 2, name: "Habit Templates", item: `${BASE_URL}/templates` }
       ]
-    }
-  });
+    })
+  ].join("\n");
+
+  const templateListItems = templateItems.map(t =>
+    `<li><strong>${escapeHtml(t.name)}</strong> - ${escapeHtml(t.description)} (${escapeHtml(t.category)})</li>`
+  ).join("\n      ");
 
   const noscript = `<noscript>
     ${NAV_LINKS}
     <h1>Habit Templates for Every Goal</h1>
     <p>Browse our curated collection of habit templates. Each comes with AI-powered coaching that creates a personalized action plan just for you.</p>
+    <h2>All Templates</h2>
+    <ul>
+      ${templateListItems}
+    </ul>
     <h2>Wellness &amp; Mindfulness</h2>
     <p>Build habits that nurture your mental health, reduce stress, and bring more peace into your daily life.</p>
     <h2>Health &amp; Fitness</h2>
