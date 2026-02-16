@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -182,6 +182,12 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
     queryKey: ['/api/founding-member-slots'],
     staleTime: 30000,
   });
+
+  useEffect(() => {
+    const handler = () => setIsAnnual(true);
+    window.addEventListener('select-annual-pricing', handler);
+    return () => window.removeEventListener('select-annual-pricing', handler);
+  }, []);
 
   const hasAnyAnnualSlots = slotsData && (
     (slotsData.pro?.remaining > 0 && slotsData.pro?.active) ||
@@ -472,6 +478,29 @@ export default function Landing() {
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [topBannerDismissed, setTopBannerDismissed] = useState(false);
+
+  const { data: topSlotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
+    queryKey: ['/api/founding-member-slots'],
+    staleTime: 30000,
+  });
+
+  const hasTopBannerSlots = topSlotsData && (
+    (topSlotsData.pro?.remaining > 0 && topSlotsData.pro?.active) ||
+    (topSlotsData.premium?.remaining > 0 && topSlotsData.premium?.active)
+  );
+
+  const totalSlotsRemaining = (topSlotsData?.pro?.remaining || 0) + (topSlotsData?.premium?.remaining || 0);
+
+  const scrollToAnnualPricing = useCallback(() => {
+    const pricingEl = document.getElementById('pricing');
+    if (pricingEl) {
+      pricingEl.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        window.dispatchEvent(new Event('select-annual-pricing'));
+      }, 500);
+    }
+  }, []);
 
   const scrollToLogin = () => {
     window.location.href = "/api/login";
@@ -538,6 +567,47 @@ export default function Landing() {
         ]
       }) }} />
       <PublicNav />
+
+      <AnimatePresence>
+        {hasTopBannerSlots && !topBannerDismissed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-primary/90 to-primary text-primary-foreground" data-testid="banner-top-founding">
+              <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap relative">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Star className="w-4 h-4 shrink-0" />
+                  <span>Founding Member Annual Plans</span>
+                  <span className="hidden sm:inline">-</span>
+                  <span className="hidden sm:inline">Save up to $40/year. Only {totalSlotsRemaining} spots left.</span>
+                  <span className="sm:hidden">- {totalSlotsRemaining} spots left</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={scrollToAnnualPricing}
+                  data-testid="button-top-founding-cta"
+                >
+                  View Plans
+                  <ArrowRight className="ml-1 w-3 h-3" />
+                </Button>
+                <button
+                  onClick={() => setTopBannerDismissed(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover-elevate text-primary-foreground/80"
+                  aria-label="Dismiss banner"
+                  data-testid="button-dismiss-top-banner"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden" aria-label="Hero - AI-powered habit coaching">
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
