@@ -137,6 +137,19 @@ export async function registerRoutes(
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
 
+  app.get("/.well-known/assetlinks.json", (_req, res) => {
+    res.json([{
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "pro.habitbuilder.app",
+        sha256_cert_fingerprints: [
+          "87:AF:FE:EB:3E:7E:2E:1B:D4:5A:58:C7:48:E2:75:FF:74:36:7F:C5:3C:51:EE:15:5E:41:B7:D7:F3:A0:A1:65"
+        ]
+      }
+    }]);
+  });
+
   app.use((req, res, next) => {
     const host = req.hostname;
     if (
@@ -144,7 +157,8 @@ export async function registerRoutes(
       host !== PRIMARY_DOMAIN &&
       host.endsWith(".replit.app") &&
       (req.method === "GET" || req.method === "HEAD") &&
-      !req.path.startsWith("/api/")
+      !req.path.startsWith("/api/") &&
+      !req.path.startsWith("/.well-known/")
     ) {
       const target = `https://${PRIMARY_DOMAIN}${req.originalUrl}`;
       return res.redirect(301, target);
