@@ -7,6 +7,9 @@ import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { startEmailScheduler } from './emailScheduler';
 import { injectSeo } from './seoInjector';
+import { db } from './db';
+import { foundingMemberSlots } from '@shared/models/auth';
+import { sql } from 'drizzle-orm';
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception (server kept running):', err.message);
@@ -136,8 +139,24 @@ app.use((req, res, next) => {
   next();
 });
 
+async function seedFoundingMemberSlots() {
+  try {
+    const existing = await db.select().from(foundingMemberSlots);
+    if (existing.length === 0) {
+      await db.insert(foundingMemberSlots).values([
+        { tier: 'pro', totalSlots: 50, usedSlots: 0, priceYearly: 4800, active: true },
+        { tier: 'premium', totalSlots: 100, usedSlots: 0, priceYearly: 14000, active: true },
+      ]);
+      console.log('Seeded founding member slots');
+    }
+  } catch (e: any) {
+    console.error('Error seeding founding member slots:', e?.message);
+  }
+}
+
 (async () => {
   await initStripe();
+  await seedFoundingMemberSlots();
   await registerRoutes(httpServer, app);
   startEmailScheduler();
 
