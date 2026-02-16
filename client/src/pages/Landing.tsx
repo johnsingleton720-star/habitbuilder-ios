@@ -571,14 +571,13 @@ export default function Landing() {
       <AnimatePresence>
         {hasTopBannerSlots && !topBannerDismissed && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-primary/90 to-primary text-primary-foreground" data-testid="banner-top-founding">
-              <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap relative">
+            <div className="fixed top-[72px] left-0 right-0 z-40 bg-gradient-to-r from-primary/95 to-primary text-primary-foreground shadow-md" data-testid="banner-top-founding">
+              <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-3 flex-wrap relative">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Star className="w-4 h-4 shrink-0" />
                   <span>Founding Member Annual Plans</span>
@@ -609,7 +608,7 @@ export default function Landing() {
         )}
       </AnimatePresence>
 
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden" aria-label="Hero - AI-powered habit coaching">
+      <section className={`relative pb-20 lg:pb-32 px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-44 lg:pt-60' : 'pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
