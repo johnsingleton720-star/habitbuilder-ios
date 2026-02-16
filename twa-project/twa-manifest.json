@@ -1,0 +1,29 @@
+{
+  "packageId": "pro.habitbuilder.app",
+  "host": "habitbuilder.pro",
+  "name": "HabitBuilder.pro",
+  "launcherName": "HabitBuilder",
+  "display": "standalone",
+  "themeColor": "#059669",
+  "navigationColor": "#059669",
+  "navigationColorDark": "#047857",
+  "navigationDividerColor": "#059669",
+  "navigationDividerColorDark": "#047857",
+  "backgroundColor": "#f0fdf4",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://habitbuilder.pro/icon-512.png",
+  "maskableIconUrl": "https://habitbuilder.pro/icon-512.png",
+  "shortcuts": [],
+  "signingKey": {
+    "path": "./habitbuilder-keystore.jks",
+    "alias": "habitbuilder"
+  },
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "splashScreenFadeOutDuration": 300,
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "orientation": "default",
+  "fingerprints": []
+}
