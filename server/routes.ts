@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots } from "@shared/schema";
 import crypto from "crypto";
 import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
@@ -1432,6 +1432,26 @@ SAFETY: Never generate harmful, violent, or explicit content.`
   });
 
   // Get all tier pricing from Stripe
+  app.get("/api/founding-member-slots", async (req, res) => {
+    try {
+      const slots = await db.select().from(foundingMemberSlots);
+      const result: any = {};
+      for (const slot of slots) {
+        result[slot.tier] = {
+          total: slot.totalSlots,
+          used: slot.usedSlots,
+          remaining: slot.totalSlots - slot.usedSlots,
+          priceYearly: slot.priceYearly,
+          active: slot.active,
+        };
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching founding member slots:", error);
+      res.status(500).json({ error: "Failed to fetch founding member slots" });
+    }
+  });
+
   app.get("/api/stripe/pricing", async (req, res) => {
     try {
       const stripe = await getUncachableStripeClient();
@@ -1472,12 +1492,25 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           active: true,
         });
         const proPrice = proPrices.data.find(p => p.recurring?.interval === 'month');
+        let proAnnualPrice = proPrices.data.find(p => p.recurring?.interval === 'year');
+        if (!proAnnualPrice) {
+          try {
+            proAnnualPrice = await stripe.prices.create({
+              product: proProduct.id,
+              unit_amount: 4800,
+              currency: 'usd',
+              recurring: { interval: 'year' },
+            });
+          } catch (e: any) { console.error("Error creating pro annual price:", e?.message); }
+        }
         
         tiers.push({
           tier: 'pro',
           name: 'Pro',
           price: proPrice?.unit_amount || 600,
           priceId: proPrice?.id,
+          annualPrice: proAnnualPrice?.unit_amount || 4800,
+          annualPriceId: proAnnualPrice?.id || null,
           description: 'AI-powered habit coaching for serious growth',
           features: [
             'Unlimited habits',
@@ -1505,12 +1538,25 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           active: true,
         });
         const premiumPrice = premiumPrices.data.find(p => p.recurring?.interval === 'month');
+        let premiumAnnualPrice = premiumPrices.data.find(p => p.recurring?.interval === 'year');
+        if (!premiumAnnualPrice) {
+          try {
+            premiumAnnualPrice = await stripe.prices.create({
+              product: premiumProduct.id,
+              unit_amount: 14000,
+              currency: 'usd',
+              recurring: { interval: 'year' },
+            });
+          } catch (e: any) { console.error("Error creating premium annual price:", e?.message); }
+        }
         
         tiers.push({
           tier: 'premium',
           name: 'Premium',
           price: premiumPrice?.unit_amount || 1500,
           priceId: premiumPrice?.id,
+          annualPrice: premiumAnnualPrice?.unit_amount || 14000,
+          annualPriceId: premiumAnnualPrice?.id || null,
           description: 'Maximum support for transformational habits',
           features: [
             'Everything in Pro',
@@ -1630,7 +1676,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     try {
       const userId = req.user!.claims.sub;
       const userEmail = req.user!.claims.email;
-      const { priceId, tier } = req.body;
+      const { priceId, tier, billingInterval } = req.body;
 
       if (!priceId) {
         return res.status(400).json({ error: "Price ID required" });
@@ -1638,6 +1684,16 @@ SAFETY: Never generate harmful, violent, or explicit content.`
 
       const stripe = await getUncachableStripeClient();
       const baseUrl = `https://${PRIMARY_DOMAIN}`;
+
+      if (billingInterval === 'year') {
+        const slots = await db.select().from(foundingMemberSlots).where(eq(foundingMemberSlots.tier, tier || 'pro'));
+        if (slots.length > 0) {
+          const slot = slots[0];
+          if (slot.usedSlots >= slot.totalSlots) {
+            return res.status(400).json({ error: "No founding member slots remaining for this tier" });
+          }
+        }
+      }
 
       // Find or create Stripe customer
       let customerId: string | undefined;
@@ -1661,6 +1717,15 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, userId));
       }
 
+      const metadata: any = {
+        userId: userId,
+        tier: tier || 'pro',
+        billingInterval: billingInterval || 'month',
+      };
+      if (billingInterval === 'year') {
+        metadata.isFoundingMember = 'true';
+      }
+
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
@@ -1669,12 +1734,9 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         customer: customerId,
         allow_promotion_codes: true,
         locale: 'auto',
-        metadata: {
-          userId: userId,
-          tier: tier || 'pro',
-        },
+        metadata,
         subscription_data: {
-          metadata: { userId, tier: tier || 'pro' },
+          metadata,
         },
       });
 
@@ -1985,6 +2047,8 @@ SAFETY: Never generate harmful, violent, or explicit content.`
       if (amount >= 1500) currentTier = 'premium';
       if (product?.name?.toLowerCase().includes('premium')) currentTier = 'premium';
 
+      const interval = price?.recurring?.interval || user.billingInterval || 'month';
+      
       res.json({
         hasSubscription: true,
         subscriptionId: activeSub.id,
@@ -1994,11 +2058,56 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         currentTier,
         priceId: price?.id,
         amount,
+        interval,
+        isFoundingMember: user.isFoundingMember || false,
         productName: product?.name || (currentTier === 'premium' ? 'Premium' : 'Pro'),
       });
     } catch (error: any) {
       console.error("Subscription details error:", error?.message || error);
       res.status(500).json({ error: "Failed to fetch subscription details" });
+    }
+  });
+
+  app.get("/api/subscription/renewal-warning", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const stripe = await getUncachableStripeClient();
+
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user || !user.stripeCustomerId) {
+        return res.json({ showWarning: false });
+      }
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        limit: 5,
+      });
+
+      const activeSub = subscriptions.data.find(
+        (s: any) => s.status === 'active' || s.status === 'trialing'
+      );
+
+      if (!activeSub) {
+        return res.json({ showWarning: false });
+      }
+
+      const periodEnd = (activeSub as any).current_period_end;
+      const now = Math.floor(Date.now() / 1000);
+      const daysRemaining = Math.ceil((periodEnd - now) / 86400);
+      const interval = activeSub.items.data[0]?.price?.recurring?.interval || user.billingInterval || 'month';
+      const warningThreshold = interval === 'year' ? 30 : 7;
+
+      res.json({
+        showWarning: daysRemaining <= warningThreshold && !activeSub.cancel_at_period_end,
+        daysRemaining,
+        renewalDate: new Date(periodEnd * 1000).toISOString(),
+        interval,
+        isFoundingMember: user.isFoundingMember || false,
+        amount: activeSub.items.data[0]?.price?.unit_amount || 0,
+      });
+    } catch (error: any) {
+      console.error("Renewal warning error:", error?.message || error);
+      res.json({ showWarning: false });
     }
   });
 

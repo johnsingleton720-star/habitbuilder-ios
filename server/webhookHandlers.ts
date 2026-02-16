@@ -1,7 +1,7 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { db } from './db';
-import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { users, foundingMemberSlots } from '@shared/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
@@ -36,12 +36,16 @@ export class WebhookHandlers {
       });
       
       if (session.metadata?.userId) {
-        // Always set tier from metadata (default to 'pro' if not specified)
         const tier = session.metadata?.tier || 'pro';
+        const billingInterval = session.metadata?.billingInterval || 'month';
+        const isFoundingMember = session.metadata?.isFoundingMember === 'true';
+        
         const updateData: any = { 
           hasPaid: true,
           subscriptionTier: tier,
           subscriptionStatus: 'active',
+          billingInterval,
+          isFoundingMember,
         };
         
         if (session.subscription) {
@@ -57,7 +61,15 @@ export class WebhookHandlers {
           .set(updateData)
           .where(eq(users.id, session.metadata.userId));
         
-        console.log(`User ${session.metadata.userId} subscription started (${tier}) - access granted`);
+        if (isFoundingMember) {
+          await db
+            .update(foundingMemberSlots)
+            .set({ usedSlots: sql`${foundingMemberSlots.usedSlots} + 1` })
+            .where(eq(foundingMemberSlots.tier, tier));
+          console.log(`Founding member slot claimed for ${tier} by user ${session.metadata.userId}`);
+        }
+        
+        console.log(`User ${session.metadata.userId} subscription started (${tier}, ${billingInterval}) - access granted`);
       } else {
         console.warn('Checkout completed but no userId in metadata:', session.id);
       }
@@ -102,12 +114,22 @@ export class WebhookHandlers {
         .limit(1);
       
       if (user) {
+        if (user.isFoundingMember && user.subscriptionTier) {
+          await db
+            .update(foundingMemberSlots)
+            .set({ usedSlots: sql`GREATEST(${foundingMemberSlots.usedSlots} - 1, 0)` })
+            .where(eq(foundingMemberSlots.tier, user.subscriptionTier));
+          console.log(`Founding member slot released for ${user.subscriptionTier} by user ${user.id}`);
+        }
+        
         await db
           .update(users)
           .set({
             subscriptionStatus: 'cancelled',
             hasPaid: false,
             subscriptionId: null,
+            billingInterval: null,
+            isFoundingMember: false,
           })
           .where(eq(users.id, user.id));
         

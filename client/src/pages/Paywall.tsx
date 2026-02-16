@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft } from "lucide-react";
+import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft, Star, Users } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,6 +18,8 @@ interface PricingTier {
   name: string;
   price: number;
   priceId: string | null;
+  annualPrice?: number;
+  annualPriceId?: string | null;
   description: string;
   features: string[];
   limitations?: string[];
@@ -28,24 +30,44 @@ interface PricingData {
   tiers: PricingTier[];
 }
 
+interface FoundingMemberSlots {
+  [tier: string]: {
+    total: number;
+    used: number;
+    remaining: number;
+    priceYearly: number;
+    active: boolean;
+  };
+}
+
 export default function Paywall() {
   usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. 1 habit free forever. Pro at $6 USD/month for unlimited habits, or Premium at $15 USD/month with advanced analytics and community features.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const { data: pricingData, isLoading } = useQuery<PricingData>({
     queryKey: ['/api/stripe/pricing'],
     staleTime: 60000,
   });
+
+  const { data: slotsData } = useQuery<FoundingMemberSlots>({
+    queryKey: ['/api/founding-member-slots'],
+    staleTime: 30000,
+  });
   
-  // Filter out free tier - only show Pro and Premium
   const paidTiers = pricingData?.tiers.filter(tier => tier.tier !== 'free') || [];
 
+  const hasAnyAnnualSlots = slotsData && (
+    (slotsData.pro?.remaining > 0 && slotsData.pro?.active) ||
+    (slotsData.premium?.remaining > 0 && slotsData.premium?.active)
+  );
+
   const checkoutMutation = useMutation({
-    mutationFn: async ({ priceId, tier }: { priceId: string; tier: string }) => {
-      const response = await apiRequest('POST', '/api/checkout', { priceId, tier });
+    mutationFn: async ({ priceId, tier, billingInterval }: { priceId: string; tier: string; billingInterval: string }) => {
+      const response = await apiRequest('POST', '/api/checkout', { priceId, tier, billingInterval });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to start checkout');
@@ -67,9 +89,12 @@ export default function Paywall() {
   });
 
   const handleSelectTier = (tier: PricingTier) => {
-    if (tier.priceId) {
+    if (isAnnual && tier.annualPriceId) {
       setSelectedTier(tier.tier);
-      checkoutMutation.mutate({ priceId: tier.priceId, tier: tier.tier });
+      checkoutMutation.mutate({ priceId: tier.annualPriceId, tier: tier.tier, billingInterval: 'year' });
+    } else if (tier.priceId) {
+      setSelectedTier(tier.tier);
+      checkoutMutation.mutate({ priceId: tier.priceId, tier: tier.tier, billingInterval: 'month' });
     }
   };
 
@@ -93,6 +118,11 @@ export default function Paywall() {
       case 'premium': return 'text-amber-500';
       default: return 'text-foreground';
     }
+  };
+
+  const getSlotInfo = (tier: string) => {
+    if (!slotsData || !slotsData[tier]) return null;
+    return slotsData[tier];
   };
 
   return (
@@ -155,22 +185,66 @@ export default function Paywall() {
           )}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="max-w-2xl mx-auto mb-8"
-        >
-          <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Crown className="w-5 h-5 text-amber-500" />
-              <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
+        {hasAnyAnnualSlots && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-3 p-1.5 rounded-lg border bg-muted/50" data-testid="toggle-billing-interval">
+              <button
+                onClick={() => setIsAnnual(false)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${!isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+                data-testid="button-billing-monthly"
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsAnnual(true)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+                data-testid="button-billing-annual"
+              >
+                Annual
+                <Badge variant="secondary" className="text-xs">
+                  Founding Member
+                </Badge>
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
-            </p>
           </div>
-        </motion.div>
+        )}
+
+        {isAnnual && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/15 dark:via-primary/10 dark:to-primary/15 border border-primary/30 rounded-lg px-6 py-4 text-center" data-testid="banner-founding-member">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Star className="w-5 h-5 text-primary" />
+                <span className="font-display font-bold text-lg">Founding Member Annual Plans</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Limited-time offer for early supporters. Lock in exclusive annual pricing. Once these spots are filled, annual plans will no longer be available to new members.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {!isAnnual && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Crown className="w-5 h-5 text-amber-500" />
+                <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -182,6 +256,12 @@ export default function Paywall() {
               const Icon = getTierIcon(tier.tier);
               const colorClass = getTierColor(tier.tier);
               const isProcessing = selectedTier === tier.tier && checkoutMutation.isPending;
+              const slotInfo = getSlotInfo(tier.tier);
+              const annualSoldOut = isAnnual && slotInfo && (slotInfo.remaining <= 0 || !slotInfo.active);
+              const monthlyPrice = tier.price;
+              const annualTotal = tier.annualPrice || 0;
+              const annualMonthly = annualTotal > 0 ? Math.round(annualTotal / 12) : 0;
+              const savings = (monthlyPrice * 12) - annualTotal;
               
               return (
                 <motion.div
@@ -191,11 +271,15 @@ export default function Paywall() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card className={`relative h-full flex flex-col ${tier.popular ? 'border-primary shadow-lg shadow-primary/20' : ''}`}>
-                    {tier.popular && (
+                    {isAnnual ? (
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                        Founding Member
+                      </Badge>
+                    ) : tier.popular ? (
                       <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                         Most Popular
                       </Badge>
-                    )}
+                    ) : null}
                     
                     <CardHeader className="text-center pb-2">
                       <div className={`inline-flex justify-center mb-2 ${colorClass}`}>
@@ -211,16 +295,56 @@ export default function Paywall() {
                     
                     <CardContent className="flex-1">
                       <div className="text-center mb-6">
-                        <span className={`text-5xl font-display font-bold ${colorClass}`}>
-                          ${formatPrice(tier.price)}
-                        </span>
-                        {tier.price > 0 && (
-                          <span className="text-muted-foreground">/month</span>
-                        )}
-                        {tier.price > 0 && (
-                          <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                        {isAnnual ? (
+                          <>
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                              <span className="text-2xl text-muted-foreground line-through">${formatPrice(monthlyPrice)}/mo</span>
+                            </div>
+                            <span className={`text-5xl font-display font-bold ${colorClass}`} data-testid={`text-annual-price-${tier.tier}`}>
+                              ${formatPrice(annualMonthly)}
+                            </span>
+                            <span className="text-muted-foreground">/mo</span>
+                            <span className="block text-sm text-muted-foreground mt-1" data-testid={`text-annual-total-${tier.tier}`}>
+                              ${formatPrice(annualTotal)}/year, billed annually
+                            </span>
+                            {savings > 0 && (
+                              <Badge variant="secondary" className="mt-2" data-testid={`badge-savings-${tier.tier}`}>
+                                Save ${formatPrice(savings)}/year
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className={`text-5xl font-display font-bold ${colorClass}`}>
+                              ${formatPrice(tier.price)}
+                            </span>
+                            {tier.price > 0 && (
+                              <span className="text-muted-foreground">/month</span>
+                            )}
+                            {tier.price > 0 && (
+                              <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                            )}
+                          </>
                         )}
                       </div>
+
+                      {isAnnual && slotInfo && (
+                        <div className="mb-4 p-3 rounded-lg border bg-muted/30 text-center" data-testid={`slots-counter-${tier.tier}`}>
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {slotInfo.remaining > 0 ? (
+                                <>{slotInfo.remaining} of {slotInfo.total} spots remaining</>
+                              ) : (
+                                <span className="text-destructive">Sold Out</span>
+                              )}
+                            </span>
+                          </div>
+                          {slotInfo.remaining > 0 && slotInfo.remaining <= 10 && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">Almost gone!</p>
+                          )}
+                        </div>
+                      )}
                       
                       <ul className="space-y-3">
                         {tier.features.map((feature, i) => (
@@ -241,16 +365,20 @@ export default function Paywall() {
                     <CardFooter>
                       <Button
                         onClick={() => handleSelectTier(tier)}
-                        disabled={isProcessing || checkoutMutation.isPending}
-                        variant={tier.popular ? "default" : "outline"}
+                        disabled={isProcessing || checkoutMutation.isPending || !!annualSoldOut}
+                        variant={tier.popular || isAnnual ? "default" : "outline"}
                         className={`w-full ${tier.popular ? 'shadow-lg shadow-primary/25' : ''}`}
-                        data-testid={`button-select-${tier.tier}`}
+                        data-testid={`button-select-${tier.tier}${isAnnual ? '-annual' : ''}`}
                       >
                         {isProcessing ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Processing...
                           </>
+                        ) : annualSoldOut ? (
+                          'Sold Out'
+                        ) : isAnnual ? (
+                          `Get Founding Member ${tier.name}`
                         ) : (
                           `Subscribe to ${tier.name}`
                         )}

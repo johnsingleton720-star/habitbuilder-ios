@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X } from "lucide-react";
+import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -297,6 +297,15 @@ export default function Account() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showChangePlan, setShowChangePlan] = useState(false);
 
+  interface RenewalWarning {
+    showWarning: boolean;
+    daysRemaining?: number;
+    renewalDate?: string;
+    interval?: string;
+    isFoundingMember?: boolean;
+    amount?: number;
+  }
+
   interface SubscriptionDetails {
     hasSubscription: boolean;
     subscriptionId?: string;
@@ -306,12 +315,19 @@ export default function Account() {
     currentTier?: string;
     priceId?: string;
     amount?: number;
+    interval?: string;
+    isFoundingMember?: boolean;
     productName?: string;
   }
 
   const { data: subDetails, isLoading: isLoadingSubDetails } = useQuery<SubscriptionDetails>({
     queryKey: ["/api/subscription/details"],
     enabled: !!user,
+  });
+
+  const { data: renewalWarning } = useQuery<RenewalWarning>({
+    queryKey: ["/api/subscription/renewal-warning"],
+    enabled: !!user && !!subDetails?.hasSubscription,
   });
 
   const cancelSubscriptionMutation = useMutation({
@@ -562,29 +578,51 @@ export default function Account() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between flex-wrap gap-2 p-4 rounded-lg bg-muted/50">
                 <div>
                   <p className="font-medium">Current Plan</p>
                   <p className="text-sm text-muted-foreground">
-                    {isPremium ? "Premium ($15 USD/month)" : isPro ? "Pro ($6 USD/month)" : isTrialActive ? "Free Trial" : "No Active Plan"}
+                    {isPremium
+                      ? `Premium (${subDetails?.interval === 'year' ? '$140 USD/year' : '$15 USD/month'})`
+                      : isPro
+                      ? `Pro (${subDetails?.interval === 'year' ? '$48 USD/year' : '$6 USD/month'})`
+                      : isTrialActive ? "Free Trial" : "No Active Plan"}
                   </p>
                 </div>
-                <Badge 
-                  variant={hasPaid ? "default" : isTrialActive ? "secondary" : "destructive"}
-                  className="gap-1"
-                  data-testid="badge-subscription-status"
-                >
-                  {isPremium ? (
-                    <><Crown className="w-3 h-3" /> Premium</>
-                  ) : isPro ? (
-                    <><Check className="w-3 h-3" /> Pro</>
-                  ) : isTrialActive ? (
-                    <><Sparkles className="w-3 h-3" /> Trial</>
-                  ) : (
-                    "Expired"
+                <div className="flex items-center gap-2 flex-wrap">
+                  {subDetails?.isFoundingMember && (
+                    <Badge variant="secondary" className="gap-1" data-testid="badge-founding-member">
+                      <Star className="w-3 h-3" /> Founding Member
+                    </Badge>
                   )}
-                </Badge>
+                  <Badge 
+                    variant={hasPaid ? "default" : isTrialActive ? "secondary" : "destructive"}
+                    className="gap-1"
+                    data-testid="badge-subscription-status"
+                  >
+                    {isPremium ? (
+                      <><Crown className="w-3 h-3" /> Premium</>
+                    ) : isPro ? (
+                      <><Check className="w-3 h-3" /> Pro</>
+                    ) : isTrialActive ? (
+                      <><Sparkles className="w-3 h-3" /> Trial</>
+                    ) : (
+                      "Expired"
+                    )}
+                  </Badge>
+                </div>
               </div>
+
+              {renewalWarning?.showWarning && (
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30" data-testid="banner-renewal-warning">
+                  <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-sm text-blue-800 dark:text-blue-200">
+                    Your {renewalWarning.interval === 'year' ? 'annual' : 'monthly'} subscription renews in {renewalWarning.daysRemaining} day{renewalWarning.daysRemaining !== 1 ? 's' : ''}
+                    {renewalWarning.amount ? ` ($${(renewalWarning.amount / 100).toFixed(0)} USD)` : ''}.
+                    {renewalWarning.isFoundingMember && ' Your founding member rate is locked in.'}
+                  </span>
+                </div>
+              )}
 
               {isTrialActive && trialEndsAt && (
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">

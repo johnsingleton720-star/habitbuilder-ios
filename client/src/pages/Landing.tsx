@@ -13,6 +13,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { PublicNav } from "@/components/PublicNav";
+import { useQuery } from "@tanstack/react-query";
 
 const habitGoals = [
   {
@@ -173,6 +174,295 @@ interface AIPlan {
   resources?: DemoResource[];
   coachMessage?: string;
   stackSuggestion?: string;
+}
+
+function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
+  const [isAnnual, setIsAnnual] = useState(false);
+  const { data: slotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
+    queryKey: ['/api/founding-member-slots'],
+    staleTime: 30000,
+  });
+
+  const hasAnyAnnualSlots = slotsData && (
+    (slotsData.pro?.remaining > 0 && slotsData.pro?.active) ||
+    (slotsData.premium?.remaining > 0 && slotsData.premium?.active)
+  );
+
+  return (
+    <section className="py-24 px-6" id="pricing" aria-label="Pricing plans">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Start with 1 habit free forever, then upgrade for unlimited habits. Cancel anytime.
+          </p>
+        </div>
+
+        {hasAnyAnnualSlots && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-3 p-1.5 rounded-lg border bg-muted/50" data-testid="toggle-landing-billing">
+              <button
+                onClick={() => setIsAnnual(false)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${!isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+                data-testid="button-landing-monthly"
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsAnnual(true)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+                data-testid="button-landing-annual"
+              >
+                Annual
+                <Badge variant="secondary" className="text-xs">
+                  Founding Member
+                </Badge>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isAnnual ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/15 dark:via-primary/10 dark:to-primary/15 border border-primary/30 rounded-lg px-6 py-4 text-center" data-testid="banner-landing-founding">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Star className="w-5 h-5 text-primary" />
+                <span className="font-display font-bold text-lg">Founding Member Annual Plans</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Limited spots for early supporters. Lock in exclusive annual pricing before it's gone forever.
+              </p>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Crown className="w-5 h-5 text-amber-500" />
+                <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0 }}
+          >
+            <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
+              <CardContent className="pt-6 flex-1 flex flex-col">
+                <div className="text-center mb-6">
+                  <div className="inline-flex justify-center mb-3">
+                    <Leaf className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Free forever</p>
+                  <div className="mt-3">
+                    <span className="text-4xl font-display font-bold">$0</span>
+                  </div>
+                </div>
+                <ul className="space-y-2.5 flex-1">
+                  {[
+                    "1 habit",
+                    "AI coaching interview",
+                    "Personalized action plans",
+                    "Basic streaks & tracking",
+                    "Habit templates library",
+                  ].map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                  {[
+                    "Advanced analytics",
+                    "Community forum (coming soon)",
+                    "Voice notes",
+                  ].map((f, i) => (
+                    <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <X className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
+                  Get Started Free
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-primary shadow-lg shadow-primary/20' : 'border-primary shadow-lg shadow-primary/20'}`} data-testid="card-pricing-pro">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                {isAnnual ? 'Founding Member' : 'Most Popular'}
+              </Badge>
+              <CardContent className="pt-6 flex-1 flex flex-col">
+                <div className="text-center mb-6">
+                  <div className="inline-flex justify-center mb-3">
+                    <Sparkles className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
+                  <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
+                  <div className="mt-3">
+                    {isAnnual ? (
+                      <>
+                        <span className="text-lg text-muted-foreground line-through">$6/mo</span>
+                        <br />
+                        <span className="text-4xl font-display font-bold text-primary">$4</span>
+                        <span className="text-muted-foreground">/mo</span>
+                        <span className="block text-sm text-muted-foreground mt-1">$48/year, billed annually</span>
+                        <Badge variant="secondary" className="mt-1 text-xs">Save $24/year</Badge>
+                        {slotsData?.pro && (
+                          <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-pro-slots">
+                            {slotsData.pro.remaining > 0 ? (
+                              <>{slotsData.pro.remaining} of {slotsData.pro.total} spots left</>
+                            ) : (
+                              <span className="text-destructive font-medium">Sold Out</span>
+                            )}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-display font-bold text-primary">$6</span>
+                        <span className="text-muted-foreground">/month</span>
+                        <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <ul className="space-y-2.5 flex-1">
+                  {[
+                    "Unlimited habits",
+                    "AI coaching & action plans",
+                    "Guided sessions with summaries",
+                    "Streaks & achievements",
+                    "XP & leveling system",
+                    "Weekly reports",
+                    "Community forum (coming soon)",
+                    "Habit templates library",
+                  ].map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
+                  {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-amber-500/50 shadow-lg shadow-amber-500/10' : ''}`} data-testid="card-pricing-premium">
+              {isAnnual && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500">
+                  Founding Member
+                </Badge>
+              )}
+              <CardContent className="pt-6 flex-1 flex flex-col">
+                <div className="text-center mb-6">
+                  <div className="inline-flex justify-center mb-3">
+                    <Crown className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
+                  <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
+                  <div className="mt-3">
+                    {isAnnual ? (
+                      <>
+                        <span className="text-lg text-muted-foreground line-through">$15/mo</span>
+                        <br />
+                        <span className="text-4xl font-display font-bold text-amber-500">~$12</span>
+                        <span className="text-muted-foreground">/mo</span>
+                        <span className="block text-sm text-muted-foreground mt-1">$140/year, billed annually</span>
+                        <Badge variant="secondary" className="mt-1 text-xs">Save $40/year</Badge>
+                        {slotsData?.premium && (
+                          <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-premium-slots">
+                            {slotsData.premium.remaining > 0 ? (
+                              <>{slotsData.premium.remaining} of {slotsData.premium.total} spots left</>
+                            ) : (
+                              <span className="text-destructive font-medium">Sold Out</span>
+                            )}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-display font-bold text-amber-500">$15</span>
+                        <span className="text-muted-foreground">/month</span>
+                        <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <ul className="space-y-2.5 flex-1">
+                  {[
+                    "Everything in Pro",
+                    "AI Coach Chat (150 msgs/month)",
+                    "Advanced analytics & trends",
+                    "AI-generated insights & reports",
+                    "Habit stacking & linking",
+                    "Community forum (coming soon)",
+                    "Direct messaging",
+                    "Voice notes",
+                    "Accountability partners",
+                    "Editable templates",
+                    "CSV data export",
+                    "Priority support",
+                  ].map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={scrollToLogin} variant={isAnnual ? "default" : "outline"} className="w-full mt-6" data-testid="button-pricing-premium">
+                  {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          1 habit free forever. No credit card required to start.
+        </p>
+        <p className="text-center text-xs text-muted-foreground mt-2">
+          Prices shown in USD. International payments accepted worldwide.
+        </p>
+      </div>
+    </section>
+  );
 }
 
 export default function Landing() {
@@ -882,188 +1172,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 px-6" id="pricing" aria-label="Pricing plans">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Start with 1 habit free forever, then upgrade for unlimited habits. Cancel anytime.
-            </p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-2xl mx-auto mb-8"
-          >
-            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Crown className="w-5 h-5 text-amber-500" />
-                <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
-              </p>
-            </div>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0 }}
-            >
-              <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
-                <CardContent className="pt-6 flex-1 flex flex-col">
-                  <div className="text-center mb-6">
-                    <div className="inline-flex justify-center mb-3">
-                      <Leaf className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Free forever</p>
-                    <div className="mt-3">
-                      <span className="text-4xl font-display font-bold">$0</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2.5 flex-1">
-                    {[
-                      "1 habit",
-                      "AI coaching interview",
-                      "Personalized action plans",
-                      "Basic streaks & tracking",
-                      "Habit templates library",
-                    ].map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                    {[
-                      "Advanced analytics",
-                      "Community forum (coming soon)",
-                      "Voice notes",
-                    ].map((f, i) => (
-                      <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <X className="w-4 h-4 mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
-                    Get Started Free
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="h-full flex flex-col relative border-primary shadow-lg shadow-primary/20" data-testid="card-pricing-pro">
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  Most Popular
-                </Badge>
-                <CardContent className="pt-6 flex-1 flex flex-col">
-                  <div className="text-center mb-6">
-                    <div className="inline-flex justify-center mb-3">
-                      <Sparkles className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
-                    <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
-                    <div className="mt-3">
-                      <span className="text-4xl font-display font-bold text-primary">$6</span>
-                      <span className="text-muted-foreground">/month</span>
-                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2.5 flex-1">
-                    {[
-                      "Unlimited habits",
-                      "AI coaching & action plans",
-                      "Guided sessions with summaries",
-                      "Streaks & achievements",
-                      "XP & leveling system",
-                      "Weekly reports",
-                      "Community forum (coming soon)",
-                      "Habit templates library",
-                    ].map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
-                    Get Started
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="h-full flex flex-col" data-testid="card-pricing-premium">
-                <CardContent className="pt-6 flex-1 flex flex-col">
-                  <div className="text-center mb-6">
-                    <div className="inline-flex justify-center mb-3">
-                      <Crown className="w-8 h-8 text-amber-500" />
-                    </div>
-                    <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
-                    <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
-                    <div className="mt-3">
-                      <span className="text-4xl font-display font-bold text-amber-500">$15</span>
-                      <span className="text-muted-foreground">/month</span>
-                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2.5 flex-1">
-                    {[
-                      "Everything in Pro",
-                      "AI Coach Chat (150 msgs/month)",
-                      "Advanced analytics & trends",
-                      "AI-generated insights & reports",
-                      "Habit stacking & linking",
-                      "Community forum (coming soon)",
-                      "Direct messaging",
-                      "Voice notes",
-                      "Accountability partners",
-                      "Editable templates",
-                      "CSV data export",
-                      "Priority support",
-                    ].map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-premium">
-                    Get Started
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            1 habit free forever. No credit card required to start.
-          </p>
-          <p className="text-center text-xs text-muted-foreground mt-2">
-            Prices shown in USD. International payments accepted worldwide.
-          </p>
-        </div>
-      </section>
+      <LandingPricing scrollToLogin={scrollToLogin} />
 
       <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">

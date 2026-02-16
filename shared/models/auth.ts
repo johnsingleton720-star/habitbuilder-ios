@@ -65,8 +65,21 @@ export const users = pgTable("users", {
   lastDailyChallengeDate: varchar("last_daily_challenge_date"), // ISO date string
   accentColor: varchar("accent_color"), // Premium reward color, separate from colorTheme
   
+  billingInterval: varchar("billing_interval"),
+  isFoundingMember: boolean("is_founding_member").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const foundingMemberSlots = pgTable("founding_member_slots", {
+  id: serial("id").primaryKey(),
+  tier: varchar("tier").notNull(),
+  totalSlots: integer("total_slots").notNull(),
+  usedSlots: integer("used_slots").notNull().default(0),
+  priceYearly: integer("price_yearly").notNull(),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Daily Challenges table
