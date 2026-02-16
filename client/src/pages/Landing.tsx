@@ -576,7 +576,7 @@ export default function Landing() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="fixed top-[72px] left-0 right-0 z-40 bg-gradient-to-r from-primary/95 to-primary text-primary-foreground shadow-md" data-testid="banner-top-founding">
+            <div className="fixed top-[56px] md:top-[72px] left-0 right-0 z-40 bg-gradient-to-r from-primary/95 to-primary text-primary-foreground shadow-md" data-testid="banner-top-founding">
               <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-3 flex-wrap relative">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Star className="w-4 h-4 shrink-0" />
@@ -608,7 +608,7 @@ export default function Landing() {
         )}
       </AnimatePresence>
 
-      <section className={`relative pb-20 lg:pb-32 px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-44 lg:pt-60' : 'pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
+      <section className={`relative pb-20 lg:pb-32 px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-36 md:pt-44 lg:pt-60' : 'pt-24 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
         <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
