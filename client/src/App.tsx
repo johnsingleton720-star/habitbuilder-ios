@@ -35,8 +35,9 @@ import TermsOfService from "@/pages/TermsOfService";
 import AcceptInvite from "@/pages/AcceptInvite";
 import Resources from "@/pages/Resources";
 import About from "@/pages/About";
+import DeleteAccount from "@/pages/DeleteAccount";
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -88,6 +89,7 @@ function Router() {
         <Route path="/terms" component={TermsOfService} />
         <Route path="/accept-invite/:token" component={AcceptInvite} />
         <Route path="/about" component={About} />
+        <Route path="/delete-account" component={DeleteAccount} />
         <Route component={Landing} />
       </Switch>
     );
@@ -123,6 +125,7 @@ function Router() {
       <Route path="/accountability" component={Accountability} />
       <Route path="/accept-invite/:token" component={AcceptInvite} />
       <Route path="/account" component={Account} />
+      <Route path="/delete-account" component={DeleteAccount} />
       <Route path="/community" component={Community} />
       <Route path="/community/post/:id" component={Community} />
       <Route path="/community/messages" component={Community} />

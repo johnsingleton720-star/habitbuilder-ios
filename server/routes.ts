@@ -322,6 +322,62 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/user/account", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+
+      await db.delete(coachMessages).where(
+        sql`chat_id IN (SELECT id FROM coach_chats WHERE user_id = ${userId})`
+      );
+      await db.delete(coachChats).where(eq(coachChats.userId, userId));
+      await db.delete(messages).where(eq(messages.senderId, userId));
+      await db.delete(conversations).where(
+        sql`user1_id = ${userId} OR user2_id = ${userId}`
+      );
+      await db.delete(commentLikes).where(eq(commentLikes.userId, userId));
+      await db.delete(postLikes).where(eq(postLikes.userId, userId));
+      await db.delete(profileLikes).where(eq(profileLikes.likedByUserId, userId));
+      await db.delete(forumComments).where(eq(forumComments.userId, userId));
+      await db.delete(forumPosts).where(eq(forumPosts.userId, userId));
+      await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
+      await db.delete(moodEntries).where(eq(moodEntries.userId, userId));
+      await db.delete(quickTasks).where(eq(quickTasks.userId, userId));
+      await db.delete(userAchievements).where(eq(userAchievements.userId, userId));
+      await db.delete(progressReports).where(eq(progressReports.userId, userId));
+      await db.delete(accountabilityPartners).where(
+        sql`user_id = ${userId} OR partner_user_id = ${userId}`
+      );
+      await db.delete(userTemplates).where(eq(userTemplates.userId, userId));
+      await db.delete(habits).where(eq(habits.userId, userId));
+      await db.delete(feedback).where(eq(feedback.userId, userId));
+      await db.delete(pageViews).where(eq(pageViews.userId, userId));
+
+      const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+      if (user?.stripeCustomerId) {
+        try {
+          const stripe = await getUncachableStripeClient();
+          const subscriptions = await stripe.subscriptions.list({
+            customer: user.stripeCustomerId,
+            status: 'active',
+          });
+          for (const sub of subscriptions.data) {
+            await stripe.subscriptions.cancel(sub.id);
+          }
+        } catch (stripeErr) {
+          console.error("Error cancelling Stripe subscription:", stripeErr);
+        }
+      }
+
+      await db.delete(users).where(eq(users.id, userId));
+
+      req.logout(() => {});
+      res.json({ success: true, message: "Account and all data deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   app.post("/api/admin/send-daily-reminders", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
