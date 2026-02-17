@@ -10,6 +10,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots } from "@shared/schema";
 import crypto from "crypto";
+import path from "path";
 import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
 
@@ -136,6 +137,11 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
+
+  app.get("/playstore-assets.zip", (_req, res) => {
+    const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "playstore-assets.zip");
+    res.download(filePath, "playstore-assets.zip");
+  });
 
   app.get("/.well-known/assetlinks.json", (_req, res) => {
     res.json([{
