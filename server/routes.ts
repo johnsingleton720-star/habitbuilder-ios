@@ -164,7 +164,8 @@ export async function registerRoutes(
       host.endsWith(".replit.app") &&
       (req.method === "GET" || req.method === "HEAD") &&
       !req.path.startsWith("/api/") &&
-      !req.path.startsWith("/.well-known/")
+      !req.path.startsWith("/.well-known/") &&
+      !req.path.endsWith(".zip")
     ) {
       const target = `https://${PRIMARY_DOMAIN}${req.originalUrl}`;
       return res.redirect(301, target);
