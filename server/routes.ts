@@ -142,7 +142,7 @@ export async function registerRoutes(
       relation: ["delegate_permission/common.handle_all_urls"],
       target: {
         namespace: "android_app",
-        package_name: "pro.habitbuilder.app",
+        package_name: "pro.habitbuilder.twa",
         sha256_cert_fingerprints: [
           "87:AF:FE:EB:3E:7E:2E:1B:D4:5A:58:C7:48:E2:75:FF:74:36:7F:C5:3C:51:EE:15:5E:41:B7:D7:F3:A0:A1:65"
         ]
