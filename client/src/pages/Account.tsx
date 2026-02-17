@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star } from "lucide-react";
+import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -1127,6 +1127,16 @@ export default function Account() {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
+              <Link href="/delete-account">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                  data-testid="button-delete-account"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>
