@@ -11,6 +11,13 @@
   "orientation": "portrait-primary",
   "categories": ["health", "lifestyle", "productivity"],
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=pro.habitbuilder.app",
+      "id": "pro.habitbuilder.app"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-48.png",
