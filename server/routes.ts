@@ -4595,6 +4595,62 @@ Return JSON with:
     }
   });
 
+  app.get("/api/admin/users/:userId/activity", isAuthenticated, async (req: any, res) => {
+    try {
+      const adminId = req.user!.claims.sub;
+      const admin = await storage.getUser(adminId);
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { userId } = req.params;
+      const targetUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!targetUser.length) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userHabits = await db.select({
+        id: habits.id,
+        title: habits.title,
+        currentStreak: habits.currentStreak,
+        longestStreak: habits.longestStreak,
+        totalTimeSpent: habits.totalTimeSpent,
+        setupComplete: habits.setupComplete,
+        archived: habits.archived,
+        category: habits.category,
+        createdAt: habits.createdAt,
+      }).from(habits).where(eq(habits.userId, userId));
+
+      const user = targetUser[0];
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus,
+          hasPaid: user.hasPaid,
+          stripeCustomerId: user.stripeCustomerId,
+          trialEndsAt: user.trialEndsAt,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          xpPoints: user.xpPoints,
+          level: user.level,
+          dailyChallengesCompleted: user.dailyChallengesCompleted,
+          onboardingComplete: user.onboardingComplete,
+          timezone: user.timezone,
+          isFoundingMember: user.isFoundingMember,
+          billingInterval: user.billingInterval,
+        },
+        habits: userHabits,
+      });
+    } catch (error) {
+      console.error("Error fetching user activity:", error);
+      res.status(500).json({ error: "Failed to fetch user activity" });
+    }
+  });
+
   app.patch("/api/admin/users/:userId/subscription", isAuthenticated, async (req: any, res) => {
     try {
       const adminId = req.user!.claims.sub;
