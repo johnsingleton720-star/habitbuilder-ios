@@ -211,29 +211,35 @@ function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             Sign in securely with your existing account. No new password to remember.
           </p>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+            <button
+              onClick={handleContinue}
+              className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 w-full text-left hover-elevate cursor-pointer"
+              data-testid="button-continue-google"
+            >
               <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center shrink-0">
                 <SiGoogle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">Continue with Google</p>
                 <p className="text-xs text-muted-foreground">Use your Gmail or Google account</p>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </button>
+            <button
+              onClick={handleContinue}
+              className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 w-full text-left hover-elevate cursor-pointer"
+              data-testid="button-continue-apple"
+            >
               <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center shrink-0">
                 <SiApple className="w-5 h-5" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">Continue with Apple</p>
                 <p className="text-xs text-muted-foreground">Use your Apple ID</p>
               </div>
-            </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </button>
           </div>
-          <Button onClick={handleContinue} className="w-full" size="lg" data-testid="button-continue-to-login">
-            Continue
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
