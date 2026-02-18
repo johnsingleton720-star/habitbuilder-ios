@@ -240,6 +240,9 @@ function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenCh
               <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </button>
           </div>
+          <p className="text-xs text-center text-muted-foreground bg-muted/40 rounded-lg p-3">
+            You'll be taken to a secure login page powered by Replit. Just tap <span className="font-semibold text-foreground">Allow</span> to sign in with your Google or Apple account.
+          </p>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
