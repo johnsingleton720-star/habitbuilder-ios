@@ -1,7 +1,7 @@
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Menu, X, ArrowRight, ShieldCheck, CreditCard } from "lucide-react";
+import { Menu, X, ArrowRight, ShieldCheck, CreditCard, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { SiGoogle, SiApple } from "react-icons/si";
 import {
@@ -56,9 +56,28 @@ function NavLoginDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
               </div>
               <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </button>
+            <div className="relative flex items-center py-1">
+              <div className="flex-1 border-t border-border/50" />
+              <span className="px-3 text-xs text-muted-foreground">or</span>
+              <div className="flex-1 border-t border-border/50" />
+            </div>
+            <button
+              onClick={handleContinue}
+              className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 w-full text-left hover-elevate cursor-pointer"
+              data-testid="button-nav-continue-email"
+            >
+              <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center shrink-0">
+                <LogIn className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">Continue with Email</p>
+                <p className="text-xs text-muted-foreground">Create an account with email & password</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </button>
           </div>
           <p className="text-xs text-center text-muted-foreground bg-muted/40 rounded-lg p-3">
-            You'll be taken to a secure login page powered by Replit. Just tap <span className="font-semibold text-foreground">Allow</span> to sign in with your Google or Apple account.
+            You'll be taken to a secure login page powered by Replit. Just tap <span className="font-semibold text-foreground">Allow</span> to sign in — or create a new account with email & password.
           </p>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
