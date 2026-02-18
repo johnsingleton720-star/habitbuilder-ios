@@ -485,11 +485,6 @@ export default function Landing() {
     staleTime: 30000,
   });
 
-  const { data: publicStats } = useQuery<{ users: number; habits: number }>({
-    queryKey: ['/api/public-stats'],
-    staleTime: 60000,
-  });
-
   const hasTopBannerSlots = topSlotsData && (
     (topSlotsData.pro?.remaining > 0 && topSlotsData.pro?.active) ||
     (topSlotsData.premium?.remaining > 0 && topSlotsData.premium?.active)
@@ -668,12 +663,6 @@ export default function Landing() {
                 <span>Cancel anytime</span>
               </div>
             </div>
-            {publicStats && publicStats.users > 0 && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="text-social-proof">
-                <Users className="w-3.5 h-3.5 text-primary/70" />
-                <span>Join {publicStats.users}+ people building better habits</span>
-              </div>
-            )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <LoginTroubleshootDialog />
               <a href="https://replit.com/forgot" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline" data-testid="link-forgot-password">
