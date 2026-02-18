@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -14,6 +14,13 @@ import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { PublicNav } from "@/components/PublicNav";
 import { useQuery } from "@tanstack/react-query";
+import { SiGoogle, SiApple } from "react-icons/si";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const habitGoals = [
   {
@@ -176,6 +183,73 @@ interface AIPlan {
   stackSuggestion?: string;
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
+function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const handleContinue = () => {
+    onOpenChange(false);
+    window.location.href = "/api/login";
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md" data-testid="dialog-login-transition">
+        <DialogHeader>
+          <DialogTitle className="text-center text-xl font-display">Create your account in seconds</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <p className="text-center text-muted-foreground text-sm">
+            Sign in securely with your existing account. No new password to remember.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+              <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center shrink-0">
+                <SiGoogle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Continue with Google</p>
+                <p className="text-xs text-muted-foreground">Use your Gmail or Google account</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+              <div className="w-10 h-10 rounded-full bg-background border flex items-center justify-center shrink-0">
+                <SiApple className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Continue with Apple</p>
+                <p className="text-xs text-muted-foreground">Use your Apple ID</p>
+              </div>
+            </div>
+          </div>
+          <Button onClick={handleContinue} className="w-full" size="lg" data-testid="button-continue-to-login">
+            Continue
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Secure & encrypted</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>No credit card needed</span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   const [isAnnual, setIsAnnual] = useState(false);
   const { data: slotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
@@ -195,11 +269,11 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   );
 
   return (
-    <section className="py-24 px-6" id="pricing" aria-label="Pricing plans">
+    <section className="py-16 md:py-24 px-4 sm:px-6" id="pricing" aria-label="Pricing plans">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+        <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+          <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
+          <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
             Start with 1 habit free forever, then upgrade for unlimited habits. Cancel anytime.
           </p>
         </div>
@@ -229,235 +303,205 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
         )}
 
         {isAnnual ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto mb-8"
-          >
-            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/15 dark:via-primary/10 dark:to-primary/15 border border-primary/30 rounded-lg px-6 py-4 text-center" data-testid="banner-landing-founding">
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/15 dark:via-primary/10 dark:to-primary/15 border border-primary/30 rounded-lg px-4 sm:px-6 py-4 text-center" data-testid="banner-landing-founding">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Star className="w-5 h-5 text-primary" />
-                <span className="font-display font-bold text-lg">Founding Member Annual Plans</span>
+                <span className="font-display font-bold text-base md:text-lg">Founding Member Annual Plans</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Limited spots for early supporters. Lock in exclusive annual pricing before it's gone forever.
               </p>
             </div>
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-2xl mx-auto mb-8"
-          >
-            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-6 py-4 text-center" data-testid="banner-promo-premium50">
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="relative bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 dark:from-amber-500/15 dark:via-amber-400/10 dark:to-amber-500/15 border border-amber-500/30 rounded-lg px-4 sm:px-6 py-4 text-center" data-testid="banner-promo-premium50">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Crown className="w-5 h-5 text-amber-500" />
-                <span className="font-display font-bold text-lg">Launch Special: 50% Off Premium</span>
+                <span className="font-display font-bold text-base md:text-lg">Launch Special: 50% Off Premium</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Use code <span className="font-mono font-bold text-foreground bg-amber-500/10 px-2 py-0.5 rounded">Premium50</span> at checkout to get your first month for just <span className="font-semibold text-foreground">$7.50</span>. Offer expires March 9th.
               </p>
             </div>
-          </motion.div>
+          </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0 }}
-          >
-            <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
-              <CardContent className="pt-6 flex-1 flex flex-col">
-                <div className="text-center mb-6">
-                  <div className="inline-flex justify-center mb-3">
-                    <Leaf className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Free forever</p>
-                  <div className="mt-3">
-                    <span className="text-4xl font-display font-bold">$0</span>
-                  </div>
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
+          <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
+            <CardContent className="pt-6 flex-1 flex flex-col">
+              <div className="text-center mb-6">
+                <div className="inline-flex justify-center mb-3">
+                  <Leaf className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <ul className="space-y-2.5 flex-1">
-                  {[
-                    "1 habit",
-                    "AI coaching interview",
-                    "Personalized action plans",
-                    "Basic streaks & tracking",
-                    "Habit templates library",
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                  {[
-                    "Advanced analytics",
-                    "Community forum (coming soon)",
-                    "Voice notes",
-                  ].map((f, i) => (
-                    <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <X className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
-                  Get Started Free
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
+                <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
+                <p className="text-sm text-muted-foreground mt-1">Free forever</p>
+                <div className="mt-3">
+                  <span className="text-4xl font-display font-bold">$0</span>
+                </div>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {[
+                  "1 habit",
+                  "AI coaching interview",
+                  "Personalized action plans",
+                  "Basic streaks & tracking",
+                  "Habit templates library",
+                ].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+                {[
+                  "Advanced analytics",
+                  "Community forum (coming soon)",
+                  "Voice notes",
+                ].map((f, i) => (
+                  <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <X className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
+                Get Started Free
+              </Button>
+            </CardContent>
+          </Card>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-primary shadow-lg shadow-primary/20' : 'border-primary shadow-lg shadow-primary/20'}`} data-testid="card-pricing-pro">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                {isAnnual ? 'Founding Member' : 'Most Popular'}
+          <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-primary shadow-lg shadow-primary/20' : 'border-primary shadow-lg shadow-primary/20'}`} data-testid="card-pricing-pro">
+            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+              {isAnnual ? 'Founding Member' : 'Most Popular'}
+            </Badge>
+            <CardContent className="pt-6 flex-1 flex flex-col">
+              <div className="text-center mb-6">
+                <div className="inline-flex justify-center mb-3">
+                  <Sparkles className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
+                <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
+                <div className="mt-3">
+                  {isAnnual ? (
+                    <>
+                      <span className="text-lg text-muted-foreground line-through">$6/mo</span>
+                      <br />
+                      <span className="text-4xl font-display font-bold text-primary">$4</span>
+                      <span className="text-muted-foreground">/mo</span>
+                      <span className="block text-sm text-muted-foreground mt-1">$48/year, billed annually</span>
+                      <Badge variant="secondary" className="mt-1 text-xs">Save $24/year</Badge>
+                      {slotsData?.pro && (
+                        <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-pro-slots">
+                          {slotsData.pro.remaining > 0 ? (
+                            <>{slotsData.pro.remaining} of {slotsData.pro.total} spots left</>
+                          ) : (
+                            <span className="text-destructive font-medium">Sold Out</span>
+                          )}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-display font-bold text-primary">$6</span>
+                      <span className="text-muted-foreground">/month</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {[
+                  "Unlimited habits",
+                  "AI coaching & action plans",
+                  "Guided sessions with summaries",
+                  "Streaks & achievements",
+                  "XP & leveling system",
+                  "Weekly reports",
+                  "Community forum (coming soon)",
+                  "Habit templates library",
+                ].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
+                {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-amber-500/50 shadow-lg shadow-amber-500/10' : ''}`} data-testid="card-pricing-premium">
+            {isAnnual && (
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500">
+                Founding Member
               </Badge>
-              <CardContent className="pt-6 flex-1 flex flex-col">
-                <div className="text-center mb-6">
-                  <div className="inline-flex justify-center mb-3">
-                    <Sparkles className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
-                  <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
-                  <div className="mt-3">
-                    {isAnnual ? (
-                      <>
-                        <span className="text-lg text-muted-foreground line-through">$6/mo</span>
-                        <br />
-                        <span className="text-4xl font-display font-bold text-primary">$4</span>
-                        <span className="text-muted-foreground">/mo</span>
-                        <span className="block text-sm text-muted-foreground mt-1">$48/year, billed annually</span>
-                        <Badge variant="secondary" className="mt-1 text-xs">Save $24/year</Badge>
-                        {slotsData?.pro && (
-                          <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-pro-slots">
-                            {slotsData.pro.remaining > 0 ? (
-                              <>{slotsData.pro.remaining} of {slotsData.pro.total} spots left</>
-                            ) : (
-                              <span className="text-destructive font-medium">Sold Out</span>
-                            )}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-4xl font-display font-bold text-primary">$6</span>
-                        <span className="text-muted-foreground">/month</span>
-                        <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
-                      </>
-                    )}
-                  </div>
+            )}
+            <CardContent className="pt-6 flex-1 flex flex-col">
+              <div className="text-center mb-6">
+                <div className="inline-flex justify-center mb-3">
+                  <Crown className="w-8 h-8 text-amber-500" />
                 </div>
-                <ul className="space-y-2.5 flex-1">
-                  {[
-                    "Unlimited habits",
-                    "AI coaching & action plans",
-                    "Guided sessions with summaries",
-                    "Streaks & achievements",
-                    "XP & leveling system",
-                    "Weekly reports",
-                    "Community forum (coming soon)",
-                    "Habit templates library",
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
-                  {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-amber-500/50 shadow-lg shadow-amber-500/10' : ''}`} data-testid="card-pricing-premium">
-              {isAnnual && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500">
-                  Founding Member
-                </Badge>
-              )}
-              <CardContent className="pt-6 flex-1 flex flex-col">
-                <div className="text-center mb-6">
-                  <div className="inline-flex justify-center mb-3">
-                    <Crown className="w-8 h-8 text-amber-500" />
-                  </div>
-                  <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
-                  <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
-                  <div className="mt-3">
-                    {isAnnual ? (
-                      <>
-                        <span className="text-lg text-muted-foreground line-through">$15/mo</span>
-                        <br />
-                        <span className="text-4xl font-display font-bold text-amber-500">~$12</span>
-                        <span className="text-muted-foreground">/mo</span>
-                        <span className="block text-sm text-muted-foreground mt-1">$140/year, billed annually</span>
-                        <Badge variant="secondary" className="mt-1 text-xs">Save $40/year</Badge>
-                        {slotsData?.premium && (
-                          <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-premium-slots">
-                            {slotsData.premium.remaining > 0 ? (
-                              <>{slotsData.premium.remaining} of {slotsData.premium.total} spots left</>
-                            ) : (
-                              <span className="text-destructive font-medium">Sold Out</span>
-                            )}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-4xl font-display font-bold text-amber-500">$15</span>
-                        <span className="text-muted-foreground">/month</span>
-                        <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
-                      </>
-                    )}
-                  </div>
+                <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
+                <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
+                <div className="mt-3">
+                  {isAnnual ? (
+                    <>
+                      <span className="text-lg text-muted-foreground line-through">$15/mo</span>
+                      <br />
+                      <span className="text-4xl font-display font-bold text-amber-500">~$12</span>
+                      <span className="text-muted-foreground">/mo</span>
+                      <span className="block text-sm text-muted-foreground mt-1">$140/year, billed annually</span>
+                      <Badge variant="secondary" className="mt-1 text-xs">Save $40/year</Badge>
+                      {slotsData?.premium && (
+                        <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-premium-slots">
+                          {slotsData.premium.remaining > 0 ? (
+                            <>{slotsData.premium.remaining} of {slotsData.premium.total} spots left</>
+                          ) : (
+                            <span className="text-destructive font-medium">Sold Out</span>
+                          )}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-display font-bold text-amber-500">$15</span>
+                      <span className="text-muted-foreground">/month</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">USD</span>
+                    </>
+                  )}
                 </div>
-                <ul className="space-y-2.5 flex-1">
-                  {[
-                    "Everything in Pro",
-                    "AI Coach Chat (150 msgs/month)",
-                    "Advanced analytics & trends",
-                    "AI-generated insights & reports",
-                    "Habit stacking & linking",
-                    "Community forum (coming soon)",
-                    "Direct messaging",
-                    "Voice notes",
-                    "Accountability partners",
-                    "Editable templates",
-                    "CSV data export",
-                    "Priority support",
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button onClick={scrollToLogin} variant={isAnnual ? "default" : "outline"} className="w-full mt-6" data-testid="button-pricing-premium">
-                  {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {[
+                  "Everything in Pro",
+                  "AI Coach Chat (150 msgs/month)",
+                  "Advanced analytics & trends",
+                  "AI-generated insights & reports",
+                  "Habit stacking & linking",
+                  "Community forum (coming soon)",
+                  "Direct messaging",
+                  "Voice notes",
+                  "Accountability partners",
+                  "Editable templates",
+                  "CSV data export",
+                  "Priority support",
+                ].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button onClick={scrollToLogin} variant={isAnnual ? "default" : "outline"} className="w-full mt-6" data-testid="button-pricing-premium">
+                {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
@@ -479,6 +523,10 @@ export default function Landing() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [topBannerDismissed, setTopBannerDismissed] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const isMobile = useIsMobile();
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !isMobile && !prefersReducedMotion;
 
   const { data: topSlotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
     queryKey: ['/api/founding-member-slots'],
@@ -503,7 +551,7 @@ export default function Landing() {
   }, []);
 
   const scrollToLogin = () => {
-    window.location.href = "/api/login";
+    setShowLoginDialog(true);
   };
 
   const handleCustomGoalSubmit = async () => {
@@ -523,6 +571,16 @@ export default function Landing() {
       setAiLoading(false);
     }
   };
+
+  const mobileMotion = {
+    initial: { opacity: 1 },
+    animate: { opacity: 1 },
+    whileInView: { opacity: 1 },
+  };
+
+  const fadeUp = shouldAnimate
+    ? { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } }
+    : mobileMotion;
 
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
@@ -568,6 +626,8 @@ export default function Landing() {
       }) }} />
       <PublicNav />
 
+      <LoginTransitionDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
+
       <AnimatePresence>
         {hasTopBannerSlots && !topBannerDismissed && (
           <motion.div
@@ -608,35 +668,34 @@ export default function Landing() {
         )}
       </AnimatePresence>
 
-      <section className={`relative pb-20 lg:pb-32 px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-36 md:pt-44 lg:pt-60' : 'pt-24 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
-        <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
-        <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
+      <section className={`relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-28 md:pt-44 lg:pt-60' : 'pt-20 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
+        {!isMobile && (
+          <>
+            <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
+            <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
+            <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
+          </>
+        )}
         
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-8"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm">
-              <Sparkles className="w-4 h-4" />
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10">
+          <div className="space-y-5 md:space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-accent/10 text-accent font-medium text-xs md:text-sm">
+              <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span>AI-powered habit coaching</span>
             </div>
             
-            <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
-              Build habits that <br />
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
+              Build habits that <br className="hidden sm:block" />
               <span className="text-gradient">actually stick.</span>
             </h1>
             
-            <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
               Your personal AI coach creates custom action plans, guides you through daily sessions, and keeps you motivated with streaks and achievements.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button onClick={scrollToLogin} size="lg" data-testid="button-hero-cta">
-                Get Started Free
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+              <Button onClick={scrollToLogin} size="lg" className="text-base" data-testid="button-hero-cta">
+                Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button
@@ -648,18 +707,26 @@ export default function Landing() {
                 See a Sample Plan
               </Button>
             </div>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <SiGoogle className="w-4 h-4" />
+                <SiApple className="w-4 h-4" />
+              </div>
+              <span>Sign in with Google or Apple — no new password needed</span>
+            </div>
             
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-primary" />
+            <div className="flex flex-wrap items-center gap-x-4 md:gap-x-6 gap-y-2 text-xs md:text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span className="font-medium">No credit card required</span>
               </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>1 habit free forever</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>Cancel anytime</span>
               </div>
             </div>
@@ -669,86 +736,88 @@ export default function Landing() {
                 Forgot your password?
               </a>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative hidden lg:block"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6 animate-pulse-glow" />
-            <div className="relative glass-panel rounded-2xl p-6 shadow-2xl transform -rotate-2 border border-white/40">
-              <div className="space-y-4">
-                {[
-                  { title: "Morning Meditation", progress: 100, icon: "complete" },
-                  { title: "Daily Reading", progress: 60, icon: "active" },
-                  { title: "Evening Walk", progress: 0, icon: "pending" }
-                ].map((item, i) => (
-                  <motion.div 
-                    key={i} 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.4 + i * 0.15 }}
-                    className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm"
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      item.icon === 'complete' ? 'bg-primary/20 text-primary' : 
-                      item.icon === 'active' ? 'bg-accent/20 text-accent' : 
-                      'bg-muted text-muted-foreground'
-                    }`}>
-                      {item.icon === 'complete' && <CheckCircle2 className="w-6 h-6" />}
-                      {item.icon === 'active' && <Sparkles className="w-5 h-5" />}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="text-sm font-medium text-foreground/80">{item.title}</div>
-                      <div className="h-2 bg-foreground/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          className="h-full bg-primary rounded-full" 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.progress}%` }}
-                          transition={{ duration: 0.8, delay: 0.6 + i * 0.15 }}
-                        />
+          {!isMobile && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative hidden lg:block"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6 animate-pulse-glow" />
+              <div className="relative glass-panel rounded-2xl p-6 shadow-2xl transform -rotate-2 border border-white/40">
+                <div className="space-y-4">
+                  {[
+                    { title: "Morning Meditation", progress: 100, icon: "complete" },
+                    { title: "Daily Reading", progress: 60, icon: "active" },
+                    { title: "Evening Walk", progress: 0, icon: "pending" }
+                  ].map((item, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: 0.4 + i * 0.15 }}
+                      className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm"
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        item.icon === 'complete' ? 'bg-primary/20 text-primary' : 
+                        item.icon === 'active' ? 'bg-accent/20 text-accent' : 
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {item.icon === 'complete' && <CheckCircle2 className="w-6 h-6" />}
+                        {item.icon === 'active' && <Sparkles className="w-5 h-5" />}
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex-1 space-y-2">
+                        <div className="text-sm font-medium text-foreground/80">{item.title}</div>
+                        <div className="h-2 bg-foreground/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-primary rounded-full" 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.progress}%` }}
+                            transition={{ duration: 0.8, delay: 0.6 + i * 0.15 }}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
         </div>
       </section>
 
-      <section className="py-24 bg-white/50 dark:bg-card/30" id="try-it" aria-label="Try a sample habit plan">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12 space-y-4">
+      <section className="py-16 md:py-24 bg-white/50 dark:bg-card/30" id="try-it" aria-label="Try a sample habit plan">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 md:mb-12 space-y-3 md:space-y-4">
             <Badge variant="secondary" className="mb-2">
               <Zap className="w-3 h-3 mr-1" />
               Live AI Demo
             </Badge>
-            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-tryit-heading">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-tryit-heading">
               Try it now — type any habit goal
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
               Our AI coach will create a personalized action plan in seconds. Pick a popular goal or type your own.
             </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap text-sm text-muted-foreground pt-2">
+            <div className="flex items-center justify-center gap-3 md:gap-4 flex-wrap text-xs md:text-sm text-muted-foreground pt-2">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>No sign-up needed</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-primary" />
+                <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>Results in seconds</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Target className="w-4 h-4 text-primary" />
+                <Target className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>100% personalized</span>
               </div>
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto mb-8">
+          <div className="max-w-2xl mx-auto mb-6 md:mb-8">
             <div className="flex gap-2">
               <Input
                 placeholder="e.g., Learn Spanish, Run a 5K, Practice guitar..."
@@ -770,7 +839,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 mb-8 md:mb-10">
             {habitGoals.map((goal) => {
               const Icon = goal.icon;
               const isSelected = selectedGoal === goal.id;
@@ -801,17 +870,17 @@ export default function Landing() {
                     }
                   }}
                   disabled={aiLoading}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
+                  className={`flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
                     isSelected
                       ? "border-primary bg-primary/5 dark:bg-primary/10 toggle-elevated"
                       : "border-border/50 bg-white dark:bg-card"
                   }`}
                   data-testid={`button-goal-${goal.id}`}
                 >
-                  <div className={`p-2 rounded-lg ${goal.bgColor}`}>
-                    <Icon className={`w-5 h-5 ${goal.color}`} />
+                  <div className={`p-1.5 md:p-2 rounded-lg ${goal.bgColor}`}>
+                    <Icon className={`w-4 h-4 md:w-5 md:h-5 ${goal.color}`} />
                   </div>
-                  <span className="text-sm font-medium text-center">{goal.label}</span>
+                  <span className="text-xs md:text-sm font-medium text-center leading-tight">{goal.label}</span>
                 </button>
               );
             })}
@@ -824,7 +893,7 @@ export default function Landing() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center py-12"
+                className="text-center py-8 md:py-12"
               >
                 <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
                 <p className="text-muted-foreground">Creating your personalized plan...</p>
@@ -856,11 +925,11 @@ export default function Landing() {
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3 mb-1">
                       <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                        <Sparkles className="w-6 h-6 text-primary" />
+                        <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                       </div>
                       <div>
                         <Badge variant="secondary" className="mb-2">AI Generated</Badge>
-                        <h3 className="font-display text-xl font-bold" data-testid="text-ai-plan-title">
+                        <h3 className="font-display text-lg md:text-xl font-bold" data-testid="text-ai-plan-title">
                           {aiPlan.title}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">{aiPlan.summary}</p>
@@ -1070,27 +1139,23 @@ export default function Landing() {
           </AnimatePresence>
 
           {!selectedGoal && !aiPlan && !aiLoading && !aiError && (
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-sm text-muted-foreground mt-6"
-            >
+            <p className="text-center text-sm text-muted-foreground mt-6">
               Type your own goal above or select a popular one to see an instant plan
-            </motion.p>
+            </p>
           )}
         </div>
       </section>
 
-      <section className="py-20 px-6" aria-label="How it works">
+      <section className="py-14 md:py-20 px-4 sm:px-6" aria-label="How it works">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-how-it-works-heading">How it works</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <div className="text-center mb-10 md:mb-14 space-y-3 md:space-y-4">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-how-it-works-heading">How it works</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
               Three simple steps to build habits that last.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
               {
                 step: "1",
@@ -1113,18 +1178,16 @@ export default function Landing() {
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="text-center space-y-4"
+                {...fadeUp}
+                transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.1 : 0 }}
+                className="text-center space-y-3 md:space-y-4"
                 data-testid={`card-how-it-works-${i}`}
               >
-                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
                   {item.icon}
                 </div>
                 <div className="text-sm font-semibold text-primary">Step {item.step}</div>
-                <h3 className="font-display text-xl font-bold">{item.title}</h3>
+                <h3 className="font-display text-lg md:text-xl font-bold">{item.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
@@ -1132,100 +1195,90 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24" id="features" aria-label="Features">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+      <section className="py-16 md:py-24" id="features" aria-label="Features">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
               More than just a tracker. HabitBuilder.pro is an interactive coach that guides you through every step.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[
               {
-                icon: <Sparkles className="w-7 h-7 text-primary" />,
+                icon: <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-primary" />,
                 title: "AI Coaching Interview",
                 desc: "Answer personalized questions about your goals, and AI creates a tailored action plan just for you."
               },
               {
-                icon: <Target className="w-7 h-7 text-accent" />,
+                icon: <Target className="w-6 h-6 md:w-7 md:h-7 text-accent" />,
                 title: "Guided Sessions",
                 desc: "Step-by-step coaching walks you through each habit with timers, notes, and progress tracking."
               },
               {
-                icon: <Flame className="w-7 h-7 text-orange-500 dark:text-orange-400" />,
+                icon: <Flame className="w-6 h-6 md:w-7 md:h-7 text-orange-500 dark:text-orange-400" />,
                 title: "Streaks & Achievements",
                 desc: "Stay motivated with daily streaks, milestone badges, and a sense of accomplishment."
               },
               {
-                icon: <Trophy className="w-7 h-7 text-amber-500 dark:text-amber-400" />,
+                icon: <Trophy className="w-6 h-6 md:w-7 md:h-7 text-amber-500 dark:text-amber-400" />,
                 title: "XP & Leveling System",
                 desc: "Earn XP through daily challenges, level up from Beginner to Habit Hero across 12 tiers."
               },
               {
-                icon: <BarChart3 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />,
+                icon: <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-emerald-500 dark:text-emerald-400" />,
                 title: "Progress Analytics",
                 desc: "Track your journey with visual charts, completion rates, and mood correlation insights."
               },
               {
-                icon: <Users className="w-7 h-7 text-blue-500 dark:text-blue-400" />,
+                icon: <Users className="w-6 h-6 md:w-7 md:h-7 text-blue-500 dark:text-blue-400" />,
                 title: "Community Forum (Coming Soon)",
                 desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired."
               },
             ].map((feature, i) => (
               <motion.div 
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="bg-white dark:bg-card p-6 rounded-xl border border-border/50"
+                {...fadeUp}
+                transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
+                className="bg-white dark:bg-card p-5 md:p-6 rounded-xl border border-border/50"
                 data-testid={`card-feature-${i}`}
               >
-                <div className="mb-4 p-2.5 bg-background dark:bg-muted rounded-lg w-fit">
+                <div className="mb-3 md:mb-4 p-2 md:p-2.5 bg-background dark:bg-muted rounded-lg w-fit">
                   {feature.icon}
                 </div>
-                <h3 className="font-display text-lg font-bold mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
+                <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mt-12 text-center"
-          >
+          <div className="mt-8 md:mt-12 text-center">
             <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-features">
               Try It Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <p className="mt-3 text-sm text-muted-foreground">No credit card needed</p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Habit Stacking">
+      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" aria-label="Habit Stacking">
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              {...fadeUp}
               transition={{ duration: 0.5 }}
-              className="space-y-6"
+              className="space-y-5 md:space-y-6"
             >
               <Badge variant="secondary" className="gap-1.5">
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
                 Premium Feature
               </Badge>
-              <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-stacking-heading">
+              <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-stacking-heading">
                 Build powerful routines with Habit Stacking
               </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
                 Chain your habits together so finishing one naturally flows into the next. 
                 Based on the proven "habit stacking" technique from behavioral science, 
                 this feature helps you build unstoppable daily routines.
@@ -1250,10 +1303,8 @@ export default function Landing() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.15 }}
+              {...fadeUp}
+              transition={{ duration: 0.5, delay: shouldAnimate ? 0.15 : 0 }}
             >
               <Card data-testid="card-stacking-demo">
                 <CardContent className="pt-6 space-y-3">
@@ -1294,16 +1345,16 @@ export default function Landing() {
 
       <LandingPricing scrollToLogin={scrollToLogin} />
 
-      <section className="py-24 px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
+      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold">What our users say</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold">What our users say</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
               Real feedback from people building better habits.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
             {[
               {
                 quote: "I was skeptical about another habit app, but the AI interview actually understood what I was trying to do. Within a week, I had a morning routine that felt natural instead of forced.",
@@ -1332,11 +1383,9 @@ export default function Landing() {
             ].map((testimonial, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white dark:bg-card p-8 rounded-xl border border-border/50"
+                {...fadeUp}
+                transition={{ duration: 0.5, delay: shouldAnimate ? i * 0.1 : 0 }}
+                className="bg-white dark:bg-card p-6 md:p-8 rounded-xl border border-border/50"
                 data-testid={`card-testimonial-${i}`}
               >
                 <div className="flex gap-1 mb-4">
@@ -1344,7 +1393,7 @@ export default function Landing() {
                     <Sparkles key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
-                <p className="text-foreground/80 leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
+                <p className="text-foreground/80 leading-relaxed mb-6 italic text-sm md:text-base">"{testimonial.quote}"</p>
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div>
                     <p className="font-semibold text-foreground">{testimonial.name}</p>
@@ -1361,15 +1410,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24 px-6" id="faq" aria-label="Frequently asked questions">
+      <section className="py-16 md:py-24 px-4 sm:px-6" id="faq" aria-label="Frequently asked questions">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-faq-heading">Frequently Asked Questions</h2>
-            <p className="text-muted-foreground text-lg">
+          <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-faq-heading">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground text-base md:text-lg">
               Everything you need to know before getting started.
             </p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {[
               {
                 q: "Is HabitBuilder really free to start?",
@@ -1392,65 +1441,58 @@ export default function Landing() {
                 a: "Pro ($6/month) gives you unlimited habits, guided sessions, achievements, and weekly reports. Premium ($15/month) adds AI Coach Chat, advanced analytics, habit stacking with unified routines, accountability partners, voice notes, and CSV data export."
               },
               {
-                q: "Does it work on mobile?",
-                a: "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support."
+                q: "How do I sign up?",
+                a: "Just click any 'Get Started' button and sign in with your Google or Apple account. It takes about 30 seconds — no new password to create or remember. You'll be building your first habit right away."
               },
             ].map((faq, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="border border-border/50 rounded-lg p-6"
+                {...fadeUp}
+                transition={{ delay: shouldAnimate ? i * 0.05 : 0 }}
+                className="border border-border/50 rounded-lg p-4 md:p-6"
                 data-testid={`faq-item-${i}`}
               >
-                <h3 className="font-display font-semibold text-lg mb-2">{faq.q}</h3>
-                <p className="text-muted-foreground leading-relaxed">{faq.a}</p>
+                <h3 className="font-display font-semibold text-base md:text-lg mb-2">{faq.q}</h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{faq.a}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="space-y-6"
-          >
-            <h2 className="font-display text-3xl lg:text-4xl font-bold">
+      <section className="py-14 md:py-20 px-4 sm:px-6 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5">
+        <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8">
+          <div className="space-y-4 md:space-y-6">
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold">
               Every day you wait is a day without progress
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
               The best time to start was yesterday. The second best time is right now. Your future self will thank you for taking action today.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-urgency">
-                Get Started Free
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 pt-2 md:pt-4">
+              <Button onClick={scrollToLogin} size="lg" className="text-base" data-testid="button-cta-urgency">
+                Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 md:gap-x-6 gap-y-2 text-xs md:text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4 text-primary" />
+                <SiGoogle className="w-3.5 h-3.5" />
+                <SiApple className="w-3.5 h-3.5" />
+                <span>Google or Apple sign-in</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                 <span>No credit card required</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-primary" />
-                <span>Set up in under 2 minutes</span>
-              </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      <footer className="py-12 border-t border-border" role="contentinfo">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <footer className="py-8 md:py-12 border-t border-border" role="contentinfo">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <div className="space-y-4">
               <LogoFooter />
               <p className="text-xs text-muted-foreground max-w-md">
@@ -1488,7 +1530,7 @@ export default function Landing() {
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
