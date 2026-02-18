@@ -35,9 +35,177 @@ interface AdminUser {
   createdAt: string;
 }
 
+interface UserActivity {
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    subscriptionTier: string;
+    subscriptionStatus: string;
+    hasPaid: boolean;
+    stripeCustomerId: string;
+    trialEndsAt: string;
+    createdAt: string;
+    updatedAt: string;
+    xpPoints: number;
+    level: number;
+    dailyChallengesCompleted: number;
+    onboardingComplete: boolean;
+    timezone: string;
+    isFoundingMember: boolean;
+    billingInterval: string;
+  };
+  habits: {
+    id: number;
+    title: string;
+    currentStreak: number;
+    longestStreak: number;
+    totalTimeSpent: number;
+    setupComplete: boolean;
+    archived: boolean;
+    category: string;
+    createdAt: string;
+  }[];
+}
+
+function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { data, isLoading } = useQuery<UserActivity>({
+    queryKey: ['/api/admin/users', userId, 'activity'],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/users/${userId}/activity`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-4 border rounded-md bg-muted/30">
+        <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" /></div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { user, habits: userHabits } = data;
+  const activeHabits = userHabits.filter(h => !h.archived);
+  const totalMinutes = userHabits.reduce((sum, h) => sum + (h.totalTimeSpent || 0), 0);
+  const bestStreak = Math.max(0, ...userHabits.map(h => h.longestStreak || 0));
+
+  return (
+    <div className="p-4 border rounded-md bg-muted/30 space-y-4" data-testid={`user-activity-panel-${userId}`}>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <p className="font-semibold text-sm">{user.firstName} {user.lastName}</p>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
+        </div>
+        <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-activity">
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="text-center p-2 rounded-md bg-background border">
+          <p className="text-lg font-bold">{user.level || 0}</p>
+          <p className="text-xs text-muted-foreground">Level</p>
+        </div>
+        <div className="text-center p-2 rounded-md bg-background border">
+          <p className="text-lg font-bold">{user.xpPoints || 0}</p>
+          <p className="text-xs text-muted-foreground">XP</p>
+        </div>
+        <div className="text-center p-2 rounded-md bg-background border">
+          <p className="text-lg font-bold">{bestStreak}</p>
+          <p className="text-xs text-muted-foreground">Best Streak</p>
+        </div>
+        <div className="text-center p-2 rounded-md bg-background border">
+          <p className="text-lg font-bold">{totalMinutes < 60 ? `${totalMinutes}m` : `${Math.round(totalMinutes / 60)}h`}</p>
+          <p className="text-xs text-muted-foreground">Time Invested</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Tier:</span>
+          <Badge variant={user.subscriptionTier === 'premium' ? 'default' : user.subscriptionTier === 'pro' ? 'secondary' : 'outline'} className="text-xs">
+            {user.subscriptionTier || 'free'}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Status:</span>
+          <span className="font-medium">{user.subscriptionStatus || 'none'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Joined:</span>
+          <span className="font-medium">{user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Timezone:</span>
+          <span className="font-medium truncate max-w-[120px]">{user.timezone || 'Not set'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Onboarding:</span>
+          <span className="font-medium">{user.onboardingComplete ? 'Complete' : 'Incomplete'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Founding:</span>
+          <span className="font-medium">{user.isFoundingMember ? 'Yes' : 'No'}</span>
+        </div>
+        {user.billingInterval && (
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-muted-foreground">Billing:</span>
+            <span className="font-medium">{user.billingInterval}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-muted-foreground">Challenges:</span>
+          <span className="font-medium">{user.dailyChallengesCompleted || 0}</span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold mb-2">Habits ({activeHabits.length} active, {userHabits.length - activeHabits.length} archived)</p>
+        {userHabits.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">No habits created yet</p>
+        ) : (
+          <div className="space-y-1.5">
+            {userHabits.map((h) => (
+              <div key={h.id} className={`flex items-center justify-between gap-2 p-2 rounded-md text-xs border ${h.archived ? 'opacity-50' : ''}`} data-testid={`habit-row-${h.id}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate">{h.title}</p>
+                  <div className="flex items-center gap-2 flex-wrap text-muted-foreground">
+                    {h.category && <span>{h.category}</span>}
+                    {h.archived && <span className="text-orange-500">(archived)</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-center">
+                    <p className="font-bold">{h.currentStreak || 0}</p>
+                    <p className="text-muted-foreground leading-none">streak</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold">{h.longestStreak || 0}</p>
+                    <p className="text-muted-foreground leading-none">best</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold">{(h.totalTimeSpent || 0) < 60 ? `${h.totalTimeSpent || 0}m` : `${Math.round((h.totalTimeSpent || 0) / 60)}h`}</p>
+                    <p className="text-muted-foreground leading-none">time</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminUserManager() {
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedTier, setSelectedTier] = useState<string>("premium");
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -69,6 +237,7 @@ function AdminUserManager() {
       <div className="flex items-center gap-2">
         <Users className="w-4 h-4" />
         <span className="font-medium text-sm">User Management</span>
+        {allUsers && <Badge variant="outline" className="text-xs">{allUsers.length} total</Badge>}
       </div>
       <Input
         placeholder="Search by email or user ID..."
@@ -79,38 +248,50 @@ function AdminUserManager() {
       {isLoading ? (
         <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
       ) : (
-        <div className="space-y-2 max-h-60 overflow-y-auto">
+        <div className="space-y-2 max-h-[500px] overflow-y-auto">
           {filteredUsers?.map((u) => (
-            <div key={u.id} className="flex items-center justify-between gap-2 p-2 border rounded-md text-sm" data-testid={`admin-user-row-${u.id}`}>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{u.email || u.id}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={u.subscriptionTier === 'premium' ? 'default' : u.subscriptionTier === 'pro' ? 'secondary' : 'outline'}>
-                    {u.subscriptionTier || 'free'}
-                  </Badge>
-                  {u.hasPaid && <Badge variant="outline">Paid</Badge>}
+            <div key={u.id} className="space-y-2">
+              <div
+                className="flex items-center justify-between gap-2 p-2 border rounded-md text-sm hover-elevate cursor-pointer"
+                onClick={() => setExpandedUserId(expandedUserId === u.id ? null : u.id)}
+                data-testid={`admin-user-row-${u.id}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{u.email || u.id}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={u.subscriptionTier === 'premium' ? 'default' : u.subscriptionTier === 'pro' ? 'secondary' : 'outline'}>
+                      {u.subscriptionTier || 'free'}
+                    </Badge>
+                    {u.hasPaid && <Badge variant="outline">Paid</Badge>}
+                    <span className="text-xs text-muted-foreground">
+                      {u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : ''}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Select defaultValue={u.subscriptionTier || 'free'} onValueChange={(val) => setSelectedTier(val)}>
+                    <SelectTrigger className="w-24" data-testid={`select-tier-${u.id}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="pro">Pro</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={() => updateMutation.mutate({ userId: u.id, tier: selectedTier, hasPaid: selectedTier !== 'free' })}
+                    disabled={updateMutation.isPending}
+                    data-testid={`button-update-tier-${u.id}`}
+                  >
+                    {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Select defaultValue={u.subscriptionTier || 'free'} onValueChange={(val) => setSelectedTier(val)}>
-                  <SelectTrigger className="w-24" data-testid={`select-tier-${u.id}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  size="sm"
-                  onClick={() => updateMutation.mutate({ userId: u.id, tier: selectedTier, hasPaid: selectedTier !== 'free' })}
-                  disabled={updateMutation.isPending}
-                  data-testid={`button-update-tier-${u.id}`}
-                >
-                  {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                </Button>
-              </div>
+              {expandedUserId === u.id && (
+                <UserActivityPanel userId={u.id} onClose={() => setExpandedUserId(null)} />
+              )}
             </div>
           ))}
           {filteredUsers?.length === 0 && <p className="text-muted-foreground text-center text-sm py-2">No users found</p>}
