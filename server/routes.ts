@@ -4829,6 +4829,19 @@ Return JSON with:
     }
   });
 
+  app.get("/api/public-stats", async (_req, res) => {
+    try {
+      const totalUsers = await db.select({ count: sql<number>`count(*)` }).from(users);
+      const totalHabits = await db.select({ count: sql<number>`count(*)` }).from(habits);
+      res.json({
+        users: Number(totalUsers[0]?.count || 0),
+        habits: Number(totalHabits[0]?.count || 0),
+      });
+    } catch (e) {
+      res.json({ users: 0, habits: 0 });
+    }
+  });
+
   // Public demo: generate a sample habit plan using AI (rate-limited, no auth required)
   const demoPlanLimiter = new Map<string, { count: number; resetAt: number }>();
   app.post("/api/demo-plan", async (req, res) => {

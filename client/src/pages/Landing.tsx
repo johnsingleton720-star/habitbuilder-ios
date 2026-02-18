@@ -485,6 +485,11 @@ export default function Landing() {
     staleTime: 30000,
   });
 
+  const { data: publicStats } = useQuery<{ users: number; habits: number }>({
+    queryKey: ['/api/public-stats'],
+    staleTime: 60000,
+  });
+
   const hasTopBannerSlots = topSlotsData && (
     (topSlotsData.pro?.remaining > 0 && topSlotsData.pro?.active) ||
     (topSlotsData.premium?.remaining > 0 && topSlotsData.premium?.active)
@@ -663,6 +668,12 @@ export default function Landing() {
                 <span>Cancel anytime</span>
               </div>
             </div>
+            {publicStats && publicStats.users > 0 && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="text-social-proof">
+                <Users className="w-3.5 h-3.5 text-primary/70" />
+                <span>Join {publicStats.users}+ people building better habits</span>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <LoginTroubleshootDialog />
               <a href="https://replit.com/forgot" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline" data-testid="link-forgot-password">
@@ -1081,7 +1092,58 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-24" aria-label="Features">
+      <section className="py-20 px-6" aria-label="How it works">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14 space-y-4">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-how-it-works-heading">How it works</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Three simple steps to build habits that last.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "1",
+                icon: <MessageCircle className="w-6 h-6" />,
+                title: "Tell us your goal",
+                desc: "Our AI coach asks a few quick questions about your lifestyle, schedule, and what you want to achieve."
+              },
+              {
+                step: "2",
+                icon: <Calendar className="w-6 h-6" />,
+                title: "Get your custom plan",
+                desc: "You'll receive a personalized daily, weekly, and monthly action plan built around your life — not a one-size-fits-all checklist."
+              },
+              {
+                step: "3",
+                icon: <TrendingUp className="w-6 h-6" />,
+                title: "Build momentum",
+                desc: "Follow guided sessions, track your streaks, earn XP, and watch your consistency grow day by day."
+              }
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="text-center space-y-4"
+                data-testid={`card-how-it-works-${i}`}
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                  {item.icon}
+                </div>
+                <div className="text-sm font-semibold text-primary">Step {item.step}</div>
+                <h3 className="font-display text-xl font-bold">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24" id="features" aria-label="Features">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="font-display text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
