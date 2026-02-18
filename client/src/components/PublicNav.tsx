@@ -108,9 +108,14 @@ export function PublicNav() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
-  const handleLoginClick = () => {
+  const handleSignUpClick = () => {
     setMobileMenuOpen(false);
     setShowLoginDialog(true);
+  };
+
+  const handleSignInClick = () => {
+    setMobileMenuOpen(false);
+    window.location.href = "/api/login";
   };
 
   return (
@@ -138,10 +143,10 @@ export function PublicNav() {
                 About
               </Button>
             </Link>
-            <Button onClick={handleLoginClick} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
+            <Button onClick={handleSignInClick} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
               Sign In
             </Button>
-            <Button onClick={handleLoginClick} data-testid="button-nav-get-started">
+            <Button onClick={handleSignUpClick} data-testid="button-nav-get-started">
               Get Started Free
             </Button>
           </div>
@@ -176,10 +181,10 @@ export function PublicNav() {
                   About
                 </Button>
               </Link>
-              <Button onClick={handleLoginClick} variant="ghost" className="w-full justify-start font-medium text-muted-foreground" data-testid="button-nav-signin-mobile">
+              <Button onClick={handleSignInClick} variant="ghost" className="w-full justify-start font-medium text-muted-foreground" data-testid="button-nav-signin-mobile">
                 Sign In
               </Button>
-              <Button onClick={handleLoginClick} className="w-full mt-2" data-testid="button-nav-get-started-mobile">
+              <Button onClick={handleSignUpClick} className="w-full mt-2" data-testid="button-nav-get-started-mobile">
                 Get Started Free
               </Button>
             </div>
