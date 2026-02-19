@@ -3670,6 +3670,44 @@ REQUIREMENTS:
     }
   });
 
+  app.get("/api/free-session-usage", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      
+      if (!isFreeUser) {
+        return res.json({ unlimited: true, used: 0, limit: 0 });
+      }
+
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const weekStart = format(monday, 'yyyy-MM-dd');
+
+      const allHabits = await storage.getHabits(userId);
+      let weeklySessionCount = 0;
+      for (const h of allHabits) {
+        const progress = h.progress || [];
+        weeklySessionCount += progress.filter((p: any) => p.date >= weekStart).length;
+      }
+
+      const nextMonday = new Date(monday);
+      nextMonday.setDate(nextMonday.getDate() + 7);
+
+      return res.json({ 
+        unlimited: false,
+        used: weeklySessionCount,
+        limit: 3,
+        resetsAt: nextMonday.toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Save session notes and progress
   app.post("/api/habits/:id/session-complete", isAuthenticated, async (req: any, res) => {
     try {

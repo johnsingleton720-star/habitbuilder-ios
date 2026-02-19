@@ -69,6 +69,11 @@ export default function HabitDetail() {
     enabled: features.hasHabitStacking,
   });
 
+  const { data: sessionUsage } = useQuery<{ unlimited: boolean; used: number; limit: number; resetsAt?: string }>({
+    queryKey: ["/api/free-session-usage"],
+    enabled: isFreeUser,
+  });
+
   const linkHabitMutation = useMutation({
     mutationFn: async (linkedHabitId: number) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/link`, { linkedHabitId });
@@ -314,6 +319,58 @@ export default function HabitDetail() {
       </header>
 
       <main className="container max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {isFreeUser && sessionUsage && !sessionUsage.unlimited && (
+          <Card className="border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10" data-testid="card-session-tracker">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-8 h-8 rounded-md flex items-center justify-center border transition-colors",
+                          i < sessionUsage.used
+                            ? "bg-primary/15 border-primary/30 text-primary"
+                            : "bg-muted/50 border-border text-muted-foreground"
+                        )}
+                        data-testid={`session-slot-${i}`}
+                      >
+                        {i < sessionUsage.used ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 opacity-40" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {sessionUsage.used >= 3
+                        ? "All sessions used this week"
+                        : `${3 - sessionUsage.used} session${3 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {sessionUsage.used >= 3
+                        ? "New sessions available Monday"
+                        : "Free plan: 3 sessions per week"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/paywall")}
+                  className="gap-1.5"
+                  data-testid="button-upgrade-sessions"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  Unlimited Sessions
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Setup Not Complete Message */}
         {!habit.setupComplete && (
           <Card className="border-primary/20 bg-primary/5">

@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -421,7 +421,7 @@ export default function Account() {
   usePageTitle("Account");
   const { user, logout } = useAuth();
   const { hasPaid, isTrialActive, trialEndsAt } = usePaymentStatus();
-  const { tier, isPro, isPremium } = useSubscription();
+  const { tier, isPro, isPremium, isFreeUser } = useSubscription();
   const { data: habits } = useHabits();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -814,6 +814,33 @@ export default function Account() {
                   <span className="text-sm text-amber-800 dark:text-amber-200">
                     Trial ends {format(new Date(trialEndsAt), "MMM d, yyyy 'at' h:mm a")}
                   </span>
+                </div>
+              )}
+
+              {isFreeUser && !isTrialActive && (
+                <div className="p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10" data-testid="card-account-upgrade">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">You're currently on the free demo</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        1 habit, 3 sessions/week, no AI summaries or streaks. Upgrade to unlock the full experience.
+                      </p>
+                      <Link href="/paywall">
+                        <Button
+                          size="sm"
+                          className="gap-1.5 mt-3"
+                          data-testid="button-account-upgrade"
+                        >
+                          <Crown className="w-3.5 h-3.5" />
+                          See Plans
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               )}
 
