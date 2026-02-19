@@ -195,8 +195,19 @@ function useIsMobile() {
 }
 
 function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const handleContinue = () => {
+  const handleContinue = async () => {
     onOpenChange(false);
+    const stored = sessionStorage.getItem("utm_params");
+    if (stored) {
+      try {
+        await fetch("/api/store-utm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: stored,
+        });
+      } catch {}
+    }
     window.location.href = "/api/login";
   };
 

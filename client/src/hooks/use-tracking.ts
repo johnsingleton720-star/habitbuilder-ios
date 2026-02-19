@@ -10,6 +10,34 @@ function getSessionId(): string {
   return sessionId;
 }
 
+function captureUtmParams(): Record<string, string> {
+  const params = new URLSearchParams(window.location.search);
+  const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid"];
+  const result: Record<string, string> = {};
+
+  for (const key of utmKeys) {
+    const value = params.get(key);
+    if (value) {
+      result[key] = value;
+    }
+  }
+
+  if (Object.keys(result).length > 0) {
+    const existing = JSON.parse(sessionStorage.getItem("utm_params") || "{}");
+    const merged = { ...existing, ...result };
+    sessionStorage.setItem("utm_params", JSON.stringify(merged));
+    return merged;
+  }
+
+  const stored = sessionStorage.getItem("utm_params");
+  return stored ? JSON.parse(stored) : {};
+}
+
+export function getStoredUtmParams(): Record<string, string> {
+  const stored = sessionStorage.getItem("utm_params");
+  return stored ? JSON.parse(stored) : {};
+}
+
 export function useTracking() {
   const [location] = useLocation();
   const lastTrackedPath = useRef<string>("");
@@ -23,6 +51,7 @@ export function useTracking() {
 
     const sessionId = getSessionId();
     const referrer = document.referrer || "";
+    const utmParams = captureUtmParams();
 
     fetch("/api/track", {
       method: "POST",
@@ -32,6 +61,7 @@ export function useTracking() {
         path: location,
         referrer,
         sessionId,
+        ...utmParams,
       }),
     }).catch(() => {});
   }, [location]);

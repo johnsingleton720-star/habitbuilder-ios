@@ -50,14 +50,14 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
-async function upsertUser(claims: any) {
+async function upsertUser(claims: any, utmData?: Record<string, string>): Promise<void> {
   await authStorage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
-  });
+  }, utmData);
 }
 
 export async function setupAuth(app: Express) {
@@ -82,6 +82,14 @@ export async function setupAuth(app: Express) {
       verified(error as Error);
     }
   };
+
+  // Store UTM params in session before login redirect
+  app.post("/api/store-utm", (req, res) => {
+    if (req.session) {
+      (req.session as any).utmData = req.body;
+    }
+    res.json({ success: true });
+  });
 
   // Keep track of registered strategies
   const registeredStrategies = new Set<string>();
@@ -125,7 +133,8 @@ export async function setupAuth(app: Express) {
     if (req.session) {
       delete (req.session as any).returnTo;
     }
-    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any) => {
+    const utmData = (req.session as any)?.utmData;
+    passport.authenticate(`replitauth:${req.hostname}`, async (err: any, user: any) => {
       if (err) {
         console.error("Callback authentication error:", err);
         return res.redirect("/api/login");
@@ -133,10 +142,20 @@ export async function setupAuth(app: Express) {
       if (!user) {
         return res.redirect("/api/login");
       }
+      if (utmData && user.claims) {
+        try {
+          await upsertUser(user.claims, utmData);
+        } catch (e) {
+          console.error("Failed to save UTM data:", e);
+        }
+      }
       req.login(user, (loginErr) => {
         if (loginErr) {
           console.error("Login session error:", loginErr);
           return res.redirect("/api/login");
+        }
+        if (req.session) {
+          delete (req.session as any).utmData;
         }
         req.session.save((saveErr) => {
           if (saveErr) {

@@ -9,7 +9,7 @@ const OWNER_EMAIL = "johnsingleton720@gmail.com";
 // (IMPORTANT) These user operations are mandatory for Replit Auth.
 export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  upsertUser(user: UpsertUser, utmData?: Record<string, string>): Promise<User>;
 }
 
 class AuthStorage implements IAuthStorage {
@@ -18,17 +18,21 @@ class AuthStorage implements IAuthStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    // Check if this is the owner - grant automatic access
+  async upsertUser(userData: UpsertUser, utmData?: Record<string, string>): Promise<User> {
     const isOwner = userData.email === OWNER_EMAIL;
-    
-    // Check if user already exists (for trial logic)
     const existingUser = await this.getUser(userData.id!);
     
-    // Set 2-day trial for new users (not owner)
     const trialEndsAt = !existingUser && !isOwner 
-      ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // 2 days from now
+      ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
       : existingUser?.trialEndsAt;
+
+    const utmFields = !existingUser && utmData ? {
+      signupSource: utmData.gclid ? "google_ads" : utmData.utm_source || "direct",
+      signupUtmSource: utmData.utm_source || null,
+      signupUtmMedium: utmData.utm_medium || null,
+      signupUtmCampaign: utmData.utm_campaign || null,
+      signupGclid: utmData.gclid || null,
+    } : {};
     
     const [user] = await db
       .insert(users)
@@ -36,6 +40,7 @@ class AuthStorage implements IAuthStorage {
         ...userData,
         ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
         ...(!existingUser && !isOwner && { trialEndsAt }),
+        ...utmFields,
       })
       .onConflictDoUpdate({
         target: users.id,

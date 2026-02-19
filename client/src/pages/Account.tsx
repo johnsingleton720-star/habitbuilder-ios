@@ -459,6 +459,9 @@ export default function Account() {
     pagesByPath: { path: string; count: number }[];
     viewsByDay: { date: string; count: number }[];
     topReferrers: { referrer: string; count: number }[];
+    trafficSources: { source: string; count: number; uniqueVisitors: number }[];
+    googleAds: { views: number; uniqueVisitors: number; signups: number };
+    campaignBreakdown: { campaign: string; source: string; views: number; uniqueVisitors: number }[];
     timeRange: string;
   }
 
@@ -1119,6 +1122,71 @@ export default function Account() {
                         {analyticsRange === '7d' ? 'Last 7 days' : analyticsRange === '30d' ? 'Last 30 days' : 'Last 90 days'}
                       </p>
                     </div>
+
+                    {adminAnalytics.googleAds && (adminAnalytics.googleAds.views > 0 || adminAnalytics.googleAds.signups > 0) && (
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2 flex items-center gap-1">
+                          <BarChart3 className="w-4 h-4 text-blue-500" />
+                          Google Ads Performance
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-center p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border">
+                            <p className="text-lg font-bold" data-testid="text-google-ads-views">{adminAnalytics.googleAds.views}</p>
+                            <p className="text-xs text-muted-foreground">Ad Clicks</p>
+                          </div>
+                          <div className="text-center p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border">
+                            <p className="text-lg font-bold" data-testid="text-google-ads-visitors">{adminAnalytics.googleAds.uniqueVisitors}</p>
+                            <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                          </div>
+                          <div className="text-center p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border">
+                            <p className="text-lg font-bold" data-testid="text-google-ads-signups">{adminAnalytics.googleAds.signups}</p>
+                            <p className="text-xs text-muted-foreground">Ad Sign-ups</p>
+                          </div>
+                        </div>
+                        {adminAnalytics.googleAds.uniqueVisitors > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Conversion rate: {((adminAnalytics.googleAds.signups / adminAnalytics.googleAds.uniqueVisitors) * 100).toFixed(1)}%
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {adminAnalytics.trafficSources && adminAnalytics.trafficSources.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2">Traffic Sources</p>
+                        <div className="space-y-1">
+                          {adminAnalytics.trafficSources.map((src, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2 text-sm py-1 border-b last:border-0">
+                              <span className="text-muted-foreground" data-testid={`text-traffic-source-${i}`}>{src.source}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" data-testid={`text-traffic-views-${i}`}>{src.count} views</Badge>
+                                <Badge variant="secondary" data-testid={`text-traffic-visitors-${i}`}>{src.uniqueVisitors} visitors</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {adminAnalytics.campaignBreakdown && adminAnalytics.campaignBreakdown.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2">Campaign Breakdown</p>
+                        <div className="space-y-1">
+                          {adminAnalytics.campaignBreakdown.map((camp, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2 text-sm py-1 border-b last:border-0">
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-foreground truncate max-w-[180px]" data-testid={`text-campaign-name-${i}`}>{camp.campaign}</span>
+                                <span className="text-xs text-muted-foreground">{camp.source}</span>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Badge variant="outline">{camp.views} views</Badge>
+                                <Badge variant="secondary">{camp.uniqueVisitors} visitors</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {adminAnalytics.pagesByPath && adminAnalytics.pagesByPath.length > 0 && (
                       <div className="pt-2">

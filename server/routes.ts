@@ -6816,7 +6816,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
   // Track page view (called from frontend)
   app.post("/api/track", async (req: any, res) => {
     try {
-      const { path, referrer, sessionId } = req.body;
+      const { path, referrer, sessionId, utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid } = req.body;
       const userId = req.user?.claims?.sub || null;
       const userAgent = req.get('User-Agent') || null;
       const ip = req.ip || req.connection?.remoteAddress || '';
@@ -6829,6 +6829,12 @@ Be specific, practical, and grounded in behavior science. Every task should make
         ipHash,
         referrer: referrer || null,
         sessionId: sessionId || null,
+        utmSource: utm_source || null,
+        utmMedium: utm_medium || null,
+        utmCampaign: utm_campaign || null,
+        utmContent: utm_content || null,
+        utmTerm: utm_term || null,
+        gclid: gclid || null,
       });
 
       res.json({ success: true });
@@ -6908,6 +6914,68 @@ Be specific, practical, and grounded in behavior science. Every task should make
         .groupBy(pageViews.referrer)
         .orderBy(sql`count(*) desc`);
 
+      // Get traffic sources (UTM + gclid breakdown)
+      const trafficSources = await db.select({
+        source: sql<string>`CASE 
+          WHEN ${pageViews.gclid} IS NOT NULL THEN 'Google Ads'
+          WHEN ${pageViews.utmSource} IS NOT NULL THEN ${pageViews.utmSource}
+          WHEN ${pageViews.referrer} IS NOT NULL AND ${pageViews.referrer} != '' THEN 'Referral'
+          ELSE 'Direct'
+        END`,
+        count: sql<number>`count(*)`,
+        uniqueVisitors: sql<number>`count(distinct coalesce(${pageViews.sessionId}, ${pageViews.ipHash}))`,
+      })
+        .from(pageViews)
+        .where(sql`${pageViews.createdAt} >= ${startDate}`)
+        .groupBy(sql`CASE 
+          WHEN ${pageViews.gclid} IS NOT NULL THEN 'Google Ads'
+          WHEN ${pageViews.utmSource} IS NOT NULL THEN ${pageViews.utmSource}
+          WHEN ${pageViews.referrer} IS NOT NULL AND ${pageViews.referrer} != '' THEN 'Referral'
+          ELSE 'Direct'
+        END`)
+        .orderBy(sql`count(*) desc`);
+
+      // Google Ads specific stats
+      const googleAdsViews = await db.select({ count: sql<number>`count(*)` })
+        .from(pageViews)
+        .where(and(
+          sql`${pageViews.createdAt} >= ${startDate}`,
+          sql`(${pageViews.gclid} IS NOT NULL OR ${pageViews.utmSource} = 'google')`
+        ));
+
+      const googleAdsUniqueVisitors = await db.select({ 
+        count: sql<number>`count(distinct coalesce(${pageViews.sessionId}, ${pageViews.ipHash}))` 
+      })
+        .from(pageViews)
+        .where(and(
+          sql`${pageViews.createdAt} >= ${startDate}`,
+          sql`(${pageViews.gclid} IS NOT NULL OR ${pageViews.utmSource} = 'google')`
+        ));
+
+      // Campaign breakdown
+      const campaignBreakdown = await db.select({
+        campaign: sql<string>`coalesce(${pageViews.utmCampaign}, 'No Campaign')`,
+        source: sql<string>`coalesce(${pageViews.utmSource}, 'unknown')`,
+        views: sql<number>`count(*)`,
+        uniqueVisitors: sql<number>`count(distinct coalesce(${pageViews.sessionId}, ${pageViews.ipHash}))`,
+      })
+        .from(pageViews)
+        .where(and(
+          sql`${pageViews.createdAt} >= ${startDate}`,
+          sql`(${pageViews.utmSource} IS NOT NULL OR ${pageViews.gclid} IS NOT NULL)`
+        ))
+        .groupBy(sql`coalesce(${pageViews.utmCampaign}, 'No Campaign')`, sql`coalesce(${pageViews.utmSource}, 'unknown')`)
+        .orderBy(sql`count(*) desc`)
+        .limit(10);
+
+      // Users who signed up from ads
+      const adSignups = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(and(
+          sql`${users.createdAt} >= ${startDate}`,
+          sql`(${users.signupGclid} IS NOT NULL OR ${users.signupUtmSource} IS NOT NULL)`
+        ));
+
       // Get total registered users
       const totalUsers = await db.select({ count: sql<number>`count(*)` }).from(users);
 
@@ -6944,6 +7012,13 @@ Be specific, practical, and grounded in behavior science. Every task should make
         pagesByPath,
         viewsByDay,
         topReferrers,
+        trafficSources,
+        googleAds: {
+          views: googleAdsViews[0]?.count || 0,
+          uniqueVisitors: googleAdsUniqueVisitors[0]?.count || 0,
+          signups: adSignups[0]?.count || 0,
+        },
+        campaignBreakdown,
         timeRange,
       });
     } catch (error) {
