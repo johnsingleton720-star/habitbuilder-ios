@@ -313,7 +313,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
         <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-            Start with 1 habit free forever, then upgrade for unlimited habits. Cancel anytime.
+            Try 1 habit free with 3 sessions per week. Upgrade for unlimited habits and full AI coaching. Cancel anytime.
           </p>
         </div>
 
@@ -383,9 +383,8 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
               <ul className="space-y-2.5 flex-1">
                 {[
                   "1 habit",
-                  "AI coaching interview",
-                  "Personalized action plans",
-                  "Basic streaks & tracking",
+                  "First AI action plan",
+                  "3 guided sessions/week",
                   "Habit templates library",
                 ].map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -394,9 +393,10 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
                 {[
-                  "Advanced analytics",
-                  "Community forum (coming soon)",
-                  "Voice notes",
+                  "AI coaching insights",
+                  "Streaks & achievements",
+                  "Plan updates & refresh",
+                  "Unlimited sessions",
                 ].map((f, i) => (
                   <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <X className="w-4 h-4 mt-0.5 shrink-0" />
@@ -555,7 +555,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
 }
 
 export default function Landing() {
-  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. 1 habit free forever, Pro at $6 USD/month or Premium at $15 USD/month.");
+  usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Try 1 habit free, Pro at $6 USD/month or Premium at $15 USD/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [customGoal, setCustomGoal] = useState("");
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
@@ -655,7 +655,7 @@ export default function Landing() {
         "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
-          { "@type": "Question", "name": "Is HabitBuilder really free to start?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! The free plan gives you 1 habit with full AI coaching, personalized action plans, streaks, and access to the template library. No credit card required. You can upgrade anytime if you want unlimited habits and advanced features." }},
+          { "@type": "Question", "name": "Is HabitBuilder really free to start?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! The free plan lets you try 1 habit with your first AI-generated action plan, 3 guided sessions per week, and access to the template library. No credit card required. Upgrade to Pro to unlock unlimited sessions, AI coaching insights, streaks, plan updates, and unlimited habits." }},
           { "@type": "Question", "name": "How does the AI coaching work?", "acceptedAnswer": { "@type": "Answer", "text": "When you create a habit, our AI conducts a short interview to understand your goals, schedule, and experience level. Based on your answers, it generates a personalized daily, weekly, and monthly action plan grounded in behavioral science. During guided sessions, you get step-by-step coaching with timers and tips." }},
           { "@type": "Question", "name": "Can I cancel my subscription anytime?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. You can cancel your Pro or Premium subscription at any time from your account settings. You'll keep access to your paid features until the end of your billing period, and your data is never deleted." }},
           { "@type": "Question", "name": "Is my data private and secure?", "acceptedAnswer": { "@type": "Answer", "text": "Your privacy is a priority. All data is encrypted and stored securely. We use Stripe for payment processing, so we never see or store your card details." }},
@@ -1461,7 +1461,7 @@ export default function Landing() {
             {[
               {
                 q: "Is HabitBuilder really free to start?",
-                a: "Yes! The free plan gives you 1 habit with full AI coaching, personalized action plans, streaks, and access to the template library. No credit card required. You can upgrade anytime if you want unlimited habits and advanced features."
+                a: "Yes! The free plan lets you try 1 habit with your first AI-generated action plan, 3 guided sessions per week, and access to the template library. No credit card required. Upgrade to Pro to unlock unlimited sessions, AI coaching insights, streaks, plan updates, and unlimited habits."
               },
               {
                 q: "How does the AI coaching work?",

@@ -157,7 +157,7 @@ export default function Paywall() {
                 Unlock Unlimited Habits
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                You can keep using 1 habit for free. Upgrade for unlimited habits, advanced AI coaching, and premium features.
+                You can keep using 1 habit for free with 3 sessions per week. Upgrade for unlimited sessions, AI coaching insights, streaks, plan updates, and more.
               </p>
             </>
           ) : isInTrial ? (

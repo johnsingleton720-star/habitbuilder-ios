@@ -46,7 +46,7 @@ export default function Dashboard() {
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { features } = useSubscription();
+  const { features, isFreeUser } = useSubscription();
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -60,9 +60,9 @@ export default function Dashboard() {
     setIsDialogOpen(true);
   };
 
-  // Detect broken streaks when habits load
+  // Detect broken streaks when habits load (skip for free users - streaks are a paid feature)
   useEffect(() => {
-    if (!habits || habits.length === 0) return;
+    if (!habits || habits.length === 0 || isFreeUser) return;
 
     // Get stored streaks from localStorage
     const storedStreaksJson = localStorage.getItem('habitStreaks');
