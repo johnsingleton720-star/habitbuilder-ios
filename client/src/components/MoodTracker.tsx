@@ -12,6 +12,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useHabits } from "@/hooks/use-habits";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Crown, ArrowRight } from "lucide-react";
+import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -87,6 +90,8 @@ export function MoodTracker() {
   const { user } = useAuth();
   const { data: habits } = useHabits();
   const { toast } = useToast();
+  const { isFreeUser } = useSubscription();
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [energy, setEnergy] = useState([3]);
@@ -185,6 +190,50 @@ export function MoodTracker() {
   const getMoodIcon = (mood: string) => {
     return MOOD_OPTIONS.find(o => o.value === mood);
   };
+
+  if (isFreeUser) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <SmilePlus className="w-5 h-5 text-muted-foreground" />
+                Mood Tracker
+                <Badge variant="outline" className="text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                  <Lock className="w-3 h-3" />
+                  Pro
+                </Badge>
+              </CardTitle>
+              <CardDescription>Track how you feel and find patterns</CardDescription>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={() => navigate("/paywall")}
+              className="gap-1.5"
+              data-testid="button-upgrade-mood"
+            >
+              <Crown className="w-3.5 h-3.5" />
+              Unlock
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <div className="flex justify-center gap-3 opacity-40 pointer-events-none select-none py-2">
+            {MOOD_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              return (
+                <div key={option.value} className="flex flex-col items-center gap-1 p-2 rounded-lg">
+                  <Icon className={cn("w-7 h-7", option.color)} />
+                  <span className="text-xs text-muted-foreground">{option.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <>

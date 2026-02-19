@@ -22,11 +22,15 @@ import {
   MicOff,
   Volume2,
   VolumeX,
-  Play
+  Play,
+  Crown,
+  ArrowRight,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface CoachingCheckinProps {
   habitId: number;
@@ -65,8 +69,9 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const audioRequestIdRef = useRef<number>(0);
   
-  const { isPremium } = useSubscription();
+  const { isPremium, isFreeUser } = useSubscription();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -341,6 +346,42 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       }
     }
   };
+
+  if (isFreeUser) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2" data-testid="button-coaching-checkin">
+            <MessageCircle className="w-4 h-4" />
+            Talk to Coach
+            <Lock className="w-3 h-3 text-amber-500" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+              <MessageCircle className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="font-semibold text-base">AI Coach is a Pro feature</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Get personalized coaching conversations, progress check-ins, and motivational support with a Pro or Premium plan.
+              </p>
+            </div>
+            <Button
+              onClick={() => { setOpen(false); navigate("/paywall"); }}
+              className="gap-2"
+              data-testid="button-upgrade-coach"
+            >
+              <Crown className="w-4 h-4" />
+              See Plans
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
