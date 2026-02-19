@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, integer, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
@@ -65,6 +65,8 @@ export const users = pgTable("users", {
   lastDailyChallengeDate: varchar("last_daily_challenge_date"), // ISO date string
   accentColor: varchar("accent_color"), // Premium reward color, separate from colorTheme
   
+  pushNotificationsEnabled: boolean("push_notifications_enabled").default(false),
+  
   billingInterval: varchar("billing_interval"),
   isFoundingMember: boolean("is_founding_member").default(false),
   
@@ -100,6 +102,17 @@ export const dailyChallenges = pgTable("daily_challenges", {
 
 export type DailyChallenge = typeof dailyChallenges.$inferSelect;
 export type InsertDailyChallenge = typeof dailyChallenges.$inferInsert;
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
