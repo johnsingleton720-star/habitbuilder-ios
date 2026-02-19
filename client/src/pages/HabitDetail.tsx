@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward, Lock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -256,6 +256,8 @@ export default function HabitDetail() {
   const activeTasksInPlan = totalTasksInPlan - skippedTasksInPlan;
   const taskCompletionRate = activeTasksInPlan > 0 ? Math.round((completedTasksInPlan / activeTasksInPlan) * 100) : 0;
 
+  const sessionLimitReached = isFreeUser && sessionUsage && !sessionUsage.unlimited && sessionUsage.used >= sessionUsage.limit;
+
   const handleToggleTask = (taskId: string, currentCompleted: boolean) => {
     updateTaskMutation.mutate({ 
       taskId, 
@@ -308,11 +310,20 @@ export default function HabitDetail() {
               <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
             )}
             {habit.setupComplete && currentPlan && !isPlanDone && !isSelectedDayPast && (
-              <Button onClick={handleStartSession} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session">
-                <Play className="w-4 h-4" />
-                <span className="hidden sm:inline">Start Session</span>
-                <span className="sm:hidden">Start</span>
-              </Button>
+              sessionLimitReached ? (
+                <Button onClick={() => navigate("/paywall")} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session-locked">
+                  <Lock className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sessions Used</span>
+                  <span className="sm:hidden">Locked</span>
+                  <Crown className="w-3 h-3 text-amber-400" />
+                </Button>
+              ) : (
+                <Button onClick={handleStartSession} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session">
+                  <Play className="w-4 h-4" />
+                  <span className="hidden sm:inline">Start Session</span>
+                  <span className="sm:hidden">Start</span>
+                </Button>
+              )
             )}
           </div>
         </div>
@@ -940,6 +951,7 @@ export default function HabitDetail() {
                             <div className="flex items-start gap-3">
                               <button
                                 onClick={() => {
+                                  if (isFreeUser) return;
                                   if (task.skipped) {
                                     updateTaskMutation.mutate({ taskId: task.id, skipped: false });
                                   } else {
@@ -952,8 +964,11 @@ export default function HabitDetail() {
                                     ? "bg-primary border-primary text-primary-foreground"
                                     : task.skipped
                                     ? "bg-muted border-muted-foreground/20 text-muted-foreground"
+                                    : isFreeUser
+                                    ? "border-muted-foreground/15 cursor-not-allowed"
                                     : "border-muted-foreground/30 hover:border-primary/50"
                                 )}
+                                disabled={isFreeUser}
                                 data-testid={`checkbox-task-${task.id}`}
                               >
                                 {task.completed && <Check className="w-3.5 h-3.5" />}
@@ -970,9 +985,23 @@ export default function HabitDetail() {
                                       {task.title}
                                     </p>
                                     {!task.completed && !task.skipped && (
-                                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
-                                        {task.description}
-                                      </p>
+                                      isFreeUser ? (
+                                        <div className="mt-1 relative">
+                                          <p className="text-sm text-muted-foreground whitespace-pre-line blur-[6px] select-none pointer-events-none" aria-hidden="true">
+                                            {task.description}
+                                          </p>
+                                          <div className="absolute inset-0 flex items-center justify-center">
+                                            <Badge variant="outline" className="gap-1 text-xs bg-background/80 backdrop-blur-sm text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                                              <Lock className="w-3 h-3" />
+                                              Start a session to view
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
+                                          {task.description}
+                                        </p>
+                                      )
                                     )}
                                   </div>
                                   <Badge variant={task.completed ? "secondary" : task.skipped ? "outline" : "outline"} className="flex-shrink-0">
@@ -995,7 +1024,7 @@ export default function HabitDetail() {
                                   </Badge>
                                 </div>
 
-                                {!task.completed && !task.skipped && (
+                                {!task.completed && !task.skipped && !isFreeUser && (
                                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                                     <Button
                                       variant="outline"
