@@ -367,11 +367,17 @@ export type InsertQuickTask = z.infer<typeof insertQuickTaskSchema>;
 export const pageViews = pgTable("page_views", {
   id: serial("id").primaryKey(),
   path: text("path").notNull(),
-  userId: varchar("user_id").references(() => users.id), // null for anonymous visitors
+  userId: varchar("user_id").references(() => users.id),
   userAgent: text("user_agent"),
-  ipHash: text("ip_hash"), // Hashed IP for privacy
+  ipHash: text("ip_hash"),
   referrer: text("referrer"),
-  sessionId: text("session_id"), // To track unique sessions
+  sessionId: text("session_id"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmContent: text("utm_content"),
+  utmTerm: text("utm_term"),
+  gclid: text("gclid"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

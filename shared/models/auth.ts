@@ -67,6 +67,12 @@ export const users = pgTable("users", {
   
   pushNotificationsEnabled: boolean("push_notifications_enabled").default(false),
   
+  signupSource: varchar("signup_source"),
+  signupUtmSource: varchar("signup_utm_source"),
+  signupUtmMedium: varchar("signup_utm_medium"),
+  signupUtmCampaign: varchar("signup_utm_campaign"),
+  signupGclid: varchar("signup_gclid"),
+  
   billingInterval: varchar("billing_interval"),
   isFoundingMember: boolean("is_founding_member").default(false),
   
