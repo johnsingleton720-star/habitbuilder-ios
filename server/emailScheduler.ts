@@ -1,7 +1,8 @@
 import { db } from "./db";
 import { users, habits } from "@shared/schema";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq, and, isNotNull, or } from "drizzle-orm";
 import { sendDailyReminderEmail, sendWeeklyDigestEmail } from "./email";
+import { sendPushToUser } from "./pushNotifications";
 
 function getUserLocalTime(timezone: string | null): { hour: number; minute: number; dayOfWeek: number; dateStr: string } {
   const tz = timezone || "America/Chicago";
@@ -45,13 +46,15 @@ function getUserLocalTime(timezone: string | null): { hour: number; minute: numb
 async function processDailyReminders() {
   try {
     const eligibleUsers = await db.query.users.findMany({
-      where: and(eq(users.dailyReminderEnabled, true), isNotNull(users.email)),
+      where: or(
+        and(eq(users.dailyReminderEnabled, true), isNotNull(users.email)),
+        eq(users.pushNotificationsEnabled, true)
+      ),
     });
 
-    let sent = 0;
+    let emailSent = 0;
+    let pushSent = 0;
     for (const u of eligibleUsers) {
-      if (!u.email) continue;
-
       const localTime = getUserLocalTime(u.timezone);
       const preferredTime = u.dailyReminderTime || "08:00";
       const [prefHour, prefMinute] = preferredTime.split(":").map(Number);
@@ -80,25 +83,46 @@ async function processDailyReminders() {
           }
         }
 
-        await sendDailyReminderEmail({
-          toEmail: u.email,
-          userName: u.firstName || "",
-          todayTasks: todayTasks.slice(0, 5),
-          currentStreak: maxStreak,
-        });
+        if (u.email && u.dailyReminderEnabled !== false) {
+          await sendDailyReminderEmail({
+            toEmail: u.email,
+            userName: u.firstName || "",
+            todayTasks: todayTasks.slice(0, 5),
+            currentStreak: maxStreak,
+          });
+          emailSent++;
+          console.log(`[Scheduler] Daily email sent to ${u.email}`);
+        }
+
+        if (u.pushNotificationsEnabled) {
+          const taskSummary = todayTasks.length > 0
+            ? todayTasks.slice(0, 2).map(t => t.taskTitle).join(", ")
+            : "Check your habit plan for today";
+          const streakMsg = maxStreak > 0 ? ` (${maxStreak}-day streak!)` : "";
+          try {
+            await sendPushToUser(u.id, {
+              title: `Time for your habits${streakMsg}`,
+              body: taskSummary,
+              url: "/",
+              tag: "daily-reminder",
+            });
+            pushSent++;
+            console.log(`[Scheduler] Daily push sent to user ${u.id}`);
+          } catch (pushErr) {
+            console.error(`[Scheduler] Failed push for user ${u.id}:`, pushErr);
+          }
+        }
 
         await db.update(users).set({ lastDailyReminderSent: localTime.dateStr }).where(eq(users.id, u.id));
-        sent++;
-        console.log(`[EmailScheduler] Daily reminder sent to ${u.email}`);
       } catch (err) {
-        console.error(`[EmailScheduler] Failed daily reminder for ${u.email}:`, err);
+        console.error(`[Scheduler] Failed daily reminder for user ${u.id}:`, err);
       }
 
       await new Promise(r => setTimeout(r, 500));
     }
 
-    if (sent > 0) {
-      console.log(`[EmailScheduler] Daily reminders: ${sent} sent`);
+    if (emailSent > 0 || pushSent > 0) {
+      console.log(`[Scheduler] Daily reminders: ${emailSent} emails, ${pushSent} push`);
     }
   } catch (error) {
     console.error("[EmailScheduler] Error processing daily reminders:", error);

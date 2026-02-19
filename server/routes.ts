@@ -8,7 +8,8 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions } from "@shared/schema";
+import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
@@ -329,10 +330,60 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/push/subscribe", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { subscription } = req.body;
+      if (!subscription || !subscription.endpoint || !subscription.keys) {
+        return res.status(400).json({ error: "Invalid subscription" });
+      }
+      const saved = await saveSubscription(userId, subscription);
+      await db.update(users).set({ pushNotificationsEnabled: true, updatedAt: new Date() }).where(eq(users.id, userId));
+      res.json({ success: true, id: saved.id });
+    } catch (error) {
+      console.error("Error saving push subscription:", error);
+      res.status(500).json({ error: "Failed to save subscription" });
+    }
+  });
+
+  app.post("/api/push/unsubscribe", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { endpoint } = req.body;
+      if (endpoint) {
+        await removeSubscription(userId, endpoint);
+      } else {
+        await removeAllSubscriptions(userId);
+      }
+      await db.update(users).set({ pushNotificationsEnabled: false, updatedAt: new Date() }).where(eq(users.id, userId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing push subscription:", error);
+      res.status(500).json({ error: "Failed to remove subscription" });
+    }
+  });
+
+  app.post("/api/push/test", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const result = await sendPushToUser(userId, {
+        title: "HabitBuilder",
+        body: "Push notifications are working! You'll get reminders for your habits here.",
+        url: "/",
+        tag: "test-notification",
+      });
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("Error sending test push:", error);
+      res.status(500).json({ error: "Failed to send test notification" });
+    }
+  });
+
   app.delete("/api/user/account", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
 
+      await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
       await db.delete(coachMessages).where(
         sql`chat_id IN (SELECT id FROM coach_chats WHERE user_id = ${userId})`
       );

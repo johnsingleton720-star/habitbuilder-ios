@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -1276,6 +1276,95 @@ export default function Account() {
                   data-testid="switch-weekly-digest"
                 />
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.395 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-primary" />
+                Push Notifications
+              </CardTitle>
+              <CardDescription>
+                Get instant reminders on your phone or computer
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium" data-testid="label-push-notifications">Enable Push Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Receive habit reminders even when the app is closed</p>
+                </div>
+                <Switch
+                  checked={user?.pushNotificationsEnabled === true}
+                  onCheckedChange={async (checked) => {
+                    if (checked) {
+                      try {
+                        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+                          toast({ title: "Push notifications are not supported on this browser", variant: "destructive" });
+                          return;
+                        }
+                        const permission = await Notification.requestPermission();
+                        if (permission !== "granted") {
+                          toast({ title: "Notification permission denied", description: "Please allow notifications in your browser settings", variant: "destructive" });
+                          return;
+                        }
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.subscribe({
+                          userVisibleOnly: true,
+                          applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
+                        });
+                        await apiRequest("POST", "/api/push/subscribe", { subscription: subscription.toJSON() });
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        toast({ title: "Push notifications enabled" });
+                      } catch (err) {
+                        console.error("Push subscription error:", err);
+                        toast({ title: "Failed to enable push notifications", variant: "destructive" });
+                      }
+                    } else {
+                      try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.getSubscription();
+                        if (subscription) {
+                          await subscription.unsubscribe();
+                          await apiRequest("POST", "/api/push/unsubscribe", { endpoint: subscription.endpoint });
+                        } else {
+                          await apiRequest("POST", "/api/push/unsubscribe", {});
+                        }
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        toast({ title: "Push notifications disabled" });
+                      } catch (err) {
+                        console.error("Push unsubscribe error:", err);
+                        toast({ title: "Failed to disable push notifications", variant: "destructive" });
+                      }
+                    }
+                  }}
+                  data-testid="switch-push-notifications"
+                />
+              </div>
+              {user?.pushNotificationsEnabled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await apiRequest("POST", "/api/push/test");
+                      toast({ title: "Test notification sent!" });
+                    } catch {
+                      toast({ title: "Failed to send test notification", variant: "destructive" });
+                    }
+                  }}
+                  data-testid="button-test-push"
+                >
+                  Send Test Notification
+                </Button>
+              )}
             </CardContent>
           </Card>
         </motion.div>
