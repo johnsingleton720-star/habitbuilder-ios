@@ -24,13 +24,14 @@ import { DailyMotivation } from "@/components/DailyMotivation";
 import { StreakProtection } from "@/components/StreakProtection";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 export default function HabitDetail() {
   usePageTitle("Habit Details");
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();
-  const { features } = useSubscription();
+  const { features, isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
@@ -390,34 +391,44 @@ export default function HabitDetail() {
                   <p className="text-xs text-muted-foreground">{completedDays}/{totalDays} days completed</p>
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    <Button
-                      onClick={() => {
-                        const extDuration = habit.planDuration === "daily" ? "weekly" : (habit.planDuration || "weekly");
-                        extendPlanMutation.mutate(extDuration);
-                      }}
-                      disabled={extendPlanMutation.isPending}
-                      className="flex-1 gap-2"
-                      data-testid="button-extend-plan"
-                    >
-                      {extendPlanMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CalendarPlus className="w-4 h-4" />
-                      )}
-                      Extend Plan
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setNewPlanDuration(habit.planDuration || "weekly");
-                        setShowPlanTypeChanger(true);
-                      }}
-                      className="flex-1 gap-2"
-                      data-testid="button-start-fresh"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      Start Fresh
-                    </Button>
+                    {isFreeUser ? (
+                      <UpgradePrompt
+                        variant="card"
+                        feature="Plan Management"
+                        description="Extend or refresh your plans with Pro. Upgrade to unlock plan management features."
+                      />
+                    ) : (
+                      <>
+                        <Button
+                          onClick={() => {
+                            const extDuration = habit.planDuration === "daily" ? "weekly" : (habit.planDuration || "weekly");
+                            extendPlanMutation.mutate(extDuration);
+                          }}
+                          disabled={extendPlanMutation.isPending}
+                          className="flex-1 gap-2"
+                          data-testid="button-extend-plan"
+                        >
+                          {extendPlanMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CalendarPlus className="w-4 h-4" />
+                          )}
+                          Extend Plan
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setNewPlanDuration(habit.planDuration || "weekly");
+                            setShowPlanTypeChanger(true);
+                          }}
+                          className="flex-1 gap-2"
+                          data-testid="button-start-fresh"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Start Fresh
+                        </Button>
+                      </>
+                    )}
                   </div>
 
                   <AnimatePresence>
@@ -584,7 +595,7 @@ export default function HabitDetail() {
                     )}
                   </CardDescription>
                 </div>
-                {!showPlanTypeChanger && (
+                {!showPlanTypeChanger && !isFreeUser && (
                   <Button
                     variant="outline"
                     size="sm"

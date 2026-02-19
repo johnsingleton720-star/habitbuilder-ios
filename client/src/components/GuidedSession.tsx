@@ -9,12 +9,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
 import { VoiceNote } from "./VoiceNote";
+import { useSubscription } from "@/hooks/use-subscription";
+import { UpgradePrompt, SessionLimitReached } from "./UpgradePrompt";
 
 interface NextInStackInfo {
   habitId: number;
@@ -77,7 +79,9 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
   // Session summary state
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
+  const [sessionLimitReached, setSessionLimitReached] = useState(false);
   
+  const { features, isFreeUser } = useSubscription();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -123,10 +127,21 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
+    onError: (error: any) => {
+      setSessionLimitReached(true);
+    },
   });
 
   const generateSummaryMutation = useMutation({
     mutationFn: async ({ finalNotes, finalCompletedCount }: { finalNotes: TaskNote[]; finalCompletedCount: number }) => {
+      if (isFreeUser) {
+        return {
+          summary: "Complete your session! Upgrade to Pro for personalized AI coaching insights after every session.",
+          insights: [],
+          encouragement: "You're building great habits!",
+          locked: true,
+        };
+      }
       const totalTimeSpent = finalNotes.reduce((sum, n) => sum + n.timeSpent, 0);
       const timeInMinutes = Math.max(1, Math.round(totalTimeSpent / 60));
       
@@ -163,6 +178,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       setSessionSummary(null);
       setShowEndEarlyConfirm(false);
       setGuidanceModalOpen(false);
+      setSessionLimitReached(false);
     }
   }, [open]);
 
@@ -342,8 +358,18 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
         </DialogHeader>
 
         <AnimatePresence mode="wait">
+          {sessionLimitReached && (
+            <motion.div
+              key="session-limit"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <SessionLimitReached />
+            </motion.div>
+          )}
+
           {/* Checklist Phase */}
-          {phase === "checklist" && (
+          {!sessionLimitReached && phase === "checklist" && (
             <motion.div
               key="checklist"
               initial={{ opacity: 0, y: 10 }}
@@ -425,7 +451,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
           )}
 
           {/* Tasks Phase */}
-          {phase === "tasks" && currentTask && (
+          {!sessionLimitReached && phase === "tasks" && currentTask && (
             <motion.div
               key={`task-${currentTaskIndex}`}
               initial={{ opacity: 0, x: 20 }}
@@ -449,16 +475,23 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                 <CardContent className="p-4 space-y-3">
                   <h3 className="font-semibold text-lg">{currentTask.title}</h3>
                   <p className="text-muted-foreground whitespace-pre-line">{currentTask.description}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 w-full"
-                    onClick={() => setGuidanceModalOpen(true)}
-                    data-testid="button-get-guidance"
-                  >
-                    <Lightbulb className="w-4 h-4" />
-                    Get Examples, Resources & Guidance
-                  </Button>
+                  {isFreeUser ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                      <Crown className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <span>AI resources available with Pro</span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 w-full"
+                      onClick={() => setGuidanceModalOpen(true)}
+                      data-testid="button-get-guidance"
+                    >
+                      <Lightbulb className="w-4 h-4" />
+                      Get Examples, Resources & Guidance
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -607,7 +640,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
           )}
 
           {/* Completion Phase */}
-          {phase === "complete" && (
+          {!sessionLimitReached && phase === "complete" && (
             <motion.div
               key="complete"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -730,76 +763,84 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <Card className="border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Brain className="w-3.5 h-3.5 text-primary" />
-                      AI Coach Feedback
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {generateSummaryMutation.isPending ? (
-                      <div className="flex items-center gap-2 text-muted-foreground py-4 justify-center">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Analyzing your session...</span>
-                      </div>
-                    ) : sessionSummary ? (
-                      <div className="space-y-3">
-                        <p className="text-sm text-foreground">{sessionSummary.summary}</p>
-                        
-                        {sessionSummary.insights && sessionSummary.insights.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Insights</p>
-                            <ul className="space-y-1.5">
-                              {sessionSummary.insights.map((insight, i) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
-                                  {insight}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
-                            <ul className="space-y-1.5">
-                              {sessionSummary.performanceTips.map((tip, i) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                                  {tip}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {sessionSummary.nextSteps && sessionSummary.nextSteps.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Steps</p>
-                            <ul className="space-y-1.5">
-                              {sessionSummary.nextSteps.map((step, i) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <ArrowRight className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                                  {step}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        <div className="pt-2 border-t">
-                          <p className="text-sm italic text-primary">{sessionSummary.encouragement}</p>
+                {isFreeUser ? (
+                  <UpgradePrompt
+                    variant="card"
+                    feature="AI Coach Feedback"
+                    description="Get personalized insights, performance tips, and next steps after every session. Upgrade to Pro to unlock AI coaching."
+                  />
+                ) : (
+                  <Card className="border-primary/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Brain className="w-3.5 h-3.5 text-primary" />
+                        AI Coach Feedback
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {generateSummaryMutation.isPending ? (
+                        <div className="flex items-center gap-2 text-muted-foreground py-4 justify-center">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Analyzing your session...</span>
                         </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Great job completing your session! Keep building on this momentum.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                      ) : sessionSummary ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-foreground">{sessionSummary.summary}</p>
+                          
+                          {sessionSummary.insights && sessionSummary.insights.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Insights</p>
+                              <ul className="space-y-1.5">
+                                {sessionSummary.insights.map((insight, i) => (
+                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
+                                    {insight}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
+                              <ul className="space-y-1.5">
+                                {sessionSummary.performanceTips.map((tip, i) => (
+                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                    {tip}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {sessionSummary.nextSteps && sessionSummary.nextSteps.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Steps</p>
+                              <ul className="space-y-1.5">
+                                {sessionSummary.nextSteps.map((step, i) => (
+                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <ArrowRight className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                    {step}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          <div className="pt-2 border-t">
+                            <p className="text-sm italic text-primary">{sessionSummary.encouragement}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Great job completing your session! Keep building on this momentum.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
 
               {nextInStack && onStartNextInStack && (
