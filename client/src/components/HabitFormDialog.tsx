@@ -3,7 +3,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { type HabitSchedule } from "@shared/schema";
 import { type HabitResponse } from "@shared/routes";
-import { useCreateHabit, useUpdateHabit } from "@/hooks/use-habits";
+import { useCreateHabit, useUpdateHabit, useHabits } from "@/hooks/use-habits";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { SchedulePicker } from "@/components/SchedulePicker";
 import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -54,6 +55,10 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const updateHabit = useUpdateHabit();
   const [, setLocation] = useLocation();
   const isEditing = !!habitToEdit;
+  const { isFreeUser, canAddMoreHabits } = useSubscription();
+  const { data: existingHabits } = useHabits();
+  const activeHabitsCount = existingHabits?.filter(h => !h.archived).length || 0;
+  const hasReachedFreeLimit = isFreeUser && !isEditing && !canAddMoreHabits(activeHabitsCount);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
@@ -146,6 +151,36 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           </DialogDescription>
         </DialogHeader>
 
+        {hasReachedFreeLimit ? (
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+              <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="font-semibold text-base">You've used your free habit slot</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                The free plan includes 1 habit to get you started. Upgrade to Pro to create unlimited habits with full AI coaching.
+              </p>
+            </div>
+            <Button
+              onClick={() => { onOpenChange(false); setLocation('/paywall'); }}
+              className="gap-2"
+              data-testid="button-upgrade-habit-limit"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade to Pro
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="text-muted-foreground"
+            >
+              Maybe later
+            </Button>
+          </div>
+        ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Icon/Color Picker with Title */}
@@ -313,7 +348,8 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
+        )}
+        </DialogContent>
     </Dialog>
   );
 }

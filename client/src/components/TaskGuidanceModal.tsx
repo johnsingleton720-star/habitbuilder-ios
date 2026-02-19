@@ -301,11 +301,13 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     },
   });
 
+  const { isFreeUser } = useSubscription();
+
   useEffect(() => {
-    if (open && !guidance && !guidanceMutation.isPending) {
+    if (open && !guidance && !guidanceMutation.isPending && !isFreeUser) {
       guidanceMutation.mutate();
     }
-  }, [open, guidance, guidanceMutation.isPending]);
+  }, [open, guidance, guidanceMutation.isPending, isFreeUser]);
 
   useEffect(() => {
     setGuidance(null);
@@ -561,7 +563,29 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
           </DialogTitle>
         </DialogHeader>
 
-        {(guidanceMutation.isPending || (!guidance && !guidanceMutation.isError)) ? (
+        {isFreeUser ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="font-semibold text-lg">Smart Resources are a Pro Feature</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Upgrade to get AI-curated tips, video tutorials, downloadable templates, and expert resources tailored to each task.
+              </p>
+              <p className="text-xs text-muted-foreground">Premium members also get editable templates and PDF downloads.</p>
+            </div>
+            <Button
+              onClick={() => { onOpenChange(false); window.location.href = '/paywall'; }}
+              className="gap-2"
+              data-testid="button-upgrade-resources"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade to Pro
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (guidanceMutation.isPending || (!guidance && !guidanceMutation.isError)) ? (
           <LoadingState />
         ) : guidanceMutation.isError ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-4">
