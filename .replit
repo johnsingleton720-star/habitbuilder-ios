@@ -47,3 +47,6 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_openai_ai_int
 [userenv.shared]
 AI_INTEGRATIONS_OPENAI_BASE_URL = "http://localhost:1106/modelfarm/openai"
 AI_INTEGRATIONS_OPENAI_API_KEY = "_DUMMY_API_KEY_"
+VAPID_PUBLIC_KEY = "BNeozYX_WZ6iyv7ZJNCzZbJRhAMLBvTT39UMNH26z1KqLhpK9Iyj6zOYVk4a8nbhZ1UziiMl59kgMrPemYH85ug"
+VAPID_PRIVATE_KEY = "9IOIbm4ara3McotnEjPbn1yvKY2ce_3d6aTTlpb89fA"
+VITE_VAPID_PUBLIC_KEY = "BNeozYX_WZ6iyv7ZJNCzZbJRhAMLBvTT39UMNH26z1KqLhpK9Iyj6zOYVk4a8nbhZ1UziiMl59kgMrPemYH85ug"
