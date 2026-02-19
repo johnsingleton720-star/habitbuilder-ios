@@ -14,6 +14,7 @@ import crypto from "crypto";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
+import { format } from "date-fns";
 
 function getUserToday(timezone?: string | null): string {
   const tz = timezone || "UTC";
@@ -3057,6 +3058,15 @@ REQUIREMENTS:
         return res.status(404).json({ error: "Habit not found" });
       }
 
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      if (isFreeUser) {
+        return res.status(403).json({ 
+          error: "paid_feature",
+          message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
+        });
+      }
+
       if (!habit.setupComplete) {
         return res.status(400).json({ error: "Habit setup must be completed first before changing plan type." });
       }
@@ -3323,6 +3333,15 @@ REQUIREMENTS:
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      if (isFreeUser) {
+        return res.status(403).json({ 
+          error: "paid_feature",
+          message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
+        });
       }
 
       if (!habit.setupComplete) {
@@ -3657,6 +3676,36 @@ REQUIREMENTS:
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
       const { date, tasksCompleted, totalTasks, timeSpent, goalTime, notes, mood } = req.body;
+
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      if (isFreeUser) {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+        monday.setHours(0, 0, 0, 0);
+
+        const weekStart = format(monday, 'yyyy-MM-dd');
+        const habit = await storage.getHabit(habitId);
+        if (!habit || habit.userId !== userId) {
+          return res.status(404).json({ error: "Habit not found" });
+        }
+
+        const allHabits = await storage.getHabits(userId);
+        let weeklySessionCount = 0;
+        for (const h of allHabits) {
+          const progress = h.progress || [];
+          weeklySessionCount += progress.filter((p: any) => p.date >= weekStart).length;
+        }
+
+        if (weeklySessionCount >= 3) {
+          return res.status(403).json({ 
+            error: "free_session_limit",
+            message: "You've reached your 3 free sessions this week. Upgrade to Pro for unlimited sessions!"
+          });
+        }
+      }
       
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
@@ -3725,6 +3774,15 @@ REQUIREMENTS:
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      if (isFreeUser) {
+        return res.status(403).json({ 
+          error: "paid_feature",
+          message: "AI session summaries are available with Pro. Upgrade to unlock personalized coaching insights!"
+        });
       }
 
       // If no notes provided, return a simple summary
@@ -3802,6 +3860,15 @@ Respond ONLY with valid JSON:
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const user = await storage.getUser(userId);
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      if (isFreeUser) {
+        return res.status(403).json({ 
+          error: "paid_feature",
+          message: "AI-powered task resources are available with Pro. Upgrade for detailed guidance, templates, and curated resources!"
+        });
       }
 
       // Find the task

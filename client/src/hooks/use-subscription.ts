@@ -18,6 +18,9 @@ interface SubscriptionFeatures {
   hasAdvancedAnalytics: boolean;
   hasCoachChat: boolean;
   hasHabitStacking: boolean;
+  hasAiResources: boolean;
+  hasPlanRefresh: boolean;
+  hasUnlimitedSessions: boolean;
 }
 
 const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = {
@@ -38,13 +41,16 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAdvancedAnalytics: false, // Premium only
     hasCoachChat: false, // Premium only
     hasHabitStacking: false, // Premium only
+    hasAiResources: true,
+    hasPlanRefresh: true,
+    hasUnlimitedSessions: true,
   },
   free: {
     maxHabits: 1,
-    hasAiCoaching: true,
-    hasPersonalizedPlans: true,
+    hasAiCoaching: false,
+    hasPersonalizedPlans: false,
     hasSessionSummaries: false,
-    hasStreaksAchievements: true,
+    hasStreaksAchievements: false,
     hasTemplates: true,
     hasEditableTemplates: false,
     hasDownloadablePdf: false,
@@ -56,6 +62,9 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAdvancedAnalytics: false,
     hasCoachChat: false,
     hasHabitStacking: false,
+    hasAiResources: false,
+    hasPlanRefresh: false,
+    hasUnlimitedSessions: false,
   },
   pro: {
     maxHabits: Infinity,
@@ -74,6 +83,9 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAdvancedAnalytics: false,
     hasCoachChat: false,
     hasHabitStacking: false,
+    hasAiResources: true,
+    hasPlanRefresh: true,
+    hasUnlimitedSessions: true,
   },
   premium: {
     maxHabits: Infinity,
@@ -92,6 +104,9 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAdvancedAnalytics: true,
     hasCoachChat: true,
     hasHabitStacking: true,
+    hasAiResources: true,
+    hasPlanRefresh: true,
+    hasUnlimitedSessions: true,
   },
 };
 
@@ -120,6 +135,7 @@ export function useSubscription() {
   const isAdmin = user?.isAdmin === true;
   const isActive = true;
   const features = TIER_FEATURES[effectiveTier];
+  const isFreeUser = effectiveTier === 'free' && !isAdmin;
   
   // Admin users get access to ALL features regardless of tier
   const canUseFeature = (feature: keyof SubscriptionFeatures): boolean => {
@@ -160,5 +176,6 @@ export function useSubscription() {
     isPro: baseTier === 'pro' || baseTier === 'premium' || isAdmin,
     isPremium: baseTier === 'premium' || isAdmin,
     isAdmin,
+    isFreeUser,
   };
 }
