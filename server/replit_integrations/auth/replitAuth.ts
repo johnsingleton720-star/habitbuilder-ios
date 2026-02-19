@@ -155,7 +155,7 @@ export async function setupAuth(app: Express) {
           console.error("Session destroy error:", err);
         }
         res.clearCookie("connect.sid");
-        res.redirect("https://replit.com/logout");
+        res.redirect("/");
       });
     });
   });
