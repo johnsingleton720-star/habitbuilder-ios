@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn, ChevronLeft, ChevronRight } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -566,6 +566,175 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   );
 }
 
+const testimonials = [
+  {
+    quote: "I was skeptical about another habit app, but the AI interview actually understood what I was trying to do. Within a week, I had a morning routine that felt natural instead of forced.",
+    name: "Sarah M.",
+    role: "Early Tester",
+    streak: "7-day streak"
+  },
+  {
+    quote: "What sold me was the guided sessions. Instead of just checking a box, it walks you through each step with coaching tips. After a week of using it, I genuinely look forward to my daily routine.",
+    name: "James K.",
+    role: "Beta Tester",
+    streak: "10-day streak"
+  },
+  {
+    quote: "The habit stacking feature changed everything for me. I linked my reading habit to my morning coffee, and now I've read more books in 2 months than I did all last year. The AI suggestions for stacking are spot-on.",
+    name: "Maria L.",
+    role: "Pro Member",
+    streak: "21-day streak"
+  },
+  {
+    quote: "As someone with ADHD, I've tried every productivity system out there. HabitBuilder's guided sessions with built-in timers keep me on track without feeling overwhelming. The streak tracking gives me that extra push to stay consistent.",
+    name: "David R.",
+    role: "Premium Member",
+    streak: "30-day streak"
+  }
+];
+
+function TestimonialsSection({ fadeUp, shouldAnimate, isMobile }: { fadeUp: any; shouldAnimate: boolean; isMobile: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const scrollToCard = (idx: number) => {
+    if (!scrollRef.current) return;
+    const container = scrollRef.current;
+    const cards = container.children;
+    if (cards[idx]) {
+      const card = cards[idx] as HTMLElement;
+      const scrollLeft = card.offsetLeft - (container.offsetWidth - card.offsetWidth) / 2;
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }
+  };
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const container = scrollRef.current;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.children[0]?.clientWidth || 1;
+    const gap = 12;
+    const idx = Math.round(scrollLeft / (cardWidth + gap));
+    setActiveIdx(Math.min(idx, testimonials.length - 1));
+  };
+
+  return (
+    <section className="py-12 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8 md:mb-16 space-y-3 md:space-y-4">
+          <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold">What our users say</h2>
+          <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
+            Real feedback from people building better habits.
+          </p>
+        </div>
+
+        {isMobile ? (
+          <div className="relative">
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex gap-3 overflow-x-auto scrollbar-hide snap-x pb-4 -mx-4 px-4"
+              data-testid="testimonial-carousel"
+            >
+              {testimonials.map((testimonial, i) => (
+                <div
+                  key={i}
+                  className="min-w-[85%] snap-center bg-white dark:bg-card p-5 rounded-xl border border-border/50 touch-card flex-shrink-0"
+                  data-testid={`card-testimonial-${i}`}
+                >
+                  <div className="flex gap-1 mb-3">
+                    {[...Array(5)].map((_, j) => (
+                      <Sparkles key={j} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-foreground/80 leading-relaxed mb-4 italic text-sm">"{testimonial.quote}"</p>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
+                      <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      {testimonial.streak}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => scrollToCard(i)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    i === activeIdx ? 'bg-primary w-5' : 'bg-muted-foreground/30'
+                  }`}
+                  aria-label={`Go to testimonial ${i + 1}`}
+                  data-testid={`dot-testimonial-${i}`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
+            {testimonials.map((testimonial, i) => (
+              <motion.div
+                key={i}
+                {...fadeUp}
+                transition={{ duration: 0.5, delay: shouldAnimate ? i * 0.1 : 0 }}
+                className="bg-white dark:bg-card p-6 md:p-8 rounded-xl border border-border/50"
+                data-testid={`card-testimonial-${i}`}
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, j) => (
+                    <Sparkles key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-foreground/80 leading-relaxed mb-6 italic text-sm md:text-base">"{testimonial.quote}"</p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <p className="font-semibold text-foreground">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                  <Badge variant="secondary">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {testimonial.streak}
+                  </Badge>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StickyMobileCTA({ onClick }: { onClick: () => void }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setVisible(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden" data-testid="sticky-mobile-cta">
+      <div className="bg-background/95 backdrop-blur-md border-t border-border/50 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <Button onClick={onClick} className="w-full shadow-lg shadow-primary/20" data-testid="button-sticky-cta">
+          Start Free — Takes 30 Seconds
+          <ArrowRight className="ml-2 w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   usePageTitle(undefined, "Build lasting habits with AI-powered coaching. Get personalized daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Try 1 habit free, Pro at $6 USD/month or Premium at $15 USD/month.");
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
@@ -678,6 +847,7 @@ export default function Landing() {
       <PublicNav />
 
       <LoginTransitionDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
+      <StickyMobileCTA onClick={scrollToLogin} />
 
       <AnimatePresence>
         {hasTopBannerSlots && !topBannerDismissed && (
@@ -753,13 +923,14 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              <Button onClick={scrollToLogin} size="lg" className="text-base shadow-lg shadow-primary/25" data-testid="button-hero-cta">
+              <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto text-base shadow-lg shadow-primary/25" data-testid="button-hero-cta">
                 Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button
                 variant="outline"
                 size="lg"
+                className="w-full sm:w-auto"
                 onClick={() => document.getElementById("try-it")?.scrollIntoView({ behavior: "smooth" })}
                 data-testid="button-hero-preview"
               >
@@ -797,7 +968,62 @@ export default function Landing() {
             </div>
           </div>
 
-          {!isMobile && (
+          {isMobile ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="mt-2"
+              data-testid="mobile-hero-preview"
+            >
+              <div className="bg-gradient-to-br from-card to-card/80 dark:from-card dark:to-card/90 rounded-xl p-3 shadow-lg border border-border/60">
+                <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-border/40">
+                  <div className="w-6 h-6 rounded-md bg-primary/15 flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-primary" />
+                  </div>
+                  <span className="font-display font-semibold text-xs">Today's Progress</span>
+                  <Badge variant="secondary" className="ml-auto text-[10px]">3 habits</Badge>
+                </div>
+                <div className="flex gap-2">
+                  {[
+                    { title: "Meditation", progress: 100, icon: Brain, color: "text-violet-500", bg: "bg-violet-500/10" },
+                    { title: "Reading", progress: 60, icon: BookOpen, color: "text-blue-500", bg: "bg-blue-500/10" },
+                    { title: "Walk", progress: 0, icon: Target, color: "text-emerald-500", bg: "bg-emerald-500/10" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 p-2 bg-muted/40 dark:bg-muted/20 rounded-lg">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.bg}`}>
+                        <item.icon className={`w-4 h-4 ${item.color}`} />
+                      </div>
+                      <span className="text-[10px] font-medium text-center leading-tight">{item.title}</span>
+                      <div className="w-full h-1 bg-foreground/[0.06] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-primary' : item.progress > 0 ? 'bg-accent' : 'bg-transparent'}`}
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
+                      {item.progress === 100 && <CheckCircle2 className="w-3 h-3 text-primary" />}
+                      {item.progress > 0 && item.progress < 100 && <span className="text-[9px] text-muted-foreground">{item.progress}%</span>}
+                      {item.progress === 0 && <span className="text-[9px] text-muted-foreground">6 PM</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-orange-500" />
+                    <span className="text-[10px] font-medium">7-day streak</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-3 h-3 text-amber-500" />
+                    <span className="text-[10px] font-medium">Lvl 3</span>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    <Star className="w-2.5 h-2.5 mr-0.5 text-amber-500" />
+                    245 XP
+                  </Badge>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1233,7 +1459,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 px-4 sm:px-6" aria-label="How it works">
+      <section className="py-10 md:py-20 px-4 sm:px-6" aria-label="How it works">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 md:mb-14 space-y-3 md:space-y-4">
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-how-it-works-heading">How it works</h2>
@@ -1282,7 +1508,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 relative" id="features" aria-label="Features">
+      <section className="py-12 md:py-24 relative" id="features" aria-label="Features">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,hsl(var(--primary)/0.05),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
@@ -1353,7 +1579,7 @@ export default function Landing() {
                 transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
                 data-testid={`card-feature-${i}`}
               >
-                <Card className="h-full hover-elevate">
+                <Card className="h-full hover-elevate touch-card">
                   <CardContent className="pt-6">
                     <div className={`mb-4 w-12 h-12 md:w-14 md:h-14 rounded-xl ${feature.bg} flex items-center justify-center`}>
                       <div className={feature.color}>{feature.icon}</div>
@@ -1366,8 +1592,8 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="mt-8 md:mt-12 text-center">
-            <Button onClick={scrollToLogin} size="lg" className="shadow-lg shadow-primary/20" data-testid="button-cta-features">
+          <div className="mt-8 md:mt-12 text-center px-4 sm:px-0">
+            <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20" data-testid="button-cta-features">
               Try It Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
@@ -1458,70 +1684,7 @@ export default function Landing() {
 
       <LandingPricing scrollToLogin={scrollToLogin} />
 
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" aria-label="Testimonials">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
-            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold">What our users say</h2>
-            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-              Real feedback from people building better habits.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
-            {[
-              {
-                quote: "I was skeptical about another habit app, but the AI interview actually understood what I was trying to do. Within a week, I had a morning routine that felt natural instead of forced.",
-                name: "Sarah M.",
-                role: "Early Tester",
-                streak: "7-day streak"
-              },
-              {
-                quote: "What sold me was the guided sessions. Instead of just checking a box, it walks you through each step with coaching tips. After a week of using it, I genuinely look forward to my daily routine.",
-                name: "James K.",
-                role: "Beta Tester",
-                streak: "10-day streak"
-              },
-              {
-                quote: "The habit stacking feature changed everything for me. I linked my reading habit to my morning coffee, and now I've read more books in 2 months than I did all last year. The AI suggestions for stacking are spot-on.",
-                name: "Maria L.",
-                role: "Pro Member",
-                streak: "21-day streak"
-              },
-              {
-                quote: "As someone with ADHD, I've tried every productivity system out there. HabitBuilder's guided sessions with built-in timers keep me on track without feeling overwhelming. The streak tracking gives me that extra push to stay consistent.",
-                name: "David R.",
-                role: "Premium Member",
-                streak: "30-day streak"
-              }
-            ].map((testimonial, i) => (
-              <motion.div
-                key={i}
-                {...fadeUp}
-                transition={{ duration: 0.5, delay: shouldAnimate ? i * 0.1 : 0 }}
-                className="bg-white dark:bg-card p-6 md:p-8 rounded-xl border border-border/50"
-                data-testid={`card-testimonial-${i}`}
-              >
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, j) => (
-                    <Sparkles key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-foreground/80 leading-relaxed mb-6 italic text-sm md:text-base">"{testimonial.quote}"</p>
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div>
-                    <p className="font-semibold text-foreground">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                  <Badge variant="secondary">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {testimonial.streak}
-                  </Badge>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection fadeUp={fadeUp} shouldAnimate={shouldAnimate} isMobile={isMobile} />
 
       <section className="py-16 md:py-24 px-4 sm:px-6" id="faq" aria-label="Frequently asked questions">
         <div className="max-w-3xl mx-auto">
@@ -1596,7 +1759,7 @@ export default function Landing() {
               The best time to start was yesterday. The second best time is right now. Your future self will thank you for taking action today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 pt-2 md:pt-4">
-              <Button onClick={scrollToLogin} size="lg" className="text-base shadow-lg shadow-primary/25" data-testid="button-cta-urgency">
+              <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto text-base shadow-lg shadow-primary/25" data-testid="button-cta-urgency">
                 Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
@@ -1616,7 +1779,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-8 md:py-12 border-t border-border" role="contentinfo">
+      <footer className="py-8 md:py-12 pb-20 md:pb-12 border-t border-border" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <div className="space-y-4">
