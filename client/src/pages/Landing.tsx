@@ -633,13 +633,13 @@ function TestimonialsSection({ fadeUp, shouldAnimate, isMobile }: { fadeUp: any;
             <div
               ref={scrollRef}
               onScroll={handleScroll}
-              className="flex gap-3 overflow-x-auto scrollbar-hide snap-x pb-4 -mx-4 px-4"
+              className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 -mx-4 px-4"
               data-testid="testimonial-carousel"
             >
               {testimonials.map((testimonial, i) => (
                 <div
                   key={i}
-                  className="min-w-[85%] snap-center bg-white dark:bg-card p-5 rounded-xl border border-border/50 touch-card flex-shrink-0"
+                  className="w-[85%] min-w-[85%] max-w-[85%] snap-center bg-white dark:bg-card p-5 rounded-xl border border-border/50 touch-card flex-shrink-0 overflow-hidden"
                   data-testid={`card-testimonial-${i}`}
                 >
                   <div className="flex gap-1 mb-3">
