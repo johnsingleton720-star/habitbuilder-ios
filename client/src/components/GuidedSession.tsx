@@ -9,7 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Crown } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Crown, Lock } from "lucide-react";
+import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
@@ -476,10 +477,13 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                   <h3 className="font-semibold text-lg">{currentTask.title}</h3>
                   <p className="text-muted-foreground whitespace-pre-line">{currentTask.description}</p>
                   {isFreeUser ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-                      <Crown className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                      <span>AI resources available with Pro</span>
-                    </div>
+                    <Link href="/paywall">
+                      <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 rounded-lg p-3 border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-resources">
+                        <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span className="flex-1">Get AI-curated tips, articles & resources for each task</span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex-shrink-0">Pro</Badge>
+                      </div>
+                    </Link>
                   ) : (
                     <Button
                       variant="outline"

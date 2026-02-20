@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Trophy } from "lucide-react";
+import { Trophy, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
   const { data: userAchievements } = useQuery<UserAchievement[]>({
     queryKey: ['/api/achievements'],
   });
-  const { isPremium } = useSubscription();
+  const { isPremium, isFreeUser } = useSubscription();
   const [selectedAchievement, setSelectedAchievement] = useState<(Achievement & { unlocked: boolean; unlockedAt?: string }) | null>(null);
   
   const unlockedIds = new Set(userAchievements?.map(a => a.achievementId) || []);
@@ -67,6 +67,12 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
             <CardTitle className="text-lg flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-500" />
               Achievements
+              {isFreeUser && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800" data-testid="badge-achievements-pro">
+                  <Crown className="w-2.5 h-2.5 mr-0.5" />
+                  Pro
+                </Badge>
+              )}
               <span className="text-sm font-normal text-muted-foreground ml-auto">
                 {unlockedCount}/{ACHIEVEMENTS.length}
               </span>

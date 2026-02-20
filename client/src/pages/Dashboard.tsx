@@ -15,7 +15,7 @@ import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -226,23 +226,34 @@ export default function Dashboard() {
           >
             <Card className="border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/15" data-testid="card-free-upgrade-cta">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-                      <Crown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">You're on the free demo</p>
-                      <p className="text-xs text-muted-foreground">Unlock unlimited habits, AI coaching, streaks, and more</p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Crown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <Link href="/paywall">
-                    <Button size="sm" className="gap-1.5" data-testid="button-dashboard-upgrade">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      See Plans
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Upgrade to unlock the full experience</p>
+                    <ul className="mt-1.5 space-y-1">
+                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span>Unlimited habits & AI-powered action plans</span>
+                      </li>
+                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span>Streak tracking, achievements & XP multipliers</span>
+                      </li>
+                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span>AI session summaries & curated resources</span>
+                      </li>
+                    </ul>
+                    <Link href="/paywall">
+                      <Button size="sm" className="gap-1.5 mt-3" data-testid="button-dashboard-upgrade">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        See Plans — Starting at $6/mo
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

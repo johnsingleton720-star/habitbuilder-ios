@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Target, TrendingUp, Trophy, Calendar, Clock, Check, ChevronRight, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Flame, Target, TrendingUp, Trophy, Calendar, Clock, Check, ChevronRight, X, Crown, Lock } from "lucide-react";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Habit, DailyPlan } from "@shared/schema";
+import { useSubscription } from "@/hooks/use-subscription";
 
 interface ProgressSummaryProps {
   habits: Habit[];
@@ -12,6 +14,7 @@ interface ProgressSummaryProps {
 
 export function ProgressSummary({ habits }: ProgressSummaryProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const { isFreeUser } = useSubscription();
 
   if (!habits || habits.length === 0) {
     return null;
@@ -161,22 +164,32 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
               <Card className={`border-0 ${stat.bgColor} shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden`} data-testid={`stat-card-${stat.label.toLowerCase().replace(' ', '-')}`}>
                 <CardContent className="p-4 relative">
                   <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.color} opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`} />
+                  {isFreeUser && stat.label === "Best Streak" && (
+                    <Badge variant="secondary" className="absolute top-2 right-2 text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 z-10" data-testid="badge-streak-pro">
+                      <Crown className="w-2.5 h-2.5 mr-0.5" />
+                      Pro
+                    </Badge>
+                  )}
                   <div className="relative">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bgColor} border border-white/50 dark:border-white/10 mb-3`}>
                       <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className={`font-display text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`} data-testid={`stat-${stat.label.toLowerCase().replace(' ', '-')}`}>
-                        {stat.value}
+                        {isFreeUser && stat.label === "Best Streak" ? (
+                          <Lock className="w-5 h-5 text-muted-foreground/50 inline" />
+                        ) : stat.value}
                       </span>
-                      {stat.suffix && (
+                      {stat.suffix && !(isFreeUser && stat.label === "Best Streak") && (
                         <span className={`text-lg font-semibold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
                           {stat.suffix}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 font-medium">{stat.label}</p>
-                    <p className="text-[10px] text-muted-foreground/70">{stat.subtext}</p>
+                    <p className="text-[10px] text-muted-foreground/70">
+                      {isFreeUser && stat.label === "Best Streak" ? "Unlock with Pro" : stat.subtext}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
