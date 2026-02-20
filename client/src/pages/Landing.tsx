@@ -308,9 +308,14 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   );
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6" id="pricing" aria-label="Pricing plans">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-16 md:py-24 px-4 sm:px-6 relative" id="pricing" aria-label="Pricing plans">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,hsl(var(--primary)/0.04),transparent)]" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+          <Badge variant="secondary" className="mb-2">
+            <CreditCard className="w-3 h-3 mr-1" />
+            Pricing
+          </Badge>
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
             Try 1 habit free with 3 sessions per week. Upgrade for unlimited habits and full AI coaching. Cancel anytime.
@@ -368,11 +373,13 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
         )}
 
         <div className="grid md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
-          <Card className="h-full flex flex-col" data-testid="card-pricing-trial">
+          <Card className="h-full flex flex-col bg-card/80" data-testid="card-pricing-trial">
             <CardContent className="pt-6 flex-1 flex flex-col">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <Leaf className="w-8 h-8 text-muted-foreground" />
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                    <Leaf className="w-6 h-6 text-muted-foreground" />
+                  </div>
                 </div>
                 <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
                 <p className="text-sm text-muted-foreground mt-1">Free forever</p>
@@ -410,14 +417,17 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
             </CardContent>
           </Card>
 
-          <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-primary shadow-lg shadow-primary/20' : 'border-primary shadow-lg shadow-primary/20'}`} data-testid="card-pricing-pro">
-            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <Card className={`h-full flex flex-col relative border-primary shadow-xl shadow-primary/15 ring-1 ring-primary/30 ${isAnnual ? 'md:scale-[1.03]' : 'md:scale-[1.03]'}`} data-testid="card-pricing-pro">
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] to-transparent rounded-[inherit] pointer-events-none" />
+            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 shadow-md">
               {isAnnual ? 'Founding Member' : 'Most Popular'}
             </Badge>
-            <CardContent className="pt-6 flex-1 flex flex-col">
+            <CardContent className="pt-6 flex-1 flex flex-col relative">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <Sparkles className="w-8 h-8 text-primary" />
+                  <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
                 </div>
                 <h3 className="font-display text-xl font-bold" data-testid="text-plan-pro">Pro</h3>
                 <p className="text-sm text-muted-foreground mt-1">For serious habit builders</p>
@@ -466,7 +476,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
               </ul>
-              <Button onClick={scrollToLogin} className="w-full mt-6" data-testid="button-pricing-pro">
+              <Button onClick={scrollToLogin} className="w-full mt-6 shadow-lg shadow-primary/20" data-testid="button-pricing-pro">
                 {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -482,7 +492,9 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
             <CardContent className="pt-6 flex-1 flex flex-col">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <Crown className="w-8 h-8 text-amber-500" />
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-amber-500" />
+                  </div>
                 </div>
                 <h3 className="font-display text-xl font-bold" data-testid="text-plan-premium">Premium</h3>
                 <p className="text-sm text-muted-foreground mt-1">The complete experience</p>
@@ -708,22 +720,30 @@ export default function Landing() {
       </AnimatePresence>
 
       <section className={`relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-28 md:pt-44 lg:pt-60' : 'pt-20 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.06]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.12),transparent)]" />
         {!isMobile && (
           <>
-            <div className="absolute top-32 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float-slow" />
-            <div className="absolute top-64 right-20 w-48 h-48 bg-accent/10 rounded-full blur-3xl animate-float-delayed" />
-            <div className="absolute bottom-20 left-1/4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl animate-float" />
+            <div className="absolute top-20 left-[5%] w-72 h-72 bg-primary/[0.08] rounded-full blur-[100px] animate-float-slow" />
+            <div className="absolute top-40 right-[10%] w-60 h-60 bg-accent/[0.08] rounded-full blur-[100px] animate-float-delayed" />
+            <div className="absolute bottom-10 left-[30%] w-40 h-40 bg-emerald-400/[0.06] rounded-full blur-[80px] animate-float" />
+            <div className="absolute top-1/2 right-[5%] w-32 h-32 bg-primary/[0.05] rounded-full blur-[60px] animate-float" />
           </>
         )}
         
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center relative z-10">
           <div className="space-y-5 md:space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-accent/10 text-accent font-medium text-xs md:text-sm">
+            <motion.div
+              initial={shouldAnimate ? { opacity: 0, y: 10 } : {}}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-xs md:text-sm"
+            >
               <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span>AI-powered habit coaching</span>
-            </div>
+            </motion.div>
             
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-foreground" data-testid="text-hero-headline">
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-foreground" data-testid="text-hero-headline">
               Build habits that <br className="hidden sm:block" />
               <span className="text-gradient">actually stick.</span>
             </h1>
@@ -733,7 +753,7 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              <Button onClick={scrollToLogin} size="lg" className="text-base" data-testid="button-hero-cta">
+              <Button onClick={scrollToLogin} size="lg" className="text-base shadow-lg shadow-primary/25" data-testid="button-hero-cta">
                 Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
@@ -779,47 +799,75 @@ export default function Landing() {
 
           {!isMobile && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
               className="relative hidden lg:block"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl transform rotate-6 animate-pulse-glow" />
-              <div className="relative glass-panel rounded-2xl p-6 shadow-2xl transform -rotate-2 border border-white/40">
-                <div className="space-y-4">
-                  {[
-                    { title: "Morning Meditation", progress: 100, icon: "complete" },
-                    { title: "Daily Reading", progress: 60, icon: "active" },
-                    { title: "Evening Walk", progress: 0, icon: "pending" }
-                  ].map((item, i) => (
-                    <motion.div 
-                      key={i} 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.4 + i * 0.15 }}
-                      className="flex items-center gap-4 p-4 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm"
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        item.icon === 'complete' ? 'bg-primary/20 text-primary' : 
-                        item.icon === 'active' ? 'bg-accent/20 text-accent' : 
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {item.icon === 'complete' && <CheckCircle2 className="w-6 h-6" />}
-                        {item.icon === 'active' && <Sparkles className="w-5 h-5" />}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <div className="text-sm font-medium text-foreground/80">{item.title}</div>
-                        <div className="h-2 bg-foreground/10 rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full bg-primary rounded-full" 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${item.progress}%` }}
-                            transition={{ duration: 0.8, delay: 0.6 + i * 0.15 }}
-                          />
+              <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 rounded-3xl blur-3xl animate-pulse-glow" />
+              <div className="relative rounded-2xl overflow-visible">
+                <div className="bg-gradient-to-br from-card to-card/80 dark:from-card dark:to-card/90 rounded-2xl p-6 shadow-2xl border border-border/60 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-5 pb-4 border-b border-border/40">
+                    <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="font-display font-semibold text-sm">Today's Progress</span>
+                    <Badge variant="secondary" className="ml-auto text-xs">3 habits</Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { title: "Morning Meditation", subtitle: "5 min guided session", progress: 100, icon: Brain, color: "text-violet-500 dark:text-violet-400", bg: "bg-violet-500/10" },
+                      { title: "Daily Reading", subtitle: "10 pages completed", progress: 60, icon: BookOpen, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-500/10" },
+                      { title: "Evening Walk", subtitle: "Starts at 6:00 PM", progress: 0, icon: Target, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-500/10" }
+                    ].map((item, i) => (
+                      <motion.div 
+                        key={i} 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.5 + i * 0.15 }}
+                        className="flex items-center gap-3.5 p-3.5 bg-muted/40 dark:bg-muted/20 rounded-xl"
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${item.bg}`}>
+                          <item.icon className={`w-5 h-5 ${item.color}`} />
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium">{item.title}</span>
+                            {item.progress === 100 && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                            {item.progress > 0 && item.progress < 100 && <span className="text-xs text-muted-foreground shrink-0">{item.progress}%</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{item.subtitle}</div>
+                          <div className="h-1.5 bg-foreground/[0.06] rounded-full overflow-hidden">
+                            <motion.div 
+                              className={`h-full rounded-full ${item.progress === 100 ? 'bg-primary' : item.progress > 0 ? 'bg-accent' : 'bg-transparent'}`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.progress}%` }}
+                              transition={{ duration: 0.8, delay: 0.7 + i * 0.15 }}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.2 }}
+                    className="mt-4 pt-4 border-t border-border/40 flex items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs font-medium">7-day streak</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-medium">Level 3</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      <Star className="w-3 h-3 mr-1 text-amber-500" />
+                      245 XP
+                    </Badge>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -1234,9 +1282,14 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24" id="features" aria-label="Features">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <section className="py-16 md:py-24 relative" id="features" aria-label="Features">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,hsl(var(--primary)/0.05),transparent)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+            <Badge variant="secondary" className="mb-2">
+              <Zap className="w-3 h-3 mr-1" />
+              Powerful Features
+            </Badge>
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
               More than just a tracker. HabitBuilder.pro is an interactive coach that guides you through every step.
@@ -1246,54 +1299,75 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[
               {
-                icon: <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-primary" />,
+                icon: <Sparkles className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "AI Coaching Interview",
-                desc: "Answer personalized questions about your goals, and AI creates a tailored action plan just for you."
+                desc: "Answer personalized questions about your goals, and AI creates a tailored action plan just for you.",
+                color: "text-primary",
+                bg: "bg-primary/10",
+                borderAccent: "border-primary/20"
               },
               {
-                icon: <Target className="w-6 h-6 md:w-7 md:h-7 text-accent" />,
+                icon: <Target className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Guided Sessions",
-                desc: "Step-by-step coaching walks you through each habit with timers, notes, and progress tracking."
+                desc: "Step-by-step coaching walks you through each habit with timers, notes, and progress tracking.",
+                color: "text-accent",
+                bg: "bg-accent/10",
+                borderAccent: "border-accent/20"
               },
               {
-                icon: <Flame className="w-6 h-6 md:w-7 md:h-7 text-orange-500 dark:text-orange-400" />,
+                icon: <Flame className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Streaks & Achievements",
-                desc: "Stay motivated with daily streaks, milestone badges, and a sense of accomplishment."
+                desc: "Stay motivated with daily streaks, milestone badges, and a sense of accomplishment.",
+                color: "text-orange-500 dark:text-orange-400",
+                bg: "bg-orange-500/10",
+                borderAccent: "border-orange-500/20"
               },
               {
-                icon: <Trophy className="w-6 h-6 md:w-7 md:h-7 text-amber-500 dark:text-amber-400" />,
+                icon: <Trophy className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "XP & Leveling System",
-                desc: "Earn XP through daily challenges, level up from Beginner to Habit Hero across 12 tiers."
+                desc: "Earn XP through daily challenges, level up from Beginner to Habit Hero across 12 tiers.",
+                color: "text-amber-500 dark:text-amber-400",
+                bg: "bg-amber-500/10",
+                borderAccent: "border-amber-500/20"
               },
               {
-                icon: <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-emerald-500 dark:text-emerald-400" />,
+                icon: <BarChart3 className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Progress Analytics",
-                desc: "Track your journey with visual charts, completion rates, and mood correlation insights."
+                desc: "Track your journey with visual charts, completion rates, and mood correlation insights.",
+                color: "text-emerald-500 dark:text-emerald-400",
+                bg: "bg-emerald-500/10",
+                borderAccent: "border-emerald-500/20"
               },
               {
-                icon: <Users className="w-6 h-6 md:w-7 md:h-7 text-blue-500 dark:text-blue-400" />,
+                icon: <Users className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Community Forum (Coming Soon)",
-                desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired."
+                desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired.",
+                color: "text-blue-500 dark:text-blue-400",
+                bg: "bg-blue-500/10",
+                borderAccent: "border-blue-500/20"
               },
             ].map((feature, i) => (
               <motion.div 
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
-                className="bg-white dark:bg-card p-5 md:p-6 rounded-xl border border-border/50"
                 data-testid={`card-feature-${i}`}
               >
-                <div className="mb-3 md:mb-4 p-2 md:p-2.5 bg-background dark:bg-muted rounded-lg w-fit">
-                  {feature.icon}
-                </div>
-                <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
+                <Card className="h-full hover-elevate">
+                  <CardContent className="pt-6">
+                    <div className={`mb-4 w-12 h-12 md:w-14 md:h-14 rounded-xl ${feature.bg} flex items-center justify-center`}>
+                      <div className={feature.color}>{feature.icon}</div>
+                    </div>
+                    <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
 
           <div className="mt-8 md:mt-12 text-center">
-            <Button onClick={scrollToLogin} size="lg" data-testid="button-cta-features">
+            <Button onClick={scrollToLogin} size="lg" className="shadow-lg shadow-primary/20" data-testid="button-cta-features">
               Try It Free
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
@@ -1499,17 +1573,30 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 px-4 sm:px-6 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5">
-        <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8">
+      <section className="py-16 md:py-24 px-4 sm:px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-accent/[0.04] to-primary/[0.08]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,hsl(var(--primary)/0.08),transparent)]" />
+        {!isMobile && (
+          <>
+            <div className="absolute top-10 left-[10%] w-40 h-40 bg-primary/[0.06] rounded-full blur-[80px]" />
+            <div className="absolute bottom-10 right-[10%] w-48 h-48 bg-accent/[0.06] rounded-full blur-[80px]" />
+          </>
+        )}
+        <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8 relative z-10">
           <div className="space-y-4 md:space-y-6">
-            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold">
-              Every day you wait is a day without progress
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-sm mx-auto">
+              <Sparkles className="w-4 h-4" />
+              <span>Your journey starts here</span>
+            </div>
+            <h2 className="font-display text-2xl md:text-3xl lg:text-5xl font-bold leading-tight">
+              Every day you wait is a day <br className="hidden sm:block" />
+              <span className="text-gradient">without progress</span>
             </h2>
             <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
               The best time to start was yesterday. The second best time is right now. Your future self will thank you for taking action today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 pt-2 md:pt-4">
-              <Button onClick={scrollToLogin} size="lg" className="text-base" data-testid="button-cta-urgency">
+              <Button onClick={scrollToLogin} size="lg" className="text-base shadow-lg shadow-primary/25" data-testid="button-cta-urgency">
                 Start Free — Takes 30 Seconds
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
