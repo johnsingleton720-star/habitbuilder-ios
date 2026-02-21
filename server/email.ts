@@ -23,6 +23,12 @@ export async function getResendClient() {
   };
 }
 
+const TEST_EMAIL_DOMAINS = ['@example.com', '@test.com', '@example.org'];
+
+function isTestEmail(email: string): boolean {
+  return TEST_EMAIL_DOMAINS.some(domain => email.toLowerCase().endsWith(domain));
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -35,11 +41,24 @@ export async function sendEmail({
   text?: string;
 }) {
   try {
+    const recipients = (Array.isArray(to) ? to : [to]).filter(email => {
+      if (isTestEmail(email)) {
+        console.log(`[Email] Skipping test email address: ${email}`);
+        return false;
+      }
+      return true;
+    });
+
+    if (recipients.length === 0) {
+      console.log('[Email] No valid recipients after filtering test addresses, skipping send');
+      return { data: null, error: null };
+    }
+
     const { client, fromEmail } = await getResendClient();
 
     const result = await client.emails.send({
       from: fromEmail,
-      to: Array.isArray(to) ? to : [to],
+      to: recipients,
       subject,
       html,
       ...(text ? { text } : {}),
