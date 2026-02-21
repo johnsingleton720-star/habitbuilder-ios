@@ -17,7 +17,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { UnifiedRoutineSession } from "@/components/UnifiedRoutineSession";
 
 export default function StackDetail() {
-  usePageTitle("Stack Details");
+  usePageTitle("Stack Details", "View and manage your habit stack. Combine habits for maximum impact with habit stacking.");
   const [, params] = useRoute("/stack/:id");
   const stackId = Number(params?.id);
   const queryClient = useQueryClient();

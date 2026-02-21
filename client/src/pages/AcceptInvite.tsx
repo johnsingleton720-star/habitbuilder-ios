@@ -18,7 +18,7 @@ interface InviteInfo {
 }
 
 export default function AcceptInvite() {
-  usePageTitle("Accept Invitation");
+  usePageTitle("Accept Invitation", "Accept an accountability partner invitation on HabitBuilder.pro.");
   const [, params] = useRoute("/accept-invite/:token");
   const token = params?.token || "";
   const [responded, setResponded] = useState<"accepted" | "declined" | null>(null);

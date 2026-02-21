@@ -37,7 +37,7 @@ interface BrokenStreakInfo {
 }
 
 export default function Dashboard() {
-  usePageTitle("Dashboard");
+  usePageTitle("Dashboard", "Your personal habit coaching dashboard. Track progress, complete guided sessions, earn XP, and stay on top of your daily habits.");
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabits();
   const [isDialogOpen, setIsDialogOpen] = useState(false);

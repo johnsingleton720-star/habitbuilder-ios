@@ -46,7 +46,7 @@ interface AnalyticsData {
 }
 
 export default function Analytics() {
-  usePageTitle("Analytics");
+  usePageTitle("Analytics", "Advanced habit analytics with trend charts, performance breakdowns, AI-generated insights, and data export.");
   const { isPremium, canUseFeature, getUpgradeMessage } = useSubscription();
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("month");

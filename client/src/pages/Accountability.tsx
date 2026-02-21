@@ -305,7 +305,7 @@ function SharedHabitCard({ habit, settings }: { habit: SharedHabitDetail; settin
 }
 
 export default function Accountability() {
-  usePageTitle("Accountability");
+  usePageTitle("Accountability", "Connect with accountability partners to stay motivated. Share progress and support each other's habit goals.");
   const { isPremium, canUseFeature } = useSubscription();
   const { toast } = useToast();
   const [isInviteOpen, setIsInviteOpen] = useState(false);

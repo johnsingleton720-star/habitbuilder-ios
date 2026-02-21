@@ -117,7 +117,7 @@ function extractResources(stacks: HabitStack[] | undefined, habits: Habit[] | un
 }
 
 export default function Resources() {
-  usePageTitle("Resource Library");
+  usePageTitle("Resource Library", "Curated resources to support your habit journey. Articles, tips, and guides on building better habits.");
   const { user } = useAuth();
   const { features, isPremium } = useSubscription();
   const { toast } = useToast();

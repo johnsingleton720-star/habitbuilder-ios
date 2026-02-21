@@ -14,7 +14,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 type ViewType = "today" | "yesterday" | "total" | "streak";
 
 export default function ProgressPage() {
-  usePageTitle("Progress");
+  usePageTitle("Progress", "View your habit progress, streaks, and completion history. Track your growth over time with detailed analytics.");
   const [, params] = useRoute("/progress/:view");
   const view = (params?.view as ViewType) || "today";
   const { data: habits, isLoading } = useHabits();

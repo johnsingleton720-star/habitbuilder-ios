@@ -457,7 +457,7 @@ function PublicProfile({ userId }: { userId: string }) {
 }
 
 export default function UserProfile() {
-  usePageTitle("Profile");
+  usePageTitle("Profile", "View community member profile, achievements, and habit-building progress.");
   const params = useParams<{ userId?: string }>();
   
   if (params.userId) {

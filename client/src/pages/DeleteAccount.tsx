@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function DeleteAccount() {
-  usePageTitle("Delete Account");
+  usePageTitle("Delete Account", "Permanently delete your HabitBuilder.pro account and all associated data.");
   const { user } = useAuth();
   const { toast } = useToast();
   const [confirmText, setConfirmText] = useState("");

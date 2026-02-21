@@ -27,7 +27,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 export default function HabitDetail() {
-  usePageTitle("Habit Details");
+  usePageTitle("Habit Details", "View your habit action plan, guided sessions, and detailed progress tracking.");
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();

@@ -418,7 +418,7 @@ function TimezoneSettings({ user }: { user: any }) {
 }
 
 export default function Account() {
-  usePageTitle("Account");
+  usePageTitle("Account", "Manage your HabitBuilder.pro account settings, email preferences, timezone, and subscription.");
   const { user, logout } = useAuth();
   const { hasPaid, isTrialActive, trialEndsAt } = usePaymentStatus();
   const { tier, isPro, isPremium, isFreeUser } = useSubscription();

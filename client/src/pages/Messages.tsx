@@ -239,7 +239,7 @@ function ConversationDetail({ conversationId, onBack }: { conversationId: number
 }
 
 export default function Messages() {
-  usePageTitle("Messages");
+  usePageTitle("Messages", "Private messages with your accountability partners and the HabitBuilder.pro community.");
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [, navigate] = useLocation();
 

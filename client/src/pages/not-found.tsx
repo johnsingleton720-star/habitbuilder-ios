@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function NotFound() {
-  usePageTitle("Page Not Found");
+  usePageTitle("Page Not Found", "The page you're looking for doesn't exist. Return to HabitBuilder.pro to continue building better habits.");
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background">
       <Card className="w-full max-w-md mx-4">
