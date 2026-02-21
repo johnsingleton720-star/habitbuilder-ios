@@ -7,6 +7,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { blogArticles } from "@/data/blog-articles";
 import { PublicNav } from "@/components/PublicNav";
+import { SeoSchema } from "@/components/SeoSchema";
 
 export default function BlogList() {
   usePageTitle("Habit Building Blog - Tips, Science, and Strategies", "Expert articles on habit formation, morning routines, habit stacking, and the science of behavior change. Learn proven techniques to build habits that stick.");
@@ -14,6 +15,10 @@ export default function BlogList() {
   return (
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Blog", url: "https://habitbuilder.pro/blog" }
+      ]} />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

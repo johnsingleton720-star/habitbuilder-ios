@@ -10,6 +10,7 @@ import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
 import { LogoFooter } from "@/components/Logo";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { SeoSchema } from "@/components/SeoSchema";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { PublicNav } from "@/components/PublicNav";
@@ -844,6 +845,9 @@ export default function Landing() {
           { "@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support." }}
         ]
       }) }} />
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" }
+      ]} />
       <PublicNav />
 
       <LoginTransitionDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />

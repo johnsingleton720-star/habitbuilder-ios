@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { PublicNav } from "@/components/PublicNav";
+import { SeoSchema } from "@/components/SeoSchema";
 import type { HabitTemplate } from "@shared/schema";
 
 const iconMap: Record<string, typeof Target> = {
@@ -49,6 +50,10 @@ export default function PublicTemplates() {
   return (
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Habit Templates", url: "https://habitbuilder.pro/templates" }
+      ]} />
       
       <section className="pt-24 pb-2 px-6">
         <div className="max-w-5xl mx-auto">

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Users, MessageCircle, TrendingUp, Lightbulb, HelpCircle, ArrowLeft, Bell } from "lucide-react";
 import { useLocation } from "wouter";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { SeoSchema } from "@/components/SeoSchema";
 
 const upcomingFeatures = [
   {
@@ -40,6 +41,10 @@ export default function Community() {
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-8">
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Community", url: "https://habitbuilder.pro/community" }
+      ]} />
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back-dashboard">
           <ArrowLeft className="w-4 h-4" />

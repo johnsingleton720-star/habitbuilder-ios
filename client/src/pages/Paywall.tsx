@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { SeoSchema } from "@/components/SeoSchema";
 
 interface PricingTier {
   tier: string;
@@ -127,6 +128,10 @@ export default function Paywall() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex flex-col items-center py-12 px-4 font-body">
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Pricing", url: "https://habitbuilder.pro/paywall" }
+      ]} />
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -8,6 +8,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { Link, useParams } from "wouter";
 import { getArticleBySlug, blogArticles } from "@/data/blog-articles";
 import { PublicNav } from "@/components/PublicNav";
+import { SeoSchema } from "@/components/SeoSchema";
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
@@ -78,6 +79,11 @@ export default function BlogArticle() {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Blog", url: "https://habitbuilder.pro/blog" },
+        { name: article.title, url: `https://habitbuilder.pro/blog/${article.slug}` }
+      ]} />
 
       <article className="pt-28 pb-16 px-6">
         <div className="max-w-3xl mx-auto">

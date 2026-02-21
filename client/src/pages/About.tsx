@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import { PublicNav } from "@/components/PublicNav";
+import { SeoSchema } from "@/components/SeoSchema";
 import { LogoFooter } from "@/components/Logo";
 
 export default function About() {
@@ -50,6 +51,10 @@ export default function About() {
   return (
     <div className="min-h-screen bg-background font-body">
       <PublicNav />
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "About", url: "https://habitbuilder.pro/about" }
+      ]} />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

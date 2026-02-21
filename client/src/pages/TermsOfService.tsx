@@ -1,4 +1,5 @@
 import { usePageTitle } from "@/hooks/use-page-title";
+import { SeoSchema } from "@/components/SeoSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Link } from "wouter";
@@ -8,6 +9,10 @@ export default function TermsOfService() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SeoSchema breadcrumbs={[
+        { name: "Home", url: "https://habitbuilder.pro/" },
+        { name: "Terms of Service", url: "https://habitbuilder.pro/terms" }
+      ]} />
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Link href="/">
