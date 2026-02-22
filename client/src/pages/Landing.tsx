@@ -1532,48 +1532,48 @@ export default function Landing() {
                 icon: <Sparkles className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "AI Coaching Interview",
                 desc: "Answer personalized questions about your goals, and AI creates a tailored action plan just for you.",
-                color: "text-primary",
-                bg: "bg-primary/10",
-                borderAccent: "border-primary/20"
+                color: "text-rose-600 dark:text-rose-400",
+                bg: "bg-gradient-to-br from-rose-500/20 to-pink-500/10",
+                borderAccent: "border-rose-500/20"
               },
               {
                 icon: <Target className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Guided Sessions",
                 desc: "Step-by-step coaching walks you through each habit with timers, notes, and progress tracking.",
-                color: "text-accent",
-                bg: "bg-accent/10",
-                borderAccent: "border-accent/20"
+                color: "text-violet-600 dark:text-violet-400",
+                bg: "bg-gradient-to-br from-violet-500/20 to-purple-500/10",
+                borderAccent: "border-violet-500/20"
               },
               {
                 icon: <Flame className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Streaks & Achievements",
                 desc: "Stay motivated with daily streaks, milestone badges, and a sense of accomplishment.",
-                color: "text-orange-500 dark:text-orange-400",
-                bg: "bg-orange-500/10",
+                color: "text-orange-600 dark:text-orange-400",
+                bg: "bg-gradient-to-br from-orange-500/20 to-red-500/10",
                 borderAccent: "border-orange-500/20"
               },
               {
                 icon: <Trophy className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "XP & Leveling System",
                 desc: "Earn XP through daily challenges, level up from Beginner to Habit Hero across 12 tiers.",
-                color: "text-amber-500 dark:text-amber-400",
-                bg: "bg-amber-500/10",
+                color: "text-amber-600 dark:text-amber-400",
+                bg: "bg-gradient-to-br from-amber-500/20 to-yellow-500/10",
                 borderAccent: "border-amber-500/20"
               },
               {
                 icon: <BarChart3 className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Progress Analytics",
                 desc: "Track your journey with visual charts, completion rates, and mood correlation insights.",
-                color: "text-emerald-500 dark:text-emerald-400",
-                bg: "bg-emerald-500/10",
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: "bg-gradient-to-br from-emerald-500/20 to-teal-500/10",
                 borderAccent: "border-emerald-500/20"
               },
               {
                 icon: <Users className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Community Forum (Coming Soon)",
                 desc: "Connect with fellow habit builders, share tips, find accountability partners, and stay inspired.",
-                color: "text-blue-500 dark:text-blue-400",
-                bg: "bg-blue-500/10",
+                color: "text-blue-600 dark:text-blue-400",
+                bg: "bg-gradient-to-br from-blue-500/20 to-indigo-500/10",
                 borderAccent: "border-blue-500/20"
               },
             ].map((feature, i) => (
@@ -1585,7 +1585,7 @@ export default function Landing() {
               >
                 <Card className="h-full hover-elevate touch-card">
                   <CardContent className="pt-6">
-                    <div className={`mb-4 w-12 h-12 md:w-14 md:h-14 rounded-xl ${feature.bg} flex items-center justify-center`}>
+                    <div className={`mb-4 w-14 h-14 md:w-16 md:h-16 rounded-2xl ${feature.bg} flex items-center justify-center shadow-sm`}>
                       <div className={feature.color}>{feature.icon}</div>
                     </div>
                     <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
