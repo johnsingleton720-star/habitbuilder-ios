@@ -150,10 +150,21 @@ The core system enables personalized habit coaching:
 -   **HTML Escaping**: All user-provided content is sanitized before inserting into email HTML
 -   **Admin API**: `POST /api/admin/emails/send`, `GET /api/admin/emails/recipients`
 
+### iOS App (Capacitor)
+-   **Framework**: Capacitor (iOS only — Android uses separate TWA build)
+-   **Bundle ID**: `pro.habitbuilder.app`
+-   **Config**: `capacitor.config.ts` — points to live `https://habitbuilder.pro` server
+-   **Platform Detection**: `client/src/lib/platform.ts` — detects iOS/Android/web at runtime
+-   **Payment Routing**: iOS users get Apple In-App Purchase; web and Android users keep Stripe
+-   **Apple IAP**: `client/src/lib/apple-iap.ts` — handles purchases and restore via native plugin (only active in iOS builds)
+-   **Receipt Validation**: `POST /api/apple/validate-receipt` — server-side Apple receipt verification
+-   **Build Instructions**: `ios-build-instructions.md` — full step-by-step guide for building and submitting to App Store
+-   **Environment Variable**: `APPLE_SHARED_SECRET` needed for receipt validation (from App Store Connect)
+
 ### Third-Party Services
 -   **Database**: PostgreSQL (Replit-managed)
 -   **Authentication**: Replit Auth
--   **Payments**: Stripe
+-   **Payments**: Stripe (web/Android), Apple In-App Purchase (iOS)
 -   **AI Services**: OpenAI (via Replit AI Integrations)
 -   **Email**: Resend (via Replit Connectors)
 
@@ -163,3 +174,4 @@ The core system enables personalized habit coaching:
 -   `REPL_ID`
 -   `AI_INTEGRATIONS_OPENAI_API_KEY`
 -   `AI_INTEGRATIONS_OPENAI_BASE_URL`
+-   `APPLE_SHARED_SECRET` (needed for iOS in-app purchase receipt validation)
