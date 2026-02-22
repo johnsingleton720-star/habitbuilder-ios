@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus, HelpCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -101,6 +101,7 @@ export function MoodTracker() {
   const [selectedHabits, setSelectedHabits] = useState<number[]>([]);
   const [reportHabitId, setReportHabitId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [showMoodImpactInfo, setShowMoodImpactInfo] = useState(false);
   
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   const today = format(new Date(), "yyyy-MM-dd");
@@ -520,10 +521,47 @@ export function MoodTracker() {
 
             <Card className="border-border/50">
               <CardContent className="p-4 space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  Mood Impact
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    Mood Impact
+                  </h4>
+                  <button
+                    onClick={() => setShowMoodImpactInfo(!showMoodImpactInfo)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="btn-mood-impact-info"
+                    aria-label="How mood impact is calculated"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
+                </div>
+                <AnimatePresence>
+                  {showMoodImpactInfo && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1.5 border border-border/50">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary" />
+                          <div className="space-y-1.5">
+                            <p><strong className="text-foreground">With habit</strong> — Your average mood score on days you completed this habit.</p>
+                            <p><strong className="text-foreground">Without habit</strong> — Your average mood score on all other days when you logged a mood but didn't do this habit.</p>
+                            <p><strong className="text-foreground">Difference</strong> — How much better (or worse) your mood tends to be on days you do this habit. The more entries you log, the more accurate this comparison becomes.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {moodReport.totalEntries < 3 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Limited data — log more mood entries for a more accurate comparison.
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="text-center flex-1">
                     <p className="text-lg font-bold text-foreground">{moodReport.avgMoodWith}/5</p>
