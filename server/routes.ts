@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq, and, isNotNull, gte } from "drizzle-orm";
+import { sql, eq, and, isNotNull, gte, lte } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -511,6 +511,28 @@ export async function registerRoutes(
       res.json(tasks);
     } catch (error) {
       console.error("Error fetching quick tasks:", error);
+      res.status(500).json({ error: "Failed to fetch quick tasks" });
+    }
+  });
+
+  app.get("/api/quick-tasks/range", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const from = req.query.from as string;
+      const to = req.query.to as string;
+      if (!from || !to) {
+        return res.status(400).json({ error: "from and to dates required" });
+      }
+      const tasks = await db.select().from(quickTasks)
+        .where(and(
+          eq(quickTasks.userId, userId),
+          gte(quickTasks.date, from),
+          lte(quickTasks.date, to)
+        ))
+        .orderBy(quickTasks.date, quickTasks.sortOrder);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching quick tasks range:", error);
       res.status(500).json({ error: "Failed to fetch quick tasks" });
     }
   });
