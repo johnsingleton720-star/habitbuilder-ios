@@ -250,8 +250,8 @@ export function QuickTasks() {
         </div>
 
         {tasks.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-2" data-testid="text-no-quick-tasks">
-            No tasks for {getDateLabel().toLowerCase()}
+          <p className="text-sm text-muted-foreground text-center py-3" data-testid="text-no-quick-tasks">
+            No tasks yet — add a quick to-do above to stay on track today!
           </p>
         )}
       </CardContent>

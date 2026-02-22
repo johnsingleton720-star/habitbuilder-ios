@@ -14,8 +14,9 @@ import { GamificationDisplay } from "@/components/GamificationDisplay";
 import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
+import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,9 @@ export default function Dashboard() {
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
+  const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(() => {
+    return localStorage.getItem('welcomeBannerDismissed') === 'true';
+  });
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features, isFreeUser } = useSubscription();
@@ -218,6 +222,60 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
+        {/* Welcome Banner for new users with no habits */}
+        {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-emerald-500/5 dark:from-primary/10 dark:to-emerald-500/10 relative overflow-hidden" data-testid="card-welcome-banner">
+              <button
+                onClick={() => {
+                  setWelcomeBannerDismissed(true);
+                  localStorage.setItem('welcomeBannerDismissed', 'true');
+                }}
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="button-dismiss-welcome"
+                aria-label="Dismiss welcome banner"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">Welcome! Let's build your first habit</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Your AI coach will create a personalized plan just for you. Pick a habit you care about, answer a few quick questions, and you'll have a step-by-step plan in minutes.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> Personalized AI plans</span>
+                      <span className="text-border">|</span>
+                      <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5 text-primary" /> Guided daily sessions</span>
+                      <span className="text-border">|</span>
+                      <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-500" /> Track your progress</span>
+                    </div>
+                    <Button
+                      onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }}
+                      className="gap-2"
+                      data-testid="button-welcome-create-habit"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Your First Habit
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+        )}
+
         {isFreeUser && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -376,15 +434,18 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : activeHabits?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center bg-card/50 rounded-3xl border border-dashed border-border">
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <Plus className="w-8 h-8 text-muted-foreground" />
+                  <div className="flex flex-col items-center justify-center py-12 text-center bg-card/50 rounded-3xl border border-dashed border-border">
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <Target className="w-7 h-7 text-primary" />
                     </div>
-                    <h3 className="font-display text-lg font-medium text-foreground">No habits yet</h3>
-                    <p className="text-muted-foreground max-w-sm mt-2 mb-6">
-                      Start building your routine by adding your first habit. Small steps lead to big changes.
+                    <h3 className="font-display text-lg font-medium text-foreground">Your habits will live here</h3>
+                    <p className="text-muted-foreground max-w-sm mt-2 text-sm">
+                      Once you create a habit, you'll see your daily plans, progress, and guided sessions right here. Most people start with something simple — like reading for 10 minutes a day.
                     </p>
-                    <Button onClick={() => setIsDialogOpen(true)}>Create First Habit</Button>
+                    <Button onClick={() => setIsDialogOpen(true)} className="mt-5 gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create Your First Habit
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -421,6 +482,9 @@ export default function Dashboard() {
       />
 
       {user && !user.onboardingComplete && <OnboardingWizard />}
+
+      {/* New User Feedback Prompt */}
+      <NewUserFeedback />
 
       {/* Streak Broken Modal */}
       {brokenStreak && (
