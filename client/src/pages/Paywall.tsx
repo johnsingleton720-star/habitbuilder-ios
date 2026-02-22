@@ -13,6 +13,8 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { SeoSchema } from "@/components/SeoSchema";
+import { isIOS } from "@/lib/platform";
+import { APPLE_PRODUCT_IDS, purchaseProduct, restorePurchases } from "@/lib/apple-iap";
 
 interface PricingTier {
   tier: string;
@@ -89,7 +91,25 @@ export default function Paywall() {
     },
   });
 
-  const handleSelectTier = (tier: PricingTier) => {
+  const handleSelectTier = async (tier: PricingTier) => {
+    if (isIOS()) {
+      const productId = tier.tier === 'pro'
+        ? (isAnnual ? APPLE_PRODUCT_IDS.pro_annual : APPLE_PRODUCT_IDS.pro_monthly)
+        : (isAnnual ? APPLE_PRODUCT_IDS.premium_annual : APPLE_PRODUCT_IDS.premium_monthly);
+      
+      setSelectedTier(tier.tier);
+      const success = await purchaseProduct(productId);
+      if (!success) {
+        setSelectedTier(null);
+        toast({
+          title: "Purchase failed",
+          description: "Unable to complete purchase. Please try again.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
     if (isAnnual && tier.annualPriceId) {
       setSelectedTier(tier.tier);
       checkoutMutation.mutate({ priceId: tier.annualPriceId, tier: tier.tier, billingInterval: 'year' });
@@ -420,6 +440,27 @@ export default function Paywall() {
             </div>
           </div>
         </div>
+
+        {isIOS() && (
+          <div className="mt-8 text-center">
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                const restored = await restorePurchases();
+                toast({
+                  title: restored ? "Purchases restored" : "No purchases found",
+                  description: restored
+                    ? "Your subscription has been restored."
+                    : "No previous purchases were found for this account.",
+                });
+              }}
+              className="text-sm text-muted-foreground"
+              data-testid="button-restore-purchases"
+            >
+              Restore Purchases
+            </Button>
+          </div>
+        )}
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground mb-2">

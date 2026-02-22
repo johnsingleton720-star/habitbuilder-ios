@@ -1876,6 +1876,71 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     }
   });
 
+  app.post("/api/apple/validate-receipt", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { receiptData, productId } = req.body;
+
+      if (!receiptData || !productId) {
+        return res.status(400).json({ error: "Receipt data and product ID required" });
+      }
+
+      const isProduction = process.env.NODE_ENV === 'production';
+      const verifyUrl = isProduction
+        ? 'https://buy.itunes.apple.com/verifyReceipt'
+        : 'https://sandbox.itunes.apple.com/verifyReceipt';
+
+      const appleResponse = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          'receipt-data': receiptData,
+          password: process.env.APPLE_SHARED_SECRET || '',
+        }),
+      });
+
+      const result = await appleResponse.json();
+
+      if (result.status === 0) {
+        const tier = productId.startsWith('pro') ? 'pro' : 'premium';
+        await db.update(users).set({
+          subscriptionTier: tier,
+          hasPaid: true,
+        }).where(eq(users.id, userId));
+
+        return res.json({ success: true, tier });
+      }
+
+      if (result.status === 21007) {
+        const sandboxResponse = await fetch('https://sandbox.itunes.apple.com/verifyReceipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            'receipt-data': receiptData,
+            password: process.env.APPLE_SHARED_SECRET || '',
+          }),
+        });
+        const sandboxResult = await sandboxResponse.json();
+
+        if (sandboxResult.status === 0) {
+          const tier = productId.startsWith('pro') ? 'pro' : 'premium';
+          await db.update(users).set({
+            subscriptionTier: tier,
+            hasPaid: true,
+          }).where(eq(users.id, userId));
+
+          return res.json({ success: true, tier });
+        }
+      }
+
+      console.error("Apple receipt validation failed:", result.status);
+      return res.status(400).json({ error: "Invalid receipt", appleStatus: result.status });
+    } catch (error) {
+      console.error("Apple receipt validation error:", error);
+      res.status(500).json({ error: "Failed to validate receipt" });
+    }
+  });
+
   // Create customer portal session for subscription management
   app.post("/api/stripe/customer-portal", isAuthenticated, async (req: any, res) => {
     try {
