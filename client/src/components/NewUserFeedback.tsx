@@ -31,15 +31,15 @@ export function NewUserFeedback() {
   useEffect(() => {
     if (!user || !habits) return;
 
+    const feedbackKey = `newUserFeedbackShown_${user.id}`;
+    if (localStorage.getItem(feedbackKey)) return;
+
     const hasCompletedSetup = habits.some(h => h.setupComplete);
     if (!hasCompletedSetup) return;
 
-    const feedbackKey = `newUserFeedbackShown_${user.id}`;
-    const alreadyShown = localStorage.getItem(feedbackKey);
-    if (alreadyShown) return;
+    localStorage.setItem(feedbackKey, "true");
 
     const timer = setTimeout(() => {
-      localStorage.setItem(feedbackKey, "true");
       setOpen(true);
     }, 3000);
 
