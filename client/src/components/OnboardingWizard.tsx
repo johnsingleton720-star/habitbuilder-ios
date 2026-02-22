@@ -41,6 +41,7 @@ export function OnboardingWizard() {
   const [createdHabitId, setCreatedHabitId] = useState<number | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -102,6 +103,22 @@ export function OnboardingWizard() {
     }
   };
 
+  const handleSkip = async () => {
+    setIsSkipping(true);
+    try {
+      await apiRequest("PATCH", "/api/user/onboarding");
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    } catch (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Failed to complete onboarding.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSkipping(false);
+    }
+  };
+
   return (
     <Dialog open modal>
       <DialogContent
@@ -109,6 +126,21 @@ export function OnboardingWizard() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        {step === 1 && (
+          <div className="flex justify-end absolute top-3 right-3 z-10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSkip}
+              disabled={isSkipping}
+              data-testid="button-onboarding-skip"
+              className="text-xs text-muted-foreground"
+            >
+              {isSkipping ? <Loader2 className="w-3 h-3 animate-spin" /> : "Skip"}
+            </Button>
+          </div>
+        )}
+
         <div className="flex justify-center gap-2 pt-2 pb-4">
           {[0, 1, 2].map((i) => (
             <div
@@ -139,20 +171,38 @@ export function OnboardingWizard() {
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-foreground">
-                  Welcome to HabitBuilder.pro!
+                  Hey there! Ready to build a better you?
                 </h2>
                 <p className="text-muted-foreground">
-                  Let's set up your first habit in under 2 minutes
+                  We'll help you pick a habit and create a personalized AI coaching plan — it only takes about 2 minutes.
+                </p>
+                <p className="text-sm text-muted-foreground/70 pt-1">
+                  Most users feel more motivated after their first session.
                 </p>
               </div>
-              <Button
-                onClick={() => setStep(1)}
-                className="gap-2"
-                data-testid="button-onboarding-start"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  onClick={() => setStep(1)}
+                  className="gap-2"
+                  data-testid="button-onboarding-start"
+                >
+                  Get Started
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleSkip}
+                  disabled={isSkipping}
+                  data-testid="button-onboarding-skip"
+                  className="text-sm text-muted-foreground"
+                >
+                  {isSkipping ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "I'll explore on my own"
+                  )}
+                </Button>
+              </div>
             </motion.div>
           )}
 
@@ -167,10 +217,10 @@ export function OnboardingWizard() {
             >
               <div className="text-center space-y-1">
                 <h2 className="text-xl font-bold text-foreground">
-                  Pick a habit to start
+                  What's one thing you'd love to do more often?
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Choose a suggestion or type your own
+                  Pick one that excites you — there's no wrong answer here.
                 </p>
               </div>
 
@@ -199,7 +249,7 @@ export function OnboardingWizard() {
 
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
-                  Or type your own:
+                  Have something else in mind?
                 </p>
                 <Input
                   placeholder="e.g., Drink more water"
@@ -235,11 +285,8 @@ export function OnboardingWizard() {
                   <Loader2 className="w-12 h-12 text-primary animate-spin" />
                   <div className="space-y-2">
                     <h2 className="text-xl font-bold text-foreground">
-                      Creating your plan...
+                      Hang tight — your AI coach is crafting a plan just for you...
                     </h2>
-                    <p className="text-muted-foreground">
-                      Your AI coach is creating your personalized plan...
-                    </p>
                   </div>
                 </>
               ) : isComplete ? (
@@ -249,10 +296,10 @@ export function OnboardingWizard() {
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-xl font-bold text-foreground">
-                      Great choice!
+                      You're all set!
                     </h2>
                     <p className="text-muted-foreground">
-                      "{habitTitle}" is ready. Next, your AI coach will ask a few quick questions to build your personalized plan.
+                      Your "{habitTitle}" habit is ready to go. Next up, your AI coach will ask a few quick questions to fine-tune your plan.
                     </p>
                   </div>
                   <Button
