@@ -503,6 +503,7 @@ export default function Dashboard() {
           <p>&copy; {new Date().getFullYear()} HabitBuilder.pro. All rights reserved.</p>
         </div>
       </footer>
+      <div className="h-16 md:hidden" />
     </div>
   );
 }

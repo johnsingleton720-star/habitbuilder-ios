@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
+import { PageTransition } from "@/components/PageTransition";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -30,6 +31,7 @@ import BlogList from "@/pages/BlogList";
 import BlogArticle from "@/pages/BlogArticle";
 import { TermsOfServiceModal } from "@/components/TermsOfServiceModal";
 import { CookieConsent } from "@/components/CookieConsent";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import AcceptInvite from "@/pages/AcceptInvite";
@@ -117,26 +119,26 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/habit/:id" component={HabitDetail} />
-      <Route path="/stack/:id" component={StackDetail} />
-      <Route path="/progress/:view" component={Progress} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/accountability" component={Accountability} />
-      <Route path="/accept-invite/:token" component={AcceptInvite} />
-      <Route path="/account" component={Account} />
-      <Route path="/delete-account" component={DeleteAccount} />
-      <Route path="/community" component={Community} />
-      <Route path="/community/post/:id" component={Community} />
-      <Route path="/community/messages" component={Community} />
-      <Route path="/community/profile" component={Community} />
-      <Route path="/community/profile/:userId" component={Community} />
-      <Route path="/coach" component={CoachChat} />
-      <Route path="/admin/feedback" component={AdminFeedback} />
-      <Route path="/admin/email" component={AdminEmail} />
-      <Route path="/resources" component={Resources} />
-      <Route path="/paywall" component={Paywall} />
-      <Route component={NotFound} />
+      <Route path="/"><PageTransition><Dashboard /></PageTransition></Route>
+      <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
+      <Route path="/stack/:id">{(params) => <PageTransition><StackDetail /></PageTransition>}</Route>
+      <Route path="/progress/:view">{(params) => <PageTransition><Progress /></PageTransition>}</Route>
+      <Route path="/analytics"><PageTransition><Analytics /></PageTransition></Route>
+      <Route path="/accountability"><PageTransition><Accountability /></PageTransition></Route>
+      <Route path="/accept-invite/:token">{(params) => <PageTransition><AcceptInvite /></PageTransition>}</Route>
+      <Route path="/account"><PageTransition><Account /></PageTransition></Route>
+      <Route path="/delete-account"><PageTransition><DeleteAccount /></PageTransition></Route>
+      <Route path="/community"><PageTransition><Community /></PageTransition></Route>
+      <Route path="/community/post/:id">{(params) => <PageTransition><Community /></PageTransition>}</Route>
+      <Route path="/community/messages"><PageTransition><Community /></PageTransition></Route>
+      <Route path="/community/profile"><PageTransition><Community /></PageTransition></Route>
+      <Route path="/community/profile/:userId">{(params) => <PageTransition><Community /></PageTransition>}</Route>
+      <Route path="/coach"><PageTransition><CoachChat /></PageTransition></Route>
+      <Route path="/admin/feedback"><PageTransition><AdminFeedback /></PageTransition></Route>
+      <Route path="/admin/email"><PageTransition><AdminEmail /></PageTransition></Route>
+      <Route path="/resources"><PageTransition><Resources /></PageTransition></Route>
+      <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
+      <Route><PageTransition><NotFound /></PageTransition></Route>
     </Switch>
   );
 }
@@ -148,6 +150,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <MobileBottomNav />
           <CookieConsent />
         </TooltipProvider>
       </ThemeProvider>

@@ -41,10 +41,18 @@ export function AchievementBadge({
   };
   
   const categoryColors = {
-    streak: unlocked ? "bg-orange-500/20 text-orange-500 border-orange-500/30" : "bg-muted text-muted-foreground border-border",
-    completion: unlocked ? "bg-green-500/20 text-green-500 border-green-500/30" : "bg-muted text-muted-foreground border-border",
-    time: unlocked ? "bg-blue-500/20 text-blue-500 border-blue-500/30" : "bg-muted text-muted-foreground border-border",
-    milestone: unlocked ? "bg-purple-500/20 text-purple-500 border-purple-500/30" : "bg-muted text-muted-foreground border-border",
+    streak: unlocked 
+      ? "bg-gradient-to-br from-orange-500/25 to-red-500/20 text-orange-500 border-orange-500/30 shadow-lg shadow-orange-500/30 ring-1 ring-white/20 dark:ring-white/10" 
+      : "bg-muted/40 text-muted-foreground/40 border-border/50 opacity-40",
+    completion: unlocked 
+      ? "bg-gradient-to-br from-emerald-500/25 to-green-500/20 text-emerald-500 border-emerald-500/30 shadow-lg shadow-emerald-500/30 ring-1 ring-white/20 dark:ring-white/10" 
+      : "bg-muted/40 text-muted-foreground/40 border-border/50 opacity-40",
+    time: unlocked 
+      ? "bg-gradient-to-br from-blue-500/25 to-cyan-500/20 text-blue-500 border-blue-500/30 shadow-lg shadow-blue-500/30 ring-1 ring-white/20 dark:ring-white/10" 
+      : "bg-muted/40 text-muted-foreground/40 border-border/50 opacity-40",
+    milestone: unlocked 
+      ? "bg-gradient-to-br from-violet-500/25 to-purple-500/20 text-violet-500 border-violet-500/30 shadow-lg shadow-violet-500/30 ring-1 ring-white/20 dark:ring-white/10" 
+      : "bg-muted/40 text-muted-foreground/40 border-border/50 opacity-40",
   };
   
   const badge = (
@@ -52,7 +60,7 @@ export function AchievementBadge({
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: unlocked ? 1.1 : 1 }}
-      className={`${sizeClasses[size]} rounded-full border-2 flex items-center justify-center ${categoryColors[achievement.category]} ${unlocked ? 'shadow-lg' : 'opacity-50'}`}
+      className={`${sizeClasses[size]} rounded-full border-2 flex items-center justify-center ${categoryColors[achievement.category]}`}
     >
       {unlocked ? (
         <Icon className={iconSizes[size]} />
