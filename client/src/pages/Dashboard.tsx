@@ -17,7 +17,7 @@ import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,6 +181,34 @@ export default function Dashboard() {
                   <BookOpen className="mr-2 h-4 w-4" />
                   Daily Journal
                   <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/focus">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-focus-timer">
+                  <Timer className="mr-2 h-4 w-4" />
+                  Focus Timer
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/mood">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-mood-tracker">
+                  <Heart className="mr-2 h-4 w-4" />
+                  Mood Tracker
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/goals">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-goals">
+                  <Target className="mr-2 h-4 w-4" />
+                  Goals
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/planner">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-planner">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Daily Planner
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/resources">
@@ -445,6 +473,71 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           )}
+        </motion.section>
+
+        {/* Feature Quick Links */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.42 }}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
+              <Card className="hover-elevate cursor-pointer border-amber-200/50 dark:border-amber-800/30 h-full" data-testid="card-focus-timer-link">
+                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Focus Timer</p>
+                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
+              <Card className="hover-elevate cursor-pointer border-teal-200/50 dark:border-teal-800/30 h-full" data-testid="card-mood-tracker-link">
+                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Mood Tracker</p>
+                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href={features.hasGoals ? "/goals" : "/paywall"}>
+              <Card className="hover-elevate cursor-pointer border-rose-200/50 dark:border-rose-800/30 h-full" data-testid="card-goals-link">
+                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Goals</p>
+                    {!features.hasGoals && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
+              <Card className="hover-elevate cursor-pointer border-sky-200/50 dark:border-sky-800/30 h-full" data-testid="card-planner-link">
+                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Daily Planner</p>
+                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}
