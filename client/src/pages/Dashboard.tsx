@@ -176,6 +176,13 @@ export default function Dashboard() {
                   <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
+              <Link href="/journal">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-journal">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Daily Journal
+                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                </DropdownMenuItem>
+              </Link>
               <Link href="/resources">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-resources">
                   <BookOpen className="mr-2 h-4 w-4" />
@@ -389,6 +396,55 @@ export default function Dashboard() {
           transition={{ duration: 0.5, delay: 0.35 }}
         >
           <MoodTracker />
+        </motion.section>
+
+        {/* Daily Journal Card */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.38 }}
+        >
+          {features.hasJournal ? (
+            <Link href="/journal">
+              <Card className="hover-elevate cursor-pointer border-indigo-200/50 dark:border-indigo-800/30" data-testid="card-journal-link">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">Daily Journal</p>
+                      <p className="text-xs text-muted-foreground">Write reflections and get AI insights</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ) : (
+            <Card className="border-muted" data-testid="card-journal-locked">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      Daily Journal
+                      <Badge variant="secondary" className="text-[10px]">Pro+</Badge>
+                    </p>
+                    <p className="text-xs text-muted-foreground">Upgrade to write reflections and get AI insights</p>
+                  </div>
+                  <Link href="/paywall">
+                    <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
+                      <Crown className="w-3 h-3" />
+                      Upgrade
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}

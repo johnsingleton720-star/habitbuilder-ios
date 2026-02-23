@@ -38,6 +38,8 @@ import AcceptInvite from "@/pages/AcceptInvite";
 import Resources from "@/pages/Resources";
 import About from "@/pages/About";
 import DeleteAccount from "@/pages/DeleteAccount";
+import Journal from "@/pages/Journal";
+import FocusTimer from "@/pages/FocusTimer";
 
 const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account"];
 
@@ -136,6 +138,8 @@ function Router() {
       <Route path="/coach"><PageTransition><CoachChat /></PageTransition></Route>
       <Route path="/admin/feedback"><PageTransition><AdminFeedback /></PageTransition></Route>
       <Route path="/admin/email"><PageTransition><AdminEmail /></PageTransition></Route>
+      <Route path="/journal"><PageTransition><Journal /></PageTransition></Route>
+      <Route path="/focus"><PageTransition><FocusTimer /></PageTransition></Route>
       <Route path="/resources"><PageTransition><Resources /></PageTransition></Route>
       <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
       <Route><PageTransition><NotFound /></PageTransition></Route>

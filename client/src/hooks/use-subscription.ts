@@ -21,6 +21,11 @@ interface SubscriptionFeatures {
   hasAiResources: boolean;
   hasPlanRefresh: boolean;
   hasUnlimitedSessions: boolean;
+  hasJournal: boolean;
+  hasFocusTimer: boolean;
+  hasMoodTracker: boolean;
+  hasGoals: boolean;
+  hasDailyPlanner: boolean;
 }
 
 const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = {
@@ -44,6 +49,11 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAiResources: true,
     hasPlanRefresh: true,
     hasUnlimitedSessions: true,
+    hasJournal: true,
+    hasFocusTimer: true,
+    hasMoodTracker: true,
+    hasGoals: false,
+    hasDailyPlanner: false,
   },
   free: {
     maxHabits: 1,
@@ -65,6 +75,11 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAiResources: false,
     hasPlanRefresh: false,
     hasUnlimitedSessions: false,
+    hasJournal: false,
+    hasFocusTimer: false,
+    hasMoodTracker: false,
+    hasGoals: false,
+    hasDailyPlanner: false,
   },
   pro: {
     maxHabits: Infinity,
@@ -86,6 +101,11 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAiResources: true,
     hasPlanRefresh: true,
     hasUnlimitedSessions: true,
+    hasJournal: true,
+    hasFocusTimer: true,
+    hasMoodTracker: true,
+    hasGoals: false,
+    hasDailyPlanner: false,
   },
   premium: {
     maxHabits: Infinity,
@@ -107,6 +127,11 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
     hasAiResources: true,
     hasPlanRefresh: true,
     hasUnlimitedSessions: true,
+    hasJournal: true,
+    hasFocusTimer: true,
+    hasMoodTracker: true,
+    hasGoals: true,
+    hasDailyPlanner: true,
   },
 };
 

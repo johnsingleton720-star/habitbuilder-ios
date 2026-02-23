@@ -65,7 +65,16 @@ export const users = pgTable("users", {
   lastDailyChallengeDate: varchar("last_daily_challenge_date"), // ISO date string
   accentColor: varchar("accent_color"), // Premium reward color, separate from colorTheme
   
-  pushNotificationsEnabled: boolean("push_notifications_enabled").default(false),
+  pushNotificationsEnabled: boolean("push_notifications_enabled").default(true),
+  pushHabitReminders: boolean("push_habit_reminders").default(true),
+  pushStreakAlerts: boolean("push_streak_alerts").default(true),
+  pushJournalReminder: boolean("push_journal_reminder").default(true),
+  pushMoodCheckin: boolean("push_mood_checkin").default(true),
+  pushTimerComplete: boolean("push_timer_complete").default(true),
+  pushGoalMilestones: boolean("push_goal_milestones").default(true),
+  pushDailyPlanner: boolean("push_daily_planner").default(true),
+  journalReminderTime: varchar("journal_reminder_time").default("20:00"),
+  moodCheckinTimes: jsonb("mood_checkin_times").$type<string[]>().default(["09:00", "14:00", "20:00"]),
   
   signupSource: varchar("signup_source"),
   signupUtmSource: varchar("signup_utm_source"),

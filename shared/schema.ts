@@ -349,9 +349,14 @@ export const quickTasks = pgTable("quick_tasks", {
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   completed: boolean("completed").default(false),
-  date: text("date").notNull(), // ISO date string yyyy-MM-dd
-  scheduledTime: text("scheduled_time"), // HH:mm format, nullable
+  date: text("date").notNull(),
+  scheduledTime: text("scheduled_time"),
   sortOrder: integer("sort_order").default(0),
+  priority: text("priority").default("normal"),
+  category: text("category"),
+  parentId: integer("parent_id"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: text("recurring_pattern"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -673,3 +678,143 @@ export const coachMessages = pgTable("coach_messages", {
 });
 
 export type CoachMessage = typeof coachMessages.$inferSelect;
+
+// ==========================================
+// JOURNAL ENTRIES (Pro+ Feature)
+// ==========================================
+
+export const journalEntries = pgTable("journal_entries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  date: text("date").notNull(),
+  content: text("content").notNull(),
+  mood: text("mood"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  aiInsights: text("ai_insights"),
+  habitIds: jsonb("habit_ids").$type<number[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type JournalEntry = typeof journalEntries.$inferSelect;
+export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
+
+// ==========================================
+// FOCUS SESSIONS / POMODORO (Pro+ Feature)
+// ==========================================
+
+export const focusSessions = pgTable("focus_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  habitId: integer("habit_id").references(() => habits.id),
+  title: text("title"),
+  duration: integer("duration").notNull().default(25),
+  completedDuration: integer("completed_duration").default(0),
+  breakDuration: integer("break_duration").default(5),
+  sessionType: text("session_type").default("focus"),
+  status: text("status").default("pending"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFocusSessionSchema = createInsertSchema(focusSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FocusSession = typeof focusSessions.$inferSelect;
+export type InsertFocusSession = z.infer<typeof insertFocusSessionSchema>;
+
+// ==========================================
+// GOALS & MILESTONES (Premium Feature)
+// ==========================================
+
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category"),
+  targetDate: text("target_date"),
+  status: text("status").default("active"),
+  habitIds: jsonb("habit_ids").$type<number[]>().default([]),
+  progress: integer("progress").default(0),
+  aiSuggestions: text("ai_suggestions"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertGoalSchema = createInsertSchema(goals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  userId: true,
+});
+
+export type Goal = typeof goals.$inferSelect;
+export type InsertGoal = z.infer<typeof insertGoalSchema>;
+
+export const goalMilestones = pgTable("goal_milestones", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").notNull().references(() => goals.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertGoalMilestoneSchema = createInsertSchema(goalMilestones).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type GoalMilestone = typeof goalMilestones.$inferSelect;
+export type InsertGoalMilestone = z.infer<typeof insertGoalMilestoneSchema>;
+
+// ==========================================
+// SMART DAILY PLANNER (Premium Feature)
+// ==========================================
+
+export interface PlannerBlock {
+  id: string;
+  time: string;
+  endTime?: string;
+  title: string;
+  type: "habit" | "task" | "break" | "custom";
+  habitId?: number;
+  taskId?: number;
+  duration: number;
+  completed: boolean;
+  notes?: string;
+}
+
+export const dailyPlannerEntries = pgTable("daily_planner_entries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  date: text("date").notNull(),
+  blocks: jsonb("blocks").$type<PlannerBlock[]>().default([]),
+  aiGenerated: boolean("ai_generated").default(false),
+  aiSummary: text("ai_summary"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDailyPlannerSchema = createInsertSchema(dailyPlannerEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type DailyPlannerEntry = typeof dailyPlannerEntries.$inferSelect;
+export type InsertDailyPlannerEntry = z.infer<typeof insertDailyPlannerSchema>;

@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions } from "@shared/schema";
 import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
@@ -540,7 +540,7 @@ export async function registerRoutes(
   app.post("/api/quick-tasks", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-      const { title, date, scheduledTime } = req.body;
+      const { title, date, scheduledTime, priority, category, parentId, isRecurring, recurringPattern } = req.body;
       if (!title || typeof title !== "string" || title.trim().length === 0) {
         return res.status(400).json({ error: "Title is required" });
       }
@@ -556,11 +556,35 @@ export async function registerRoutes(
         date,
         scheduledTime: scheduledTime || null,
         sortOrder,
+        priority: priority || "normal",
+        category: category || null,
+        parentId: parentId || null,
+        isRecurring: isRecurring || false,
+        recurringPattern: recurringPattern || null,
       }).returning();
       res.status(201).json(task);
     } catch (error) {
       console.error("Error creating quick task:", error);
       res.status(500).json({ error: "Failed to create quick task" });
+    }
+  });
+
+  app.patch("/api/quick-tasks/reorder", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { taskIds } = req.body;
+      if (!Array.isArray(taskIds)) {
+        return res.status(400).json({ error: "taskIds array is required" });
+      }
+      for (let i = 0; i < taskIds.length; i++) {
+        await db.update(quickTasks)
+          .set({ sortOrder: i })
+          .where(and(eq(quickTasks.id, taskIds[i]), eq(quickTasks.userId, userId)));
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering quick tasks:", error);
+      res.status(500).json({ error: "Failed to reorder tasks" });
     }
   });
 
@@ -588,6 +612,21 @@ export async function registerRoutes(
       }
       if (req.body.date !== undefined && typeof req.body.date === "string") {
         updates.date = req.body.date;
+      }
+      if (req.body.priority !== undefined) {
+        updates.priority = req.body.priority;
+      }
+      if (req.body.category !== undefined) {
+        updates.category = req.body.category || null;
+      }
+      if (req.body.parentId !== undefined) {
+        updates.parentId = req.body.parentId || null;
+      }
+      if (typeof req.body.isRecurring === "boolean") {
+        updates.isRecurring = req.body.isRecurring;
+      }
+      if (req.body.recurringPattern !== undefined) {
+        updates.recurringPattern = req.body.recurringPattern || null;
       }
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
@@ -621,6 +660,125 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting quick task:", error);
       res.status(500).json({ error: "Failed to delete quick task" });
+    }
+  });
+
+  // ==========================================
+  // JOURNAL ENTRIES
+  // ==========================================
+
+  app.get("/api/journal", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await db.select().from(journalEntries)
+        .where(eq(journalEntries.userId, userId))
+        .orderBy(sql`${journalEntries.date} DESC`)
+        .limit(30);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching journal entries:", error);
+      res.status(500).json({ error: "Failed to fetch journal entries" });
+    }
+  });
+
+  app.get("/api/journal/:date", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [entry] = await db.select().from(journalEntries)
+        .where(and(eq(journalEntries.userId, userId), eq(journalEntries.date, req.params.date)));
+      res.json(entry || null);
+    } catch (error) {
+      console.error("Error fetching journal entry:", error);
+      res.status(500).json({ error: "Failed to fetch journal entry" });
+    }
+  });
+
+  app.post("/api/journal", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date, content, mood, tags, habitIds } = req.body;
+
+      const [existing] = await db.select().from(journalEntries)
+        .where(and(eq(journalEntries.userId, userId), eq(journalEntries.date, date)));
+
+      if (existing) {
+        const [updated] = await db.update(journalEntries)
+          .set({ content, mood, tags, habitIds, updatedAt: new Date() })
+          .where(eq(journalEntries.id, existing.id))
+          .returning();
+        return res.json(updated);
+      }
+
+      const [entry] = await db.insert(journalEntries)
+        .values({ userId, date, content, mood, tags, habitIds })
+        .returning();
+      res.json(entry);
+    } catch (error) {
+      console.error("Error saving journal entry:", error);
+      res.status(500).json({ error: "Failed to save journal entry" });
+    }
+  });
+
+  app.post("/api/journal/:id/insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const [entry] = await db.select().from(journalEntries)
+        .where(and(eq(journalEntries.id, id), eq(journalEntries.userId, userId)));
+
+      if (!entry) return res.status(404).json({ message: "Not found" });
+
+      const recentEntries = await db.select().from(journalEntries)
+        .where(eq(journalEntries.userId, userId))
+        .orderBy(sql`${journalEntries.date} DESC`)
+        .limit(7);
+
+      const userHabits = await db.select().from(habits)
+        .where(eq(habits.userId, userId));
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a compassionate habit coach analyzing a user's journal entries. Provide brief, actionable insights (2-3 sentences) about patterns you notice in their mood, habits, and reflections. Be encouraging and specific. Do not generate harmful or inappropriate content."
+          },
+          {
+            role: "user",
+            content: `Today's entry: "${entry.content}" (mood: ${entry.mood || "not specified"})\n\nRecent entries: ${recentEntries.map(e => `${e.date}: ${e.content.substring(0, 100)}... (mood: ${e.mood || "?"})`).join("\n")}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ")}`
+          }
+        ],
+        max_tokens: 200,
+      });
+
+      const insights = response.choices[0]?.message?.content || "Keep journaling - patterns will emerge over time!";
+
+      const [updated] = await db.update(journalEntries)
+        .set({ aiInsights: insights, updatedAt: new Date() })
+        .where(eq(journalEntries.id, id))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error generating journal insights:", error);
+      res.status(500).json({ error: "Failed to generate insights" });
+    }
+  });
+
+  app.delete("/api/journal/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await db.delete(journalEntries)
+        .where(and(eq(journalEntries.id, parseInt(req.params.id)), eq(journalEntries.userId, userId)));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting journal entry:", error);
+      res.status(500).json({ error: "Failed to delete journal entry" });
     }
   });
 
@@ -8099,6 +8257,69 @@ Be specific, practical, and grounded in behavior science. Every task should make
     } catch (error) {
       console.error("Error fetching unread count:", error);
       res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  // ===== FOCUS SESSIONS =====
+  app.get("/api/focus-sessions/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const sessions = await db.select().from(focusSessions)
+        .where(and(eq(focusSessions.userId, userId), eq(focusSessions.status, "completed")));
+      const totalMinutes = sessions.reduce((sum, s) => sum + (s.completedDuration || 0), 0);
+      const totalSessions = sessions.length;
+      const todayStr = new Date().toISOString().split("T")[0];
+      const todaySessions = sessions.filter(s => s.completedAt && s.completedAt.toISOString().split("T")[0] === todayStr);
+      const todayMinutes = todaySessions.reduce((sum, s) => sum + (s.completedDuration || 0), 0);
+      res.json({ totalMinutes, totalSessions, todayMinutes, todaySessions: todaySessions.length });
+    } catch (error) {
+      console.error("Error fetching focus session stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/focus-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const sessions = await db.select().from(focusSessions)
+        .where(eq(focusSessions.userId, userId))
+        .orderBy(sql`${focusSessions.createdAt} DESC`)
+        .limit(20);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching focus sessions:", error);
+      res.status(500).json({ error: "Failed to fetch sessions" });
+    }
+  });
+
+  app.post("/api/focus-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { habitId, title, duration, breakDuration } = req.body;
+      const [session] = await db.insert(focusSessions)
+        .values({ userId, habitId, title, duration: duration || 25, breakDuration: breakDuration || 5, status: "active", startedAt: new Date() })
+        .returning();
+      res.json(session);
+    } catch (error) {
+      console.error("Error creating focus session:", error);
+      res.status(500).json({ error: "Failed to create session" });
+    }
+  });
+
+  app.patch("/api/focus-sessions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      if (updates.status === "completed") updates.completedAt = new Date();
+      const [session] = await db.update(focusSessions)
+        .set(updates)
+        .where(and(eq(focusSessions.id, id), eq(focusSessions.userId, userId)))
+        .returning();
+      res.json(session);
+    } catch (error) {
+      console.error("Error updating focus session:", error);
+      res.status(500).json({ error: "Failed to update session" });
     }
   });
 
