@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { PageTransition } from "@/components/PageTransition";
 
 import NotFound from "@/pages/not-found";
@@ -53,6 +54,7 @@ function Router() {
   const { toast } = useToast();
   
   useTracking();
+  usePushNotifications();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

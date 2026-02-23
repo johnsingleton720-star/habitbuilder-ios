@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn, ChevronLeft, ChevronRight, PenLine, Timer, Heart, Bell } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -1606,7 +1606,113 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" aria-label="Habit Stacking">
+      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" id="tools" aria-label="Powerful tools" data-testid="section-powerful-tools">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+            <Badge variant="secondary" className="mb-2">
+              <Sparkles className="w-3 h-3 mr-1" />
+              New Features
+            </Badge>
+            <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-tools-heading">Powerful tools for every part of your day</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
+              Go beyond habit tracking with journaling, focus sessions, mood insights, goal planning, and more — all powered by AI.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {[
+              {
+                icon: <PenLine className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Daily Journal & Reflection",
+                desc: "Write freely, reflect on your day, and get AI-powered insights that reveal patterns in your thoughts and habits over time.",
+                color: "text-indigo-600 dark:text-indigo-400",
+                bg: "bg-gradient-to-br from-indigo-500/20 to-violet-500/10",
+                tier: "Pro",
+                tierColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+              },
+              {
+                icon: <Timer className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Focus Timer / Pomodoro",
+                desc: "Deep work sessions using the Pomodoro technique. Link timers to your habits and track focused time automatically.",
+                color: "text-amber-600 dark:text-amber-400",
+                bg: "bg-gradient-to-br from-amber-500/20 to-orange-500/10",
+                tier: "Pro",
+                tierColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+              },
+              {
+                icon: <Heart className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Mood Tracker",
+                desc: "Track your mood, energy, stress, and sleep quality daily. Discover AI-powered correlations between how you feel and your habits.",
+                color: "text-teal-600 dark:text-teal-400",
+                bg: "bg-gradient-to-br from-teal-500/20 to-cyan-500/10",
+                tier: "Pro",
+                tierColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+              },
+              {
+                icon: <Trophy className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Goal Setting & Milestones",
+                desc: "Set ambitious long-term goals, break them into achievable milestones, and link each milestone to the habits that drive progress.",
+                color: "text-rose-600 dark:text-rose-400",
+                bg: "bg-gradient-to-br from-rose-500/20 to-pink-500/10",
+                tier: "Premium",
+                tierColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+              },
+              {
+                icon: <Calendar className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Smart Daily Planner",
+                desc: "Let AI generate your optimized daily schedule from your habits, tasks, and goals — so you always know what to do next.",
+                color: "text-sky-600 dark:text-sky-400",
+                bg: "bg-gradient-to-br from-sky-500/20 to-blue-500/10",
+                tier: "Premium",
+                tierColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+              },
+              {
+                icon: <Bell className="w-6 h-6 md:w-7 md:h-7" />,
+                title: "Push Notifications",
+                desc: "Never miss a habit reminder, mood check-in, or journal prompt. Smart notifications keep you on track throughout the day.",
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: "bg-gradient-to-br from-emerald-500/20 to-green-500/10",
+                tier: null,
+                tierColor: "",
+              },
+            ].map((tool, i) => (
+              <motion.div
+                key={i}
+                {...fadeUp}
+                transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
+                data-testid={`card-tool-${i}`}
+              >
+                <Card className="h-full hover-elevate touch-card">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl ${tool.bg} flex items-center justify-center shadow-sm shrink-0`}>
+                        <div className={tool.color}>{tool.icon}</div>
+                      </div>
+                      {tool.tier && (
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${tool.tierColor}`} data-testid={`badge-tier-${i}`}>
+                          {tool.tier}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-tool-title-${i}`}>{tool.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{tool.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-8 md:mt-12 text-center px-4 sm:px-0">
+            <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20" data-testid="button-cta-tools">
+              Unlock All Features
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+            <p className="mt-3 text-sm text-muted-foreground">Start free, upgrade anytime</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 px-4 sm:px-6" aria-label="Habit Stacking">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <motion.div

@@ -315,6 +315,26 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/notification-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const allowedFields = ['pushNotificationsEnabled', 'pushHabitReminders', 'pushStreakAlerts', 'pushJournalReminder', 'pushMoodCheckin', 'pushTimerComplete', 'pushGoalMilestones', 'pushDailyPlanner', 'journalReminderTime', 'moodCheckinTimes'];
+      const updates: any = { updatedAt: new Date() };
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) updates[field] = req.body[field];
+      }
+      const [updated] = await db.update(users).set(updates).where(eq(users.id, userId)).returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
+
+  app.get("/api/push/vapid-key", (_req, res) => {
+    res.json({ vapidPublicKey: process.env.VAPID_PUBLIC_KEY || "" });
+  });
+
   app.patch("/api/user/email-preferences", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
