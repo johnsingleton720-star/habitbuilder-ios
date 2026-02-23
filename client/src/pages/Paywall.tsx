@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft, Star, Users } from "lucide-react";
+import { Check, X, Leaf, Sparkles, Crown, Loader2, AlertCircle, Zap, Clock, ArrowLeft, Star, Users, Target } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -417,25 +417,30 @@ export default function Paywall() {
         )}
 
         <div className="mt-12 text-center">
-          <div className="bg-card rounded-xl p-6 max-w-2xl mx-auto border">
+          <div className="bg-card rounded-xl p-6 max-w-3xl mx-auto border">
             <h3 className="font-display text-xl font-semibold mb-3">
               Why upgrade to a paid plan?
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
               <div className="text-center">
                 <Sparkles className="w-8 h-8 text-primary mx-auto mb-2" />
                 <p className="font-medium">AI-Powered Coaching</p>
-                <p className="text-muted-foreground">Personalized interviews and custom action plans</p>
+                <p className="text-muted-foreground">Personalized action plans and session summaries</p>
               </div>
               <div className="text-center">
                 <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="font-medium">Guided Sessions</p>
-                <p className="text-muted-foreground">Step-by-step coaching with timers and notes</p>
+                <p className="font-medium">Productivity Suite</p>
+                <p className="text-muted-foreground">Journal, focus timer, mood tracking, and daily challenges</p>
+              </div>
+              <div className="text-center">
+                <Target className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="font-medium">Smart Planning</p>
+                <p className="text-muted-foreground">AI daily planner, goals & milestones, and full journal analysis</p>
               </div>
               <div className="text-center">
                 <Crown className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                <p className="font-medium">Premium Features</p>
-                <p className="text-muted-foreground">AI Coach Chat, habit stacking, voice notes, accountability partners, and more</p>
+                <p className="font-medium">Community & Support</p>
+                <p className="text-muted-foreground">Accountability partners, forums, AI coach chat, and priority support</p>
               </div>
             </div>
           </div>

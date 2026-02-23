@@ -403,7 +403,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                 {[
                   "AI coaching insights",
                   "Streaks & achievements",
-                  "Plan updates & refresh",
+                  "Productivity tools",
                   "Unlimited sessions",
                 ].map((f, i) => (
                   <li key={`no-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -465,11 +465,13 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   "Unlimited habits",
                   "AI coaching & action plans",
                   "Guided sessions with summaries",
+                  "Daily journal",
+                  "Focus timer (Pomodoro)",
+                  "Mood tracking & check-ins",
                   "Streaks & achievements",
                   "XP & leveling system",
-                  "Weekly reports",
-                  "Community forum (coming soon)",
-                  "Habit templates library",
+                  "Daily challenges",
+                  "Weekly progress reports",
                 ].map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
@@ -531,14 +533,15 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                 {[
                   "Everything in Pro",
                   "AI Coach Chat (150 msgs/month)",
-                  "Advanced analytics & trends",
-                  "AI-generated insights & reports",
+                  "Goals & milestones tracking",
+                  "Smart Daily Planner (AI-powered)",
+                  "Full Journal AI Analysis",
                   "Habit stacking & linking",
-                  "Community forum (coming soon)",
-                  "Direct messaging",
-                  "Voice notes",
+                  "Advanced analytics & trends",
                   "Accountability partners",
-                  "Editable templates",
+                  "Community forum & messaging",
+                  "Voice notes",
+                  "Unlockable accent colors",
                   "CSV data export",
                   "Priority support",
                 ].map((f, i) => (
