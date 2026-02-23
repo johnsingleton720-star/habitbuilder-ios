@@ -16,6 +16,23 @@ interface TodaysFocusProps {
   stacks?: HabitStack[];
 }
 
+const categoryColors: Record<string, { accent: string; bg: string; border: string; progress: string }> = {
+  health: { accent: "text-emerald-500", bg: "from-emerald-500/5 to-green-500/5", border: "border-emerald-200/40 dark:border-emerald-800/40", progress: "bg-emerald-500" },
+  fitness: { accent: "text-orange-500", bg: "from-orange-500/5 to-amber-500/5", border: "border-orange-200/40 dark:border-orange-800/40", progress: "bg-orange-500" },
+  mindfulness: { accent: "text-violet-500", bg: "from-violet-500/5 to-purple-500/5", border: "border-violet-200/40 dark:border-violet-800/40", progress: "bg-violet-500" },
+  productivity: { accent: "text-blue-500", bg: "from-blue-500/5 to-cyan-500/5", border: "border-blue-200/40 dark:border-blue-800/40", progress: "bg-blue-500" },
+  learning: { accent: "text-indigo-500", bg: "from-indigo-500/5 to-blue-500/5", border: "border-indigo-200/40 dark:border-indigo-800/40", progress: "bg-indigo-500" },
+  creativity: { accent: "text-pink-500", bg: "from-pink-500/5 to-rose-500/5", border: "border-pink-200/40 dark:border-pink-800/40", progress: "bg-pink-500" },
+  social: { accent: "text-amber-500", bg: "from-amber-500/5 to-yellow-500/5", border: "border-amber-200/40 dark:border-amber-800/40", progress: "bg-amber-500" },
+  finance: { accent: "text-teal-500", bg: "from-teal-500/5 to-emerald-500/5", border: "border-teal-200/40 dark:border-teal-800/40", progress: "bg-teal-500" },
+};
+const defaultColor = { accent: "text-primary", bg: "from-primary/5 to-accent/5", border: "border-gray-100 dark:border-gray-800", progress: "bg-primary" };
+
+function getHabitColor(habit: HabitResponse) {
+  const cat = (habit.category || "").toLowerCase();
+  return categoryColors[cat] || defaultColor;
+}
+
 function getTimeOfDayIcon() {
   const hour = new Date().getHours();
   if (hour < 12) return Sunrise;
@@ -46,8 +63,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
       if (!isPlanStillActive(habit)) return false;
       if (!habit.schedule?.days || habit.schedule.days.length === 0) {
         const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-        const hasTodayPlan = dailyPlans.some(p => p.date === todayStr);
-        return hasTodayPlan || !habit.setupComplete;
+        return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0) || !habit.setupComplete;
       }
       return habit.schedule.days.includes(dayName);
     });
@@ -251,7 +267,11 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               <motion.div
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                className="group flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-gray-900/80 border-2 border-gray-100 dark:border-gray-700 hover:border-primary/30 shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                className={cn(
+                  "group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r shadow-sm hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
+                  getHabitColor(nextHabit).bg,
+                  getHabitColor(nextHabit).border
+                )}
                 data-testid={`focus-habit-${nextHabit.id}`}
               >
                 <div className="flex-1 min-w-0">
@@ -281,11 +301,11 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex-1 h-1.5 rounded-full bg-muted/50 overflow-hidden max-w-[120px]">
                             <div 
-                              className="h-full rounded-full bg-primary"
+                              className={cn("h-full rounded-full", getHabitColor(nextHabit).progress)}
                               style={{ width: `${(taskProgress.completed / taskProgress.total) * 100}%` }}
                             />
                           </div>
-                          <span className="text-xs text-primary font-medium">
+                          <span className={cn("text-xs font-medium", getHabitColor(nextHabit).accent)}>
                             {taskProgress.completed}/{taskProgress.total} tasks
                           </span>
                         </div>
@@ -427,7 +447,11 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                       return (
                         <Link key={habit.id} href={`/habit/${habit.id}`}>
                           <div
-                            className="group flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-all cursor-pointer"
+                            className={cn(
+                              "group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r border hover:border-primary/30 transition-all cursor-pointer",
+                              getHabitColor(habit).bg,
+                              getHabitColor(habit).border
+                            )}
                             data-testid={`remaining-habit-${habit.id}`}
                           >
                             <div className="flex-1 min-w-0">
@@ -442,7 +466,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                                 <div className="flex items-center gap-2 mt-1.5">
                                   <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
                                     <div
-                                      className={cn("h-full rounded-full", pct > 0 ? "bg-amber-500" : "bg-muted")}
+                                      className={cn("h-full rounded-full", pct > 0 ? getHabitColor(habit).progress : "bg-muted")}
                                       style={{ width: `${pct}%` }}
                                     />
                                   </div>
