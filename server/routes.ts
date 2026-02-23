@@ -8735,7 +8735,15 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone }).toLowerCase();
 
       const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
-      const activeHabits = userHabits.filter(h => !h.archived);
+      const activeHabits = userHabits.filter(h => {
+        if (h.archived) return false;
+        if (h.setupComplete) {
+          const dPlans = ((h.dailyPlans || []) as any[]);
+          const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1]?.date : null);
+          if (endDate && endDate < date) return false;
+        }
+        return true;
+      });
       const scheduledHabits = activeHabits.filter(h => {
         if (!h.schedule) return true;
         const scheduleDays = (h.schedule as any).days;

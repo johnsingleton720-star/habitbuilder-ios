@@ -32,8 +32,17 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
     return plan.completed || activeTasks.every(t => t.completed);
   };
 
+  const isPlanExpired = (habit: Habit, dateStr: string) => {
+    if (!habit.setupComplete) return false;
+    const dPlans = (habit.dailyPlans || []) as DailyPlan[];
+    const endDate = habit.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1].date : null);
+    if (endDate && endDate < dateStr) return true;
+    return false;
+  };
+
   const todayDayName = format(new Date(), "EEEE").toLowerCase();
   const habitsScheduledToday = habits.filter(h => {
+    if (isPlanExpired(h, todayStr)) return false;
     const scheduleDays = h.schedule?.days as string[] | undefined;
     if (scheduleDays && scheduleDays.length > 0) {
       return scheduleDays.includes(todayDayName);
@@ -53,6 +62,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
   const longestStreak = Math.max(...habits.map(h => h.longestStreak || 0), 0);
 
   const isHabitScheduledForDate = (habit: Habit, dateStr: string) => {
+    if (isPlanExpired(habit, dateStr)) return false;
     const scheduleDays = habit.schedule?.days as string[] | undefined;
     const hasSchedule = scheduleDays && scheduleDays.length > 0;
     const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();

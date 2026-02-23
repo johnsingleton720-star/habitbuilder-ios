@@ -88,7 +88,8 @@ interface MoodReport {
 
 export function MoodTracker() {
   const { user } = useAuth();
-  const { data: habits } = useHabits();
+  const { data: allHabits } = useHabits();
+  const habits = allHabits?.filter((h: any) => !h.archived) || null;
   const { toast } = useToast();
   const { isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
@@ -354,7 +355,10 @@ export function MoodTracker() {
                       
                       {habits && habits.length > 0 && (
                         <div className="space-y-2">
-                          <span className="text-sm font-medium">Habits completed today</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium">Habits completed today</span>
+                            <span className="text-[10px] text-muted-foreground italic">(helps track mood-habit patterns)</span>
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             {habits.map((habit: { id: number; title: string }) => (
                               <Badge
