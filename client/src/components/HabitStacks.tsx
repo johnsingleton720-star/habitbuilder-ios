@@ -106,10 +106,13 @@ export function HabitStacks() {
 
   if (!features.hasHabitStacking) {
     return (
-      <Card data-testid="card-habit-stacks-locked">
-        <CardHeader className="pb-3">
+      <Card className="overflow-hidden" data-testid="card-habit-stacks-locked">
+        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
+        <CardHeader className="pb-3 bg-gradient-to-r from-violet-500/5 to-purple-500/5">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Layers className="w-4 h-4 text-primary" />
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/10">
+              <Layers className="w-4 h-4 text-violet-500" />
+            </div>
             Habit Stacks
             <Badge variant="secondary" className="text-[10px]">Premium</Badge>
           </CardTitle>
@@ -133,8 +136,9 @@ export function HabitStacks() {
   }
 
   return (
-    <Card data-testid="card-habit-stacks">
-      <CardHeader className="pb-3">
+    <Card className="overflow-hidden" data-testid="card-habit-stacks">
+      <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
+      <CardHeader className="pb-3 bg-gradient-to-r from-violet-500/5 to-purple-500/5">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <button
             className="flex items-center gap-2 cursor-pointer"
@@ -142,7 +146,9 @@ export function HabitStacks() {
             data-testid="button-toggle-stacks"
           >
             <CardTitle className="flex items-center gap-2 text-base">
-              <Layers className="w-4 h-4 text-primary" />
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/10">
+                <Layers className="w-4 h-4 text-violet-500" />
+              </div>
               Habit Stacks
               {stacks && stacks.length > 0 && (
                 <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
@@ -188,7 +194,9 @@ export function HabitStacks() {
                 </div>
               ) : !stacks || stacks.length === 0 ? (
                 <div className="text-center py-6">
-                  <Layers className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
+                    <Layers className="w-7 h-7 text-violet-500/60" />
+                  </div>
                   <p className="text-sm text-muted-foreground mb-1">No stacks yet</p>
                   <p className="text-xs text-muted-foreground">
                     {activeHabits.length < 2

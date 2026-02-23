@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Target, TrendingUp, Trophy, Calendar, Clock, Check, ChevronRight, X, Crown, Lock } from "lucide-react";
+import { Flame, Target, TrendingUp, Trophy, Calendar, CalendarCheck, Clock, Check, ChevronRight, X, Crown, Lock } from "lucide-react";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -81,6 +81,10 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
     };
   });
 
+  const weeklyCompletions = weekDays.reduce((sum, d) => sum + d.completed, 0);
+  const weeklyTotal = weekDays.reduce((sum, d) => sum + d.total, 0);
+  const weeklyPercent = weeklyTotal > 0 ? Math.round((weeklyCompletions / weeklyTotal) * 100) : 0;
+
   const sortByScheduleTime = (a: Habit, b: Habit) => {
     const timeA = a.schedule?.time;
     const timeB = b.schedule?.time;
@@ -127,6 +131,17 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
       href: "/progress/today",
     },
     {
+      icon: CalendarCheck,
+      label: "This Week",
+      value: weeklyPercent,
+      suffix: "%",
+      subtext: `${weeklyCompletions}/${weeklyTotal} completed`,
+      color: "from-violet-500 to-purple-500",
+      bgColor: "bg-violet-50 dark:bg-violet-900/50",
+      iconColor: "text-violet-500",
+      href: "/progress/weekly",
+    },
+    {
       icon: Trophy,
       label: "Total Done",
       value: totalSessions,
@@ -152,7 +167,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {stats.map((stat, index) => (
           <Link key={index} href={stat.href}>
             <motion.div

@@ -449,10 +449,10 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-center gap-2.5 group p-2 rounded-lg transition-colors",
-        task.completed
-          ? "bg-muted/30"
-          : "hover:bg-muted/40"
+        "flex items-center gap-2.5 group p-2.5 rounded-xl transition-all border",
+        task.completed 
+          ? "bg-muted/20 border-transparent" 
+          : "bg-gradient-to-r from-primary/[0.03] to-accent/[0.03] border-border/40 hover:border-primary/20 hover:shadow-sm"
       )}
       data-testid={`quick-task-${task.id}`}
     >
@@ -465,7 +465,10 @@ function TaskItem({
           lastToggleEvent.current = { clientX: e.clientX, clientY: e.clientY };
         }}
         className={cn(
-          task.completed && "data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+          "transition-all",
+          task.completed 
+            ? "data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" 
+            : "border-primary/40 data-[state=unchecked]:hover:border-primary"
         )}
         data-testid={`checkbox-quick-task-${task.id}`}
       />
@@ -482,8 +485,10 @@ function TaskItem({
         <div className="flex items-center gap-2 mt-0.5">
           {task.scheduledTime && (
             <span className={cn(
-              "text-[10px] flex items-center gap-0.5",
-              task.completed ? "text-muted-foreground/40" : "text-muted-foreground"
+              "text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-md",
+              task.completed 
+                ? "text-muted-foreground/40" 
+                : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
             )} data-testid={`time-quick-task-${task.id}`}>
               <Clock className="w-2.5 h-2.5" />
               {formatTime12h(task.scheduledTime)}

@@ -4,14 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, Clock, Flame, Target, TrendingUp, Trophy, CheckCircle2, Award, Zap, Star } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarCheck, Clock, Flame, Target, TrendingUp, Trophy, CheckCircle2, Award, Zap, Star } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { format, subDays, startOfWeek, addDays, differenceInDays, parseISO } from "date-fns";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import type { DailyPlan, ProgressEntry, Habit } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 
-type ViewType = "today" | "yesterday" | "total" | "streak";
+type ViewType = "today" | "yesterday" | "total" | "streak" | "weekly";
 
 export default function ProgressPage() {
   usePageTitle("Progress", "View your habit progress, streaks, and completion history. Track your growth over time with detailed analytics.");
@@ -156,6 +157,13 @@ export default function ProgressPage() {
       bgColor: "bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30",
       borderColor: "border-orange-200/50 dark:border-orange-800/50",
     },
+    weekly: {
+      title: "Weekly Progress",
+      icon: CalendarCheck,
+      color: "text-violet-500",
+      bgColor: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30",
+      borderColor: "border-violet-200/50 dark:border-violet-800/50",
+    },
   };
 
   const config = viewConfig[view];
@@ -202,6 +210,7 @@ export default function ProgressPage() {
                 {view === "yesterday" && format(subDays(today, 1), "EEEE, MMMM d, yyyy")}
                 {view === "total" && "Your complete journey"}
                 {view === "streak" && "Keep the momentum going"}
+                {view === "weekly" && "This week's overview"}
               </p>
             </div>
           </div>
@@ -221,6 +230,10 @@ export default function ProgressPage() {
         
         {view === "streak" && (
           <StreakView stats={getStreakStats()} />
+        )}
+        
+        {view === "weekly" && (
+          <WeeklyView habits={habits || []} />
         )}
       </div>
     </div>
@@ -649,6 +662,181 @@ function StreakView({ stats }: { stats: { bestStreak: number; currentStreak: num
               </Link>
             </motion.div>
           ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function WeeklyView({ habits }: { habits: any[] }) {
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStart, i);
+    const dateStr = format(date, "yyyy-MM-dd");
+    const dayName = format(date, "EEEE").toLowerCase();
+    const isToday = dateStr === todayStr;
+    const isFuture = dateStr > todayStr;
+    
+    const scheduledHabits = habits.filter(h => {
+      const scheduleDays = h.schedule?.days as string[] | undefined;
+      if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
+      const dailyPlans = (h.dailyPlans || []) as any[];
+      return dailyPlans.some((p: any) => p.date === dateStr && p.tasks.length > 0);
+    });
+    
+    const completedHabits = scheduledHabits.filter(h => {
+      const dailyPlans = (h.dailyPlans || []) as any[];
+      const plan = dailyPlans.find((p: any) => p.date === dateStr);
+      if (!plan || plan.tasks.length === 0) return false;
+      const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+      return activeTasks.length > 0 && activeTasks.every((t: any) => t.completed);
+    });
+    
+    return {
+      date,
+      dateStr,
+      dayLetter: format(date, "EEE"),
+      dayNum: format(date, "d"),
+      isToday,
+      isFuture,
+      completed: completedHabits.length,
+      total: scheduledHabits.length,
+      allComplete: scheduledHabits.length > 0 && completedHabits.length === scheduledHabits.length,
+    };
+  });
+  
+  const totalCompleted = weekDays.reduce((sum, d) => sum + d.completed, 0);
+  const totalScheduled = weekDays.reduce((sum, d) => sum + d.total, 0);
+  const weeklyPercent = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+  const daysWithPerfect = weekDays.filter(d => d.allComplete && !d.isFuture).length;
+  
+  const habitWeeklyStats = habits.map(h => {
+    let completed = 0;
+    let scheduled = 0;
+    weekDays.forEach(d => {
+      if (d.isFuture) return;
+      const dayName = format(d.date, "EEEE").toLowerCase();
+      const scheduleDays = h.schedule?.days as string[] | undefined;
+      const isScheduled = scheduleDays && scheduleDays.length > 0 
+        ? scheduleDays.includes(dayName) 
+        : (h.dailyPlans || []).some((p: any) => p.date === d.dateStr && p.tasks.length > 0);
+      if (!isScheduled) return;
+      scheduled++;
+      const dailyPlans = (h.dailyPlans || []) as any[];
+      const plan = dailyPlans.find((p: any) => p.date === d.dateStr);
+      if (plan) {
+        const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+        if (activeTasks.length > 0 && activeTasks.every((t: any) => t.completed)) completed++;
+      }
+    });
+    return { ...h, weekCompleted: completed, weekScheduled: scheduled };
+  }).filter(h => h.weekScheduled > 0);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <Card className="border-violet-200/50 dark:border-violet-800/50 overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" style={{ width: `${weeklyPercent}%` }} />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-lg font-semibold">Weekly Progress</span>
+            <Badge variant={weeklyPercent === 100 ? "default" : "secondary"} className={weeklyPercent === 100 ? "bg-gradient-to-r from-violet-500 to-purple-500" : ""}>
+              {totalCompleted}/{totalScheduled} completed
+            </Badge>
+          </div>
+          <Progress value={weeklyPercent} className="h-3 mb-2" />
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{weeklyPercent}% complete</span>
+            <span>{daysWithPerfect} perfect day{daysWithPerfect !== 1 ? 's' : ''}</span>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+            <CalendarCheck className="w-4 h-4 text-violet-500" />
+            Day by Day
+          </h3>
+          <div className="grid grid-cols-7 gap-2">
+            {weekDays.map((day) => (
+              <div key={day.dateStr} className="text-center">
+                <span className="text-[10px] text-muted-foreground font-medium">{day.dayLetter}</span>
+                <div className={cn(
+                  "w-10 h-10 mx-auto mt-1 rounded-xl flex items-center justify-center text-sm font-bold transition-all",
+                  day.isToday && "ring-2 ring-violet-500 ring-offset-2 ring-offset-background",
+                  day.allComplete
+                    ? "bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/20"
+                    : day.isFuture
+                      ? "bg-muted/30 text-muted-foreground/50"
+                      : day.completed > 0
+                        ? "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300"
+                        : day.total > 0
+                          ? "bg-red-50 dark:bg-red-950/20 text-red-400"
+                          : "bg-muted/30 text-muted-foreground/50"
+                )}>
+                  {day.dayNum}
+                </div>
+                {!day.isFuture && day.total > 0 && (
+                  <span className="text-[9px] text-muted-foreground mt-1 block">
+                    {day.completed}/{day.total}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {habitWeeklyStats.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Target className="w-4 h-4 text-violet-500" />
+            Habit Breakdown
+          </h3>
+          {habitWeeklyStats
+            .sort((a, b) => (b.weekCompleted / b.weekScheduled) - (a.weekCompleted / a.weekScheduled))
+            .map((habit: any, i: number) => {
+              const pct = Math.round((habit.weekCompleted / habit.weekScheduled) * 100);
+              return (
+                <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <Link href={`/habit/${habit.id}`}>
+                    <Card className="hover:border-violet-300/50 hover:shadow-md transition-all cursor-pointer">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                              pct === 100
+                                ? "bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/20"
+                                : "bg-violet-50 dark:bg-violet-950/30"
+                            )}>
+                              {pct === 100 ? (
+                                <CheckCircle2 className="w-5 h-5" />
+                              ) : (
+                                <span className="text-sm font-bold text-violet-500">{pct}%</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-medium truncate">{habit.title}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {habit.weekCompleted}/{habit.weekScheduled} day{habit.weekScheduled !== 1 ? 's' : ''} completed
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              );
+            })}
         </div>
       )}
     </motion.div>
