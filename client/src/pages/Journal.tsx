@@ -22,6 +22,9 @@ import {
   Loader2,
   Lock,
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Crown,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, addDays, subDays, parseISO } from "date-fns";
@@ -68,8 +71,11 @@ export default function Journal() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showPastEntries, setShowPastEntries] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContentRef = useRef("");
+
+  const isPremium = features.hasGoals;
 
   if (!features.hasJournal) {
     return (
@@ -154,6 +160,21 @@ export default function Journal() {
     },
   });
 
+  const fullAnalysisMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/journal/full-analysis", {});
+      return res.json();
+    },
+    onSuccess: (data: { analysis: string }) => {
+      toast({ title: "Full analysis ready", description: "AI has analyzed all your journal entries." });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to generate analysis", variant: "destructive" });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (entryId: number) => {
       await apiRequest("DELETE", `/api/journal/${entryId}`);
@@ -225,8 +246,15 @@ export default function Journal() {
     setSelectedDate(format(new Date(), "yyyy-MM-dd"));
   };
 
+  const selectEntry = (date: string) => {
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
+    setSelectedDate(date);
+    setShowPastEntries(false);
+  };
+
   const isToday = selectedDate === format(new Date(), "yyyy-MM-dd");
   const displayDate = format(parseISO(selectedDate), "EEEE, MMMM d, yyyy");
+  const sortedRecent = recentEntries ? [...recentEntries].sort((a, b) => b.date.localeCompare(a.date)) : [];
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
@@ -246,18 +274,65 @@ export default function Journal() {
               <p className="text-sm text-muted-foreground">Reflect on your day and discover patterns</p>
             </div>
           </div>
-          {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700" data-testid="badge-unsaved">
-              Unsaved changes
-            </Badge>
-          )}
-          {saveMutation.isPending && (
-            <Badge variant="outline" className="text-muted-foreground" data-testid="badge-saving">
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Saving...
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {hasUnsavedChanges && (
+              <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700" data-testid="badge-unsaved">
+                Unsaved
+              </Badge>
+            )}
+            {saveMutation.isPending && (
+              <Badge variant="outline" className="text-muted-foreground" data-testid="badge-saving">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Saving
+              </Badge>
+            )}
+          </div>
         </div>
+
+        {sortedRecent.length > 0 && (
+          <div className="lg:hidden">
+            <button
+              onClick={() => setShowPastEntries(!showPastEntries)}
+              className="flex items-center gap-2 w-full text-left text-sm font-medium text-muted-foreground p-2 rounded-md hover-elevate"
+              data-testid="button-toggle-past-entries"
+            >
+              <BookOpen className="w-4 h-4" />
+              Past Entries ({sortedRecent.length})
+              {showPastEntries ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+            </button>
+            {showPastEntries && (
+              <Card className="mt-2" data-testid="card-mobile-past-entries">
+                <CardContent className="p-2 max-h-60 overflow-y-auto space-y-1">
+                  {sortedRecent.slice(0, 20).map((entry) => (
+                    <button
+                      key={entry.id}
+                      onClick={() => selectEntry(entry.date)}
+                      className={`w-full text-left p-2.5 rounded-md transition-colors cursor-pointer ${
+                        entry.date === selectedDate
+                          ? "bg-indigo-100/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"
+                          : "hover-elevate"
+                      }`}
+                      data-testid={`button-entry-mobile-${entry.date}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {format(parseISO(entry.date), "MMM d, yyyy")}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {entry.mood && <MoodIcon mood={entry.mood} className="text-xs" />}
+                          {entry.aiInsights && <Sparkles className="w-3 h-3 text-indigo-400" />}
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground mt-0.5 line-clamp-1">
+                        {entry.content.substring(0, 60)}{entry.content.length > 60 ? "..." : ""}
+                      </p>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
@@ -344,7 +419,7 @@ export default function Journal() {
                 </div>
 
                 <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-border">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       onClick={() => saveEntry()}
                       disabled={saveMutation.isPending || (!content.trim() && !mood)}
@@ -364,7 +439,20 @@ export default function Journal() {
                         data-testid="button-get-insights"
                       >
                         {insightsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        Get AI Insights
+                        AI Insights
+                      </Button>
+                    )}
+                    {isPremium && recentEntries && recentEntries.length >= 3 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fullAnalysisMutation.mutate()}
+                        disabled={fullAnalysisMutation.isPending}
+                        className="gap-1.5 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800"
+                        data-testid="button-full-analysis"
+                      >
+                        {fullAnalysisMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+                        Full Analysis
                       </Button>
                     )}
                   </div>
@@ -394,32 +482,46 @@ export default function Journal() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-foreground leading-relaxed" data-testid="text-ai-insights">
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-ai-insights">
                     {currentEntry.aiInsights}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {fullAnalysisMutation.data && (
+              <Card className="border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10" data-testid="card-full-analysis">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-violet-700 dark:text-violet-300">
+                    <Crown className="w-4 h-4" />
+                    Full Journal Analysis
+                    <Badge variant="secondary" className="text-[10px]">Premium</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-full-analysis">
+                    {fullAnalysisMutation.data.analysis}
                   </p>
                 </CardContent>
               </Card>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="hidden lg:block space-y-4">
             <Card data-testid="card-recent-entries">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Recent Entries</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
                 {isLoadingRecent ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="h-14 w-full" />
                   ))
-                ) : recentEntries && recentEntries.length > 0 ? (
-                  recentEntries.slice(0, 15).map((entry) => (
+                ) : sortedRecent.length > 0 ? (
+                  sortedRecent.slice(0, 20).map((entry) => (
                     <button
                       key={entry.id}
-                      onClick={() => {
-                        if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
-                        setSelectedDate(entry.date);
-                      }}
+                      onClick={() => selectEntry(entry.date)}
                       className={`w-full text-left p-3 rounded-md transition-colors cursor-pointer ${
                         entry.date === selectedDate
                           ? "bg-indigo-100/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"

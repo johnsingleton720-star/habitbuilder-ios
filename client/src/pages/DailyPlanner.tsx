@@ -197,6 +197,7 @@ export default function DailyPlanner() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
       setUpdatingBlockId(null);
     },
     onError: (err: Error) => {

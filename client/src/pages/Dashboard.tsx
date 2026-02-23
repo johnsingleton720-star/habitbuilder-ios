@@ -53,6 +53,18 @@ export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
   const { features, isFreeUser } = useSubscription();
 
+  useEffect(() => {
+    if (window.location.hash === "#habits") {
+      setTimeout(() => {
+        const habitsSection = document.getElementById("habits-section");
+        if (habitsSection) {
+          habitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+      }, 300);
+    }
+  }, []);
+
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
     enabled: features.hasHabitStacking,

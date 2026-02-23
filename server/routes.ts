@@ -655,6 +655,30 @@ export async function registerRoutes(
         .set(updates)
         .where(and(eq(quickTasks.id, taskId), eq(quickTasks.userId, userId)))
         .returning();
+
+      if (typeof req.body.completed === "boolean") {
+        try {
+          const taskDate = updated.date || existing.date;
+          if (taskDate) {
+            const [plannerEntry] = await db.select().from(dailyPlannerEntries)
+              .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, taskDate)));
+            if (plannerEntry && Array.isArray(plannerEntry.blocks)) {
+              const plannerBlocks = (plannerEntry.blocks as any[]).map(b => {
+                if (b.type === "task" && (b.taskId === taskId || b.title === updated.title)) {
+                  return { ...b, completed: req.body.completed };
+                }
+                return b;
+              });
+              await db.update(dailyPlannerEntries)
+                .set({ blocks: plannerBlocks, updatedAt: new Date() })
+                .where(eq(dailyPlannerEntries.id, plannerEntry.id));
+            }
+          }
+        } catch (syncErr) {
+          console.error("Error syncing task completion to planner:", syncErr);
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating quick task:", error);
@@ -787,6 +811,58 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error generating journal insights:", error);
       res.status(500).json({ error: "Failed to generate insights" });
+    }
+  });
+
+  app.post("/api/journal/full-analysis", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user || user.subscriptionTier !== "premium") {
+        return res.status(403).json({ error: "Full journal analysis is a Premium feature" });
+      }
+
+      const allEntries = await db.select().from(journalEntries)
+        .where(eq(journalEntries.userId, userId))
+        .orderBy(sql`${journalEntries.date} DESC`)
+        .limit(50);
+
+      if (allEntries.length < 3) {
+        return res.status(400).json({ error: "You need at least 3 journal entries for a full analysis" });
+      }
+
+      const userHabits = await db.select().from(habits)
+        .where(eq(habits.userId, userId));
+
+      const entrySummaries = allEntries.map(e =>
+        `${e.date} (mood: ${e.mood || "not specified"}): ${e.content.substring(0, 200)}`
+      ).join("\n");
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a compassionate habit coach providing a comprehensive analysis of a user's journal history. Analyze mood trends over time, recurring themes and patterns, correlations between habits and mood, areas of growth, and actionable recommendations. Structure your response with clear sections: Mood Trends, Key Themes, Habit Correlations, Growth Areas, and Recommendations. Be encouraging, specific, and insightful. Do not generate harmful or inappropriate content."
+          },
+          {
+            role: "user",
+            content: `Analyze these ${allEntries.length} journal entries:\n\n${entrySummaries}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ") || "None"}`
+          }
+        ],
+        max_tokens: 800,
+      });
+
+      const analysis = response.choices[0]?.message?.content || "Keep journaling - patterns will emerge over time!";
+      res.json({ analysis, entriesAnalyzed: allEntries.length });
+    } catch (error) {
+      console.error("Error generating full journal analysis:", error);
+      res.status(500).json({ error: "Failed to generate analysis" });
     }
   });
 
@@ -4057,6 +4133,24 @@ REQUIREMENTS:
         currentStreak,
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
       });
+
+      try {
+        const [plannerEntry] = await db.select().from(dailyPlannerEntries)
+          .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+        if (plannerEntry && Array.isArray(plannerEntry.blocks)) {
+          const plannerBlocks = (plannerEntry.blocks as any[]).map(b => {
+            if (b.type === "habit" && (b.habitId === habitId || b.title === habit.title)) {
+              return { ...b, completed: true };
+            }
+            return b;
+          });
+          await db.update(dailyPlannerEntries)
+            .set({ blocks: plannerBlocks, updatedAt: new Date() })
+            .where(eq(dailyPlannerEntries.id, plannerEntry.id));
+        }
+      } catch (syncErr) {
+        console.error("Error syncing habit session to planner:", syncErr);
+      }
 
       await checkAndAwardAchievements(userId);
 
@@ -8752,11 +8846,32 @@ Rules:
       const [entry] = await db.select().from(dailyPlannerEntries)
         .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
       if (!entry) return res.status(404).json({ message: "No plan for this date" });
+      const originalBlock = ((entry.blocks || []) as any[]).find(b => b.id === blockId);
       const blocks = ((entry.blocks || []) as any[]).map(b => b.id === blockId ? { ...b, ...updates } : b);
       const [updated] = await db.update(dailyPlannerEntries)
         .set({ blocks, updatedAt: new Date() })
         .where(eq(dailyPlannerEntries.id, entry.id))
         .returning();
+
+      if (typeof updates.completed === "boolean" && originalBlock) {
+        try {
+          if (originalBlock.type === "task") {
+            const userTasks = await db.select().from(quickTasks)
+              .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+            const matchingTask = userTasks.find(t =>
+              (originalBlock.taskId && t.id === originalBlock.taskId) || t.title === originalBlock.title
+            );
+            if (matchingTask) {
+              await db.update(quickTasks)
+                .set({ completed: updates.completed })
+                .where(eq(quickTasks.id, matchingTask.id));
+            }
+          }
+        } catch (syncErr) {
+          console.error("Error syncing planner block to task:", syncErr);
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating planner block:", error);

@@ -132,6 +132,7 @@ export function QuickTasks() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/planner"] });
       if (variables.completed) {
         celebrate(lastToggleEvent.current);
       }

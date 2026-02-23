@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const { user } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   if (!user) {
     return null;
@@ -45,13 +45,22 @@ export function MobileBottomNav() {
     return location.startsWith(path);
   };
 
-  const handleNavClick = (path: string) => {
+  const scrollToHabits = () => {
+    setTimeout(() => {
+      const habitsSection = document.getElementById("habits-section");
+      if (habitsSection) {
+        habitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
+
+  const handleNavClick = (e: React.MouseEvent, path: string) => {
     if (path === "/#habits") {
+      e.preventDefault();
       if (location === "/") {
-        const habitsSection = document.getElementById("habits-section");
-        if (habitsSection) {
-          habitsSection.scrollIntoView({ behavior: "smooth" });
-        }
+        scrollToHabits();
+      } else {
+        window.location.href = "/#habits";
       }
     }
   };
@@ -80,7 +89,7 @@ export function MobileBottomNav() {
                   )}
                   data-testid={item.testId}
                   aria-label={item.label}
-                  onClick={() => handleNavClick(item.path)}
+                  onClick={(e) => handleNavClick(e, item.path)}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs font-medium">{item.label}</span>
