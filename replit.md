@@ -16,7 +16,11 @@ Preferred communication style: Simple, everyday language.
 -   **State Management**: TanStack React Query
 -   **UI Components**: shadcn/ui with Radix UI primitives
 -   **Styling**: Tailwind CSS with a nature-themed color palette
--   **Animations**: Framer Motion
+-   **Animations**: Framer Motion (page transitions via `PageTransition.tsx` wrapper on all authenticated routes)
+-   **Mobile Navigation**: `MobileBottomNav.tsx` - fixed bottom bar (Dashboard, Progress, Account, Upgrade) visible only on mobile (<768px), only for authenticated users
+-   **Loading States**: Shimmer CSS animation (`animate-shimmer` class in `index.css`) used across all loading skeletons
+-   **Dashboard Hero Card**: `DashboardHeroCard.tsx` - compact level/XP ring/streak/tier summary at dashboard top
+-   **Achievement Badges**: Gradient backgrounds with category-specific glow effects for unlocked badges
 -   **PWA Support**: Service worker for offline caching and web app manifest.
 
 ### Backend
