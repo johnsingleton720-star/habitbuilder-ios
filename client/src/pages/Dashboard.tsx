@@ -193,7 +193,7 @@ export default function Dashboard() {
               <Link href="/mood">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-mood-tracker">
                   <Heart className="mr-2 h-4 w-4" />
-                  Mood Tracker
+                  Mood Insights
                   <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
                 </DropdownMenuItem>
               </Link>
@@ -417,7 +417,7 @@ export default function Dashboard() {
           <GamificationDisplay />
         </motion.section>
 
-        {/* Mood Tracker */}
+        {/* Mood Check-in */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -503,7 +503,7 @@ export default function Dashboard() {
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Mood Tracker</p>
+                    <p className="text-xs font-semibold text-foreground">Mood Check-in</p>
                     {!features.hasMoodTracker && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>

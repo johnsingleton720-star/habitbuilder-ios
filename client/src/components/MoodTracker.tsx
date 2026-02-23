@@ -200,7 +200,7 @@ export function MoodTracker() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <SmilePlus className="w-5 h-5 text-muted-foreground" />
-                Mood Tracker
+                Mood Check-in
                 <Badge variant="outline" className="text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
                   <Lock className="w-3 h-3" />
                   Pro
@@ -244,7 +244,7 @@ export function MoodTracker() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <SmilePlus className="w-5 h-5 text-primary" />
-              Mood Tracker
+              Mood Check-in
               {!isPremium && <Badge variant="secondary" className="text-xs">Premium</Badge>}
             </CardTitle>
             <CardDescription>Track how you feel and find patterns</CardDescription>

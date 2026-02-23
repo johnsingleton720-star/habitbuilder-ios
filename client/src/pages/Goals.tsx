@@ -705,7 +705,7 @@ export default function Goals() {
   });
 
   const allGoals = goalsData || [];
-  const allHabits = habitsData || [];
+  const allHabits = (habitsData || []).filter(h => !h.archived);
   const activeGoals = allGoals.filter(g => g.status === "active");
   const completedGoals = allGoals.filter(g => g.status === "completed");
   const overallProgress = allGoals.length > 0

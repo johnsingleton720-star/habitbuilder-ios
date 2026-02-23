@@ -8549,7 +8549,10 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
       const milestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, id));
       const linkedHabits = userHabits.filter(h => (goal.habitIds as number[] || []).includes(h.id));
-      const openai = new OpenAI();
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -8619,6 +8622,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
 
       const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
       const scheduledHabits = userHabits.filter(h => {
+        if (h.archived) return false;
         if (!h.schedule) return false;
         const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         return (h.schedule as any).days?.includes(dayOfWeek);
