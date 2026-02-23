@@ -8821,22 +8821,41 @@ Rules:
         blocks = [];
       }
 
-      blocks = blocks.map((b: any, i: number) => ({
-        id: b.id || `block-${i + 1}`,
-        time: b.time || b.startTime || "09:00",
-        endTime: b.endTime || b.end_time || "",
-        title: b.title || b.name || "Untitled",
-        type: b.type || "custom",
-        habitId: b.habitId || null,
-        taskId: b.taskId || null,
-        duration: b.duration || 30,
-        completed: false,
-      }));
-
-      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date}`);
-
       const [existing] = await db.select().from(dailyPlannerEntries)
         .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      const oldBlocks = existing ? ((existing.blocks || []) as any[]) : [];
+      const completedMap = new Map<string, boolean>();
+      for (const ob of oldBlocks) {
+        if (ob.completed) {
+          completedMap.set(ob.title?.toLowerCase()?.trim(), true);
+          if (ob.habitId) completedMap.set(`habit-${ob.habitId}`, true);
+          if (ob.taskId) completedMap.set(`task-${ob.taskId}`, true);
+        }
+      }
+
+      blocks = blocks.map((b: any, i: number) => {
+        const title = (b.title || b.name || "Untitled").trim();
+        const type = b.type || "custom";
+        const habitId = b.habitId || null;
+        const taskId = b.taskId || null;
+        const wasCompleted = completedMap.has(title.toLowerCase()) ||
+          (habitId && completedMap.has(`habit-${habitId}`)) ||
+          (taskId && completedMap.has(`task-${taskId}`));
+        return {
+          id: b.id || `block-${i + 1}`,
+          time: b.time || b.startTime || "09:00",
+          endTime: b.endTime || b.end_time || "",
+          title,
+          type,
+          habitId,
+          taskId,
+          duration: b.duration || 30,
+          completed: wasCompleted || false,
+        };
+      });
+
+      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${[...completedMap.values()].filter(Boolean).length} completed states)`);
+
       if (existing) {
         const [updated] = await db.update(dailyPlannerEntries)
           .set({ blocks, aiGenerated: true, updatedAt: new Date() })
@@ -8851,6 +8870,64 @@ Rules:
     } catch (error) {
       console.error("Error generating planner:", error);
       res.status(500).json({ error: "Failed to generate daily plan" });
+    }
+  });
+
+  app.post("/api/planner/refresh", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date } = req.body;
+
+      const [existing] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      if (!existing) return res.status(404).json({ message: "No plan for this date to refresh" });
+
+      const currentBlocks = ((existing.blocks || []) as any[]);
+      const existingTitles = new Set(currentBlocks.map(b => b.title?.toLowerCase()?.trim()));
+
+      const tasks = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+
+      const newBlocks: any[] = [];
+      for (const task of tasks) {
+        if (!existingTitles.has(task.title.toLowerCase().trim())) {
+          newBlocks.push({
+            id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            time: "09:00",
+            endTime: "09:30",
+            title: task.title,
+            type: "task",
+            habitId: null,
+            taskId: task.id,
+            duration: 30,
+            completed: task.completed || false,
+          });
+        }
+      }
+
+      for (const block of currentBlocks) {
+        if (block.type === "task") {
+          const matchingTask = tasks.find(t =>
+            (block.taskId && t.id === block.taskId) || t.title.toLowerCase().trim() === block.title?.toLowerCase()?.trim()
+          );
+          if (matchingTask && matchingTask.completed && !block.completed) {
+            block.completed = true;
+          }
+        }
+      }
+
+      const mergedBlocks = [...currentBlocks, ...newBlocks].sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+
+      const [updated] = await db.update(dailyPlannerEntries)
+        .set({ blocks: mergedBlocks, updatedAt: new Date() })
+        .where(eq(dailyPlannerEntries.id, existing.id))
+        .returning();
+
+      console.log(`[Planner] Refreshed plan for ${date}: added ${newBlocks.length} new blocks`);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error refreshing planner:", error);
+      res.status(500).json({ error: "Failed to refresh plan" });
     }
   });
 

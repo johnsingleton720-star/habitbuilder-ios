@@ -40,6 +40,7 @@ import {
   Palette,
   Timer,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PlannerBlock, DailyPlannerEntry } from "@shared/schema";
@@ -203,6 +204,21 @@ export default function DailyPlanner() {
     onError: (err: Error) => {
       setUpdatingBlockId(null);
       toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/planner/refresh", { date: dateStr });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      toast({ title: "Plan refreshed", description: "New tasks synced and completion states updated." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Refresh failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -377,6 +393,21 @@ export default function DailyPlanner() {
           )}
           {generateMutation.isPending ? "Generating..." : "Generate My Day"}
         </Button>
+        {blocks.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+            data-testid="button-refresh-plan"
+          >
+            {refreshMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Refresh
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={() => setShowAddDialog(true)}

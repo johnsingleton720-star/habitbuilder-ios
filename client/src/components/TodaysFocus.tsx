@@ -48,24 +48,14 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [routineSessionStack, setRoutineSessionStack] = useState<HabitStack | null>(null);
 
-  const isPlanStillActive = (habit: HabitResponse) => {
-    if (!habit.setupComplete) return true;
-    const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-    const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
-    const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
-    if (planEndDate && planEndDate < todayStr) return false;
-    if (lastDailyPlanDate && lastDailyPlanDate < todayStr) return false;
-    return true;
-  };
-
   const getScheduledHabits = () => {
     return habits.filter((habit) => {
-      if (!isPlanStillActive(habit)) return false;
-      if (!habit.schedule?.days || habit.schedule.days.length === 0) {
-        const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-        return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0) || !habit.setupComplete;
+      const scheduleDays = habit.schedule?.days as string[] | undefined;
+      if (scheduleDays && scheduleDays.length > 0) {
+        return scheduleDays.includes(dayName);
       }
-      return habit.schedule.days.includes(dayName);
+      const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+      return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0) || !habit.setupComplete;
     });
   };
 

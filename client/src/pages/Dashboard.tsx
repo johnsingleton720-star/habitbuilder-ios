@@ -398,51 +398,11 @@ export default function Dashboard() {
           <QuickTasks />
         </motion.section>
 
-        {/* Progress Summary */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <ProgressSummary habits={activeHabits || []} />
-          </motion.section>
-        )}
-
-        {/* Achievements (compact) - Show progress before challenges */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-          >
-            <AchievementsDisplay compact />
-          </motion.section>
-        )}
-
-        {/* Gamification - XP, Levels, Daily Challenges */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <GamificationDisplay />
-        </motion.section>
-
-        {/* Mood Check-in */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-        >
-          <MoodTracker />
-        </motion.section>
-
         {/* Daily Journal Card */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.38 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
           {features.hasJournal ? (
             <Link href="/journal">
@@ -491,7 +451,7 @@ export default function Dashboard() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.42 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
         >
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
@@ -550,6 +510,46 @@ export default function Dashboard() {
               </Card>
             </Link>
           </div>
+        </motion.section>
+
+        {/* Progress Summary */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <ProgressSummary habits={activeHabits || []} />
+          </motion.section>
+        )}
+
+        {/* Achievements (compact) - Show progress before challenges */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <AchievementsDisplay compact />
+          </motion.section>
+        )}
+
+        {/* Gamification - XP, Levels, Daily Challenges */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <GamificationDisplay />
+        </motion.section>
+
+        {/* Mood Check-in */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.45 }}
+        >
+          <MoodTracker />
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}
