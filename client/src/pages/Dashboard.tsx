@@ -15,6 +15,7 @@ import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
+import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -221,6 +222,9 @@ export default function Dashboard() {
 
         {/* Trial Banner */}
         <TrialBanner />
+
+        {/* Hero Card - Level, XP, Streak at a glance */}
+        <DashboardHeroCard />
 
         {/* Welcome Banner for new users with no habits */}
         {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && (
@@ -442,17 +446,23 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : activeHabits?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center bg-card/50 rounded-3xl border border-dashed border-border">
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      <Target className="w-7 h-7 text-primary" />
+                  <div className="flex flex-col items-center justify-center py-12 text-center bg-gradient-to-br from-primary/5 via-card/80 to-accent/5 dark:from-primary/10 dark:via-card dark:to-accent/10 rounded-3xl border border-dashed border-primary/20">
+                    <div className="relative mb-4">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <Target className="w-8 h-8 text-primary" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 text-accent" />
+                      </div>
                     </div>
                     <h3 className="font-display text-lg font-medium text-foreground">Your habits will live here</h3>
                     <p className="text-muted-foreground max-w-sm mt-2 text-sm">
                       Once you create a habit, you'll see your daily plans, progress, and guided sessions right here. Most people start with something simple — like reading for 10 minutes a day.
                     </p>
-                    <Button onClick={() => setIsDialogOpen(true)} className="mt-5 gap-2">
+                    <Button onClick={() => setIsDialogOpen(true)} className="mt-5 gap-2 shadow-lg shadow-primary/20">
                       <Plus className="w-4 h-4" />
                       Create Your First Habit
+                      <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
                 ) : (
