@@ -728,12 +728,13 @@ export async function registerRoutes(
   app.get("/api/journal/:date", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-      const [entry] = await db.select().from(journalEntries)
-        .where(and(eq(journalEntries.userId, userId), eq(journalEntries.date, req.params.date)));
-      res.json(entry || null);
+      const entries = await db.select().from(journalEntries)
+        .where(and(eq(journalEntries.userId, userId), eq(journalEntries.date, req.params.date)))
+        .orderBy(sql`${journalEntries.createdAt} DESC`);
+      res.json(entries);
     } catch (error) {
-      console.error("Error fetching journal entry:", error);
-      res.status(500).json({ error: "Failed to fetch journal entry" });
+      console.error("Error fetching journal entries:", error);
+      res.status(500).json({ error: "Failed to fetch journal entries" });
     }
   });
 
@@ -742,17 +743,6 @@ export async function registerRoutes(
       const userId = req.user!.claims.sub;
       const { date, content, mood, tags, habitIds } = req.body;
 
-      const [existing] = await db.select().from(journalEntries)
-        .where(and(eq(journalEntries.userId, userId), eq(journalEntries.date, date)));
-
-      if (existing) {
-        const [updated] = await db.update(journalEntries)
-          .set({ content, mood, tags, habitIds, updatedAt: new Date() })
-          .where(eq(journalEntries.id, existing.id))
-          .returning();
-        return res.json(updated);
-      }
-
       const [entry] = await db.insert(journalEntries)
         .values({ userId, date, content, mood, tags, habitIds })
         .returning();
@@ -760,6 +750,27 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error saving journal entry:", error);
       res.status(500).json({ error: "Failed to save journal entry" });
+    }
+  });
+
+  app.put("/api/journal/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const { content, mood, tags, habitIds } = req.body;
+
+      const [existing] = await db.select().from(journalEntries)
+        .where(and(eq(journalEntries.id, id), eq(journalEntries.userId, userId)));
+      if (!existing) return res.status(404).json({ error: "Entry not found" });
+
+      const [updated] = await db.update(journalEntries)
+        .set({ content, mood, tags, habitIds, updatedAt: new Date() })
+        .where(eq(journalEntries.id, id))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating journal entry:", error);
+      res.status(500).json({ error: "Failed to update journal entry" });
     }
   });
 

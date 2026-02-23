@@ -25,21 +25,23 @@ import {
   ChevronDown,
   ChevronUp,
   Crown,
+  PenLine,
+  FilePlus,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, addDays, subDays, parseISO } from "date-fns";
 import type { JournalEntry } from "@shared/schema";
 
 const MOOD_OPTIONS = [
-  { value: "great", icon: "star", label: "Great", color: "text-emerald-500" },
-  { value: "good", icon: "smile", label: "Good", color: "text-green-500" },
-  { value: "okay", icon: "meh", label: "Okay", color: "text-amber-500" },
-  { value: "bad", icon: "frown", label: "Bad", color: "text-orange-500" },
-  { value: "terrible", icon: "cloud-rain", label: "Terrible", color: "text-red-500" },
+  { value: "great", label: "Great" },
+  { value: "good", label: "Good" },
+  { value: "okay", label: "Okay" },
+  { value: "bad", label: "Bad" },
+  { value: "terrible", label: "Terrible" },
 ];
 
 function MoodIcon({ mood, className }: { mood: string; className?: string }) {
-  const iconMap: Record<string, string> = {
+  const colorMap: Record<string, string> = {
     great: "text-emerald-500",
     good: "text-green-500",
     okay: "text-amber-500",
@@ -54,7 +56,7 @@ function MoodIcon({ mood, className }: { mood: string; className?: string }) {
     terrible: "Terrible",
   };
   return (
-    <span className={`font-medium ${iconMap[mood] || "text-muted-foreground"} ${className || ""}`}>
+    <span className={`font-medium ${colorMap[mood] || "text-muted-foreground"} ${className || ""}`}>
       {labelMap[mood] || mood}
     </span>
   );
@@ -70,10 +72,9 @@ export default function Journal() {
   const [mood, setMood] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showPastEntries, setShowPastEntries] = useState(false);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedContentRef = useRef("");
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
 
   const isPremium = features.hasGoals;
 
@@ -106,42 +107,71 @@ export default function Journal() {
     );
   }
 
-  const { data: currentEntry, isLoading: isLoadingEntry } = useQuery<JournalEntry | null>({
+  const { data: todayEntries, isLoading: isLoadingToday } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal", selectedDate],
   });
 
-  const { data: recentEntries, isLoading: isLoadingRecent } = useQuery<JournalEntry[]>({
+  const { data: allEntries, isLoading: isLoadingAll } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
   });
 
+  const clearEditor = () => {
+    setContent("");
+    setMood("");
+    setTags([]);
+    setEditingEntryId(null);
+    setViewingEntry(null);
+  };
+
   useEffect(() => {
-    if (currentEntry) {
-      setContent(currentEntry.content || "");
-      setMood(currentEntry.mood || "");
-      setTags((currentEntry.tags as string[]) || []);
-      lastSavedContentRef.current = currentEntry.content || "";
-    } else if (!isLoadingEntry) {
-      setContent("");
-      setMood("");
-      setTags([]);
-      lastSavedContentRef.current = "";
+    clearEditor();
+  }, [selectedDate]);
+
+  const loadEntryForEditing = (entry: JournalEntry) => {
+    setContent(entry.content || "");
+    setMood(entry.mood || "");
+    setTags((entry.tags as string[]) || []);
+    setEditingEntryId(entry.id);
+    setViewingEntry(entry);
+    setShowPastEntries(false);
+    if (entry.date !== selectedDate) {
+      setSelectedDate(entry.date);
     }
-    setHasUnsavedChanges(false);
-  }, [currentEntry, isLoadingEntry, selectedDate]);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data: { date: string; content: string; mood: string; tags: string[] }) => {
       const res = await apiRequest("POST", "/api/journal", data);
       return res.json();
     },
-    onSuccess: (data: JournalEntry) => {
-      lastSavedContentRef.current = data.content;
-      setHasUnsavedChanges(false);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      clearEditor();
+      toast({ title: "Entry saved", description: "Your journal entry has been saved." });
     },
     onError: () => {
       toast({ title: "Failed to save", description: "Could not save your journal entry. Please try again.", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: number; content: string; mood: string; tags: string[] }) => {
+      const res = await apiRequest("PUT", `/api/journal/${data.id}`, {
+        content: data.content,
+        mood: data.mood,
+        tags: data.tags,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      clearEditor();
+      toast({ title: "Entry updated", description: "Your journal entry has been updated." });
+    },
+    onError: () => {
+      toast({ title: "Failed to update", description: "Could not update your journal entry.", variant: "destructive" });
     },
   });
 
@@ -167,8 +197,6 @@ export default function Journal() {
     },
     onSuccess: (data: { analysis: string }) => {
       toast({ title: "Full analysis ready", description: "AI has analyzed all your journal entries." });
-      queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
-      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
     },
     onError: () => {
       toast({ title: "Failed to generate analysis", variant: "destructive" });
@@ -182,79 +210,81 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
-      setContent("");
-      setMood("");
-      setTags([]);
+      clearEditor();
       toast({ title: "Entry deleted" });
     },
   });
 
-  const saveEntry = useCallback(() => {
+  const handleSave = () => {
     if (!content.trim() && !mood) return;
-    if (content === lastSavedContentRef.current && mood === (currentEntry?.mood || "") && JSON.stringify(tags) === JSON.stringify((currentEntry?.tags as string[]) || [])) return;
-    saveMutation.mutate({ date: selectedDate, content, mood, tags });
-  }, [content, mood, tags, selectedDate, currentEntry, saveMutation]);
-
-  const debouncedSave = useCallback(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    setHasUnsavedChanges(true);
-    saveTimerRef.current = setTimeout(() => {
-      saveEntry();
-    }, 2000);
-  }, [saveEntry]);
-
-  const handleContentChange = (value: string) => {
-    setContent(value);
-    debouncedSave();
+    if (editingEntryId) {
+      updateMutation.mutate({ id: editingEntryId, content, mood, tags });
+    } else {
+      saveMutation.mutate({ date: selectedDate, content, mood, tags });
+    }
   };
 
   const handleMoodChange = (newMood: string) => {
     setMood(newMood === mood ? "" : newMood);
-    setTimeout(() => saveEntry(), 100);
   };
 
   const addTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
-      const newTags = [...tags, trimmed];
-      setTags(newTags);
+      setTags([...tags, trimmed]);
       setTagInput("");
-      if (content.trim()) {
-        saveMutation.mutate({ date: selectedDate, content, mood, tags: newTags });
-      }
     }
   };
 
   const removeTag = (tag: string) => {
-    const newTags = tags.filter(t => t !== tag);
-    setTags(newTags);
-    if (content.trim()) {
-      saveMutation.mutate({ date: selectedDate, content, mood, tags: newTags });
-    }
+    setTags(tags.filter(t => t !== tag));
   };
 
-  const goToPrevDay = () => {
-    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
-    setSelectedDate(format(subDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
-  };
-  const goToNextDay = () => {
-    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
-    setSelectedDate(format(addDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
-  };
-  const goToToday = () => {
-    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
-    setSelectedDate(format(new Date(), "yyyy-MM-dd"));
-  };
-
-  const selectEntry = (date: string) => {
-    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveEntry(); }
-    setSelectedDate(date);
-    setShowPastEntries(false);
-  };
+  const goToPrevDay = () => setSelectedDate(format(subDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
+  const goToNextDay = () => setSelectedDate(format(addDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
+  const goToToday = () => setSelectedDate(format(new Date(), "yyyy-MM-dd"));
 
   const isToday = selectedDate === format(new Date(), "yyyy-MM-dd");
   const displayDate = format(parseISO(selectedDate), "EEEE, MMMM d, yyyy");
-  const sortedRecent = recentEntries ? [...recentEntries].sort((a, b) => b.date.localeCompare(a.date)) : [];
+  const isSaving = saveMutation.isPending || updateMutation.isPending;
+
+  const sortedAllEntries = allEntries ? [...allEntries].sort((a, b) => b.date.localeCompare(a.date) || new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()) : [];
+  const todayEntriesList = todayEntries || [];
+
+  const renderEntryItem = (entry: JournalEntry, isMobile: boolean) => {
+    const isSelected = editingEntryId === entry.id;
+    const prefix = isMobile ? "mobile" : "desktop";
+    return (
+      <button
+        key={entry.id}
+        onClick={() => loadEntryForEditing(entry)}
+        className={`w-full text-left p-2.5 rounded-md transition-colors cursor-pointer ${
+          isSelected
+            ? "bg-indigo-100/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"
+            : "hover:bg-muted/50"
+        }`}
+        data-testid={`button-entry-${prefix}-${entry.id}`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {format(parseISO(entry.date), "MMM d, yyyy")}
+            {entry.createdAt && (
+              <span className="ml-1 text-muted-foreground/60">
+                {format(new Date(entry.createdAt), "h:mm a")}
+              </span>
+            )}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {entry.mood && <MoodIcon mood={entry.mood} className="text-xs" />}
+            {entry.aiInsights && <Sparkles className="w-3 h-3 text-indigo-400" />}
+          </div>
+        </div>
+        <p className="text-sm text-foreground mt-0.5 line-clamp-2">
+          {entry.content.substring(0, 80)}{entry.content.length > 80 ? "..." : ""}
+        </p>
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
@@ -275,12 +305,7 @@ export default function Journal() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700" data-testid="badge-unsaved">
-                Unsaved
-              </Badge>
-            )}
-            {saveMutation.isPending && (
+            {isSaving && (
               <Badge variant="outline" className="text-muted-foreground" data-testid="badge-saving">
                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                 Saving
@@ -289,48 +314,66 @@ export default function Journal() {
           </div>
         </div>
 
-        {sortedRecent.length > 0 && (
+        {sortedAllEntries.length > 0 && (
           <div className="lg:hidden">
             <button
               onClick={() => setShowPastEntries(!showPastEntries)}
-              className="flex items-center gap-2 w-full text-left text-sm font-medium text-muted-foreground p-2 rounded-md hover-elevate"
+              className="flex items-center gap-2 w-full text-left text-sm font-medium text-muted-foreground p-2 rounded-md hover:bg-muted/50"
               data-testid="button-toggle-past-entries"
             >
               <BookOpen className="w-4 h-4" />
-              Past Entries ({sortedRecent.length})
+              Past Entries ({sortedAllEntries.length})
               {showPastEntries ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
             </button>
             {showPastEntries && (
               <Card className="mt-2" data-testid="card-mobile-past-entries">
                 <CardContent className="p-2 max-h-60 overflow-y-auto space-y-1">
-                  {sortedRecent.slice(0, 20).map((entry) => (
-                    <button
-                      key={entry.id}
-                      onClick={() => selectEntry(entry.date)}
-                      className={`w-full text-left p-2.5 rounded-md transition-colors cursor-pointer ${
-                        entry.date === selectedDate
-                          ? "bg-indigo-100/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"
-                          : "hover-elevate"
-                      }`}
-                      data-testid={`button-entry-mobile-${entry.date}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {format(parseISO(entry.date), "MMM d, yyyy")}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          {entry.mood && <MoodIcon mood={entry.mood} className="text-xs" />}
-                          {entry.aiInsights && <Sparkles className="w-3 h-3 text-indigo-400" />}
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground mt-0.5 line-clamp-1">
-                        {entry.content.substring(0, 60)}{entry.content.length > 60 ? "..." : ""}
-                      </p>
-                    </button>
-                  ))}
+                  {sortedAllEntries.slice(0, 30).map((entry) => renderEntryItem(entry, true))}
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+
+        {todayEntriesList.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+              Entries for {format(parseISO(selectedDate), "MMM d, yyyy")} ({todayEntriesList.length})
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {todayEntriesList.map((entry) => (
+                <Card
+                  key={entry.id}
+                  className={`cursor-pointer transition-colors ${
+                    editingEntryId === entry.id
+                      ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-950/20"
+                      : "hover:border-muted-foreground/20"
+                  }`}
+                  onClick={() => loadEntryForEditing(entry)}
+                  data-testid={`card-today-entry-${entry.id}`}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        {entry.createdAt && format(new Date(entry.createdAt), "h:mm a")}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {entry.mood && <MoodIcon mood={entry.mood} className="text-xs" />}
+                        {entry.aiInsights && <Sparkles className="w-3 h-3 text-indigo-400" />}
+                      </div>
+                    </div>
+                    <p className="text-sm text-foreground line-clamp-2">{entry.content}</p>
+                    {entry.tags && (entry.tags as string[]).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {(entry.tags as string[]).slice(0, 3).map(t => (
+                          <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
@@ -353,21 +396,34 @@ export default function Journal() {
                     <ChevronRight className="w-5 h-5" />
                   </Button>
                 </div>
-                {!isToday && (
-                  <Button variant="outline" size="sm" onClick={goToToday} data-testid="button-today">
-                    Today
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {editingEntryId && (
+                    <Badge variant="outline" className="text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700 gap-1">
+                      <PenLine className="w-3 h-3" />
+                      Editing
+                    </Badge>
+                  )}
+                  {!isToday && !editingEntryId && (
+                    <Button variant="outline" size="sm" onClick={goToToday} data-testid="button-today">
+                      Today
+                    </Button>
+                  )}
+                  {editingEntryId && (
+                    <Button variant="outline" size="sm" onClick={clearEditor} className="gap-1" data-testid="button-new-entry">
+                      <FilePlus className="w-4 h-4" />
+                      New Entry
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isLoadingEntry ? (
+                {isLoadingToday ? (
                   <Skeleton className="h-40 w-full" />
                 ) : (
                   <Textarea
                     placeholder="How was your day? What did you accomplish? What's on your mind..."
                     value={content}
-                    onChange={(e) => handleContentChange(e.target.value)}
-                    onBlur={() => { if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); } saveEntry(); }}
+                    onChange={(e) => setContent(e.target.value)}
                     className="min-h-[200px] resize-none text-base leading-relaxed border-0 focus-visible:ring-1 focus-visible:ring-indigo-300 dark:focus-visible:ring-indigo-700"
                     data-testid="textarea-journal-content"
                   />
@@ -421,19 +477,19 @@ export default function Journal() {
                 <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-border">
                   <div className="flex gap-2 flex-wrap">
                     <Button
-                      onClick={() => saveEntry()}
-                      disabled={saveMutation.isPending || (!content.trim() && !mood)}
+                      onClick={handleSave}
+                      disabled={isSaving || (!content.trim() && !mood)}
                       size="sm"
                       data-testid="button-save-entry"
                     >
-                      {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
-                      Save Entry
+                      {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+                      {editingEntryId ? "Update Entry" : "Save Entry"}
                     </Button>
-                    {currentEntry && (
+                    {editingEntryId && viewingEntry && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => insightsMutation.mutate(currentEntry.id)}
+                        onClick={() => insightsMutation.mutate(editingEntryId)}
                         disabled={insightsMutation.isPending}
                         className="gap-1.5 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800"
                         data-testid="button-get-insights"
@@ -442,7 +498,7 @@ export default function Journal() {
                         AI Insights
                       </Button>
                     )}
-                    {isPremium && recentEntries && recentEntries.length >= 3 && (
+                    {isPremium && allEntries && allEntries.length >= 3 && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -456,11 +512,11 @@ export default function Journal() {
                       </Button>
                     )}
                   </div>
-                  {currentEntry && (
+                  {editingEntryId && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteMutation.mutate(currentEntry.id)}
+                      onClick={() => deleteMutation.mutate(editingEntryId)}
                       disabled={deleteMutation.isPending}
                       className="text-destructive"
                       data-testid="button-delete-entry"
@@ -473,7 +529,7 @@ export default function Journal() {
               </CardContent>
             </Card>
 
-            {currentEntry?.aiInsights && (
+            {viewingEntry?.aiInsights && (
               <Card className="border-indigo-200/50 dark:border-indigo-800/30 bg-gradient-to-br from-indigo-50/50 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/10" data-testid="card-ai-insights">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
@@ -483,7 +539,7 @@ export default function Journal() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-ai-insights">
-                    {currentEntry.aiInsights}
+                    {viewingEntry.aiInsights}
                   </p>
                 </CardContent>
               </Card>
@@ -512,40 +568,13 @@ export default function Journal() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Recent Entries</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
-                {isLoadingRecent ? (
+              <CardContent className="space-y-1 max-h-[600px] overflow-y-auto">
+                {isLoadingAll ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="h-14 w-full" />
                   ))
-                ) : sortedRecent.length > 0 ? (
-                  sortedRecent.slice(0, 20).map((entry) => (
-                    <button
-                      key={entry.id}
-                      onClick={() => selectEntry(entry.date)}
-                      className={`w-full text-left p-3 rounded-md transition-colors cursor-pointer ${
-                        entry.date === selectedDate
-                          ? "bg-indigo-100/60 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"
-                          : "hover-elevate"
-                      }`}
-                      data-testid={`button-entry-${entry.date}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {format(parseISO(entry.date), "MMM d")}
-                        </span>
-                        {entry.mood && <MoodIcon mood={entry.mood} className="text-xs" />}
-                      </div>
-                      <p className="text-sm text-foreground mt-1 line-clamp-2">
-                        {entry.content.substring(0, 80)}{entry.content.length > 80 ? "..." : ""}
-                      </p>
-                      {entry.aiInsights && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <Sparkles className="w-3 h-3 text-indigo-400" />
-                          <span className="text-[10px] text-indigo-500 dark:text-indigo-400">Has insights</span>
-                        </div>
-                      )}
-                    </button>
-                  ))
+                ) : sortedAllEntries.length > 0 ? (
+                  sortedAllEntries.slice(0, 30).map((entry) => renderEntryItem(entry, false))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No entries yet. Start writing today!
