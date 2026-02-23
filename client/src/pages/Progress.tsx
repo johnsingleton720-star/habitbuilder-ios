@@ -165,8 +165,16 @@ export default function ProgressPage() {
     return (
       <div className="min-h-screen bg-gradient-subtle p-4 md:p-8">
         <div className="mx-auto max-w-3xl space-y-6">
-          <div className="h-8 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-48 bg-muted animate-pulse rounded-2xl" />
+          <div className="h-8 w-32 bg-muted/30 rounded relative overflow-hidden"><div className="absolute inset-0 animate-shimmer" /></div>
+          <div className="h-48 bg-muted/30 rounded-2xl relative overflow-hidden">
+            <div className="absolute inset-0 animate-shimmer" />
+            <div className="p-6 space-y-4">
+              <div className="h-5 w-1/3 bg-muted/50 rounded-lg" />
+              <div className="h-4 w-full bg-muted/40 rounded-lg" />
+              <div className="h-4 w-2/3 bg-muted/40 rounded-lg" />
+              <div className="h-10 w-full bg-muted/30 rounded-xl mt-4" />
+            </div>
+          </div>
         </div>
       </div>
     );

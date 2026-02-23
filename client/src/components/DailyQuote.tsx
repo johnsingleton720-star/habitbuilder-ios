@@ -7,7 +7,14 @@ export function DailyQuote() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-32 rounded-2xl bg-muted/50 animate-pulse" />
+      <div className="w-full h-32 rounded-2xl bg-muted/30 relative overflow-hidden">
+        <div className="absolute inset-0 animate-shimmer" />
+        <div className="p-6 space-y-3">
+          <div className="h-3 w-24 bg-muted/50 rounded-lg" />
+          <div className="h-5 w-full bg-muted/40 rounded-lg" />
+          <div className="h-5 w-3/4 bg-muted/40 rounded-lg" />
+        </div>
+      </div>
     );
   }
 

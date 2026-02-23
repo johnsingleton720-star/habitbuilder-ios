@@ -430,7 +430,15 @@ export default function Dashboard() {
                 {isLoading ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-40 rounded-2xl bg-muted/50 animate-pulse border border-border/50" />
+                      <div key={i} className="h-40 rounded-2xl bg-muted/30 border border-border/50 relative overflow-hidden">
+                        <div className="absolute inset-0 animate-shimmer" />
+                        <div className="p-4 space-y-3">
+                          <div className="h-5 w-2/3 bg-muted/50 rounded-lg" />
+                          <div className="h-3 w-full bg-muted/40 rounded-lg" />
+                          <div className="h-3 w-4/5 bg-muted/40 rounded-lg" />
+                          <div className="h-8 w-24 bg-muted/50 rounded-lg mt-4" />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : activeHabits?.length === 0 ? (

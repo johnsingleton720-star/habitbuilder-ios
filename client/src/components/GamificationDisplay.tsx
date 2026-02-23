@@ -258,14 +258,22 @@ export function GamificationDisplay() {
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 animate-shimmer" />
         <CardHeader className="pb-2">
-          <div className="h-6 bg-muted rounded w-1/3"></div>
+          <div className="h-6 bg-muted/50 rounded-lg w-1/3"></div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="h-4 bg-muted rounded w-full"></div>
-            <div className="h-4 bg-muted rounded w-2/3"></div>
+            <div className="h-4 bg-muted/40 rounded-lg w-full"></div>
+            <div className="h-4 bg-muted/40 rounded-lg w-2/3"></div>
+            <div className="flex gap-3 mt-2">
+              <div className="h-16 w-16 bg-muted/30 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-muted/40 rounded-lg w-full" />
+                <div className="h-3 bg-muted/40 rounded-lg w-3/4" />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
