@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries } from "@shared/schema";
 import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
@@ -6549,6 +6549,45 @@ Be specific, practical, and grounded in behavior science. Every task should make
     }
   });
 
+  app.post("/api/mood/ai-insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await db.select().from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(sql`${moodEntries.date} DESC`)
+        .limit(14);
+
+      if (entries.length < 3) {
+        return res.json({ insight: "Keep logging your mood! After a few days, I'll spot patterns for you." });
+      }
+
+      const userHabits = await db.select().from(habits)
+        .where(eq(habits.userId, userId));
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: "Analyze mood tracking data and provide brief, actionable insights about patterns. Focus on connections between mood, energy, sleep, stress, and habits. Be encouraging. 2-3 sentences max."
+        }, {
+          role: "user",
+          content: `Mood entries (newest first): ${entries.map(e => `${e.date}: mood=${e.mood}, energy=${e.energy}/5, stress=${e.stress}/5, sleep=${e.sleep}/5, notes="${e.notes || 'none'}"`).join("\n")}\n\nHabits: ${userHabits.map((h: any) => h.title).join(", ")}`
+        }],
+        max_tokens: 200,
+      });
+
+      res.json({ insight: response.choices[0]?.message?.content || "Keep tracking!" });
+    } catch (error) {
+      console.error("Error generating AI mood insights:", error);
+      res.status(500).json({ error: "Failed to generate AI insights" });
+    }
+  });
+
   // Mood report for a specific habit correlation
   app.get("/api/mood/report/:habitId", isAuthenticated, async (req: any, res) => {
     try {
@@ -8320,6 +8359,313 @@ Be specific, practical, and grounded in behavior science. Every task should make
     } catch (error) {
       console.error("Error updating focus session:", error);
       res.status(500).json({ error: "Failed to update session" });
+    }
+  });
+
+  // ==========================================
+  // GOALS & MILESTONES (Premium)
+  // ==========================================
+
+  app.get("/api/goals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userGoals = await db.select().from(goals).where(eq(goals.userId, userId)).orderBy(goals.createdAt);
+      const allMilestones = await db.select().from(goalMilestones).where(eq(goalMilestones.userId, userId)).orderBy(goalMilestones.sortOrder);
+      const goalsWithMilestones = userGoals.map(g => ({
+        ...g,
+        milestones: allMilestones.filter(m => m.goalId === g.id),
+      }));
+      res.json(goalsWithMilestones);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+      res.status(500).json({ error: "Failed to fetch goals" });
+    }
+  });
+
+  app.post("/api/goals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { title, description, category, targetDate, habitIds, milestones } = req.body;
+      if (!title || typeof title !== "string" || title.trim().length === 0) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      const [goal] = await db.insert(goals).values({
+        userId,
+        title: title.trim(),
+        description: description || null,
+        category: category || null,
+        targetDate: targetDate || null,
+        habitIds: habitIds || [],
+        progress: 0,
+      }).returning();
+      if (milestones && Array.isArray(milestones)) {
+        for (let i = 0; i < milestones.length; i++) {
+          if (milestones[i].title && milestones[i].title.trim()) {
+            await db.insert(goalMilestones).values({
+              goalId: goal.id,
+              userId,
+              title: milestones[i].title.trim(),
+              description: milestones[i].description || null,
+              sortOrder: i,
+            });
+          }
+        }
+      }
+      const createdMilestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, goal.id)).orderBy(goalMilestones.sortOrder);
+      res.status(201).json({ ...goal, milestones: createdMilestones });
+    } catch (error) {
+      console.error("Error creating goal:", error);
+      res.status(500).json({ error: "Failed to create goal" });
+    }
+  });
+
+  app.patch("/api/goals/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      updates.updatedAt = new Date();
+      const [updated] = await db.update(goals)
+        .set(updates)
+        .where(and(eq(goals.id, id), eq(goals.userId, userId)))
+        .returning();
+      if (!updated) return res.status(404).json({ error: "Goal not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      res.status(500).json({ error: "Failed to update goal" });
+    }
+  });
+
+  app.delete("/api/goals/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      await db.delete(goalMilestones).where(and(eq(goalMilestones.goalId, id), eq(goalMilestones.userId, userId)));
+      await db.delete(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+      res.status(500).json({ error: "Failed to delete goal" });
+    }
+  });
+
+  app.post("/api/goals/:id/milestones", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const goalId = parseInt(req.params.id);
+      const { title, description } = req.body;
+      if (!title || typeof title !== "string" || title.trim().length === 0) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      const existing = await db.select().from(goalMilestones).where(and(eq(goalMilestones.goalId, goalId), eq(goalMilestones.userId, userId)));
+      const [milestone] = await db.insert(goalMilestones).values({
+        goalId,
+        userId,
+        title: title.trim(),
+        description: description || null,
+        sortOrder: existing.length,
+      }).returning();
+      res.status(201).json(milestone);
+    } catch (error) {
+      console.error("Error adding milestone:", error);
+      res.status(500).json({ error: "Failed to add milestone" });
+    }
+  });
+
+  app.patch("/api/goals/:goalId/milestones/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const goalId = parseInt(req.params.goalId);
+      const updates: any = { ...req.body };
+      if (updates.isCompleted === true && !updates.completedAt) {
+        updates.completedAt = new Date();
+      }
+      if (updates.isCompleted === false) {
+        updates.completedAt = null;
+      }
+      const [updated] = await db.update(goalMilestones)
+        .set(updates)
+        .where(and(eq(goalMilestones.id, id), eq(goalMilestones.userId, userId), eq(goalMilestones.goalId, goalId)))
+        .returning();
+      if (!updated) return res.status(404).json({ error: "Milestone not found" });
+      const allMilestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, goalId));
+      const total = allMilestones.length;
+      const completed = allMilestones.filter(m => m.isCompleted).length;
+      const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+      await db.update(goals).set({ progress, updatedAt: new Date() }).where(eq(goals.id, goalId));
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating milestone:", error);
+      res.status(500).json({ error: "Failed to update milestone" });
+    }
+  });
+
+  app.delete("/api/goals/:goalId/milestones/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const goalId = parseInt(req.params.goalId);
+      await db.delete(goalMilestones).where(and(eq(goalMilestones.id, id), eq(goalMilestones.userId, userId), eq(goalMilestones.goalId, goalId)));
+      const allMilestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, goalId));
+      const total = allMilestones.length;
+      const completed = allMilestones.filter(m => m.isCompleted).length;
+      const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+      await db.update(goals).set({ progress, updatedAt: new Date() }).where(eq(goals.id, goalId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting milestone:", error);
+      res.status(500).json({ error: "Failed to delete milestone" });
+    }
+  });
+
+  app.post("/api/goals/:id/ai-suggestions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const [goal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+      if (!goal) return res.status(404).json({ error: "Goal not found" });
+      const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
+      const milestones = await db.select().from(goalMilestones).where(eq(goalMilestones.goalId, id));
+      const linkedHabits = userHabits.filter(h => (goal.habitIds as number[] || []).includes(h.id));
+      const openai = new OpenAI();
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a goal achievement coach. Provide actionable, specific advice for achieving goals. Keep suggestions concise and practical. Format as a numbered list of 5-7 suggestions.",
+          },
+          {
+            role: "user",
+            content: `Help me achieve this goal:\n\nGoal: ${goal.title}\nDescription: ${goal.description || "N/A"}\nCategory: ${goal.category || "N/A"}\nTarget Date: ${goal.targetDate || "No deadline"}\nProgress: ${goal.progress}%\n\nCurrent Milestones:\n${milestones.map(m => `- ${m.title} (${m.isCompleted ? "completed" : "pending"})`).join("\n") || "None set"}\n\nLinked Habits:\n${linkedHabits.map(h => `- ${h.title}`).join("\n") || "None linked"}\n\nProvide specific, actionable suggestions to help me make progress on this goal.`,
+          },
+        ],
+        max_tokens: 500,
+      });
+      const suggestions = completion.choices[0]?.message?.content || "Unable to generate suggestions at this time.";
+      await db.update(goals).set({ aiSuggestions: suggestions, updatedAt: new Date() }).where(eq(goals.id, id));
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Error generating AI suggestions:", error);
+      res.status(500).json({ error: "Failed to generate suggestions" });
+    }
+  });
+
+  // ==========================================
+  // SMART DAILY PLANNER (Premium Feature)
+  // ==========================================
+
+  app.get("/api/planner/:date", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [entry] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, req.params.date)));
+      res.json(entry || null);
+    } catch (error) {
+      console.error("Error fetching planner entry:", error);
+      res.status(500).json({ error: "Failed to fetch planner entry" });
+    }
+  });
+
+  app.post("/api/planner", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date, blocks } = req.body;
+      const [existing] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      if (existing) {
+        const [updated] = await db.update(dailyPlannerEntries)
+          .set({ blocks, updatedAt: new Date() })
+          .where(eq(dailyPlannerEntries.id, existing.id))
+          .returning();
+        return res.json(updated);
+      }
+      const [entry] = await db.insert(dailyPlannerEntries)
+        .values({ userId, date, blocks })
+        .returning();
+      res.json(entry);
+    } catch (error) {
+      console.error("Error saving planner entry:", error);
+      res.status(500).json({ error: "Failed to save planner entry" });
+    }
+  });
+
+  app.post("/api/planner/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date } = req.body;
+
+      const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
+      const scheduledHabits = userHabits.filter(h => {
+        if (!h.schedule) return false;
+        const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        return (h.schedule as any).days?.includes(dayOfWeek);
+      });
+
+      const tasks = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: `You are a productivity coach creating an optimized daily schedule. Create time blocks that balance habits, tasks, and breaks. Return a JSON object with a "blocks" key containing an array of blocks with format: {"blocks": [{"id": "unique-id", "time": "HH:MM", "endTime": "HH:MM", "title": "...", "type": "habit|task|break|custom", "habitId": number|null, "taskId": number|null, "duration": minutes, "completed": false}]}. Schedule from 7AM to 10PM. Include 15-minute breaks every 2 hours. Put high-energy tasks in the morning. Do not generate harmful content.`
+        }, {
+          role: "user",
+          content: `Habits for today: ${scheduledHabits.map(h => `"${h.title}" (${h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible'})`).join(", ") || 'none'}\n\nTasks: ${tasks.map(t => `"${t.title}" (priority: ${t.priority || 'normal'})`).join(", ") || 'none'}`
+        }],
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      });
+
+      let blocks: any[] = [];
+      try {
+        const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
+        blocks = parsed.blocks || parsed.schedule || [];
+      } catch { blocks = []; }
+
+      const [existing] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      if (existing) {
+        const [updated] = await db.update(dailyPlannerEntries)
+          .set({ blocks, aiGenerated: true, updatedAt: new Date() })
+          .where(eq(dailyPlannerEntries.id, existing.id))
+          .returning();
+        return res.json(updated);
+      }
+      const [entry] = await db.insert(dailyPlannerEntries)
+        .values({ userId, date, blocks, aiGenerated: true })
+        .returning();
+      res.json(entry);
+    } catch (error) {
+      console.error("Error generating planner:", error);
+      res.status(500).json({ error: "Failed to generate daily plan" });
+    }
+  });
+
+  app.patch("/api/planner/block", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date, blockId, updates } = req.body;
+      const [entry] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      if (!entry) return res.status(404).json({ message: "No plan for this date" });
+      const blocks = ((entry.blocks || []) as any[]).map(b => b.id === blockId ? { ...b, ...updates } : b);
+      const [updated] = await db.update(dailyPlannerEntries)
+        .set({ blocks, updatedAt: new Date() })
+        .where(eq(dailyPlannerEntries.id, entry.id))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating planner block:", error);
+      res.status(500).json({ error: "Failed to update block" });
     }
   });
 

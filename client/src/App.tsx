@@ -40,6 +40,9 @@ import About from "@/pages/About";
 import DeleteAccount from "@/pages/DeleteAccount";
 import Journal from "@/pages/Journal";
 import FocusTimer from "@/pages/FocusTimer";
+import MoodTracker from "@/pages/MoodTracker";
+import Goals from "@/pages/Goals";
+import DailyPlanner from "@/pages/DailyPlanner";
 
 const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account"];
 
@@ -140,6 +143,9 @@ function Router() {
       <Route path="/admin/email"><PageTransition><AdminEmail /></PageTransition></Route>
       <Route path="/journal"><PageTransition><Journal /></PageTransition></Route>
       <Route path="/focus"><PageTransition><FocusTimer /></PageTransition></Route>
+      <Route path="/mood"><PageTransition><MoodTracker /></PageTransition></Route>
+      <Route path="/goals"><PageTransition><Goals /></PageTransition></Route>
+      <Route path="/planner"><PageTransition><DailyPlanner /></PageTransition></Route>
       <Route path="/resources"><PageTransition><Resources /></PageTransition></Route>
       <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
       <Route><PageTransition><NotFound /></PageTransition></Route>
