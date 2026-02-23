@@ -8620,12 +8620,18 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const userId = req.user!.claims.sub;
       const { date } = req.body;
 
+      const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
+      const userTimezone = user?.timezone || 'America/New_York';
+      const dateObj = new Date(date + 'T12:00:00');
+      const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone }).toLowerCase();
+
       const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
-      const scheduledHabits = userHabits.filter(h => {
-        if (h.archived) return false;
-        if (!h.schedule) return false;
-        const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-        return (h.schedule as any).days?.includes(dayOfWeek);
+      const activeHabits = userHabits.filter(h => !h.archived);
+      const scheduledHabits = activeHabits.filter(h => {
+        if (!h.schedule) return true;
+        const scheduleDays = (h.schedule as any).days;
+        if (!scheduleDays || scheduleDays.length === 0) return true;
+        return scheduleDays.includes(dayOfWeek);
       });
 
       const tasks = await db.select().from(quickTasks)
@@ -8636,24 +8642,89 @@ Be specific, practical, and grounded in behavior science. Every task should make
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 
+      const habitsList = scheduledHabits.length > 0
+        ? scheduledHabits.map(h => `- "${h.title}" (preferred time: ${h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible'})`).join("\n")
+        : "No habits scheduled";
+      const tasksList = tasks.length > 0
+        ? tasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
+        : "No tasks";
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: `You are a productivity coach creating an optimized daily schedule. Create time blocks that balance habits, tasks, and breaks. Return a JSON object with a "blocks" key containing an array of blocks with format: {"blocks": [{"id": "unique-id", "time": "HH:MM", "endTime": "HH:MM", "title": "...", "type": "habit|task|break|custom", "habitId": number|null, "taskId": number|null, "duration": minutes, "completed": false}]}. Schedule from 7AM to 10PM. Include 15-minute breaks every 2 hours. Put high-energy tasks in the morning. Do not generate harmful content.`
+          content: `You are a productivity coach. Create an optimized daily schedule as a JSON object. You MUST respond with exactly this format:
+{
+  "blocks": [
+    {
+      "id": "block-1",
+      "time": "07:00",
+      "endTime": "07:30",
+      "title": "Morning Routine",
+      "type": "habit",
+      "habitId": null,
+      "taskId": null,
+      "duration": 30,
+      "completed": false
+    }
+  ]
+}
+Rules:
+- The top-level key MUST be "blocks" containing an array
+- Each block must have: id (string like "block-1"), time (HH:MM), endTime (HH:MM), title (string), type (one of: habit, task, break, custom), duration (number in minutes), completed (false)
+- Schedule from 7AM to 10PM
+- Include 15-minute breaks every 2 hours
+- Put high-energy tasks in the morning
+- Use type "habit" for habit blocks, "task" for task blocks, "break" for breaks
+- Do not generate harmful content`
         }, {
           role: "user",
-          content: `Habits for today: ${scheduledHabits.map(h => `"${h.title}" (${h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible'})`).join(", ") || 'none'}\n\nTasks: ${tasks.map(t => `"${t.title}" (priority: ${t.priority || 'normal'})`).join(", ") || 'none'}`
+          content: `Create my schedule for today.\n\nMy habits:\n${habitsList}\n\nMy tasks:\n${tasksList}`
         }],
-        max_tokens: 1000,
+        max_tokens: 2000,
         response_format: { type: "json_object" }
       });
 
+      const rawContent = response.choices[0]?.message?.content || "{}";
+      console.log("[Planner] AI raw response:", rawContent.substring(0, 500));
+
       let blocks: any[] = [];
       try {
-        const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
-        blocks = parsed.blocks || parsed.schedule || [];
-      } catch { blocks = []; }
+        const parsed = JSON.parse(rawContent);
+        if (Array.isArray(parsed)) {
+          blocks = parsed;
+        } else if (Array.isArray(parsed.blocks)) {
+          blocks = parsed.blocks;
+        } else if (Array.isArray(parsed.schedule)) {
+          blocks = parsed.schedule;
+        } else if (Array.isArray(parsed.timeBlocks)) {
+          blocks = parsed.timeBlocks;
+        } else if (Array.isArray(parsed.plan)) {
+          blocks = parsed.plan;
+        } else {
+          const firstArrayKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
+          if (firstArrayKey) {
+            blocks = parsed[firstArrayKey];
+          }
+        }
+      } catch (e) {
+        console.error("[Planner] JSON parse error:", e);
+        blocks = [];
+      }
+
+      blocks = blocks.map((b: any, i: number) => ({
+        id: b.id || `block-${i + 1}`,
+        time: b.time || b.startTime || "09:00",
+        endTime: b.endTime || b.end_time || "",
+        title: b.title || b.name || "Untitled",
+        type: b.type || "custom",
+        habitId: b.habitId || null,
+        taskId: b.taskId || null,
+        duration: b.duration || 30,
+        completed: false,
+      }));
+
+      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date}`);
 
       const [existing] = await db.select().from(dailyPlannerEntries)
         .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));

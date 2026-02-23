@@ -541,7 +541,7 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}
-        <section className="space-y-4">
+        <section id="habits-section" className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <button
               className="flex items-center gap-2 cursor-pointer"

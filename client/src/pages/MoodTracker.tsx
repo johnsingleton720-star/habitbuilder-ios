@@ -3,8 +3,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import {
@@ -22,9 +20,10 @@ import {
   Calendar,
   TrendingUp,
   Activity,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -54,18 +53,11 @@ const MOOD_CONFIG: Record<MoodType, { label: string; icon: typeof Smile; color: 
   terrible: { label: "Terrible", icon: AlertCircle, color: "text-red-600 dark:text-red-400", bgColor: "bg-red-100 dark:bg-red-900/40", dotColor: "bg-red-500", value: 1 },
 };
 
-const MOOD_ORDER: MoodType[] = ["great", "good", "okay", "bad", "terrible"];
-
 export default function MoodTracker() {
-  usePageTitle("Mood Tracker", "Track your mood, energy, stress, and sleep to discover patterns and improve well-being.");
+  usePageTitle("Mood Insights", "Analyze your mood patterns, energy, stress, and sleep trends with AI-powered insights.");
   const { features } = useSubscription();
   const { toast } = useToast();
 
-  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
-  const [energy, setEnergy] = useState([3]);
-  const [stress, setStress] = useState([3]);
-  const [sleep, setSleep] = useState([3]);
-  const [notes, setNotes] = useState("");
   const [aiInsight, setAiInsight] = useState<string | null>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -75,24 +67,6 @@ export default function MoodTracker() {
   });
 
   const todayEntry = entries.find(e => e.date === today);
-
-  const saveMoodMutation = useMutation({
-    mutationFn: async (data: Partial<MoodEntry>) => {
-      return await apiRequest("POST", "/api/mood", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
-      toast({ title: "Mood logged!", description: "Your mood has been recorded." });
-      setSelectedMood(null);
-      setEnergy([3]);
-      setStress([3]);
-      setSleep([3]);
-      setNotes("");
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to save mood", description: error.message, variant: "destructive" });
-    },
-  });
 
   const aiInsightMutation = useMutation({
     mutationFn: async () => {
@@ -107,18 +81,6 @@ export default function MoodTracker() {
     },
   });
 
-  const handleSave = () => {
-    if (!selectedMood) return;
-    saveMoodMutation.mutate({
-      date: today,
-      mood: selectedMood,
-      energy: energy[0],
-      stress: stress[0],
-      sleep: sleep[0],
-      notes: notes || undefined,
-    });
-  };
-
   if (!features.hasMoodTracker) {
     return (
       <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
@@ -132,8 +94,8 @@ export default function MoodTracker() {
             </Link>
           </div>
           <UpgradePrompt
-            feature="Mood Tracker"
-            description="Track your mood, energy, stress, and sleep patterns. Get AI-powered insights about what affects your well-being."
+            feature="Mood Insights"
+            description="Analyze your mood patterns, energy, stress, and sleep trends. Get AI-powered insights about what affects your well-being."
             variant="card"
           />
         </div>
@@ -149,6 +111,13 @@ export default function MoodTracker() {
 
   const sortedEntries = [...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 14);
 
+  const energyEntries = entries.filter(e => e.energy && e.energy > 0);
+  const stressEntries = entries.filter(e => e.stress && e.stress > 0);
+  const sleepEntries = entries.filter(e => e.sleep && e.sleep > 0);
+  const avgEnergy = energyEntries.length > 0 ? (energyEntries.reduce((s, e) => s + (e.energy || 0), 0) / energyEntries.length).toFixed(1) : "-";
+  const avgStress = stressEntries.length > 0 ? (stressEntries.reduce((s, e) => s + (e.stress || 0), 0) / stressEntries.length).toFixed(1) : "-";
+  const avgSleep = sleepEntries.length > 0 ? (sleepEntries.reduce((s, e) => s + (e.sleep || 0), 0) / sleepEntries.length).toFixed(1) : "-";
+
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -162,9 +131,9 @@ export default function MoodTracker() {
             <div>
               <h1 className="text-xl font-bold text-foreground flex items-center gap-2" data-testid="text-mood-title">
                 <Activity className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                Mood Tracker
+                Mood Insights
               </h1>
-              <p className="text-sm text-muted-foreground">Check in with yourself daily</p>
+              <p className="text-sm text-muted-foreground">Trends and patterns from your mood check-ins</p>
             </div>
           </div>
           {todayEntry && (
@@ -175,123 +144,47 @@ export default function MoodTracker() {
           )}
         </div>
 
-        <Card data-testid="card-mood-checkin">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="border-teal-200/30 dark:border-teal-800/20 bg-teal-50/30 dark:bg-teal-950/10" data-testid="card-log-cta">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center flex-shrink-0">
               <SmilePlus className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              {todayEntry ? "Update Today's Check-in" : "Quick Check-in"}
-            </CardTitle>
-            <CardDescription>How are you feeling right now?</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="flex justify-center gap-2 flex-wrap">
-              {MOOD_ORDER.map((mood) => {
-                const config = MOOD_CONFIG[mood];
-                const Icon = config.icon;
-                const isSelected = selectedMood === mood;
-                return (
-                  <button
-                    key={mood}
-                    onClick={() => setSelectedMood(mood)}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all min-w-[60px]",
-                      isSelected
-                        ? `${config.bgColor} ring-2 ring-primary scale-105`
-                        : "hover-elevate"
-                    )}
-                    data-testid={`button-mood-${mood}`}
-                  >
-                    <Icon className={cn("w-7 h-7", config.color)} />
-                    <span className={cn("text-xs font-medium", isSelected ? config.color : "text-muted-foreground")}>
-                      {config.label}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
-
-            {selectedMood && (
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-medium">Energy</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{energy[0]}/5</span>
-                  </div>
-                  <Slider
-                    value={energy}
-                    onValueChange={setEnergy}
-                    min={1}
-                    max={5}
-                    step={1}
-                    className="w-full"
-                    data-testid="slider-energy"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium">Stress</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{stress[0]}/5</span>
-                  </div>
-                  <Slider
-                    value={stress}
-                    onValueChange={setStress}
-                    min={1}
-                    max={5}
-                    step={1}
-                    className="w-full"
-                    data-testid="slider-stress"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Moon className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium">Sleep Quality</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{sleep[0]}/5</span>
-                  </div>
-                  <Slider
-                    value={sleep}
-                    onValueChange={setSleep}
-                    min={1}
-                    max={5}
-                    step={1}
-                    className="w-full"
-                    data-testid="slider-sleep"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">Notes (optional)</span>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Anything on your mind?"
-                    className="resize-none"
-                    rows={2}
-                    data-testid="textarea-mood-notes"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleSave}
-                  disabled={saveMoodMutation.isPending}
-                  className="w-full"
-                  data-testid="button-save-mood"
-                >
-                  {saveMoodMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : todayEntry ? "Update Mood" : "Save Mood"}
-                </Button>
-              </div>
-            )}
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">{todayEntry ? "Today's mood is logged" : "Haven't checked in today"}</p>
+              <p className="text-xs text-muted-foreground">Log your mood from the dashboard Mood Check-in card</p>
+            </div>
+            <Link href="/">
+              <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-go-checkin">
+                <Home className="w-3.5 h-3.5" />
+                Dashboard
+              </Button>
+            </Link>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Card data-testid="stat-avg-energy">
+            <CardContent className="p-3 text-center">
+              <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+              <p className="text-lg font-bold text-foreground">{avgEnergy}</p>
+              <p className="text-[10px] text-muted-foreground">Avg Energy</p>
+            </CardContent>
+          </Card>
+          <Card data-testid="stat-avg-stress">
+            <CardContent className="p-3 text-center">
+              <Brain className="w-4 h-4 text-purple-500 mx-auto mb-1" />
+              <p className="text-lg font-bold text-foreground">{avgStress}</p>
+              <p className="text-[10px] text-muted-foreground">Avg Stress</p>
+            </CardContent>
+          </Card>
+          <Card data-testid="stat-avg-sleep">
+            <CardContent className="p-3 text-center">
+              <Moon className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+              <p className="text-lg font-bold text-foreground">{avgSleep}</p>
+              <p className="text-[10px] text-muted-foreground">Avg Sleep</p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card data-testid="card-mood-timeline">
           <CardHeader className="pb-3">
@@ -432,9 +325,17 @@ export default function MoodTracker() {
                 ))}
               </div>
             ) : sortedEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6" data-testid="text-no-entries">
-                No mood entries yet. Start by logging how you feel today.
-              </p>
+              <div className="text-center py-6 space-y-2">
+                <p className="text-sm text-muted-foreground" data-testid="text-no-entries">
+                  No mood entries yet.
+                </p>
+                <Link href="/">
+                  <Button variant="outline" size="sm" className="gap-1.5" data-testid="button-start-logging">
+                    <Home className="w-3.5 h-3.5" />
+                    Go to Dashboard to log your first mood
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <div className="space-y-2">
                 {sortedEntries.map((entry) => {

@@ -1,4 +1,4 @@
-import { Home, BarChart3, Settings, Sparkles } from "lucide-react";
+import { Home, BarChart3, Settings, Leaf } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -7,13 +7,9 @@ export function MobileBottomNav() {
   const { user } = useAuth();
   const [location] = useLocation();
 
-  // Only render if user is authenticated
   if (!user) {
     return null;
   }
-
-  // Don't render on paywall page
-  const isOnPaywall = location === "/paywall";
 
   const navItems = [
     {
@@ -21,6 +17,12 @@ export function MobileBottomNav() {
       icon: Home,
       path: "/",
       testId: "nav-item-home",
+    },
+    {
+      label: "Habits",
+      icon: Leaf,
+      path: "/#habits",
+      testId: "nav-item-habits",
     },
     {
       label: "Progress",
@@ -34,23 +36,24 @@ export function MobileBottomNav() {
       path: "/account",
       testId: "nav-item-account",
     },
-    ...(isOnPaywall
-      ? []
-      : [
-          {
-            label: "Upgrade",
-            icon: Sparkles,
-            path: "/paywall",
-            testId: "nav-item-upgrade",
-          },
-        ]),
   ];
 
   const isActive = (path: string) => {
-    if (path === "/") {
+    if (path === "/" || path === "/#habits") {
       return location === "/";
     }
     return location.startsWith(path);
+  };
+
+  const handleNavClick = (path: string) => {
+    if (path === "/#habits") {
+      if (location === "/") {
+        const habitsSection = document.getElementById("habits-section");
+        if (habitsSection) {
+          habitsSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
   };
 
   return (
@@ -64,9 +67,10 @@ export function MobileBottomNav() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+            const href = item.path === "/#habits" ? "/" : item.path;
 
             return (
-              <Link key={item.path} href={item.path}>
+              <Link key={item.path} href={href}>
                 <button
                   className={cn(
                     "flex flex-col items-center justify-center gap-1 w-full h-16 transition-colors",
@@ -76,6 +80,7 @@ export function MobileBottomNav() {
                   )}
                   data-testid={item.testId}
                   aria-label={item.label}
+                  onClick={() => handleNavClick(item.path)}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs font-medium">{item.label}</span>

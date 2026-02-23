@@ -405,7 +405,7 @@ function GoalDetailDialog({
 
           {linkedHabits.length > 0 && (
             <div>
-              <p className="text-sm font-medium mb-1.5">Linked Habits</p>
+              <p className="text-sm font-medium mb-1.5">Habits driving this goal</p>
               <div className="flex flex-wrap gap-1">
                 {linkedHabits.map(h => (
                   <Badge key={h.id} variant="secondary" className="text-xs">
@@ -617,7 +617,8 @@ function CreateGoalDialog({ habits, open, onOpenChange }: { habits: Habit[]; ope
 
           {habits.length > 0 && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Link Habits</label>
+              <label className="text-sm font-medium">Habits driving this goal</label>
+              <p className="text-xs text-muted-foreground">Select the daily habits that will help you reach this goal</p>
               <div className="flex flex-wrap gap-1.5">
                 {habits.map(h => (
                   <Badge
@@ -751,10 +752,13 @@ export default function Goals() {
                 Back
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Target className="w-6 h-6 text-rose-500" />
-              Goals
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Target className="w-6 h-6 text-rose-500" />
+                Goals
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Outcomes with deadlines — your habits are the daily actions that get you there</p>
+            </div>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="gap-1.5" data-testid="button-open-create-goal">
             <Plus className="w-4 h-4" />
