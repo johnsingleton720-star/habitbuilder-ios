@@ -797,6 +797,17 @@ export interface PlannerBlock {
   duration: number;
   completed: boolean;
   notes?: string;
+  energyLevel?: "high" | "medium" | "low";
+  priority?: "high" | "medium" | "low";
+  skipped?: boolean;
+}
+
+export interface PlannerInsights {
+  focusTheme: string;
+  focusDescription: string;
+  atRiskHabits: string[];
+  energyStrategy: string;
+  tipsForToday: string[];
 }
 
 export const dailyPlannerEntries = pgTable("daily_planner_entries", {
@@ -806,6 +817,7 @@ export const dailyPlannerEntries = pgTable("daily_planner_entries", {
   blocks: jsonb("blocks").$type<PlannerBlock[]>().default([]),
   aiGenerated: boolean("ai_generated").default(false),
   aiSummary: text("ai_summary"),
+  insights: jsonb("insights").$type<PlannerInsights>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
