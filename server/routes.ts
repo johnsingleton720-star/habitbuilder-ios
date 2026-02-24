@@ -8976,7 +8976,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         };
       }
 
-      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${[...completedMap.values()].filter(Boolean).length} completed states)`);
+      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${Array.from(completedMap.values()).filter(Boolean).length} completed states)`);
 
       if (existing) {
         const [updated] = await db.update(dailyPlannerEntries)

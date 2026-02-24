@@ -41,9 +41,24 @@ import {
   Timer,
   TrendingUp,
   RefreshCw,
+  HelpCircle,
+  Target,
+  Brain,
+  AlertTriangle,
+  SkipForward,
+  CalendarRange,
+  X,
+  Lightbulb,
+  Battery,
+  BatteryLow,
+  BatteryMedium,
+  BatteryFull,
+  ArrowRight,
+  BarChart3,
+  Info,
 } from "lucide-react";
 import { Link } from "wouter";
-import type { PlannerBlock, DailyPlannerEntry } from "@shared/schema";
+import type { PlannerBlock, PlannerInsights, DailyPlannerEntry } from "@shared/schema";
 
 const BLOCK_TYPE_STYLES: Record<string, { bg: string; border: string; icon: typeof Zap; label: string }> = {
   habit: {
@@ -72,6 +87,18 @@ const BLOCK_TYPE_STYLES: Record<string, { bg: string; border: string; icon: type
   },
 };
 
+const ENERGY_COLORS = {
+  high: "text-orange-500",
+  medium: "text-yellow-500",
+  low: "text-blue-400",
+};
+
+const PRIORITY_STYLES = {
+  high: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+  medium: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
+  low: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+};
+
 function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -93,29 +120,50 @@ function isToday(date: Date): boolean {
   return formatDate(date) === formatDate(today);
 }
 
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function EnergyIcon({ level }: { level?: string }) {
+  if (level === "high") return <BatteryFull className="w-3 h-3 text-orange-500" />;
+  if (level === "low") return <BatteryLow className="w-3 h-3 text-blue-400" />;
+  return <BatteryMedium className="w-3 h-3 text-yellow-500" />;
+}
+
 function TimeBlock({
   block,
   onToggle,
+  onSkip,
   isUpdating,
 }: {
   block: PlannerBlock;
   onToggle: () => void;
+  onSkip: () => void;
   isUpdating: boolean;
 }) {
   const style = BLOCK_TYPE_STYLES[block.type] || BLOCK_TYPE_STYLES.custom;
   const Icon = style.icon;
+  const isSkipped = block.skipped;
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-md border-l-4 ${style.border} ${style.bg} transition-all cursor-pointer hover-elevate`}
-      onClick={onToggle}
+      className={`flex items-start gap-3 p-3 rounded-md border-l-4 ${style.border} ${isSkipped ? "bg-muted/30 opacity-60" : style.bg} transition-all`}
       data-testid={`block-${block.id}`}
     >
-      <div className="flex-shrink-0 pt-0.5">
+      <div
+        className="flex-shrink-0 pt-0.5 cursor-pointer"
+        onClick={onToggle}
+      >
         {isUpdating ? (
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         ) : block.completed ? (
           <CheckCircle2 className="w-5 h-5 text-emerald-500" data-testid={`block-check-${block.id}`} />
+        ) : isSkipped ? (
+          <SkipForward className="w-5 h-5 text-muted-foreground" data-testid={`block-skip-${block.id}`} />
         ) : (
           <Circle className="w-5 h-5 text-muted-foreground" data-testid={`block-circle-${block.id}`} />
         )}
@@ -123,7 +171,7 @@ function TimeBlock({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span
-            className={`text-sm font-medium ${block.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+            className={`text-sm font-medium ${block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"}`}
             data-testid={`block-title-${block.id}`}
           >
             {block.title}
@@ -132,6 +180,12 @@ function TimeBlock({
             <Icon className="w-3 h-3 mr-1" />
             {style.label}
           </Badge>
+          {block.priority === "high" && !block.completed && !isSkipped && (
+            <Badge variant="outline" className={`text-[10px] py-0 ${PRIORITY_STYLES.high}`}>
+              <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
+              Priority
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -143,18 +197,395 @@ function TimeBlock({
             <Timer className="w-3 h-3" />
             {block.duration}min
           </span>
+          {block.energyLevel && (
+            <span className="flex items-center gap-1">
+              <EnergyIcon level={block.energyLevel} />
+              <span className={ENERGY_COLORS[block.energyLevel] || ""}>
+                {block.energyLevel}
+              </span>
+            </span>
+          )}
         </div>
       </div>
+      {!block.completed && !isSkipped && block.type !== "break" && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); onSkip(); }}
+          data-testid={`button-skip-${block.id}`}
+        >
+          <SkipForward className="w-3.5 h-3.5" />
+        </Button>
+      )}
     </div>
   );
 }
 
+function FocusThemeCard({ insights }: { insights: PlannerInsights }) {
+  const [showTips, setShowTips] = useState(false);
+
+  return (
+    <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20" data-testid="card-focus-theme">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+              <Target className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Today's Focus</p>
+              <h3 className="text-base font-semibold text-foreground" data-testid="text-focus-theme">
+                {insights.focusTheme}
+              </h3>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setShowTips(!showTips)}
+            data-testid="button-toggle-tips"
+          >
+            <Lightbulb className={`w-4 h-4 ${showTips ? "text-yellow-500" : "text-muted-foreground"}`} />
+          </Button>
+        </div>
+
+        <p className="text-sm text-muted-foreground" data-testid="text-focus-desc">
+          {insights.focusDescription}
+        </p>
+
+        {insights.atRiskHabits && insights.atRiskHabits.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Streak at risk:</span>
+            {insights.atRiskHabits.map((h, i) => (
+              <Badge key={i} variant="outline" className="text-xs bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400">
+                {h}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-start gap-2">
+          <Brain className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-muted-foreground">{insights.energyStrategy}</p>
+        </div>
+
+        {showTips && insights.tipsForToday && (
+          <div className="space-y-1.5 pt-1 border-t border-border/50">
+            <p className="text-xs font-medium text-foreground flex items-center gap-1">
+              <Lightbulb className="w-3 h-3 text-yellow-500" />
+              Tips for Today
+            </p>
+            {insights.tipsForToday.map((tip, i) => (
+              <p key={i} className="text-xs text-muted-foreground pl-4">
+                {i + 1}. {tip}
+              </p>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function EnergyCurve({ blocks }: { blocks: PlannerBlock[] }) {
+  if (blocks.length === 0) return null;
+
+  const hourSlots: { hour: number; level: number; hasBlock: boolean }[] = [];
+  for (let h = 7; h <= 22; h++) {
+    const blocksAtHour = blocks.filter(b => {
+      const blockHour = parseInt(b.time.split(":")[0]);
+      const endHour = b.endTime ? parseInt(b.endTime.split(":")[0]) : blockHour + 1;
+      return h >= blockHour && h < endHour;
+    });
+    const levels = blocksAtHour.map(b => b.energyLevel === "high" ? 3 : b.energyLevel === "low" ? 1 : 2);
+    const avgLevel = levels.length > 0 ? levels.reduce((a, b) => a + b, 0) / levels.length : 0;
+    hourSlots.push({ hour: h, level: avgLevel, hasBlock: blocksAtHour.length > 0 });
+  }
+
+  const maxLevel = 3;
+
+  return (
+    <Card data-testid="card-energy-curve">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Battery className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Energy Throughout the Day</span>
+        </div>
+        <div className="flex items-end gap-[2px] h-10">
+          {hourSlots.map((slot) => (
+            <div
+              key={slot.hour}
+              className="flex-1 rounded-t-sm transition-all"
+              style={{
+                height: slot.hasBlock ? `${(slot.level / maxLevel) * 100}%` : "4px",
+                minHeight: "2px",
+              }}
+              title={`${slot.hour}:00 - ${slot.level === 3 ? "High" : slot.level === 2 ? "Medium" : slot.level === 1 ? "Low" : "Free"} energy`}
+            >
+              <div
+                className={`w-full h-full rounded-t-sm ${
+                  slot.level >= 2.5 ? "bg-orange-400" :
+                  slot.level >= 1.5 ? "bg-yellow-400" :
+                  slot.level >= 0.5 ? "bg-blue-300" :
+                  "bg-muted"
+                }`}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-[10px] text-muted-foreground">7am</span>
+          <span className="text-[10px] text-muted-foreground">12pm</span>
+          <span className="text-[10px] text-muted-foreground">5pm</span>
+          <span className="text-[10px] text-muted-foreground">10pm</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface WeeklySummary {
+  days: {
+    date: string;
+    dayName: string;
+    hasPlanner: boolean;
+    totalBlocks: number;
+    completedBlocks: number;
+    skippedBlocks: number;
+    habitCount: number;
+    completedHabits: number;
+    totalMinutes: number;
+    completionRate: number;
+  }[];
+  habitDistribution: {
+    title: string;
+    daysPerWeek: number;
+    currentStreak: number;
+    totalTime: number;
+  }[];
+}
+
+function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay: (date: string) => void }) {
+  const { data: summary, isLoading } = useQuery<WeeklySummary>({
+    queryKey: ["/api/planner/weekly-summary", startDate],
+    queryFn: async () => {
+      const res = await fetch(`/api/planner/weekly-summary?startDate=${startDate}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch weekly summary");
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+
+  if (!summary) return null;
+
+  const todayStr = formatDate(new Date());
+
+  return (
+    <div className="space-y-3" data-testid="weekly-view">
+      <div className="grid grid-cols-7 gap-1" data-testid="weekly-grid">
+        {summary.days.map((day) => {
+          const isCurrentDay = day.date === todayStr;
+          const isPast = day.date < todayStr;
+          return (
+            <button
+              key={day.date}
+              onClick={() => onSelectDay(day.date)}
+              className={`p-2 rounded-lg text-center transition-all ${
+                isCurrentDay ? "bg-primary/15 border border-primary/30" :
+                day.hasPlanner ? "bg-card border border-border hover:border-primary/30" :
+                "bg-muted/30 border border-transparent hover:bg-muted/50"
+              }`}
+              data-testid={`weekly-day-${day.date}`}
+            >
+              <p className="text-[10px] font-medium text-muted-foreground">{day.dayName}</p>
+              <p className={`text-sm font-bold ${isCurrentDay ? "text-primary" : "text-foreground"}`}>
+                {new Date(day.date + 'T12:00:00').getDate()}
+              </p>
+              {day.hasPlanner ? (
+                <div className="mt-1">
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 rounded-full transition-all"
+                      style={{ width: `${day.completionRate}%` }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{day.completionRate}%</p>
+                </div>
+              ) : (
+                <p className="text-[9px] text-muted-foreground mt-1">{isPast ? "—" : "Plan"}</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {summary.habitDistribution.length > 0 && (
+        <Card data-testid="card-habit-distribution">
+          <CardContent className="p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+              <BarChart3 className="w-3.5 h-3.5" />
+              Habit Balance This Week
+            </p>
+            <div className="space-y-2">
+              {summary.habitDistribution.slice(0, 6).map((habit, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-foreground truncate flex-1 min-w-0">{habit.title}</span>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 7 }).map((_, d) => {
+                      const dayData = summary.days[d];
+                      const isScheduled = d < habit.daysPerWeek;
+                      return (
+                        <div
+                          key={d}
+                          className={`w-3 h-3 rounded-sm ${
+                            dayData?.completedHabits > 0 && isScheduled
+                              ? "bg-emerald-500"
+                              : isScheduled ? "bg-emerald-500/20" : "bg-muted"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] py-0 ml-1">
+                    {habit.currentStreak}d
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="p-3">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                {summary.days.reduce((s, d) => s + d.completedBlocks, 0)}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Completed</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">
+                {Math.round(summary.days.reduce((s, d) => s + d.totalMinutes, 0) / 60 * 10) / 10}h
+              </p>
+              <p className="text-[10px] text-muted-foreground">Planned</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-primary">
+                {summary.days.filter(d => d.hasPlanner).length}/7
+              </p>
+              <p className="text-[10px] text-muted-foreground">Days Planned</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto" data-testid="dialog-help">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5 text-primary" />
+            How Smart Planner Works
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              Daily Focus Theme
+            </h4>
+            <p className="text-muted-foreground">
+              Each day gets a personalized theme based on which habits need attention, your recent patterns, and what would make the biggest impact today.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <Battery className="w-4 h-4 text-orange-500" />
+              Energy-Aware Scheduling
+            </h4>
+            <p className="text-muted-foreground">
+              Your schedule adapts to your energy levels. If you've been logging low energy or poor sleep in mood check-ins, demanding tasks are scheduled later in the day. High energy? They go first.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Streak Protection
+            </h4>
+            <p className="text-muted-foreground">
+              Habits with active streaks that haven't been done today are flagged as priorities and placed at optimal times so you don't lose your momentum.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <SkipForward className="w-4 h-4 text-blue-500" />
+              Adaptive Rescheduling
+            </h4>
+            <p className="text-muted-foreground">
+              Missed a block? Tap the skip button and the planner will suggest available times later in your day to fit it in, so nothing gets lost.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <CalendarRange className="w-4 h-4 text-purple-500" />
+              Weekly Overview
+            </h4>
+            <p className="text-muted-foreground">
+              Switch to the weekly view to see your habit balance across the entire week. See which days are light and which are heavy, and plan ahead.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              Gets Smarter Over Time
+            </h4>
+            <p className="text-muted-foreground">
+              The more you use mood check-ins and complete sessions, the better the planner understands your patterns. New users get sensible defaults that improve as you build history.
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function DailyPlanner() {
-  usePageTitle("Daily Planner");
+  usePageTitle("Smart Planner");
   const { features } = useSubscription();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<"daily" | "weekly">("daily");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [rescheduleData, setRescheduleData] = useState<{
+    blockId: string;
+    blockTitle: string;
+    suggestedTime: string | null;
+    availableSlots: string[];
+  } | null>(null);
   const [newBlock, setNewBlock] = useState({
     title: "",
     time: "09:00",
@@ -164,6 +595,8 @@ export default function DailyPlanner() {
   const [updatingBlockId, setUpdatingBlockId] = useState<string | null>(null);
 
   const dateStr = formatDate(selectedDate);
+  const weekStart = getWeekStart(selectedDate);
+  const weekStartStr = formatDate(weekStart);
 
   const { data: plannerEntry, isLoading } = useQuery<DailyPlannerEntry | null>({
     queryKey: ["/api/planner", dateStr],
@@ -171,6 +604,7 @@ export default function DailyPlanner() {
   });
 
   const blocks: PlannerBlock[] = (plannerEntry?.blocks as PlannerBlock[]) || [];
+  const insights: PlannerInsights | null = (plannerEntry as any)?.insights || null;
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -179,7 +613,8 @@ export default function DailyPlanner() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
-      toast({ title: "Plan generated", description: "Your AI-optimized schedule is ready." });
+      queryClient.invalidateQueries({ queryKey: ["/api/planner/weekly-summary"] });
+      toast({ title: "Smart plan generated", description: "Your AI-optimized schedule is ready." });
     },
     onError: (err: Error) => {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
@@ -219,6 +654,50 @@ export default function DailyPlanner() {
     },
     onError: (err: Error) => {
       toast({ title: "Refresh failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const skipMutation = useMutation({
+    mutationFn: async (blockId: string) => {
+      const res = await apiRequest("POST", "/api/planner/reschedule", { date: dateStr, blockId });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      if (data.suggestedTime) {
+        setRescheduleData({
+          blockId: data.skippedBlock.id,
+          blockTitle: data.skippedBlock.title,
+          suggestedTime: data.suggestedTime,
+          availableSlots: data.availableSlots || [],
+        });
+        setShowRescheduleDialog(true);
+      } else {
+        toast({ title: "Block skipped", description: "No available slots to reschedule." });
+      }
+    },
+    onError: (err: Error) => {
+      toast({ title: "Skip failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const rescheduleConfirmMutation = useMutation({
+    mutationFn: async ({ blockId, newTime }: { blockId: string; newTime: string }) => {
+      const res = await apiRequest("POST", "/api/planner/reschedule-confirm", {
+        date: dateStr,
+        blockId,
+        newTime,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      setShowRescheduleDialog(false);
+      setRescheduleData(null);
+      toast({ title: "Rescheduled", description: "Block moved to a new time slot." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Reschedule failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -282,7 +761,7 @@ export default function DailyPlanner() {
         </div>
         <UpgradePrompt
           feature="Smart Daily Planner"
-          description="AI-powered daily schedule optimizer that combines your habits, tasks, and custom time blocks into an optimized daily plan. Available with Premium."
+          description="AI-powered daily schedule optimizer that adapts to your energy levels, protects your streaks, and gets smarter over time. Available with Premium."
           variant="card"
         />
       </div>
@@ -290,6 +769,8 @@ export default function DailyPlanner() {
   }
 
   const completedCount = blocks.filter((b) => b.completed).length;
+  const skippedCount = blocks.filter((b) => b.skipped).length;
+  const activeBlocks = blocks.filter(b => !b.skipped);
   const totalMinutes = blocks.reduce((sum, b) => sum + b.duration, 0);
   const totalHours = (totalMinutes / 60).toFixed(1);
   const habitCount = blocks.filter((b) => b.type === "habit").length;
@@ -309,7 +790,7 @@ export default function DailyPlanner() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
+    <div className="max-w-2xl mx-auto p-4 space-y-4 pb-24">
       <div className="flex items-center gap-2 flex-wrap">
         <Link href="/">
           <Button variant="ghost" size="icon" data-testid="button-back-planner">
@@ -318,10 +799,41 @@ export default function DailyPlanner() {
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground" data-testid="text-planner-title">
-            Daily Planner
+            Smart Planner
           </h1>
-          <p className="text-sm text-muted-foreground">AI-powered schedule optimizer</p>
+          <p className="text-sm text-muted-foreground">AI-powered schedule that adapts to you</p>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowHelpModal(true)}
+          data-testid="button-help"
+        >
+          <HelpCircle className="w-5 h-5 text-muted-foreground" />
+        </Button>
+      </div>
+
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg" data-testid="tab-selector">
+        <Button
+          variant={activeTab === "daily" ? "default" : "ghost"}
+          size="sm"
+          className="flex-1 h-8"
+          onClick={() => setActiveTab("daily")}
+          data-testid="tab-daily"
+        >
+          <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
+          Daily
+        </Button>
+        <Button
+          variant={activeTab === "weekly" ? "default" : "ghost"}
+          size="sm"
+          className="flex-1 h-8"
+          onClick={() => setActiveTab("weekly")}
+          data-testid="tab-weekly"
+        >
+          <CalendarRange className="w-3.5 h-3.5 mr-1.5" />
+          Weekly
+        </Button>
       </div>
 
       <Card data-testid="card-date-selector">
@@ -348,110 +860,140 @@ export default function DailyPlanner() {
         </CardContent>
       </Card>
 
-      {blocks.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="stats-summary">
-          <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-foreground" data-testid="stat-hours">{totalHours}</p>
-              <p className="text-xs text-muted-foreground">Hours Planned</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-foreground" data-testid="stat-completed">
-                {completedCount}/{blocks.length}
-              </p>
-              <p className="text-xs text-muted-foreground">Completed</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400" data-testid="stat-habits">{habitCount}</p>
-              <p className="text-xs text-muted-foreground">Habits</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-sky-600 dark:text-sky-400" data-testid="stat-tasks">{taskCount}</p>
-              <p className="text-xs text-muted-foreground">Tasks</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          onClick={() => generateMutation.mutate()}
-          disabled={generateMutation.isPending}
-          className="bg-gradient-to-r from-sky-500 to-blue-600 text-white border-0"
-          data-testid="button-generate-plan"
-        >
-          {generateMutation.isPending ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Sparkles className="w-4 h-4 mr-2" />
-          )}
-          {generateMutation.isPending ? "Generating..." : "Generate My Day"}
-        </Button>
-        {blocks.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => refreshMutation.mutate()}
-            disabled={refreshMutation.isPending}
-            data-testid="button-refresh-plan"
-          >
-            {refreshMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Refresh
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          onClick={() => setShowAddDialog(true)}
-          data-testid="button-add-block"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Block
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-md" />
-          ))}
-        </div>
-      ) : blocks.length === 0 ? (
-        <Card data-testid="card-empty-planner">
-          <CardContent className="p-8 text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-full bg-sky-500/10 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-sky-500" />
-            </div>
-            <h3 className="text-base font-medium text-foreground">No plan for this day yet</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Click "Generate My Day" to create an AI-optimized schedule based on your habits and tasks, or manually add time blocks.
-            </p>
-          </CardContent>
-        </Card>
+      {activeTab === "weekly" ? (
+        <WeeklyView
+          startDate={weekStartStr}
+          onSelectDay={(date) => {
+            setSelectedDate(new Date(date + 'T12:00:00'));
+            setActiveTab("daily");
+          }}
+        />
       ) : (
-        <div className="space-y-2" data-testid="timeline-view">
-          {blocks.map((block) => (
-            <TimeBlock
-              key={block.id}
-              block={block}
-              isUpdating={updatingBlockId === block.id}
-              onToggle={() => {
-                toggleBlockMutation.mutate({
-                  blockId: block.id,
-                  completed: !block.completed,
-                });
-              }}
-            />
-          ))}
-        </div>
+        <>
+          {insights && <FocusThemeCard insights={insights} />}
+
+          {blocks.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="stats-summary">
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-foreground" data-testid="stat-hours">{totalHours}</p>
+                    <p className="text-xs text-muted-foreground">Hours Planned</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-foreground" data-testid="stat-completed">
+                      {completedCount}/{blocks.length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Completed</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400" data-testid="stat-habits">{habitCount}</p>
+                    <p className="text-xs text-muted-foreground">Habits</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-sky-600 dark:text-sky-400" data-testid="stat-tasks">{taskCount}</p>
+                    <p className="text-xs text-muted-foreground">Tasks</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <EnergyCurve blocks={blocks} />
+            </>
+          )}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+              className="bg-gradient-to-r from-primary to-emerald-600 text-white border-0"
+              data-testid="button-generate-plan"
+            >
+              {generateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {generateMutation.isPending ? "Optimizing..." : blocks.length > 0 ? "Regenerate" : "Generate My Day"}
+            </Button>
+            {blocks.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => refreshMutation.mutate()}
+                disabled={refreshMutation.isPending}
+                data-testid="button-refresh-plan"
+              >
+                {refreshMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Sync Tasks
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setShowAddDialog(true)}
+              data-testid="button-add-block"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Block
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-md" />
+              ))}
+            </div>
+          ) : blocks.length === 0 ? (
+            <Card data-testid="card-empty-planner">
+              <CardContent className="p-8 text-center space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-base font-medium text-foreground">Your Smart Planner is Ready</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Hit "Generate My Day" and the AI will create an optimized schedule based on your habits, tasks, energy patterns, and streaks.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
+                  <Info className="w-3.5 h-3.5" />
+                  <span>Tap the <HelpCircle className="w-3 h-3 inline" /> icon above for details on smart features</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2" data-testid="timeline-view">
+              {blocks.map((block) => (
+                <TimeBlock
+                  key={block.id}
+                  block={block}
+                  isUpdating={updatingBlockId === block.id}
+                  onToggle={() => {
+                    if (!block.skipped) {
+                      toggleBlockMutation.mutate({
+                        blockId: block.id,
+                        completed: !block.completed,
+                      });
+                    }
+                  }}
+                  onSkip={() => skipMutation.mutate(block.id)}
+                />
+              ))}
+              {skippedCount > 0 && (
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  {skippedCount} block{skippedCount > 1 ? "s" : ""} skipped
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -524,6 +1066,80 @@ export default function DailyPlanner() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent data-testid="dialog-reschedule">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <SkipForward className="w-5 h-5 text-primary" />
+              Reschedule Block
+            </DialogTitle>
+          </DialogHeader>
+          {rescheduleData && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{rescheduleData.blockTitle}</span> was skipped. Would you like to fit it in later?
+              </p>
+
+              {rescheduleData.suggestedTime && (
+                <Button
+                  className="w-full"
+                  onClick={() => rescheduleConfirmMutation.mutate({
+                    blockId: rescheduleData.blockId,
+                    newTime: rescheduleData.suggestedTime!,
+                  })}
+                  disabled={rescheduleConfirmMutation.isPending}
+                  data-testid="button-reschedule-suggested"
+                >
+                  {rescheduleConfirmMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                  )}
+                  Move to {rescheduleData.suggestedTime} (suggested)
+                </Button>
+              )}
+
+              {rescheduleData.availableSlots.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Or pick a time:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {rescheduleData.availableSlots.filter(s => s !== rescheduleData.suggestedTime).slice(0, 5).map((slot) => (
+                      <Button
+                        key={slot}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => rescheduleConfirmMutation.mutate({
+                          blockId: rescheduleData.blockId,
+                          newTime: slot,
+                        })}
+                        disabled={rescheduleConfirmMutation.isPending}
+                        data-testid={`button-slot-${slot}`}
+                      >
+                        {slot}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => {
+                  setShowRescheduleDialog(false);
+                  setRescheduleData(null);
+                }}
+                data-testid="button-skip-permanently"
+              >
+                Skip for today
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <HelpModal open={showHelpModal} onClose={() => setShowHelpModal(false)} />
     </div>
   );
 }
