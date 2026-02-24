@@ -89,7 +89,16 @@ interface MoodReport {
 export function MoodTracker() {
   const { user } = useAuth();
   const { data: allHabits } = useHabits();
-  const habits = allHabits?.filter((h: any) => !h.archived) || null;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const habits = allHabits?.filter((h: any) => {
+    if (h.archived) return false;
+    if (h.setupComplete) {
+      const dPlans = (h.dailyPlans || []) as any[];
+      const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1]?.date : null);
+      if (endDate && endDate < todayStr) return false;
+    }
+    return true;
+  }) || null;
   const { toast } = useToast();
   const { isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
@@ -105,7 +114,7 @@ export function MoodTracker() {
   const [showMoodImpactInfo, setShowMoodImpactInfo] = useState(false);
   
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = todayStr;
   
   const { data: entries = [] } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
@@ -357,7 +366,12 @@ export function MoodTracker() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium">Habits completed today</span>
-                            <span className="text-[10px] text-muted-foreground italic">(helps track mood-habit patterns)</span>
+                            <div className="relative group">
+                              <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" data-testid="icon-habit-info" />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2 rounded-md bg-popover border border-border shadow-md text-[11px] text-muted-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
+                                Select habits you completed today. This helps track how your habits affect your mood over time.
+                              </div>
+                            </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {habits.map((habit: { id: number; title: string }) => (
