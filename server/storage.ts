@@ -1,4 +1,4 @@
-import { habits, users, habitStacks, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry, type HabitStack, type InsertHabitStack } from "@shared/schema";
+import { habits, users, habitStacks, userCommitments, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry, type HabitStack, type InsertHabitStack, type UserCommitment, type InsertUserCommitment } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -26,6 +26,10 @@ export interface IStorage {
   linkHabit(id: number, userId: string, linkedHabitId: number): Promise<Habit | undefined>;
   unlinkHabit(id: number, userId: string): Promise<Habit | undefined>;
   getUser(userId: string): Promise<User | undefined>;
+  getCommitments(userId: string): Promise<UserCommitment[]>;
+  createCommitment(userId: string, data: InsertUserCommitment): Promise<UserCommitment>;
+  updateCommitment(id: number, userId: string, updates: Partial<InsertUserCommitment>): Promise<UserCommitment | undefined>;
+  deleteCommitment(id: number, userId: string): Promise<void>;
   getHabitStacks(userId: string): Promise<HabitStack[]>;
   getHabitStack(id: number, userId: string): Promise<HabitStack | undefined>;
   createHabitStack(userId: string, stack: InsertHabitStack): Promise<HabitStack>;
@@ -87,6 +91,24 @@ export class DatabaseStorage implements IStorage {
   async getUser(userId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     return user;
+  }
+
+  async getCommitments(userId: string): Promise<UserCommitment[]> {
+    return await db.select().from(userCommitments).where(eq(userCommitments.userId, userId));
+  }
+
+  async createCommitment(userId: string, data: InsertUserCommitment): Promise<UserCommitment> {
+    const [created] = await db.insert(userCommitments).values({ ...data, userId }).returning();
+    return created;
+  }
+
+  async updateCommitment(id: number, userId: string, updates: Partial<InsertUserCommitment>): Promise<UserCommitment | undefined> {
+    const [updated] = await db.update(userCommitments).set(updates).where(and(eq(userCommitments.id, id), eq(userCommitments.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteCommitment(id: number, userId: string): Promise<void> {
+    await db.delete(userCommitments).where(and(eq(userCommitments.id, id), eq(userCommitments.userId, userId)));
   }
 
   async getHabitStacks(userId: string): Promise<HabitStack[]> {

@@ -791,7 +791,7 @@ export interface PlannerBlock {
   time: string;
   endTime?: string;
   title: string;
-  type: "habit" | "task" | "break" | "custom";
+  type: "habit" | "task" | "break" | "custom" | "commitment";
   habitId?: number;
   taskId?: number;
   duration: number;
@@ -830,3 +830,26 @@ export const insertDailyPlannerSchema = createInsertSchema(dailyPlannerEntries).
 
 export type DailyPlannerEntry = typeof dailyPlannerEntries.$inferSelect;
 export type InsertDailyPlannerEntry = z.infer<typeof insertDailyPlannerSchema>;
+
+// ==========================================
+// USER COMMITMENTS (My Routine)
+// ==========================================
+
+export const userCommitments = pgTable("user_commitments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  days: text("days").array().notNull(),
+  color: text("color"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommitmentSchema = createInsertSchema(userCommitments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserCommitment = typeof userCommitments.$inferSelect;
+export type InsertUserCommitment = z.infer<typeof insertCommitmentSchema>;

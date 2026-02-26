@@ -27,6 +27,8 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Plus,
   Sparkles,
   ArrowLeft,
@@ -56,9 +58,12 @@ import {
   ArrowRight,
   BarChart3,
   Info,
+  Briefcase,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Link } from "wouter";
-import type { PlannerBlock, PlannerInsights, DailyPlannerEntry } from "@shared/schema";
+import type { PlannerBlock, PlannerInsights, DailyPlannerEntry, UserCommitment } from "@shared/schema";
 
 const BLOCK_TYPE_STYLES: Record<string, { bg: string; border: string; icon: typeof Zap; label: string }> = {
   habit: {
@@ -85,6 +90,12 @@ const BLOCK_TYPE_STYLES: Record<string, { bg: string; border: string; icon: type
     icon: Palette,
     label: "Custom",
   },
+  commitment: {
+    bg: "bg-slate-500/8 dark:bg-slate-500/12",
+    border: "border-l-slate-400 dark:border-l-slate-500",
+    icon: Briefcase,
+    label: "Commitment",
+  },
 };
 
 const ENERGY_COLORS = {
@@ -98,6 +109,48 @@ const PRIORITY_STYLES = {
   medium: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
   low: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
 };
+
+function formatTime12h(time: string): string {
+  if (!time) return "";
+  const [hStr, mStr] = time.split(":");
+  let h = parseInt(hStr);
+  const m = mStr || "00";
+  const ampm = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+const TIME_OPTIONS: { value: string; label: string }[] = [];
+for (let h = 0; h < 24; h++) {
+  for (const m of ["00", "30"]) {
+    const value = `${String(h).padStart(2, "0")}:${m}`;
+    TIME_OPTIONS.push({ value, label: formatTime12h(value) });
+  }
+}
+
+const DAY_LABELS = [
+  { key: "monday", short: "M" },
+  { key: "tuesday", short: "T" },
+  { key: "wednesday", short: "W" },
+  { key: "thursday", short: "T" },
+  { key: "friday", short: "F" },
+  { key: "saturday", short: "S" },
+  { key: "sunday", short: "S" },
+];
+
+function formatDaysShort(days: string[]): string {
+  const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+  const weekend = ["saturday", "sunday"];
+  const allDays = [...weekdays, ...weekend];
+  if (days.length === 7) return "Every day";
+  if (weekdays.every(d => days.includes(d)) && !days.includes("saturday") && !days.includes("sunday")) return "M-F";
+  if (weekend.every(d => days.includes(d)) && days.length === 2) return "Weekends";
+  return days.map(d => {
+    const idx = allDays.indexOf(d);
+    return ["M", "Tu", "W", "Th", "F", "Sa", "Su"][idx] || d.slice(0, 2);
+  }).join(", ");
+}
 
 function formatDate(date: Date): string {
   const year = date.getFullYear();
@@ -148,39 +201,46 @@ function TimeBlock({
   const style = BLOCK_TYPE_STYLES[block.type] || BLOCK_TYPE_STYLES.custom;
   const Icon = style.icon;
   const isSkipped = block.skipped;
+  const isCommitment = block.type === "commitment";
 
   return (
     <div
       className={`flex items-start gap-3 p-3 rounded-md border-l-4 ${style.border} ${isSkipped ? "bg-muted/30 opacity-60" : style.bg} transition-all`}
       data-testid={`block-${block.id}`}
     >
-      <div
-        className="flex-shrink-0 pt-0.5 cursor-pointer"
-        onClick={onToggle}
-      >
-        {isUpdating ? (
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        ) : block.completed ? (
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" data-testid={`block-check-${block.id}`} />
-        ) : isSkipped ? (
-          <SkipForward className="w-5 h-5 text-muted-foreground" data-testid={`block-skip-${block.id}`} />
-        ) : (
-          <Circle className="w-5 h-5 text-muted-foreground" data-testid={`block-circle-${block.id}`} />
-        )}
-      </div>
+      {isCommitment ? (
+        <div className="flex-shrink-0 pt-0.5">
+          <Briefcase className="w-5 h-5 text-slate-400" />
+        </div>
+      ) : (
+        <div
+          className="flex-shrink-0 pt-0.5 cursor-pointer"
+          onClick={onToggle}
+        >
+          {isUpdating ? (
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          ) : block.completed ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" data-testid={`block-check-${block.id}`} />
+          ) : isSkipped ? (
+            <SkipForward className="w-5 h-5 text-muted-foreground" data-testid={`block-skip-${block.id}`} />
+          ) : (
+            <Circle className="w-5 h-5 text-muted-foreground" data-testid={`block-circle-${block.id}`} />
+          )}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span
-            className={`text-sm font-medium ${block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"}`}
+            className={`text-sm font-medium ${isCommitment ? "text-muted-foreground" : block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"}`}
             data-testid={`block-title-${block.id}`}
           >
             {block.title}
           </span>
-          <Badge variant="outline" className="text-xs no-default-hover-elevate no-default-active-elevate">
+          <Badge variant="outline" className={`text-xs no-default-hover-elevate no-default-active-elevate ${isCommitment ? "border-slate-300 dark:border-slate-600 text-slate-500" : ""}`}>
             <Icon className="w-3 h-3 mr-1" />
             {style.label}
           </Badge>
-          {block.priority === "high" && !block.completed && !isSkipped && (
+          {block.priority === "high" && !block.completed && !isSkipped && !isCommitment && (
             <Badge variant="outline" className={`text-[10px] py-0 ${PRIORITY_STYLES.high}`}>
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               Priority
@@ -190,14 +250,14 @@ function TimeBlock({
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {block.time}
-            {block.endTime ? ` - ${block.endTime}` : ""}
+            {formatTime12h(block.time)}
+            {block.endTime ? ` - ${formatTime12h(block.endTime)}` : ""}
           </span>
           <span className="flex items-center gap-1">
             <Timer className="w-3 h-3" />
             {block.duration}min
           </span>
-          {block.energyLevel && (
+          {block.energyLevel && !isCommitment && (
             <span className="flex items-center gap-1">
               <EnergyIcon level={block.energyLevel} />
               <span className={ENERGY_COLORS[block.energyLevel] || ""}>
@@ -207,7 +267,7 @@ function TimeBlock({
           )}
         </div>
       </div>
-      {!block.completed && !isSkipped && block.type !== "break" && (
+      {!block.completed && !isSkipped && block.type !== "break" && !isCommitment && (
         <Button
           variant="ghost"
           size="icon"
@@ -558,6 +618,16 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="space-y-2">
             <h4 className="font-medium flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-slate-500" />
+              My Routine
+            </h4>
+            <p className="text-muted-foreground">
+              Set up your fixed commitments like work hours, school, or gym time. The AI will never schedule over these and will plan your habits and tasks around them.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-medium flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
               Gets Smarter Over Time
             </h4>
@@ -593,6 +663,15 @@ export default function DailyPlanner() {
     duration: 30,
   });
   const [updatingBlockId, setUpdatingBlockId] = useState<string | null>(null);
+  const [showRoutine, setShowRoutine] = useState(false);
+  const [showCommitmentDialog, setShowCommitmentDialog] = useState(false);
+  const [editingCommitment, setEditingCommitment] = useState<UserCommitment | null>(null);
+  const [commitmentForm, setCommitmentForm] = useState({
+    title: "",
+    startTime: "09:00",
+    endTime: "17:00",
+    days: ["monday", "tuesday", "wednesday", "thursday", "friday"] as string[],
+  });
 
   const dateStr = formatDate(selectedDate);
   const weekStart = getWeekStart(selectedDate);
@@ -601,6 +680,59 @@ export default function DailyPlanner() {
   const { data: plannerEntry, isLoading } = useQuery<DailyPlannerEntry | null>({
     queryKey: ["/api/planner", dateStr],
     enabled: features.hasDailyPlanner,
+  });
+
+  const { data: commitments = [] } = useQuery<UserCommitment[]>({
+    queryKey: ["/api/commitments"],
+    enabled: features.hasDailyPlanner,
+  });
+
+  const createCommitmentMutation = useMutation({
+    mutationFn: async (data: { title: string; startTime: string; endTime: string; days: string[] }) => {
+      const res = await apiRequest("POST", "/api/commitments", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/commitments"] });
+      setShowCommitmentDialog(false);
+      setEditingCommitment(null);
+      setCommitmentForm({ title: "", startTime: "09:00", endTime: "17:00", days: ["monday", "tuesday", "wednesday", "thursday", "friday"] });
+      toast({ title: "Commitment saved", description: "Your routine has been updated." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const updateCommitmentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<{ title: string; startTime: string; endTime: string; days: string[] }> }) => {
+      const res = await apiRequest("PATCH", `/api/commitments/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/commitments"] });
+      setShowCommitmentDialog(false);
+      setEditingCommitment(null);
+      setCommitmentForm({ title: "", startTime: "09:00", endTime: "17:00", days: ["monday", "tuesday", "wednesday", "thursday", "friday"] });
+      toast({ title: "Commitment updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteCommitmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/commitments/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/commitments"] });
+      toast({ title: "Commitment removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    },
   });
 
   const blocks: PlannerBlock[] = (plannerEntry?.blocks as PlannerBlock[]) || [];
@@ -789,6 +921,49 @@ export default function DailyPlanner() {
     });
   };
 
+  const openCommitmentDialog = (commitment?: UserCommitment) => {
+    if (commitment) {
+      setEditingCommitment(commitment);
+      setCommitmentForm({
+        title: commitment.title,
+        startTime: commitment.startTime,
+        endTime: commitment.endTime,
+        days: commitment.days as string[],
+      });
+    } else {
+      setEditingCommitment(null);
+      setCommitmentForm({ title: "", startTime: "09:00", endTime: "17:00", days: ["monday", "tuesday", "wednesday", "thursday", "friday"] });
+    }
+    setShowCommitmentDialog(true);
+  };
+
+  const handleSaveCommitment = () => {
+    if (!commitmentForm.title.trim()) {
+      toast({ title: "Title required", variant: "destructive" });
+      return;
+    }
+    if (commitmentForm.days.length === 0) {
+      toast({ title: "Select at least one day", variant: "destructive" });
+      return;
+    }
+    if (commitmentForm.startTime >= commitmentForm.endTime) {
+      toast({ title: "End time must be after start time", variant: "destructive" });
+      return;
+    }
+    if (editingCommitment) {
+      updateCommitmentMutation.mutate({ id: editingCommitment.id, data: commitmentForm });
+    } else {
+      createCommitmentMutation.mutate(commitmentForm);
+    }
+  };
+
+  const toggleCommitmentDay = (day: string) => {
+    setCommitmentForm(prev => ({
+      ...prev,
+      days: prev.days.includes(day) ? prev.days.filter(d => d !== day) : [...prev.days, day],
+    }));
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4 pb-24">
       <div className="flex items-center gap-2 flex-wrap">
@@ -907,6 +1082,78 @@ export default function DailyPlanner() {
             </>
           )}
 
+          <Card data-testid="card-my-routine">
+            <CardContent className="p-3">
+              <button
+                className="flex items-center justify-between w-full text-left"
+                onClick={() => setShowRoutine(!showRoutine)}
+                data-testid="button-toggle-routine"
+              >
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-medium text-foreground">My Routine</span>
+                  {commitments.length > 0 && (
+                    <Badge variant="outline" className="text-[10px] py-0">{commitments.length}</Badge>
+                  )}
+                </div>
+                {showRoutine ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </button>
+              {showRoutine && (
+                <div className="mt-3 space-y-2">
+                  {commitments.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No commitments yet. Add your work hours, school, gym, or any fixed time blocks so the AI schedules around them.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {commitments.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg px-2.5 py-1.5 text-xs group"
+                          data-testid={`commitment-chip-${c.id}`}
+                        >
+                          <Briefcase className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                          <span className="font-medium text-foreground">{c.title}</span>
+                          <span className="text-muted-foreground">
+                            {formatTime12h(c.startTime)}-{formatTime12h(c.endTime)}
+                          </span>
+                          <span className="text-muted-foreground">{formatDaysShort(c.days as string[])}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => openCommitmentDialog(c)}
+                            data-testid={`button-edit-commitment-${c.id}`}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                            onClick={() => deleteCommitmentMutation.mutate(c.id)}
+                            data-testid={`button-delete-commitment-${c.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openCommitmentDialog()}
+                    data-testid="button-add-commitment"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Add Commitment
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               onClick={() => generateMutation.mutate()}
@@ -1014,12 +1261,19 @@ export default function DailyPlanner() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground">Time</label>
-                <Input
-                  type="time"
+                <Select
                   value={newBlock.time}
-                  onChange={(e) => setNewBlock({ ...newBlock, time: e.target.value })}
-                  data-testid="input-block-time"
-                />
+                  onValueChange={(v) => setNewBlock({ ...newBlock, time: v })}
+                >
+                  <SelectTrigger data-testid="input-block-time">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Duration (min)</label>
@@ -1096,7 +1350,7 @@ export default function DailyPlanner() {
                   ) : (
                     <ArrowRight className="w-4 h-4 mr-2" />
                   )}
-                  Move to {rescheduleData.suggestedTime} (suggested)
+                  Move to {formatTime12h(rescheduleData.suggestedTime!)} (suggested)
                 </Button>
               )}
 
@@ -1116,7 +1370,7 @@ export default function DailyPlanner() {
                         disabled={rescheduleConfirmMutation.isPending}
                         data-testid={`button-slot-${slot}`}
                       >
-                        {slot}
+                        {formatTime12h(slot)}
                       </Button>
                     ))}
                   </div>
@@ -1136,6 +1390,123 @@ export default function DailyPlanner() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCommitmentDialog} onOpenChange={setShowCommitmentDialog}>
+        <DialogContent data-testid="dialog-commitment">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-slate-500" />
+              {editingCommitment ? "Edit Commitment" : "Add Commitment"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">What is it?</label>
+              <Input
+                placeholder="e.g., Work, School, Gym"
+                value={commitmentForm.title}
+                onChange={(e) => setCommitmentForm({ ...commitmentForm, title: e.target.value })}
+                data-testid="input-commitment-title"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Start Time</label>
+                <Select
+                  value={commitmentForm.startTime}
+                  onValueChange={(v) => setCommitmentForm({ ...commitmentForm, startTime: v })}
+                >
+                  <SelectTrigger data-testid="select-commitment-start">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">End Time</label>
+                <Select
+                  value={commitmentForm.endTime}
+                  onValueChange={(v) => setCommitmentForm({ ...commitmentForm, endTime: v })}
+                >
+                  <SelectTrigger data-testid="select-commitment-end">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Which days?</label>
+              <div className="flex gap-1.5">
+                {DAY_LABELS.map((day, i) => (
+                  <button
+                    key={day.key}
+                    onClick={() => toggleCommitmentDay(day.key)}
+                    className={`w-9 h-9 rounded-full text-xs font-medium transition-all ${
+                      commitmentForm.days.includes(day.key)
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                    data-testid={`button-day-${day.key}`}
+                  >
+                    {day.short}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2"
+                  onClick={() => setCommitmentForm({ ...commitmentForm, days: ["monday", "tuesday", "wednesday", "thursday", "friday"] })}
+                  data-testid="button-weekdays"
+                >
+                  Weekdays
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2"
+                  onClick={() => setCommitmentForm({ ...commitmentForm, days: ["saturday", "sunday"] })}
+                  data-testid="button-weekends"
+                >
+                  Weekends
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2"
+                  onClick={() => setCommitmentForm({ ...commitmentForm, days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] })}
+                  data-testid="button-everyday"
+                >
+                  Every day
+                </Button>
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleSaveCommitment}
+              disabled={createCommitmentMutation.isPending || updateCommitmentMutation.isPending}
+              data-testid="button-save-commitment"
+            >
+              {(createCommitmentMutation.isPending || updateCommitmentMutation.isPending) ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Briefcase className="w-4 h-4 mr-2" />
+              )}
+              {editingCommitment ? "Update" : "Save"} Commitment
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

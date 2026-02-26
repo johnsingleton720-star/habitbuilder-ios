@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema } from "@shared/schema";
 import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
@@ -8756,6 +8756,11 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const tasks = await db.select().from(quickTasks)
         .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
 
+      const dayCommitments = await storage.getCommitments(userId);
+      const todayCommitments = dayCommitments.filter(c =>
+        (c.days as string[]).includes(dayOfWeek)
+      );
+
       const recentMoods = await db.select().from(moodEntries)
         .where(eq(moodEntries.userId, userId))
         .orderBy(desc(moodEntries.createdAt))
@@ -8836,6 +8841,10 @@ Be specific, practical, and grounded in behavior science. Every task should make
         ? tasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
         : "No tasks";
 
+      const commitmentsList = todayCommitments.length > 0
+        ? todayCommitments.map(c => `- "${c.title}" from ${c.startTime} to ${c.endTime} (FIXED - cannot move)`).join("\n")
+        : "";
+
       const openai = new OpenAI({
         apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
         baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -8882,12 +8891,13 @@ SCHEDULING RULES:
 - Add transition buffers: 5 min between similar tasks, 10-15 min between different types
 - Put streak-at-risk habits at their peak productivity times
 - Include strategic breaks (not just filler) - suggest activities like stretching, walking, hydrating
-- Type must be one of: "habit", "task", "break", "custom"
+- Type must be one of: "habit", "task", "break", "custom", "commitment"
+- For commitment blocks: use type "commitment", set completed to false, do NOT schedule any other blocks during commitment times
 - Do not generate harmful content`
         }, {
           role: "user",
           content: `Create my optimized schedule for ${dayOfWeek}, ${date}.
-
+${commitmentsList ? `\nFIXED COMMITMENTS (DO NOT schedule anything during these times — work around them and include them as "commitment" type blocks):\n${commitmentsList}\n` : ""}
 My habits:
 ${habitDetails}
 
@@ -9111,15 +9121,27 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
       );
 
       const occupiedTimes = new Set(blocks.filter(b => !b.skipped && b.id !== blockId).map(b => b.time));
+
+      const dateObj = new Date(date + 'T12:00:00');
+      const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
+      const userTimezone = user?.timezone || 'America/New_York';
+      const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone }).toLowerCase();
+      const allCommitments = await storage.getCommitments(userId);
+      const dayCommitments = allCommitments.filter(c => (c.days as string[]).includes(dayOfWeek));
+
+      const isInCommitment = (slot: string) => {
+        return dayCommitments.some(c => slot >= c.startTime && slot < c.endTime);
+      };
+
       const availableSlots: string[] = [];
       const skippedHour = parseInt(skippedBlock.time.split(":")[0]);
       for (let h = Math.max(skippedHour + 1, 7); h <= 21; h++) {
         const slot = `${String(h).padStart(2, "0")}:00`;
-        if (!occupiedTimes.has(slot)) {
+        if (!occupiedTimes.has(slot) && !isInCommitment(slot)) {
           availableSlots.push(slot);
         }
         const halfSlot = `${String(h).padStart(2, "0")}:30`;
-        if (!occupiedTimes.has(halfSlot)) {
+        if (!occupiedTimes.has(halfSlot) && !isInCommitment(halfSlot)) {
           availableSlots.push(halfSlot);
         }
       }
@@ -9254,6 +9276,61 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
     } catch (error) {
       console.error("Error fetching recent posts:", error);
       res.status(500).json({ error: "Failed to fetch posts" });
+    }
+  });
+
+  // ==========================================
+  // USER COMMITMENTS (My Routine)
+  // ==========================================
+
+  app.get("/api/commitments", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const commitments = await storage.getCommitments(userId);
+      res.json(commitments);
+    } catch (error) {
+      console.error("Error fetching commitments:", error);
+      res.status(500).json({ error: "Failed to fetch commitments" });
+    }
+  });
+
+  app.post("/api/commitments", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const parsed = insertCommitmentSchema.parse({ ...req.body, userId });
+      const commitment = await storage.createCommitment(userId, parsed);
+      res.json(commitment);
+    } catch (error: any) {
+      if (error?.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid commitment data", details: error.errors });
+      }
+      console.error("Error creating commitment:", error);
+      res.status(500).json({ error: "Failed to create commitment" });
+    }
+  });
+
+  app.patch("/api/commitments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateCommitment(id, userId, req.body);
+      if (!updated) return res.status(404).json({ error: "Commitment not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating commitment:", error);
+      res.status(500).json({ error: "Failed to update commitment" });
+    }
+  });
+
+  app.delete("/api/commitments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteCommitment(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting commitment:", error);
+      res.status(500).json({ error: "Failed to delete commitment" });
     }
   });
 
