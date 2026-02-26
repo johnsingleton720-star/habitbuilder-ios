@@ -152,7 +152,7 @@ export async function registerRoutes(
         namespace: "android_app",
         package_name: "pro.habitbuilder.twa",
         sha256_cert_fingerprints: [
-          "87:AF:FE:EB:3E:7E:2E:1B:D4:5A:58:C7:48:E2:75:FF:74:36:7F:C5:3C:51:EE:15:5E:41:B7:D7:F3:A0:A1:65"
+          "BE:40:2E:61:B2:41:53:E0:B1:23:59:DA:16:B6:12:AD:C9:4C:40:B3:D0:BD:18:C9:FD:23:99:F5:1D:A4:01:AF"
         ]
       }
     }]);
