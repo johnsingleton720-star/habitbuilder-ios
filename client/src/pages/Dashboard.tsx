@@ -7,7 +7,7 @@ import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
 import { ProgressSummary } from "@/components/ProgressSummary";
 import { TodaysFocus } from "@/components/TodaysFocus";
-import { StreakBrokenModal } from "@/components/StreakBrokenModal";
+import { StreakBrokenModal, type MissReason } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
@@ -133,8 +133,19 @@ export default function Dashboard() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
-  const handleStartFresh = () => {
+  const handleStartFresh = async (reason?: MissReason) => {
     if (brokenStreak) {
+      if (reason) {
+        try {
+          await fetch(`/api/habits/${brokenStreak.habitId}/streak-miss-reason`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason }),
+          });
+        } catch (err) {
+          console.error("Failed to save miss reason:", err);
+        }
+      }
       navigate(`/habit/${brokenStreak.habitId}`);
     }
   };

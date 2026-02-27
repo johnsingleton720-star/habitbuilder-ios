@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward, Lock } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward, Lock, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -123,6 +123,29 @@ export default function HabitDetail() {
       toast({
         title: "Something went wrong",
         description: "Could not regenerate your plan. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const adjustPlanMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/adjust-plan`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      setSelectedDay(null);
+      toast({
+        title: "Plan adjusted",
+        description: data.adjustmentSummary || "Your plan has been adapted to better fit your needs.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "Could not adjust your plan. Please try again.",
         variant: "destructive",
       });
     },
@@ -578,6 +601,57 @@ export default function HabitDetail() {
         {habit.setupComplete && (
           <HabitStackInfo habitId={habitId} features={features} />
         )}
+
+        {/* Smart Plan Adjustment Banner */}
+        {(() => {
+          if (!habit.setupComplete || isPlanDone || isFreeUser) return null;
+          const pastDays = dailyPlans.filter(p => p.date <= todayStr);
+          if (pastDays.length < 5) return null;
+          const pastActiveTasks = pastDays.reduce((sum, p) => sum + p.tasks.filter(t => !t.skipped).length, 0);
+          const pastCompletedTasks = pastDays.reduce((sum, p) => sum + p.tasks.filter(t => t.completed).length, 0);
+          const pastRate = pastActiveTasks > 0 ? (pastCompletedTasks / pastActiveTasks) * 100 : 100;
+          if (pastRate >= 40) return null;
+          const hasFutureDays = dailyPlans.some(p => p.date > todayStr);
+          if (!hasFutureDays) return null;
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="border-amber-500/30 bg-gradient-to-r from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10" data-testid="card-adjust-plan">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mt-0.5">
+                      <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" data-testid="text-adjust-plan-title">
+                        This plan doesn't seem to be fitting your schedule
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Your completion rate is {Math.round(pastRate)}% after {pastDays.length} days. The AI can redesign your remaining days to be easier and better adapted to your patterns.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="mt-3 gap-2"
+                        onClick={() => adjustPlanMutation.mutate()}
+                        disabled={adjustPlanMutation.isPending}
+                        data-testid="button-adjust-plan"
+                      >
+                        {adjustPlanMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        {adjustPlanMutation.isPending ? "Adjusting..." : "Adjust My Plan"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })()}
 
         {/* Progress Overview */}
         {habit.setupComplete && (

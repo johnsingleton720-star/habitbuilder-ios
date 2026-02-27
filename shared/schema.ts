@@ -127,6 +127,9 @@ export const habits = pgTable("habits", {
   streakFreezeUsed: integer("streak_freeze_used").default(0), // Freezes used this month
   streakFreezeMonth: text("streak_freeze_month"), // Month when freeze count resets (YYYY-MM)
   
+  // Missed-day reflection reasons
+  missReasons: jsonb("miss_reasons").$type<{ reason: string; date: string }[]>().default([]),
+  
   // Archiving
   archived: boolean("archived").default(false),
   

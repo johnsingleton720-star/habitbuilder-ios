@@ -1160,6 +1160,55 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Streak miss reason (all tiers)
+  const missReasonSchema = z.object({
+    reason: z.string().min(1).max(200),
+  });
+
+  app.post("/api/habits/:id/streak-miss-reason", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const parsed = missReasonSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "A valid reason is required" });
+      }
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const existingReasons = (habit.missReasons as { reason: string; date: string }[] | null) || [];
+      const today = getUserToday(null);
+      const updatedReasons = [...existingReasons, { reason: parsed.data.reason, date: today }];
+
+      const updated = await storage.updateHabit(habitId, userId, { missReasons: updatedReasons } as any);
+      res.json({ success: true, missReasons: updated?.missReasons });
+    } catch (error) {
+      console.error("Error saving streak miss reason:", error);
+      res.status(500).json({ error: "Failed to save miss reason" });
+    }
+  });
+
+  app.get("/api/habits/:id/streak-miss-reasons", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      res.json(habit.missReasons || []);
+    } catch (error) {
+      console.error("Error fetching miss reasons:", error);
+      res.status(500).json({ error: "Failed to fetch miss reasons" });
+    }
+  });
+
   // Habit Stacking/Linking (Premium feature)
   const linkHabitSchema = z.object({
     linkedHabitId: z.number().int().positive(),
@@ -3068,6 +3117,69 @@ Return JSON:
     }
   });
 
+  async function buildMoodJournalContext(userId: string): Promise<string> {
+    try {
+      const user = await storage.getUser(userId);
+      const tier = user?.subscriptionTier;
+      const isAdmin = user?.isAdmin === true;
+      const isPro = tier === 'pro' || tier === 'premium' || isAdmin;
+      const isPremium = tier === 'premium' || isAdmin;
+
+      if (!isPro) return "";
+
+      const moodCount = isPremium ? 7 : 5;
+      const recentMoods = await db.select().from(moodEntries)
+        .where(eq(moodEntries.userId, userId))
+        .orderBy(desc(moodEntries.createdAt))
+        .limit(moodCount);
+
+      let contextParts: string[] = [];
+
+      if (recentMoods.length > 0) {
+        const moodSummaries = recentMoods.map(m => {
+          let parts = [`${m.date}: mood=${m.mood}`];
+          if (m.energy != null) parts.push(`energy=${m.energy}/5`);
+          if (m.stress != null) parts.push(`stress=${m.stress}/5`);
+          if (m.sleep != null) parts.push(`sleep=${m.sleep}/5`);
+          return parts.join(", ");
+        });
+
+        const energyValues = recentMoods.filter(m => m.energy != null).map(m => m.energy!);
+        const stressValues = recentMoods.filter(m => m.stress != null).map(m => m.stress!);
+        const avgEnergy = energyValues.length > 0 ? (energyValues.reduce((a, b) => a + b, 0) / energyValues.length).toFixed(1) : null;
+        const avgStress = stressValues.length > 0 ? (stressValues.reduce((a, b) => a + b, 0) / stressValues.length).toFixed(1) : null;
+
+        contextParts.push(`\n\nRecent Mood Data (last ${recentMoods.length} entries):\n${moodSummaries.join("\n")}`);
+        if (avgEnergy || avgStress) {
+          contextParts.push(`Averages: ${avgEnergy ? `energy=${avgEnergy}/5` : ""}${avgEnergy && avgStress ? ", " : ""}${avgStress ? `stress=${avgStress}/5` : ""}`);
+        }
+      }
+
+      if (isPremium) {
+        const recentJournals = await db.select().from(journalEntries)
+          .where(eq(journalEntries.userId, userId))
+          .orderBy(desc(journalEntries.createdAt))
+          .limit(5);
+
+        if (recentJournals.length > 0) {
+          const journalSummaries = recentJournals.map(j => {
+            const truncated = j.content.length > 100 ? j.content.substring(0, 100) + "..." : j.content;
+            return `${j.date}: ${truncated}`;
+          });
+          contextParts.push(`\nRecent Journal Themes (last ${recentJournals.length} entries):\n${journalSummaries.join("\n")}`);
+        }
+      }
+
+      if (contextParts.length > 0) {
+        return "\n\nUser's recent wellbeing context (use this to tailor the plan to their current state):" + contextParts.join("\n");
+      }
+      return "";
+    } catch (error) {
+      console.error("Error building mood/journal context:", error);
+      return "";
+    }
+  }
+
   // Generate personalized action plan based on questionnaire answers
   app.post("/api/habits/:id/generate-plan", isAuthenticated, async (req: any, res) => {
     try {
@@ -3091,11 +3203,13 @@ Return JSON:
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + daysCount - 1);
 
+      const moodJournalContext = await buildMoodJournalContext(userId);
+
       // Build context from questionnaire
       const contextSummary = questions
         .filter((q: any) => q.answer)
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
-        .join("\n\n");
+        .join("\n\n") + moodJournalContext;
 
       let fixedDailyPlans: any[];
 
@@ -3438,10 +3552,12 @@ REQUIREMENTS:
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + daysCount - 1);
 
+      const moodJournalContext = await buildMoodJournalContext(userId);
+
       const contextSummary = questions
         .filter((q: any) => q.answer)
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
-        .join("\n\n");
+        .join("\n\n") + moodJournalContext;
 
       let fixedDailyPlans: any[];
 
@@ -3672,6 +3788,220 @@ REQUIREMENTS:
     } catch (error) {
       console.error("Error regenerating plan:", error);
       res.status(500).json({ error: "Failed to regenerate plan" });
+    }
+  });
+
+  app.post("/api/habits/:id/adjust-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const user = await storage.getUser(userId);
+      const tier = user?.subscriptionTier;
+      const isAdmin = user?.isAdmin === true;
+      const isPro = tier === 'pro' || tier === 'premium' || isAdmin;
+      const isPremium = tier === 'premium' || isAdmin;
+
+      if (!isPro) {
+        return res.status(403).json({
+          error: "paid_feature",
+          message: "Smart plan adjustment is available with Pro. Upgrade to get AI-adapted plans!"
+        });
+      }
+
+      if (!habit.setupComplete) {
+        return res.status(400).json({ error: "Habit setup must be completed first." });
+      }
+
+      const safetyCheck = checkContentSafety(habit.title, habit.description, habit.goal);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
+      }
+
+      const dailyPlans = (habit.dailyPlans || []) as any[];
+      const todayStr = getUserToday(user?.timezone);
+
+      const pastPlans = dailyPlans.filter((p: any) => p.date <= todayStr);
+      const futurePlans = dailyPlans.filter((p: any) => p.date > todayStr);
+
+      const completedDays = pastPlans.filter((p: any) =>
+        p.completed || (p.tasks.length > 0 && p.tasks.every((t: any) => t.completed))
+      );
+      const missedDays = pastPlans.filter((p: any) =>
+        !p.completed && p.tasks.some((t: any) => !t.completed && !t.skipped)
+      );
+
+      const completionPatterns = pastPlans.map((p: any) => {
+        const totalTasks = p.tasks.length;
+        const completedTasks = p.tasks.filter((t: any) => t.completed).length;
+        const skippedTasks = p.tasks.filter((t: any) => t.skipped).length;
+        return {
+          date: p.date,
+          dayNumber: p.dayNumber,
+          focus: p.focus,
+          completed: completedTasks,
+          skipped: skippedTasks,
+          total: totalTasks,
+          rate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        };
+      });
+
+      const missReasons = (habit.missReasons as { reason: string; date: string }[] | null) || [];
+      const reasonSummary = missReasons.length > 0
+        ? missReasons.map(r => `${r.date}: ${r.reason}`).join("\n")
+        : "No miss reasons recorded";
+
+      const moodCount = isPremium ? 7 : 3;
+      let moodContext = "";
+      try {
+        const recentMoods = await db.select().from(moodEntries)
+          .where(eq(moodEntries.userId, userId))
+          .orderBy(desc(moodEntries.createdAt))
+          .limit(moodCount);
+        if (recentMoods.length > 0) {
+          moodContext = "\n\nRecent Mood Data:\n" + recentMoods.map(m => {
+            let parts = [`${m.date}: mood=${m.mood}`];
+            if (m.energy != null) parts.push(`energy=${m.energy}/5`);
+            if (m.stress != null) parts.push(`stress=${m.stress}/5`);
+            return parts.join(", ");
+          }).join("\n");
+        }
+      } catch {}
+
+      let journalContext = "";
+      if (isPremium) {
+        try {
+          const recentJournals = await db.select().from(journalEntries)
+            .where(eq(journalEntries.userId, userId))
+            .orderBy(desc(journalEntries.createdAt))
+            .limit(5);
+          if (recentJournals.length > 0) {
+            journalContext = "\n\nRecent Journal Themes:\n" + recentJournals.map(j => {
+              const truncated = j.content.length > 100 ? j.content.substring(0, 100) + "..." : j.content;
+              return `${j.date}: ${truncated}`;
+            }).join("\n");
+          }
+        } catch {}
+      }
+
+      const questions = (habit.questions || []) as any[];
+      const interviewContext = questions
+        .filter((q: any) => q.answer)
+        .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
+        .join("\n\n");
+
+      const completionPatternsStr = completionPatterns
+        .map(p => `Day ${p.dayNumber} (${p.date}): ${p.completed}/${p.total} tasks (${p.rate}%)${p.skipped > 0 ? ` [${p.skipped} skipped]` : ""}`)
+        .join("\n");
+
+      const remainingDaysCount = futurePlans.length;
+      const completedDaysList = completedDays.map((p: any) => p.date);
+
+      const prompt = `The user is struggling with their habit plan for "${habit.title}" and needs an adjusted plan.
+${habit.goal ? `Goal: ${habit.goal}` : ""}
+
+Original interview answers:
+${interviewContext}
+
+Previous AI context: ${habit.aiContext || "None"}
+
+COMPLETION PATTERNS (what actually happened):
+${completionPatternsStr}
+
+MISSED DAY REASONS:
+${reasonSummary}
+${moodContext}${journalContext}
+
+The user has ${remainingDaysCount} remaining days in their plan. They completed ${completedDays.length} out of ${pastPlans.length} past days.
+
+Your job: Generate ${remainingDaysCount} NEW daily plans that REPLACE the remaining future days. Keep the same date range but create plans that are:
+1. EASIER — reduce duration, simplify tasks, lower the bar so they can actually succeed
+2. DIFFERENTLY TIMED — if they miss certain days consistently, adjust the approach for those patterns
+3. RESTRUCTURED — based on their miss reasons and mood data, redesign tasks to address their actual obstacles
+
+The completed days are preserved. You are only replacing future/remaining days starting from tomorrow.
+
+Return JSON:
+{
+  "adjustedPlans": [
+${futurePlans.map((p: any, i: number) => `    {
+      "date": "${p.date}",
+      "dayNumber": ${p.dayNumber || (pastPlans.length + i + 1)},
+      "focus": "Theme reflecting the adjusted approach",
+      "tasks": [
+        {
+          "id": "adj-day${pastPlans.length + i + 1}-task1",
+          "title": "Easier, more achievable task title",
+          "description": "Clear instructions with CUE/ROUTINE/REWARD structure",
+          "duration": 5,
+          "completed": false,
+          "notes": ""
+        }
+      ],
+      "completed": false,
+      "timeSpent": 0
+    }`).join(",\n")}
+  ],
+  "adjustmentSummary": "2-3 sentences explaining what was changed and why, referencing their specific patterns and obstacles",
+  "aiContext": "Updated context reflecting the adjusted approach"
+}
+
+REQUIREMENTS:
+1. Make tasks noticeably easier than the original plan — the user needs quick wins to rebuild momentum
+2. Address the specific miss reasons directly in task design
+3. Keep 2-3 tasks per day maximum
+4. Each task should be 5-15 minutes, not longer
+5. Reference their actual completion patterns and obstacles
+6. Never mention specific third-party apps, brands, or services by name`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert behavioral psychologist specializing in plan recovery and habit rescue. When a user is struggling, you redesign their plan to be easier, more achievable, and better aligned with their actual life patterns. You understand that a struggling user needs quick wins, not harder challenges. Every task includes a clear cue, specific routine, and satisfying reward. Always return valid JSON. SAFETY: Never generate harmful content.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No content from AI");
+
+      const adjustedData = JSON.parse(content);
+      if (!adjustedData.adjustedPlans || !Array.isArray(adjustedData.adjustedPlans)) {
+        throw new Error("Invalid adjusted plan structure from AI");
+      }
+
+      const newDailyPlans = [
+        ...pastPlans,
+        ...adjustedData.adjustedPlans.map((plan: any, index: number) => ({
+          ...plan,
+          date: futurePlans[index]?.date || plan.date,
+          dayNumber: plan.dayNumber || (pastPlans.length + index + 1),
+        })),
+      ];
+
+      await storage.updateHabit(habitId, userId, {
+        dailyPlans: newDailyPlans,
+        aiContext: adjustedData.aiContext || habit.aiContext,
+      });
+
+      res.json({
+        success: true,
+        adjustmentSummary: adjustedData.adjustmentSummary,
+        dailyPlans: newDailyPlans,
+      });
+    } catch (error) {
+      console.error("Error adjusting plan:", error);
+      res.status(500).json({ error: "Failed to adjust plan" });
     }
   });
 
@@ -4516,6 +4846,72 @@ Return JSON:
     } catch (error) {
       console.error("Error generating coaching check-in:", error);
       res.status(500).json({ error: "Failed to generate check-in" });
+    }
+  });
+
+  app.post("/api/habits/:id/coaching-followup", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { conversationHistory, userMessage } = req.body;
+
+      if (!userMessage || typeof userMessage !== "string" || userMessage.trim().length === 0) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      if (!Array.isArray(conversationHistory)) {
+        return res.status(400).json({ error: "Conversation history is required" });
+      }
+      if (conversationHistory.filter((m: any) => m.role === "assistant").length >= 3) {
+        return res.status(400).json({ error: "Maximum follow-up exchanges reached" });
+      }
+
+      const user = await storage.getUser(userId);
+      const isPro = user?.subscriptionTier === "pro" || user?.subscriptionTier === "premium" || user?.isAdmin;
+      if (!isPro) {
+        return res.status(403).json({ error: "Coaching follow-ups require a Pro or Premium subscription" });
+      }
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const dailyPlans = habit.dailyPlans || [];
+      const completedDays = dailyPlans.filter((p: any) => p.completed).length;
+      const totalDays = dailyPlans.length;
+      const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+
+      const systemPrompt = `You are a supportive, encouraging AI habit coach having a conversation with a user about their habit: "${habit.title}".
+Their progress: ${completedDays}/${totalDays} days completed (${completionRate}%), streak: ${habit.currentStreak || 0} days.
+${habit.aiContext ? `About them: ${habit.aiContext}` : ''}
+
+Keep responses warm, personal, concise (under 100 words), and actionable. Reference their specific habit and situation.
+Never mention specific third-party apps, brands, or services by name.
+SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.
+Respond in plain text, not JSON.`;
+
+      const messages: any[] = [
+        { role: "system", content: systemPrompt },
+        ...conversationHistory.slice(-6).map((m: any) => ({
+          role: m.role === "user" ? "user" : "assistant",
+          content: m.content,
+        })),
+        { role: "user", content: userMessage.trim() },
+      ];
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 300,
+      });
+
+      const reply = response.choices[0].message.content;
+      if (!reply) throw new Error("No content from AI");
+
+      res.json({ reply });
+    } catch (error) {
+      console.error("Error generating coaching follow-up:", error);
+      res.status(500).json({ error: "Failed to generate follow-up" });
     }
   });
 

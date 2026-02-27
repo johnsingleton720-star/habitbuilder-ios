@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   MessageCircle, 
   Loader2, 
@@ -25,7 +23,8 @@ import {
   Play,
   Crown,
   ArrowRight,
-  Lock
+  Lock,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -46,6 +45,13 @@ interface CheckinResponse {
   encouragingClose: string;
 }
 
+interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const MAX_FOLLOWUPS = 2;
+
 const moodOptions = [
   { value: "great", label: "Great", icon: Smile, color: "text-green-500" },
   { value: "okay", label: "Okay", icon: Meh, color: "text-yellow-500" },
@@ -61,19 +67,27 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [isAudioReady, setIsAudioReady] = useState(false); // Audio loaded, ready for user tap
+  const [isAudioReady, setIsAudioReady] = useState(false);
+  const [followUpMessages, setFollowUpMessages] = useState<ConversationMessage[]>([]);
+  const [followUpInput, setFollowUpInput] = useState("");
+  const [isFollowUpRecording, setIsFollowUpRecording] = useState(false);
+  const [isFollowUpTranscribing, setIsFollowUpTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const followUpRecorderRef = useRef<MediaRecorder | null>(null);
+  const followUpChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const audioRequestIdRef = useRef<number>(0);
   
-  const { isPremium, isFreeUser } = useSubscription();
+  const { isPremium, isPro, isFreeUser } = useSubscription();
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  // Cleanup audio on unmount
+  const assistantCount = followUpMessages.filter(m => m.role === "assistant").length;
+  const canFollowUp = (isPro || isPremium) && assistantCount < MAX_FOLLOWUPS;
+
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -85,7 +99,6 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     };
   }, []);
 
-  // Stop audio when dialog closes
   useEffect(() => {
     if (!open) {
       if (audioRef.current) {
@@ -97,13 +110,12 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       setIsSpeaking(false);
       setIsLoadingAudio(false);
       setIsAudioReady(false);
-      audioRequestIdRef.current += 1; // Cancel any pending requests
+      audioRequestIdRef.current += 1;
     }
   }, [open]);
 
-  // Auto-scroll to bottom when checkin data changes
   useEffect(() => {
-    if (checkinData && scrollContainerRef.current) {
+    if (scrollContainerRef.current) {
       const timer = setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
@@ -111,7 +123,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [checkinData]);
+  }, [checkinData, followUpMessages]);
 
   const checkinMutation = useMutation({
     mutationFn: async () => {
@@ -126,8 +138,53 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     },
   });
 
+  const followUpMutation = useMutation({
+    mutationFn: async (userMessage: string) => {
+      const initialCoachContent = checkinData
+        ? `${checkinData.greeting} ${checkinData.progressAcknowledgment} ${checkinData.motivation} ${checkinData.tipForTomorrow} ${checkinData.questionForUser} ${checkinData.encouragingClose}`
+        : "";
+      const conversationHistory: ConversationMessage[] = [
+        { role: "assistant", content: initialCoachContent },
+        ...followUpMessages,
+      ];
+      const res = await apiRequest("POST", `/api/habits/${habitId}/coaching-followup`, {
+        conversationHistory,
+        userMessage,
+      });
+      return res.json();
+    },
+    onSuccess: (data, userMessage) => {
+      setFollowUpMessages(prev => [
+        ...prev,
+        { role: "user", content: userMessage },
+        { role: "assistant", content: data.reply },
+      ]);
+      setFollowUpInput("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Follow-up failed",
+        description: error?.message || "Could not get a response. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleStartCheckin = () => {
     checkinMutation.mutate();
+  };
+
+  const handleSendFollowUp = () => {
+    const message = followUpInput.trim();
+    if (!message || followUpMutation.isPending) return;
+    followUpMutation.mutate(message);
+  };
+
+  const handleFollowUpKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendFollowUp();
+    }
   };
 
   const handleClose = () => {
@@ -135,10 +192,12 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     setFeedback("");
     setMood(null);
     setCheckinData(null);
+    setFollowUpMessages([]);
+    setFollowUpInput("");
     stopRecording();
+    stopFollowUpRecording();
   };
 
-  // Voice recording functions for Premium users
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -155,7 +214,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         stream.getTracks().forEach(track => track.stop());
-        await transcribeAudio(audioBlob);
+        await transcribeAudio(audioBlob, "feedback");
       };
       
       mediaRecorder.start();
@@ -172,8 +231,42 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     }
   };
 
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
+  const startFollowUpRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      followUpRecorderRef.current = mediaRecorder;
+      followUpChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          followUpChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(followUpChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        await transcribeAudio(audioBlob, "followup");
+      };
+      
+      mediaRecorder.start();
+      setIsFollowUpRecording(true);
+    } catch (error) {
+      console.error("Error starting follow-up recording:", error);
+    }
+  };
+
+  const stopFollowUpRecording = () => {
+    if (followUpRecorderRef.current && followUpRecorderRef.current.state === 'recording') {
+      followUpRecorderRef.current.stop();
+      setIsFollowUpRecording(false);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob, target: "feedback" | "followup") => {
+    if (target === "feedback") setIsTranscribing(true);
+    else setIsFollowUpTranscribing(true);
     try {
       const arrayBuffer = await audioBlob.arrayBuffer();
       const base64Audio = btoa(
@@ -184,16 +277,20 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       const data = await response.json();
       
       if (data.transcript) {
-        setFeedback(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
+        if (target === "feedback") {
+          setFeedback(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
+        } else {
+          setFollowUpInput(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
+        }
       }
     } catch (error) {
       console.error("Error transcribing:", error);
     } finally {
-      setIsTranscribing(false);
+      if (target === "feedback") setIsTranscribing(false);
+      else setIsFollowUpTranscribing(false);
     }
   };
 
-  // Stop any currently playing audio and cancel pending requests
   const stopAudio = () => {
     audioRequestIdRef.current += 1;
     if (audioRef.current) {
@@ -207,23 +304,19 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
     setIsAudioReady(false);
   };
 
-  // Text-to-speech for coach response
   const speakResponse = async () => {
     if (!checkinData) return;
     
-    // If already speaking, stop it
     if (isSpeaking) {
       stopAudio();
       return;
     }
     
-    // If loading, allow stopping
     if (isLoadingAudio) {
       stopAudio();
       return;
     }
     
-    // If audio is already loaded (from previous failed autoplay), try to play it
     if (isAudioReady && audioRef.current) {
       setIsAudioReady(false);
       setIsSpeaking(true);
@@ -233,7 +326,6 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       } catch (e) {
         console.error("Retry play failed:", e);
         setIsSpeaking(false);
-        // Clear and will fetch again
         audioRef.current = null;
         audioUrlRef.current = null;
         toast({
@@ -254,14 +346,12 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       
       const response = await apiRequest("POST", "/api/text-to-speech", { text: fullText });
       
-      // Check if request was cancelled while waiting
       if (currentRequestId !== audioRequestIdRef.current) {
         return;
       }
       
       const data = await response.json();
       
-      // Check again after parsing
       if (currentRequestId !== audioRequestIdRef.current) {
         return;
       }
@@ -271,7 +361,6 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
       }
       
       if (data.audio) {
-        // Use data URL for better mobile compatibility (especially iOS Safari)
         const audioUrl = `data:audio/mpeg;base64,${data.audio}`;
         audioUrlRef.current = audioUrl;
         
@@ -300,18 +389,14 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
           });
         };
         
-        // Set state before attempting play
         setIsLoadingAudio(false);
         
-        // Try to play
         try {
           await audio.play();
           setIsSpeaking(true);
         } catch (playError: any) {
           console.error("Audio play error:", playError);
-          // On iOS, if autoplay is blocked, set ready state for user to tap again
           if (playError.name === 'NotAllowedError') {
-            // Keep the audio loaded and set ready state
             setIsAudioReady(true);
             toast({
               title: "Ready to play",
@@ -487,9 +572,126 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
               {checkinData.encouragingClose}
             </p>
 
-            <Button onClick={handleClose} className="w-full" data-testid="button-close-checkin">
-              Thanks, Coach!
-            </Button>
+            {followUpMessages.length > 0 && (
+              <div className="space-y-3 pt-2" data-testid="followup-conversation">
+                {followUpMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "flex gap-2",
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                    data-testid={`chat-bubble-${msg.role}-${idx}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 mt-1">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-md px-3 py-2 max-w-[80%] text-sm",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      )}
+                    >
+                      {msg.content}
+                    </div>
+                    {msg.role === "user" && (
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+                        <User className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {followUpMutation.isPending && (
+                  <div className="flex gap-2 justify-start" data-testid="followup-loading">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <div className="rounded-md px-3 py-2 bg-muted text-sm flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(isPro || isPremium) && canFollowUp ? (
+              <div className="space-y-2 pt-2">
+                <div className="relative">
+                  <Textarea
+                    placeholder="Reply to your coach..."
+                    value={followUpInput}
+                    onChange={(e) => setFollowUpInput(e.target.value)}
+                    onKeyDown={handleFollowUpKeyDown}
+                    rows={2}
+                    className={cn("text-sm", isPremium ? "pr-20" : "pr-12")}
+                    disabled={followUpMutation.isPending}
+                    data-testid="input-followup"
+                  />
+                  <div className="absolute right-2 top-2 flex items-center gap-1">
+                    {isPremium && (
+                      <Button
+                        size="icon"
+                        variant={isFollowUpRecording ? "destructive" : "ghost"}
+                        className="h-7 w-7"
+                        onClick={isFollowUpRecording ? stopFollowUpRecording : startFollowUpRecording}
+                        disabled={isFollowUpTranscribing || followUpMutation.isPending}
+                        title={isFollowUpRecording ? "Stop recording" : "Record voice reply"}
+                        data-testid="button-followup-voice"
+                      >
+                        {isFollowUpTranscribing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : isFollowUpRecording ? (
+                          <MicOff className="w-3.5 h-3.5" />
+                        ) : (
+                          <Mic className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={handleSendFollowUp}
+                      disabled={!followUpInput.trim() || followUpMutation.isPending}
+                      data-testid="button-send-followup"
+                    >
+                      {followUpMutation.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                {isFollowUpRecording && (
+                  <p className="text-xs text-destructive animate-pulse">Recording... Tap microphone to stop</p>
+                )}
+                {isFollowUpTranscribing && (
+                  <p className="text-xs text-muted-foreground">Transcribing your reply...</p>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  {MAX_FOLLOWUPS - assistantCount} follow-up{MAX_FOLLOWUPS - assistantCount !== 1 ? "s" : ""} remaining
+                </p>
+              </div>
+            ) : (isPro || isPremium) && !canFollowUp && followUpMessages.length > 0 ? (
+              <div className="pt-2 space-y-2">
+                <p className="text-xs text-muted-foreground text-center">
+                  You've used all follow-ups for this session.
+                </p>
+                <Button onClick={handleClose} className="w-full" data-testid="button-close-checkin">
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={handleClose} className="w-full" data-testid="button-close-checkin">
+                Thanks, Coach!
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
