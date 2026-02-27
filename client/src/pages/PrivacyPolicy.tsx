@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
         { name: "Home", url: "https://habitbuilder.pro/" },
         { name: "Privacy Policy", url: "https://habitbuilder.pro/privacy" }
       ]} />
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b px-6 py-4">
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b px-6 py-4 safe-top">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Link href="/">
             <Button variant="ghost" size="icon" data-testid="button-back-privacy">

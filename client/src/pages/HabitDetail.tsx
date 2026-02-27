@@ -306,7 +306,7 @@ export default function HabitDetail() {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b safe-top">
         <div className="container max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <Link href="/">

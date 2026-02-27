@@ -150,7 +150,7 @@ export default function CoachChatPage() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle font-body flex flex-col">
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50 px-4 py-3">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50 px-4 py-3 safe-top">
         <div className="mx-auto max-w-4xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             {activeChatId ? (

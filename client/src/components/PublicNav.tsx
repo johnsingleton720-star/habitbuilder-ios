@@ -121,7 +121,7 @@ export function PublicNav() {
   return (
     <>
       <NavLoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-4 sm:px-6 py-3" aria-label="Main navigation">
+      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-4 sm:px-6 py-3 safe-top" aria-label="Main navigation">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
             <Logo />

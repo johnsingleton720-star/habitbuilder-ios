@@ -95,8 +95,8 @@ Preferred communication style: Simple, everyday language.
 -   **Usage**: Sending accountability invites, progress updates, daily reminders, weekly digests, and admin-triggered emails.
 
 ### Mobile Applications
--   **iOS App**: Capacitor framework, uses Apple In-App Purchase for payments.
--   **Android App**: Separate TWA build (not detailed).
+-   **iOS App**: Capacitor framework with iOS safe area insets (viewport-fit=cover, safe-top/safe-bottom CSS utilities), Keyboard/StatusBar/SplashScreen plugin config, allowNavigation for Replit OIDC auth flow. Uses Apple In-App Purchase for payments. Build instructions in `ios-build-instructions.md` cover MacinCloud, Codemagic CI/CD, and direct Mac options.
+-   **Android App**: Separate TWA build (`twa-project/` directory).
 
 ### Third-Party Services
 -   **Database**: PostgreSQL (Replit-managed).
