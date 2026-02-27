@@ -9120,137 +9120,133 @@ Be specific, practical, and grounded in behavior science. Every task should make
     }
   });
 
-  app.post("/api/planner/generate", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user!.claims.sub;
-      const { date } = req.body;
+  async function generatePlanForDate(userId: string, date: string): Promise<any> {
+    const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
+    const userTimezone = user?.timezone || 'America/New_York';
+    const dateObj = new Date(date + 'T12:00:00');
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone }).toLowerCase();
 
-      const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
-      const userTimezone = user?.timezone || 'America/New_York';
-      const dateObj = new Date(date + 'T12:00:00');
-      const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone }).toLowerCase();
-
-      const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
-      const activeHabits = userHabits.filter(h => {
-        if (h.archived) return false;
-        if (h.setupComplete) {
-          const dPlans = ((h.dailyPlans || []) as any[]);
-          const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1]?.date : null);
-          if (endDate && endDate < date) return false;
-        }
-        return true;
-      });
-      const scheduledHabits = activeHabits.filter(h => {
-        const scheduleDays = h.schedule ? (h.schedule as any).days : null;
-        if (scheduleDays && scheduleDays.length > 0) {
-          return scheduleDays.includes(dayOfWeek);
-        }
+    const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
+    const activeHabits = userHabits.filter(h => {
+      if (h.archived) return false;
+      if (h.setupComplete) {
         const dPlans = ((h.dailyPlans || []) as any[]);
-        return dPlans.some((p: any) => p.date === date && p.tasks?.length > 0) || !h.setupComplete;
+        const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1]?.date : null);
+        if (endDate && endDate < date) return false;
+      }
+      return true;
+    });
+    const scheduledHabits = activeHabits.filter(h => {
+      const scheduleDays = h.schedule ? (h.schedule as any).days : null;
+      if (scheduleDays && scheduleDays.length > 0) {
+        return scheduleDays.includes(dayOfWeek);
+      }
+      const dPlans = ((h.dailyPlans || []) as any[]);
+      return dPlans.some((p: any) => p.date === date && p.tasks?.length > 0) || !h.setupComplete;
+    });
+
+    const tasks = await db.select().from(quickTasks)
+      .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+
+    const dayCommitments = await storage.getCommitments(userId);
+    const todayCommitments = dayCommitments.filter(c =>
+      (c.days as string[]).includes(dayOfWeek)
+    );
+
+    const recentMoods = await db.select().from(moodEntries)
+      .where(eq(moodEntries.userId, userId))
+      .orderBy(desc(moodEntries.createdAt))
+      .limit(7);
+
+    const avgEnergy = recentMoods.length > 0
+      ? recentMoods.reduce((sum, m) => sum + (m.energy || 3), 0) / recentMoods.length
+      : 3;
+    const avgStress = recentMoods.length > 0
+      ? recentMoods.reduce((sum, m) => sum + (m.stress || 3), 0) / recentMoods.length
+      : 3;
+    const avgSleep = recentMoods.length > 0
+      ? recentMoods.reduce((sum, m) => sum + (m.sleep || 3), 0) / recentMoods.length
+      : 3;
+
+    const habitAnalytics = scheduledHabits.map(h => {
+      const progress = ((h.progress || []) as any[]);
+      const sessionsLast7Days = progress.filter((p: any) => {
+        if (!p.date) return false;
+        const pDate = new Date(p.date);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return pDate >= weekAgo;
       });
+      const totalMinutes = h.totalTimeSpent || 0;
+      const sessionTimes = progress.map((p: any) => {
+        if (p.date) {
+          const d = new Date(p.date);
+          return d.getHours();
+        }
+        return -1;
+      }).filter((h: number) => h >= 0);
+      const peakHour = sessionTimes.length > 0
+        ? Math.round(sessionTimes.reduce((s: number, v: number) => s + v, 0) / sessionTimes.length)
+        : -1;
 
-      const tasks = await db.select().from(quickTasks)
-        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+      const streakAtRisk = (h.currentStreak || 0) > 2 &&
+        !((h.dailyPlans || []) as any[]).some((p: any) =>
+          p.date === date && p.tasks?.some((t: any) => t.completed));
 
-      const dayCommitments = await storage.getCommitments(userId);
-      const todayCommitments = dayCommitments.filter(c =>
-        (c.days as string[]).includes(dayOfWeek)
-      );
+      return {
+        title: h.title,
+        currentStreak: h.currentStreak || 0,
+        longestStreak: h.longestStreak || 0,
+        sessionsThisWeek: sessionsLast7Days.length,
+        totalMinutes,
+        peakHour,
+        streakAtRisk,
+        preferredTime: h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible',
+      };
+    });
 
-      const recentMoods = await db.select().from(moodEntries)
-        .where(eq(moodEntries.userId, userId))
-        .orderBy(desc(moodEntries.createdAt))
-        .limit(7);
+    const atRiskHabits = habitAnalytics.filter(h => h.streakAtRisk).map(h => h.title);
+    const hasUserData = recentMoods.length > 0 || habitAnalytics.some(h => h.sessionsThisWeek > 0);
 
-      const avgEnergy = recentMoods.length > 0
-        ? recentMoods.reduce((sum, m) => sum + (m.energy || 3), 0) / recentMoods.length
-        : 3;
-      const avgStress = recentMoods.length > 0
-        ? recentMoods.reduce((sum, m) => sum + (m.stress || 3), 0) / recentMoods.length
-        : 3;
-      const avgSleep = recentMoods.length > 0
-        ? recentMoods.reduce((sum, m) => sum + (m.sleep || 3), 0) / recentMoods.length
-        : 3;
-
-      const habitAnalytics = scheduledHabits.map(h => {
-        const progress = ((h.progress || []) as any[]);
-        const sessionsLast7Days = progress.filter((p: any) => {
-          if (!p.date) return false;
-          const pDate = new Date(p.date);
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return pDate >= weekAgo;
-        });
-        const totalMinutes = h.totalTimeSpent || 0;
-        const sessionTimes = progress.map((p: any) => {
-          if (p.date) {
-            const d = new Date(p.date);
-            return d.getHours();
-          }
-          return -1;
-        }).filter((h: number) => h >= 0);
-        const peakHour = sessionTimes.length > 0
-          ? Math.round(sessionTimes.reduce((s: number, v: number) => s + v, 0) / sessionTimes.length)
-          : -1;
-
-        const streakAtRisk = (h.currentStreak || 0) > 2 &&
-          !((h.dailyPlans || []) as any[]).some((p: any) =>
-            p.date === date && p.tasks?.some((t: any) => t.completed));
-
-        return {
-          title: h.title,
-          currentStreak: h.currentStreak || 0,
-          longestStreak: h.longestStreak || 0,
-          sessionsThisWeek: sessionsLast7Days.length,
-          totalMinutes,
-          peakHour,
-          streakAtRisk,
-          preferredTime: h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible',
-        };
-      });
-
-      const atRiskHabits = habitAnalytics.filter(h => h.streakAtRisk).map(h => h.title);
-      const hasUserData = recentMoods.length > 0 || habitAnalytics.some(h => h.sessionsThisWeek > 0);
-
-      let energyContext = "";
-      if (hasUserData) {
-        energyContext = `\n\nUser Energy Data (last 7 days):
+    let energyContext = "";
+    if (hasUserData) {
+      energyContext = `\n\nUser Energy Data (last 7 days):
 - Average energy: ${avgEnergy.toFixed(1)}/5 ${avgEnergy < 2.5 ? "(LOW - schedule lighter)" : avgEnergy > 3.5 ? "(HIGH - can handle more)" : "(moderate)"}
 - Average stress: ${avgStress.toFixed(1)}/5 ${avgStress > 3.5 ? "(HIGH STRESS - add extra breaks)" : ""}
 - Average sleep: ${avgSleep.toFixed(1)}/5 ${avgSleep < 2.5 ? "(POOR SLEEP - ease into day)" : ""}`;
-      }
+    }
 
-      let habitDetails = "";
-      if (habitAnalytics.length > 0) {
-        habitDetails = habitAnalytics.map(h => {
-          let detail = `- "${h.title}" (preferred: ${h.preferredTime}, streak: ${h.currentStreak} days`;
-          if (h.peakHour >= 0) detail += `, usually done around ${h.peakHour}:00`;
-          if (h.streakAtRisk) detail += `, STREAK AT RISK`;
-          detail += `)`;
-          return detail;
-        }).join("\n");
-      } else {
-        habitDetails = "No habits scheduled";
-      }
+    let habitDetails = "";
+    if (habitAnalytics.length > 0) {
+      habitDetails = habitAnalytics.map(h => {
+        let detail = `- "${h.title}" (preferred: ${h.preferredTime}, streak: ${h.currentStreak} days`;
+        if (h.peakHour >= 0) detail += `, usually done around ${h.peakHour}:00`;
+        if (h.streakAtRisk) detail += `, STREAK AT RISK`;
+        detail += `)`;
+        return detail;
+      }).join("\n");
+    } else {
+      habitDetails = "No habits scheduled";
+    }
 
-      const tasksList = tasks.length > 0
-        ? tasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
-        : "No tasks";
+    const tasksList = tasks.length > 0
+      ? tasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
+      : "No tasks";
 
-      const commitmentsList = todayCommitments.length > 0
-        ? todayCommitments.map(c => `- "${c.title}" from ${c.startTime} to ${c.endTime} (FIXED - cannot move)`).join("\n")
-        : "";
+    const commitmentsList = todayCommitments.length > 0
+      ? todayCommitments.map(c => `- "${c.title}" from ${c.startTime} to ${c.endTime} (FIXED - cannot move)`).join("\n")
+      : "";
 
-      const openai = new OpenAI({
-        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-      });
+    const openai = new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    });
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{
-          role: "system",
-          content: `You are an expert productivity coach creating a personalized daily schedule. Respond with this exact JSON format:
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{
+        role: "system",
+        content: `You are an expert productivity coach creating a personalized daily schedule. Respond with this exact JSON format:
 {
   "insights": {
     "focusTheme": "Short 2-4 word theme for the day (e.g., 'Deep Work & Recovery', 'Momentum Building')",
@@ -9290,9 +9286,9 @@ SCHEDULING RULES:
 - Type must be one of: "habit", "task", "break", "custom", "commitment"
 - For commitment blocks: use type "commitment", set completed to false, do NOT schedule any other blocks during commitment times
 - Do not generate harmful content`
-        }, {
-          role: "user",
-          content: `Create my optimized schedule for ${dayOfWeek}, ${date}.
+      }, {
+        role: "user",
+        content: `Create my optimized schedule for ${dayOfWeek}, ${date}.
 ${commitmentsList ? `\nFIXED COMMITMENTS (DO NOT schedule anything during these times — work around them and include them as "commitment" type blocks):\n${commitmentsList}\n` : ""}
 My habits:
 ${habitDetails}
@@ -9302,102 +9298,162 @@ ${tasksList}${energyContext}
 
 ${atRiskHabits.length > 0 ? `\nIMPORTANT: These habits have active streaks at risk: ${atRiskHabits.join(", ")}. Prioritize them at optimal times.` : ""}
 ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible defaults for energy scheduling." : ""}`
-        }],
-        max_tokens: 3000,
-        response_format: { type: "json_object" }
-      });
+      }],
+      max_tokens: 3000,
+      response_format: { type: "json_object" }
+    });
 
-      const rawContent = response.choices[0]?.message?.content || "{}";
-      console.log("[Planner] AI raw response:", rawContent.substring(0, 500));
+    const rawContent = response.choices[0]?.message?.content || "{}";
+    console.log("[Planner] AI raw response:", rawContent.substring(0, 500));
 
-      let blocks: any[] = [];
-      let insights: any = null;
-      try {
-        const parsed = JSON.parse(rawContent);
-        insights = parsed.insights || null;
-        if (Array.isArray(parsed)) {
-          blocks = parsed;
-        } else if (Array.isArray(parsed.blocks)) {
-          blocks = parsed.blocks;
-        } else if (Array.isArray(parsed.schedule)) {
-          blocks = parsed.schedule;
-        } else if (Array.isArray(parsed.timeBlocks)) {
-          blocks = parsed.timeBlocks;
-        } else if (Array.isArray(parsed.plan)) {
-          blocks = parsed.plan;
-        } else {
-          const firstArrayKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
-          if (firstArrayKey) {
-            blocks = parsed[firstArrayKey];
-          }
-        }
-      } catch (e) {
-        console.error("[Planner] JSON parse error:", e);
-        blocks = [];
-      }
-
-      const [existing] = await db.select().from(dailyPlannerEntries)
-        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
-      const oldBlocks = existing ? ((existing.blocks || []) as any[]) : [];
-      const completedMap = new Map<string, boolean>();
-      for (const ob of oldBlocks) {
-        if (ob.completed) {
-          completedMap.set(ob.title?.toLowerCase()?.trim(), true);
-          if (ob.habitId) completedMap.set(`habit-${ob.habitId}`, true);
-          if (ob.taskId) completedMap.set(`task-${ob.taskId}`, true);
+    let blocks: any[] = [];
+    let insights: any = null;
+    try {
+      const parsed = JSON.parse(rawContent);
+      insights = parsed.insights || null;
+      if (Array.isArray(parsed)) {
+        blocks = parsed;
+      } else if (Array.isArray(parsed.blocks)) {
+        blocks = parsed.blocks;
+      } else if (Array.isArray(parsed.schedule)) {
+        blocks = parsed.schedule;
+      } else if (Array.isArray(parsed.timeBlocks)) {
+        blocks = parsed.timeBlocks;
+      } else if (Array.isArray(parsed.plan)) {
+        blocks = parsed.plan;
+      } else {
+        const firstArrayKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
+        if (firstArrayKey) {
+          blocks = parsed[firstArrayKey];
         }
       }
+    } catch (e) {
+      console.error("[Planner] JSON parse error:", e);
+      blocks = [];
+    }
 
-      blocks = blocks.map((b: any, i: number) => {
-        const title = (b.title || b.name || "Untitled").trim();
-        const type = b.type || "custom";
-        const habitId = b.habitId || null;
-        const taskId = b.taskId || null;
-        const wasCompleted = completedMap.has(title.toLowerCase()) ||
-          (habitId && completedMap.has(`habit-${habitId}`)) ||
-          (taskId && completedMap.has(`task-${taskId}`));
-        return {
-          id: b.id || `block-${i + 1}`,
-          time: b.time || b.startTime || "09:00",
-          endTime: b.endTime || b.end_time || "",
-          title,
-          type,
-          habitId,
-          taskId,
-          duration: b.duration || 30,
-          completed: wasCompleted || false,
-          energyLevel: b.energyLevel || "medium",
-          priority: b.priority || "medium",
-          skipped: false,
-        };
-      });
-
-      if (!insights) {
-        insights = {
-          focusTheme: "Productive Day",
-          focusDescription: "A balanced schedule designed to help you make progress on your habits and tasks.",
-          atRiskHabits: atRiskHabits,
-          energyStrategy: hasUserData ? "Schedule adapted based on your recent energy and mood patterns." : "Using standard energy optimization — demanding tasks in the morning, lighter ones later.",
-          tipsForToday: ["Focus on one task at a time for best results", "Take breaks between different types of activities", "Stay hydrated throughout the day"],
-        };
+    const [existing] = await db.select().from(dailyPlannerEntries)
+      .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+    const oldBlocks = existing ? ((existing.blocks || []) as any[]) : [];
+    const completedMap = new Map<string, boolean>();
+    for (const ob of oldBlocks) {
+      if (ob.completed) {
+        completedMap.set(ob.title?.toLowerCase()?.trim(), true);
+        if (ob.habitId) completedMap.set(`habit-${ob.habitId}`, true);
+        if (ob.taskId) completedMap.set(`task-${ob.taskId}`, true);
       }
+    }
 
-      console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${Array.from(completedMap.values()).filter(Boolean).length} completed states)`);
+    blocks = blocks.map((b: any, i: number) => {
+      const title = (b.title || b.name || "Untitled").trim();
+      const type = b.type || "custom";
+      const habitId = b.habitId || null;
+      const taskId = b.taskId || null;
+      const wasCompleted = completedMap.has(title.toLowerCase()) ||
+        (habitId && completedMap.has(`habit-${habitId}`)) ||
+        (taskId && completedMap.has(`task-${taskId}`));
+      return {
+        id: b.id || `block-${i + 1}`,
+        time: b.time || b.startTime || "09:00",
+        endTime: b.endTime || b.end_time || "",
+        title,
+        type,
+        habitId,
+        taskId,
+        duration: b.duration || 30,
+        completed: wasCompleted || false,
+        energyLevel: b.energyLevel || "medium",
+        priority: b.priority || "medium",
+        skipped: false,
+      };
+    });
 
-      if (existing) {
-        const [updated] = await db.update(dailyPlannerEntries)
-          .set({ blocks, insights, aiGenerated: true, updatedAt: new Date() })
-          .where(eq(dailyPlannerEntries.id, existing.id))
-          .returning();
-        return res.json(updated);
-      }
-      const [entry] = await db.insert(dailyPlannerEntries)
-        .values({ userId, date, blocks, insights, aiGenerated: true })
+    if (!insights) {
+      insights = {
+        focusTheme: "Productive Day",
+        focusDescription: "A balanced schedule designed to help you make progress on your habits and tasks.",
+        atRiskHabits: atRiskHabits,
+        energyStrategy: hasUserData ? "Schedule adapted based on your recent energy and mood patterns." : "Using standard energy optimization — demanding tasks in the morning, lighter ones later.",
+        tipsForToday: ["Focus on one task at a time for best results", "Take breaks between different types of activities", "Stay hydrated throughout the day"],
+      };
+    }
+
+    console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${Array.from(completedMap.values()).filter(Boolean).length} completed states)`);
+
+    if (existing) {
+      const [updated] = await db.update(dailyPlannerEntries)
+        .set({ blocks, insights, aiGenerated: true, updatedAt: new Date() })
+        .where(eq(dailyPlannerEntries.id, existing.id))
         .returning();
-      res.json(entry);
+      return updated;
+    }
+    const [entry] = await db.insert(dailyPlannerEntries)
+      .values({ userId, date, blocks, insights, aiGenerated: true })
+      .returning();
+    return entry;
+  }
+
+  app.post("/api/planner/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date } = req.body;
+      const result = await generatePlanForDate(userId, date);
+      res.json(result);
     } catch (error) {
       console.error("Error generating planner:", error);
       res.status(500).json({ error: "Failed to generate daily plan" });
+    }
+  });
+
+  app.post("/api/planner/generate-week", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { startDate } = req.body;
+
+      if (!startDate) {
+        return res.status(400).json({ error: "startDate is required" });
+      }
+
+      const results: { date: string; status: string }[] = [];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate + 'T12:00:00');
+        d.setDate(d.getDate() + i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+        const [existing] = await db.select().from(dailyPlannerEntries)
+          .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, dateStr)));
+
+        if (existing && ((existing.blocks || []) as any[]).length > 0) {
+          results.push({ date: dateStr, status: "skipped" });
+          continue;
+        }
+
+        try {
+          await generatePlanForDate(userId, dateStr);
+          results.push({ date: dateStr, status: "generated" });
+        } catch (dayError) {
+          console.error(`[Planner] Failed to generate for ${dateStr}:`, dayError);
+          results.push({ date: dateStr, status: "failed" });
+        }
+      }
+
+      const generated = results.filter(r => r.status === "generated").length;
+      const skipped = results.filter(r => r.status === "skipped").length;
+      const failed = results.filter(r => r.status === "failed").length;
+
+      res.json({
+        results,
+        summary: {
+          generated,
+          skipped,
+          failed,
+          total: 7,
+        },
+      });
+    } catch (error) {
+      console.error("Error generating weekly planner:", error);
+      res.status(500).json({ error: "Failed to generate weekly plan" });
     }
   });
 

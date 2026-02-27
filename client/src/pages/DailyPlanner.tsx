@@ -429,12 +429,35 @@ interface WeeklySummary {
 }
 
 function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay: (date: string) => void }) {
+  const { toast } = useToast();
+
   const { data: summary, isLoading } = useQuery<WeeklySummary>({
     queryKey: ["/api/planner/weekly-summary", startDate],
     queryFn: async () => {
       const res = await fetch(`/api/planner/weekly-summary?startDate=${startDate}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch weekly summary");
       return res.json();
+    },
+  });
+
+  const generateWeekMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/planner/generate-week", { startDate });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner/weekly-summary", startDate] });
+      for (const r of data.results) {
+        queryClient.invalidateQueries({ queryKey: ["/api/planner", r.date] });
+      }
+      const { generated, skipped } = data.summary;
+      toast({
+        title: "Weekly plan generated",
+        description: `${generated} day${generated !== 1 ? "s" : ""} generated${skipped > 0 ? `, ${skipped} already planned` : ""}.`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -450,6 +473,8 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
   if (!summary) return null;
 
   const todayStr = formatDate(new Date());
+  const daysPlanned = summary.days.filter(d => d.hasPlanner).length;
+  const allPlanned = daysPlanned === 7;
 
   return (
     <div className="space-y-3" data-testid="weekly-view">
@@ -489,6 +514,24 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
           );
         })}
       </div>
+
+      <Button
+        onClick={() => generateWeekMutation.mutate()}
+        disabled={generateWeekMutation.isPending}
+        className="w-full bg-gradient-to-r from-primary to-emerald-600 text-white border-0"
+        data-testid="button-generate-week"
+      >
+        {generateWeekMutation.isPending ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Sparkles className="w-4 h-4 mr-2" />
+        )}
+        {generateWeekMutation.isPending
+          ? "Generating week..."
+          : allPlanned
+            ? "Regenerate Week"
+            : `Generate My Week${daysPlanned > 0 ? ` (${7 - daysPlanned} days)` : ""}`}
+      </Button>
 
       {summary.habitDistribution.length > 0 && (
         <Card data-testid="card-habit-distribution">
@@ -544,7 +587,7 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
             </div>
             <div>
               <p className="text-lg font-bold text-primary">
-                {summary.days.filter(d => d.hasPlanner).length}/7
+                {daysPlanned}/7
               </p>
               <p className="text-[10px] text-muted-foreground">Days Planned</p>
             </div>
