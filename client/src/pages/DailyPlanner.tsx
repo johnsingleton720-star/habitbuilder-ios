@@ -431,13 +431,14 @@ interface WeeklySummary {
 function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay: (date: string) => void }) {
   const { toast } = useToast();
 
-  const { data: summary, isLoading } = useQuery<WeeklySummary>({
+  const { data: summary, isLoading, isError, refetch } = useQuery<WeeklySummary>({
     queryKey: ["/api/planner/weekly-summary", startDate],
     queryFn: async () => {
       const res = await fetch(`/api/planner/weekly-summary?startDate=${startDate}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch weekly summary");
       return res.json();
     },
+    staleTime: 0,
   });
 
   const generateWeekMutation = useMutation({
@@ -470,7 +471,41 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
     );
   }
 
-  if (!summary) return null;
+  if (isError || !summary) {
+    return (
+      <div className="space-y-3" data-testid="weekly-view">
+        <Card>
+          <CardContent className="p-6 text-center space-y-3">
+            <CalendarRange className="w-8 h-8 mx-auto text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {isError ? "Failed to load weekly summary. Tap to retry." : "No weekly data available yet."}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              data-testid="button-retry-weekly"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+        <Button
+          onClick={() => generateWeekMutation.mutate()}
+          disabled={generateWeekMutation.isPending}
+          className="w-full bg-gradient-to-r from-primary to-emerald-600 text-white border-0"
+          data-testid="button-generate-week"
+        >
+          {generateWeekMutation.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4 mr-2" />
+          )}
+          {generateWeekMutation.isPending ? "Generating week..." : "Generate My Week"}
+        </Button>
+      </div>
+    );
+  }
 
   const todayStr = formatDate(new Date());
   const daysPlanned = summary.days.filter(d => d.hasPlanner).length;
