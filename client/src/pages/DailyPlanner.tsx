@@ -434,7 +434,10 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
   const { data: summary, isLoading, isError, refetch } = useQuery<WeeklySummary>({
     queryKey: ["/api/planner/weekly-summary", startDate],
     queryFn: async () => {
-      const res = await fetch(`/api/planner/weekly-summary?startDate=${startDate}`, { credentials: "include" });
+      const res = await fetch(`/api/planner/weekly-summary?startDate=${startDate}&_t=${Date.now()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Failed to fetch weekly summary");
       return res.json();
     },

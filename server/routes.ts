@@ -9749,6 +9749,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         };
       });
 
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
       res.json({ days, habitDistribution });
     } catch (error) {
       console.error("Error fetching weekly summary:", error);
