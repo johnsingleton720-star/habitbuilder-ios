@@ -16,6 +16,7 @@ import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
+import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -49,11 +50,17 @@ export default function Dashboard() {
   const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(() => {
     return localStorage.getItem('welcomeBannerDismissed') === 'true';
   });
+  const [showTour, setShowTour] = useState(false);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features, isFreeUser } = useSubscription();
 
   useEffect(() => {
+    if (window.location.hash === "#tour") {
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => setShowTour(true), 800);
+      return;
+    }
     if (window.location.hash === "#habits") {
       setTimeout(() => {
         const habitsSection = document.getElementById("habits-section");
@@ -64,6 +71,13 @@ export default function Dashboard() {
       }, 300);
     }
   }, []);
+
+  useEffect(() => {
+    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+      localStorage.setItem(TOUR_STORAGE_KEY, "pending");
+      setTimeout(() => setShowTour(true), 1000);
+    }
+  }, [user?.onboardingComplete]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -170,7 +184,7 @@ export default function Dashboard() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-10 w-10 rounded-full p-0">
+              <Button variant="ghost" className="h-10 w-10 rounded-full p-0" data-tour="user-menu-trigger">
                 <Avatar className="h-10 w-10 border border-border">
                   <AvatarImage src={user?.profileImageUrl || undefined} />
                   <AvatarFallback><UserIcon className="w-5 h-5" /></AvatarFallback>
@@ -390,6 +404,7 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Today's Focus - What to do NOW */}
+        <div data-tour="daily-action-center">
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -408,6 +423,7 @@ export default function Dashboard() {
         >
           <QuickTasks />
         </motion.section>
+        </div>
 
         {/* Daily Journal Card */}
         <motion.section
@@ -464,7 +480,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="feature-links">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-amber-200/50 dark:border-amber-800/30 h-full" data-testid="card-focus-timer-link">
                 <CardContent className="p-3 flex flex-col items-center text-center gap-2">
@@ -535,6 +551,7 @@ export default function Dashboard() {
         )}
 
         {/* Achievements (compact) - Show progress before challenges */}
+        <div data-tour="achievements-section">
         {habits && habits.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -553,6 +570,7 @@ export default function Dashboard() {
         >
           <GamificationDisplay />
         </motion.section>
+        </div>
 
         {/* Mood Check-in */}
         <motion.section
@@ -672,6 +690,10 @@ export default function Dashboard() {
       />
 
       {user && !user.onboardingComplete && <OnboardingWizard />}
+
+      {showTour && (
+        <FeatureTour onComplete={() => setShowTour(false)} />
+      )}
 
       {/* New User Feedback Prompt */}
       <NewUserFeedback />

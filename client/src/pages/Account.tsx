@@ -4,8 +4,8 @@ import { usePaymentStatus } from "@/hooks/use-payment";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
-import { ArrowLeft, ArrowRight, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { ArrowLeft, ArrowRight, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone, HelpCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -427,6 +427,7 @@ export default function Account() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [, navigate] = useLocation();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d" | "90d">("7d");
   const [editingName, setEditingName] = useState(false);
@@ -1047,6 +1048,18 @@ export default function Account() {
               >
                 <MessageSquare className="w-4 h-4" />
                 Share Feedback
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  localStorage.removeItem("featureTourCompleted");
+                  navigate("/#tour");
+                }}
+                data-testid="button-take-tour"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Take a Tour
               </Button>
               {user?.isAdmin && (
                 <>
