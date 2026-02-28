@@ -4241,12 +4241,64 @@ REQUIREMENTS:
       if (!habit || habit.userId !== userId) {
         return res.status(404).json({ error: "Habit not found" });
       }
+
+      if (!archived) {
+        const user = await storage.getUser(userId);
+        const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+        const isAdmin = user?.isAdmin === true;
+        const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+        const isInTrial = trialEndsAt && trialEndsAt > new Date();
+
+        if (!hasPaidSubscription && !isAdmin && !isInTrial) {
+          const allHabits = await storage.getHabits(userId);
+          const activeCount = allHabits.filter(h => !h.archived).length;
+          if (activeCount >= 1) {
+            return res.status(403).json({ error: "Free accounts are limited to 1 active habit. Upgrade to unlock more." });
+          }
+        }
+      }
       
-      const updated = await storage.updateHabit(habitId, userId, { archived: !!archived });
+      const updates: any = { archived: !!archived };
+      if (!archived) {
+        updates.downgradeArchived = false;
+      }
+      const updated = await storage.updateHabit(habitId, userId, updates);
       res.json(updated);
     } catch (error) {
       console.error("Error archiving habit:", error);
       res.status(500).json({ error: "Failed to archive habit" });
+    }
+  });
+
+  app.post("/api/habits/downgrade-archive", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { keepHabitId } = req.body;
+
+      if (!keepHabitId || typeof keepHabitId !== 'number') {
+        return res.status(400).json({ error: "keepHabitId is required" });
+      }
+
+      const allHabits = await storage.getHabits(userId);
+      const activeHabits = allHabits.filter(h => !h.archived);
+
+      const keepHabit = activeHabits.find(h => h.id === keepHabitId);
+      if (!keepHabit) {
+        return res.status(404).json({ error: "Selected habit not found" });
+      }
+
+      const toArchive = activeHabits.filter(h => h.id !== keepHabitId);
+      for (const habit of toArchive) {
+        await storage.updateHabit(habit.id, userId, {
+          archived: true,
+          downgradeArchived: true,
+        } as any);
+      }
+
+      res.json({ archived: toArchive.length, kept: keepHabitId });
+    } catch (error) {
+      console.error("Error downgrade archiving:", error);
+      res.status(500).json({ error: "Failed to archive habits" });
     }
   });
 

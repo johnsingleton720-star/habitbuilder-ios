@@ -17,6 +17,7 @@ import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
+import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -53,7 +54,7 @@ export default function Dashboard() {
   const [showTour, setShowTour] = useState(false);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { features, isFreeUser } = useSubscription();
+  const { features, isFreeUser, isInTrial } = useSubscription();
 
   useEffect(() => {
     if (window.location.hash === "#tour") {
@@ -688,6 +689,10 @@ export default function Dashboard() {
           goal: selectedTemplate.suggestedGoal || '',
         } : undefined}
       />
+
+      {isFreeUser && !isInTrial && !user?.isAdmin && activeHabits && activeHabits.length > 1 && (
+        <DowngradeHabitPicker habits={habits || []} open={true} />
+      )}
 
       {user && !user.onboardingComplete && <OnboardingWizard />}
 

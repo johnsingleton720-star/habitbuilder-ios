@@ -38,6 +38,11 @@ Preferred communication style: Simple, everyday language.
 -   **Smart Resources**: AI generates relevant, clickable external resources (articles, books, courses) for tasks, avoiding competing habit trackers.
 -   **AI Safety**: Server-side content safety filters and AI guardrails prevent harmful content generation.
 
+### Subscription Downgrade Protection
+-   **Habit Archiving on Cancellation**: When a Pro/Premium user cancels and drops to the free tier, a modal prompts them to choose 1 habit to keep active. The rest are archived with a `downgradeArchived` flag.
+-   **Auto-Restore on Re-subscription**: When a cancelled user re-subscribes (via checkout or subscription reactivation), all `downgradeArchived` habits are automatically restored.
+-   **Unarchive Protection**: Free users cannot unarchive habits if they already have 1 active habit.
+
 ### Payment System
 -   **Subscription Tiers**: Free, Pro, Premium, managed via Stripe for web/Android and Apple In-App Purchase for iOS.
 -   **Trial System**: 2-day free trial, with free tier limitations designed to encourage upgrades.

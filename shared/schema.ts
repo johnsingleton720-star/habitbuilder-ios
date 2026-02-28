@@ -132,6 +132,7 @@ export const habits = pgTable("habits", {
   
   // Archiving
   archived: boolean("archived").default(false),
+  downgradeArchived: boolean("downgrade_archived").default(false),
   
   // Habit stacking (Premium feature)
   linkedHabitId: integer("linked_habit_id"), // "After completing this habit, do linked habit next"

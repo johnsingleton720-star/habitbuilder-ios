@@ -1,7 +1,7 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { db } from './db';
-import { users, foundingMemberSlots } from '@shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { users, foundingMemberSlots, habits } from '@shared/schema';
+import { eq, sql, and } from 'drizzle-orm';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
@@ -70,6 +70,19 @@ export class WebhookHandlers {
         }
         
         console.log(`User ${session.metadata.userId} subscription started (${tier}, ${billingInterval}) - access granted`);
+
+        const restoredHabits = await db
+          .update(habits)
+          .set({ archived: false, downgradeArchived: false })
+          .where(and(
+            eq(habits.userId, session.metadata.userId),
+            eq(habits.downgradeArchived, true)
+          ))
+          .returning();
+
+        if (restoredHabits.length > 0) {
+          console.log(`Restored ${restoredHabits.length} downgrade-archived habits for user ${session.metadata.userId}`);
+        }
       } else {
         console.warn('Checkout completed but no userId in metadata:', session.id);
       }
@@ -97,6 +110,21 @@ export class WebhookHandlers {
             hasPaid: isActive,
           })
           .where(eq(users.id, user.id));
+        
+        if (isActive) {
+          const restoredHabits = await db
+            .update(habits)
+            .set({ archived: false, downgradeArchived: false })
+            .where(and(
+              eq(habits.userId, user.id),
+              eq(habits.downgradeArchived, true)
+            ))
+            .returning();
+
+          if (restoredHabits.length > 0) {
+            console.log(`Restored ${restoredHabits.length} downgrade-archived habits for user ${user.id}`);
+          }
+        }
         
         console.log(`User ${user.id} subscription updated: ${subscription.status}`);
       }
