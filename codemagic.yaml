@@ -1,0 +1,103 @@
+workflows:
+  ios-release:
+    name: iOS App Store Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: pro.habitbuilder.app
+      node: 18
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Build web app
+        script: npm run build
+      - name: Add iOS platform
+        script: npx cap add ios || true
+      - name: Sync Capacitor
+        script: npx cap sync ios
+      - name: Fix Podfile for archive
+        script: |
+          cat > ios/App/Podfile << 'EOF'
+          require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
+
+          platform :ios, '16.0'
+          use_frameworks!
+
+          install! 'cocoapods', :disable_input_output_paths => true
+
+          def capacitor_pods
+            pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
+            pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
+          end
+
+          target 'App' do
+            capacitor_pods
+          end
+
+          post_install do |installer|
+            assertDeploymentTarget(installer)
+            installer.pods_project.targets.each do |target|
+              target.shell_script_build_phases.each do |phase|
+                if phase.name == '[CP] Embed Pods Frameworks'
+                  phase.shell_script = "echo 'Skipping embed frameworks'"
+                end
+              end
+            end
+          end
+          EOF
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Set app icon
+        script: |
+          if [ -f "client/public/playstore-icon.png" ]; then
+            mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
+            cp client/public/playstore-icon.png ios/App/App/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+            cat > ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json << 'ICONEOF'
+          {
+            "images": [
+              {
+                "filename": "icon-1024.png",
+                "idiom": "universal",
+                "platform": "ios",
+                "size": "1024x1024"
+              }
+            ],
+            "info": {
+              "author": "xcode",
+              "version": 1
+            }
+          }
+          ICONEOF
+          fi
+      - name: Build archive
+        script: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive \
+            clean archive \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="XWGZCDT3XH"
+      - name: Export IPA
+        script: |
+          cd ios/App
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist ../../exportOptions.plist
+    artifacts:
+      - ios/App/build/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
