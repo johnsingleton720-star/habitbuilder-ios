@@ -190,10 +190,10 @@ These screenshots show your real app UI framed with marketing text on a dark gre
 
 **iPhone 5.5" Display**: You can also reuse the 6.7" screenshots.
 
-**iPad Pro 12.9" (Optional but recommended)**:
-1. `ipad-01-dashboard.png`
-2. `ipad-02-coaching.png`
-3. `ipad-03-analytics.png`
+**iPad Pro 12.9" (Optional but recommended, 2048x2732)**:
+1. `ipad-01-dashboard.png` — Dashboard with daily focus and quick tasks
+2. `ipad-02-coaching.png` — AI Coach chat
+3. `ipad-03-planner.png` — Smart Daily Planner
 
 ### Step 9: Fill In App Metadata
 
