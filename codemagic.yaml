@@ -60,7 +60,12 @@ workflows:
         script: |
           cd ios/App
           sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = ".*"/PROVISIONING_PROFILE_SPECIFIER = ""/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*;/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' '/PROVISIONING_PROFILE/s/= "HabitBuilder Distribution"/= ""/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's/PROVISIONING_PROFILE = ".*"/PROVISIONING_PROFILE = ""/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's/"ProvisioningStyle" = "Manual"/"ProvisioningStyle" = "Automatic"/g' App.xcodeproj/project.pbxproj || true
+          cat App.xcodeproj/project.pbxproj | grep -i "provisioning\|CODE_SIGN_STYLE" || true
       - name: Set app icon
         script: |
           if [ -f "client/public/playstore-icon.png" ]; then
