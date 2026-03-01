@@ -4,9 +4,6 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: pro.habitbuilder.app
       groups:
         - apple
       node: 18
@@ -55,8 +52,15 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Set up code signing
-        script: xcode-project use-profiles
+      - name: Save App Store Connect API key
+        script: |
+          mkdir -p ~/private_keys
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8
+      - name: Set up automatic signing
+        script: |
+          cd ios/App
+          sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj || true
       - name: Set app icon
         script: |
           if [ -f "client/public/playstore-icon.png" ]; then
@@ -88,15 +92,23 @@ workflows:
             -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive \
             clean archive \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="XWGZCDT3XH"
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="XWGZCDT3XH" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
+            -authenticationKeyID $APP_STORE_CONNECT_KEY_IDENTIFIER \
+            -authenticationKeyIssuerID $APP_STORE_CONNECT_ISSUER_ID
       - name: Export IPA
         script: |
           cd ios/App
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/ipa \
-            -exportOptionsPlist ../../exportOptions.plist
+            -exportOptionsPlist ../../exportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
+            -authenticationKeyID $APP_STORE_CONNECT_KEY_IDENTIFIER \
+            -authenticationKeyIssuerID $APP_STORE_CONNECT_ISSUER_ID
     artifacts:
       - ios/App/build/ipa/*.ipa
     publishing:
