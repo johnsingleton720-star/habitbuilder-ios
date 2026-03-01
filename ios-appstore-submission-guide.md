@@ -175,14 +175,16 @@ Go back to App Store Connect → your app → **App Information**
 
 Click on **1.0 Prepare for Submission** in the left sidebar.
 
-**iPhone 6.7" Display Screenshots** (required — iPhone 15 Pro Max size):
+**iPhone 6.7" Display Screenshots** (required — iPhone 15 Pro Max size, 1290x2796):
 Upload these files from `attached_assets/appstore-screenshots/`:
-1. `iphone-01-dashboard.png` — Dashboard view
-2. `iphone-02-ai-coach.png` — AI Coaching
-3. `iphone-03-planner.png` — Smart Daily Planner
-4. `iphone-04-progress.png` — Progress tracking
-5. `iphone-05-mood.png` — Mood & Journal
-6. `iphone-06-achievements.png` — Achievements
+1. `iphone-01-landing.png` — Landing page with "Build Habits That Actually Stick"
+2. `iphone-02-dashboard.png` — Dashboard with daily action center
+3. `iphone-03-coach.png` — AI Coaching chat
+4. `iphone-04-planner.png` — Smart Daily Planner
+5. `iphone-05-mood.png` — Mood and Wellness Tracking
+6. `iphone-06-journal.png` — Daily Journal
+
+These screenshots show your real app UI framed with marketing text on a dark green background.
 
 **iPhone 6.5" Display**: You can check "Use 6.7-inch Display screenshots" to reuse the same images.
 
