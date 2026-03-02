@@ -1,9 +1,12 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Sun, 
+  Sun,
+  Sunset,
+  Moon,
   Target, 
   Lightbulb, 
   Flame,
@@ -21,11 +24,26 @@ interface MotivationData {
   streakMessage: string;
 }
 
+function getTimeOfDayInfo() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return { greeting: "Good Morning!", Icon: Sun, gradient: "from-amber-400 to-orange-500" };
+  } else if (hour >= 12 && hour < 17) {
+    return { greeting: "Good Afternoon!", Icon: Sunset, gradient: "from-orange-400 to-rose-500" };
+  } else if (hour >= 17 && hour < 21) {
+    return { greeting: "Good Evening!", Icon: Sunset, gradient: "from-purple-400 to-indigo-500" };
+  } else {
+    return { greeting: "Good Night!", Icon: Moon, gradient: "from-indigo-400 to-blue-600" };
+  }
+}
+
 export function DailyMotivation({ habitId }: DailyMotivationProps) {
+  const timeInfo = useMemo(() => getTimeOfDayInfo(), []);
+
   const { data: motivation, isLoading } = useQuery<MotivationData>({
     queryKey: ['/api/habits', habitId, 'daily-motivation'],
     enabled: habitId > 0,
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    staleTime: 1000 * 60 * 60,
   });
 
   if (isLoading) {
@@ -50,11 +68,11 @@ export function DailyMotivation({ habitId }: DailyMotivationProps) {
       <CardContent className="p-0">
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <Sun className="w-4 h-4 text-white" />
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${timeInfo.gradient} flex items-center justify-center`}>
+              <timeInfo.Icon className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-medium">Good Morning!</p>
+              <p className="text-sm font-medium" data-testid="text-greeting">{timeInfo.greeting}</p>
               <p className="text-xs text-muted-foreground">Your daily motivation</p>
             </div>
             <Badge variant="secondary" className="ml-auto gap-1">

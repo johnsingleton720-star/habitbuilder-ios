@@ -80,8 +80,19 @@ Preferred communication style: Simple, everyday language.
 ### My Routine (User Commitments)
 -   Users define recurring fixed time blocks (e.g., work, gym) that the AI planner respects when scheduling habits, ensuring no conflicts.
 
-### Email Notifications
--   Automated daily morning reminders and weekly progress digests, respecting user timezones and preferences.
+### Push Notifications & Email Notifications
+-   **Push Notification Scheduler** (`server/emailScheduler.ts`): Runs every 15 minutes, checking all users' timezones and preferences. Sends push notifications via Web Push (VAPID) for:
+    - **Daily Morning Reminders**: At user's `dailyReminderTime` (default 08:00) — today's tasks + streak info
+    - **Journal Reminders**: At user's `journalReminderTime` (default 20:00) — "Time to reflect"
+    - **Mood Check-ins**: At user's `moodCheckinTimes` (defaults 09:00, 14:00, 20:00) — "How are you feeling?"
+    - **Streak Alerts**: At user's `streakAlertTime` (default 19:00) — warns if incomplete habits risk streak
+    - **Habit Reminders**: Per-habit times from `habitReminders` table on matching days
+    - **Daily Planner**: At user's `dailyPlannerTime` (default 07:00) — task count summary
+    - **Goal Milestones**: On achievement — celebrates new milestones
+    - **Weekly Digests**: Sunday 9am — email summary of week's progress
+-   All notification types have individual toggle switches and configurable times in Account settings.
+-   Deduplication tracking fields prevent duplicate sends across scheduler cycles.
+-   **Time-Aware Greeting**: `DailyMotivation.tsx` dynamically shows "Good Morning/Afternoon/Evening/Night" with matching icon based on user's local time. AI motivation prompt also receives time-of-day context.
 
 ### Dark Mode
 -   Supports theme switching with localStorage persistence.

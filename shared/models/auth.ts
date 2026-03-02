@@ -75,6 +75,16 @@ export const users = pgTable("users", {
   pushDailyPlanner: boolean("push_daily_planner").default(true),
   journalReminderTime: varchar("journal_reminder_time").default("20:00"),
   moodCheckinTimes: jsonb("mood_checkin_times").$type<string[]>().default(["09:00", "14:00", "20:00"]),
+  streakAlertTime: varchar("streak_alert_time").default("19:00"),
+  dailyPlannerTime: varchar("daily_planner_time").default("07:00"),
+  habitReminderTime: varchar("habit_reminder_time").default("08:00"),
+  
+  lastJournalReminderSent: varchar("last_journal_reminder_sent"),
+  lastMoodCheckinSent: jsonb("last_mood_checkin_sent").$type<Record<string, string>>(),
+  lastStreakAlertSent: varchar("last_streak_alert_sent"),
+  lastDailyPlannerSent: varchar("last_daily_planner_sent"),
+  lastGoalMilestoneSent: varchar("last_goal_milestone_sent"),
+  lastHabitRemindersSent: jsonb("last_habit_reminders_sent").$type<Record<string, string>>(),
   
   signupSource: varchar("signup_source"),
   signupUtmSource: varchar("signup_utm_source"),

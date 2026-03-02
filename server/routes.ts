@@ -318,7 +318,7 @@ export async function registerRoutes(
   app.patch("/api/user/notification-preferences", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-      const allowedFields = ['pushNotificationsEnabled', 'pushHabitReminders', 'pushStreakAlerts', 'pushJournalReminder', 'pushMoodCheckin', 'pushTimerComplete', 'pushGoalMilestones', 'pushDailyPlanner', 'journalReminderTime', 'moodCheckinTimes'];
+      const allowedFields = ['pushNotificationsEnabled', 'pushHabitReminders', 'pushStreakAlerts', 'pushJournalReminder', 'pushMoodCheckin', 'pushTimerComplete', 'pushGoalMilestones', 'pushDailyPlanner', 'journalReminderTime', 'moodCheckinTimes', 'streakAlertTime', 'dailyPlannerTime', 'habitReminderTime'];
       const updates: any = { updatedAt: new Date() };
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -4984,17 +4984,32 @@ Respond in plain text, not JSON.`;
       const tasksToday = todayPlan?.tasks || [];
       const completedToday = tasksToday.filter(t => t.completed).length;
 
-      const prompt = `Generate a brief, personalized daily motivation for someone working on: "${habit.title}"
+      const userTz = userForMotiv?.timezone || "America/Chicago";
+      let userLocalHour = new Date().getHours();
+      let timeOfDay = "morning";
+      try {
+        const parts = new Intl.DateTimeFormat("en-US", { timeZone: userTz, hour: "numeric", hour12: false }).formatToParts(new Date());
+        userLocalHour = parseInt(parts.find(p => p.type === "hour")?.value || "12");
+      } catch {}
+      if (userLocalHour >= 5 && userLocalHour < 12) timeOfDay = "morning";
+      else if (userLocalHour >= 12 && userLocalHour < 17) timeOfDay = "afternoon";
+      else if (userLocalHour >= 17 && userLocalHour < 21) timeOfDay = "evening";
+      else timeOfDay = "night";
 
+      const prompt = `Generate a brief, personalized motivation for someone working on: "${habit.title}"
+
+Current time of day for user: ${timeOfDay} (${userLocalHour}:00 local time)
 Today's plan: ${tasksToday.length} tasks, ${completedToday} completed
 Current streak: ${habit.currentStreak || 0} days
 ${todayPlan?.focus ? `Today's focus: ${todayPlan.focus}` : ''}
 
+IMPORTANT: Tailor your message to the time of day. If it's evening or night, do NOT say "start your day" or "good morning". Reference the appropriate time context naturally (e.g. "wind down", "finish strong", "reflect on today", "great progress today").
+
 Return JSON with:
 {
-  "morningMotivation": "Brief inspiring message for starting the day (1-2 sentences)",
-  "focusReminder": "What to focus on today specifically",
-  "quickTip": "One quick tip for success today",
+  "morningMotivation": "Brief inspiring message appropriate for the time of day (1-2 sentences)",
+  "focusReminder": "What to focus on right now specifically",
+  "quickTip": "One quick tip for success",
   "streakMessage": "Message about their streak (encouraging if high, supportive if low)"
 }`;
 

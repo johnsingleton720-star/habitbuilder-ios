@@ -1,10 +1,10 @@
 import { db } from "./db";
-import { users, habits } from "@shared/schema";
+import { users, habits, habitReminders, quickTasks, goalMilestones, goals } from "@shared/schema";
 import { eq, and, isNotNull, or } from "drizzle-orm";
 import { sendDailyReminderEmail, sendWeeklyDigestEmail } from "./email";
 import { sendPushToUser } from "./pushNotifications";
 
-function getUserLocalTime(timezone: string | null): { hour: number; minute: number; dayOfWeek: number; dateStr: string } {
+function getUserLocalTime(timezone: string | null): { hour: number; minute: number; dayOfWeek: number; dateStr: string; dayName: string } {
   const tz = timezone || "America/Chicago";
   try {
     const now = new Date();
@@ -26,21 +26,32 @@ function getUserLocalTime(timezone: string | null): { hour: number; minute: numb
     const month = parts.find(p => p.type === "month")?.value || "01";
     const day = parts.find(p => p.type === "day")?.value || "01";
     const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const dayNameMap: Record<string, string> = { Sun: "sunday", Mon: "monday", Tue: "tuesday", Wed: "wednesday", Thu: "thursday", Fri: "friday", Sat: "saturday" };
     return {
       hour,
       minute,
       dayOfWeek: dayMap[weekday] ?? 1,
       dateStr: `${year}-${month}-${day}`,
+      dayName: dayNameMap[weekday] ?? "monday",
     };
   } catch {
     const now = new Date();
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     return {
       hour: now.getUTCHours(),
       minute: now.getUTCMinutes(),
       dayOfWeek: now.getUTCDay(),
       dateStr: now.toISOString().split("T")[0],
+      dayName: days[now.getUTCDay()],
     };
   }
+}
+
+function isTimeMatch(localTime: { hour: number; minute: number }, targetTime: string): boolean {
+  const [prefHour, prefMinute] = targetTime.split(":").map(Number);
+  if (localTime.hour !== prefHour) return false;
+  if (localTime.minute > (prefMinute + 14)) return false;
+  return true;
 }
 
 async function processDailyReminders() {
@@ -57,11 +68,8 @@ async function processDailyReminders() {
     for (const u of eligibleUsers) {
       const localTime = getUserLocalTime(u.timezone);
       const preferredTime = u.dailyReminderTime || "08:00";
-      const [prefHour, prefMinute] = preferredTime.split(":").map(Number);
 
-      if (localTime.hour !== prefHour) continue;
-      if (localTime.minute > (prefMinute + 14)) continue;
-
+      if (!isTimeMatch(localTime, preferredTime)) continue;
       if (u.lastDailyReminderSent === localTime.dateStr) continue;
 
       try {
@@ -202,21 +210,396 @@ async function processWeeklyDigests() {
   }
 }
 
+async function processJournalReminders() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        eq(users.pushJournalReminder, true)
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+      const reminderTime = u.journalReminderTime || "20:00";
+
+      if (!isTimeMatch(localTime, reminderTime)) continue;
+      if (u.lastJournalReminderSent === localTime.dateStr) continue;
+
+      try {
+        await sendPushToUser(u.id, {
+          title: "Journal Time",
+          body: "Time to reflect \u2014 open your journal",
+          url: "/journal",
+          tag: "journal-reminder",
+        });
+        pushSent++;
+        console.log(`[Scheduler] Journal reminder push sent to user ${u.id}`);
+
+        await db.update(users).set({ lastJournalReminderSent: localTime.dateStr }).where(eq(users.id, u.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed journal reminder for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Journal reminders: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing journal reminders:", error);
+  }
+}
+
+async function processMoodCheckins() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        eq(users.pushMoodCheckin, true)
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+      const checkinTimes = (u.moodCheckinTimes as string[]) || ["09:00", "14:00", "20:00"];
+
+      const matchingTime = checkinTimes.find(t => isTimeMatch(localTime, t));
+      if (!matchingTime) continue;
+
+      const sentTracker = (u.lastMoodCheckinSent as Record<string, string>) || {};
+      const dedupeKey = `${localTime.dateStr}_${matchingTime}`;
+      if (sentTracker[dedupeKey]) continue;
+
+      try {
+        await sendPushToUser(u.id, {
+          title: "Mood Check-in",
+          body: "Quick check-in \u2014 how are you feeling?",
+          url: "/mood",
+          tag: `mood-checkin-${matchingTime}`,
+        });
+        pushSent++;
+        console.log(`[Scheduler] Mood check-in push sent to user ${u.id} for ${matchingTime}`);
+
+        const updatedTracker = { ...sentTracker, [dedupeKey]: localTime.dateStr };
+        const oldKeys = Object.keys(updatedTracker).filter(k => !k.startsWith(localTime.dateStr));
+        for (const k of oldKeys) delete updatedTracker[k];
+
+        await db.update(users).set({ lastMoodCheckinSent: updatedTracker }).where(eq(users.id, u.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed mood check-in for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Mood check-ins: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing mood check-ins:", error);
+  }
+}
+
+async function processStreakAlerts() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        eq(users.pushStreakAlerts, true)
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+      const alertTime = u.streakAlertTime || "19:00";
+
+      if (!isTimeMatch(localTime, alertTime)) continue;
+      if (u.lastStreakAlertSent === localTime.dateStr) continue;
+
+      try {
+        const userHabits = await db.query.habits.findMany({
+          where: eq(habits.userId, u.id),
+        });
+
+        const atRiskHabits = userHabits.filter(h => {
+          if (!h.currentStreak || h.currentStreak <= 0) return false;
+          if (h.archived) return false;
+          const progress = h.progress as any[];
+          if (!Array.isArray(progress)) return true;
+          return !progress.some((p: any) => p.date === localTime.dateStr);
+        });
+
+        if (atRiskHabits.length > 0) {
+          const topAtRisk = atRiskHabits.sort((a, b) => (b.currentStreak || 0) - (a.currentStreak || 0))[0];
+          const body = atRiskHabits.length === 1
+            ? `Your ${topAtRisk.currentStreak}-day streak for ${topAtRisk.title} is at risk!`
+            : `${atRiskHabits.length} streaks at risk! Your ${topAtRisk.currentStreak}-day streak for ${topAtRisk.title} needs attention.`;
+
+          await sendPushToUser(u.id, {
+            title: "Streak Alert",
+            body,
+            url: "/",
+            tag: "streak-alert",
+          });
+          pushSent++;
+          console.log(`[Scheduler] Streak alert push sent to user ${u.id}`);
+        }
+
+        await db.update(users).set({ lastStreakAlertSent: localTime.dateStr }).where(eq(users.id, u.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed streak alert for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Streak alerts: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing streak alerts:", error);
+  }
+}
+
+async function processHabitReminders() {
+  try {
+    const allReminders = await db.query.habitReminders.findMany({
+      where: eq(habitReminders.enabled, true),
+    });
+
+    if (allReminders.length === 0) return;
+
+    const userIdSet = new Set(allReminders.map(r => r.userId));
+    const userIds = Array.from(userIdSet);
+    const usersData = await db.query.users.findMany({
+      where: or(...userIds.map(id => eq(users.id, id))),
+    });
+    const usersMap = new Map(usersData.map(u => [u.id, u]));
+
+    const habitIdSet = new Set(allReminders.map(r => r.habitId));
+    const habitIds = Array.from(habitIdSet);
+    const habitsData = await db.query.habits.findMany({
+      where: or(...habitIds.map(id => eq(habits.id, id))),
+    });
+    const habitsMap = new Map(habitsData.map(h => [h.id, h]));
+
+    let pushSent = 0;
+    for (const reminder of allReminders) {
+      const user = usersMap.get(reminder.userId);
+      if (!user) continue;
+      if (!user.pushNotificationsEnabled || !user.pushHabitReminders) continue;
+
+      const habit = habitsMap.get(reminder.habitId);
+      if (!habit || habit.archived) continue;
+
+      const localTime = getUserLocalTime(user.timezone);
+
+      const reminderDays = (reminder.days as string[]) || [];
+      if (reminderDays.length > 0 && !reminderDays.includes(localTime.dayName)) continue;
+
+      if (!isTimeMatch(localTime, reminder.reminderTime)) continue;
+
+      const sentTracker = (user.lastHabitRemindersSent as Record<string, string>) || {};
+      const dedupeKey = `${reminder.habitId}_${localTime.dateStr}`;
+      if (sentTracker[dedupeKey]) continue;
+
+      try {
+        await sendPushToUser(user.id, {
+          title: "Habit Reminder",
+          body: `Time for ${habit.title}!`,
+          url: `/habits/${habit.id}`,
+          tag: `habit-reminder-${habit.id}`,
+        });
+        pushSent++;
+        console.log(`[Scheduler] Habit reminder push sent to user ${user.id} for habit ${habit.id}`);
+
+        const updatedTracker = { ...sentTracker, [dedupeKey]: localTime.dateStr };
+        const oldKeys = Object.keys(updatedTracker).filter(k => !k.endsWith(`_${localTime.dateStr}`));
+        for (const k of oldKeys) delete updatedTracker[k];
+
+        await db.update(users).set({ lastHabitRemindersSent: updatedTracker }).where(eq(users.id, user.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed habit reminder for user ${user.id}, habit ${habit.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Habit reminders: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing habit reminders:", error);
+  }
+}
+
+async function processDailyPlanner() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        eq(users.pushDailyPlanner, true)
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+      const plannerTime = u.dailyPlannerTime || "07:00";
+
+      if (!isTimeMatch(localTime, plannerTime)) continue;
+      if (u.lastDailyPlannerSent === localTime.dateStr) continue;
+
+      try {
+        const userTasks = await db.query.quickTasks.findMany({
+          where: and(
+            eq(quickTasks.userId, u.id),
+            eq(quickTasks.date, localTime.dateStr),
+            eq(quickTasks.completed, false)
+          ),
+        });
+
+        const userHabits = await db.query.habits.findMany({
+          where: eq(habits.userId, u.id),
+        });
+
+        let habitTaskCount = 0;
+        for (const habit of userHabits) {
+          if (habit.archived) continue;
+          const plans = habit.dailyPlans as any[];
+          if (Array.isArray(plans)) {
+            const todayPlan = plans.find((p: any) => p.date === localTime.dateStr);
+            if (todayPlan && todayPlan.tasks) {
+              habitTaskCount += (todayPlan.tasks as any[]).filter((t: any) => !t.completed).length;
+            }
+          }
+        }
+
+        const totalTasks = userTasks.length + habitTaskCount;
+
+        if (totalTasks > 0) {
+          await sendPushToUser(u.id, {
+            title: "Daily Planner",
+            body: `You have ${totalTasks} task${totalTasks !== 1 ? "s" : ""} planned for today`,
+            url: "/planner",
+            tag: "daily-planner",
+          });
+          pushSent++;
+          console.log(`[Scheduler] Daily planner push sent to user ${u.id}`);
+        }
+
+        await db.update(users).set({ lastDailyPlannerSent: localTime.dateStr }).where(eq(users.id, u.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed daily planner for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Daily planner: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing daily planner:", error);
+  }
+}
+
+async function processGoalMilestones() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        eq(users.pushGoalMilestones, true)
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+
+      if (u.lastGoalMilestoneSent === localTime.dateStr) continue;
+
+      try {
+        const userGoals = await db.query.goals.findMany({
+          where: eq(goals.userId, u.id),
+        });
+
+        if (userGoals.length === 0) {
+          await db.update(users).set({ lastGoalMilestoneSent: localTime.dateStr }).where(eq(users.id, u.id));
+          continue;
+        }
+
+        const allMilestones = await db.query.goalMilestones.findMany({
+          where: eq(goalMilestones.userId, u.id),
+        });
+
+        const newlyCompleted = allMilestones.filter(m => {
+          if (!m.isCompleted || !m.completedAt) return false;
+          const completedDate = new Date(m.completedAt).toISOString().split("T")[0];
+          return completedDate === localTime.dateStr;
+        });
+
+        if (newlyCompleted.length > 0) {
+          const milestone = newlyCompleted[0];
+          const body = newlyCompleted.length === 1
+            ? `You hit a new milestone! ${milestone.title}`
+            : `You hit ${newlyCompleted.length} new milestones! ${milestone.title} and more`;
+
+          await sendPushToUser(u.id, {
+            title: "Milestone Reached",
+            body,
+            url: "/goals",
+            tag: "goal-milestone",
+          });
+          pushSent++;
+          console.log(`[Scheduler] Goal milestone push sent to user ${u.id}`);
+        }
+
+        await db.update(users).set({ lastGoalMilestoneSent: localTime.dateStr }).where(eq(users.id, u.id));
+      } catch (err) {
+        console.error(`[Scheduler] Failed goal milestone for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Goal milestones: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing goal milestones:", error);
+  }
+}
+
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
+
+function runAllSchedulerTasks() {
+  processDailyReminders();
+  processWeeklyDigests();
+  processJournalReminders();
+  processMoodCheckins();
+  processStreakAlerts();
+  processHabitReminders();
+  processDailyPlanner();
+  processGoalMilestones();
+}
 
 export function startEmailScheduler() {
   if (schedulerInterval) return;
 
-  console.log("[EmailScheduler] Starting email scheduler (checks every 15 minutes)");
+  console.log("[EmailScheduler] Starting scheduler (checks every 15 minutes) - all notification types enabled");
 
   setTimeout(() => {
-    processDailyReminders();
-    processWeeklyDigests();
+    runAllSchedulerTasks();
   }, 10000);
 
   schedulerInterval = setInterval(() => {
-    processDailyReminders();
-    processWeeklyDigests();
+    runAllSchedulerTasks();
   }, 15 * 60 * 1000);
 }
 

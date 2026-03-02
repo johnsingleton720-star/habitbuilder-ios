@@ -1461,58 +1461,112 @@ export default function Account() {
                   <div className="border-t pt-4 space-y-3">
                     <p className="text-sm font-medium text-muted-foreground">Notification Types</p>
                     {[
-                      { key: "pushHabitReminders", label: "Habit Reminders", description: "Get reminded to complete your habits" },
-                      { key: "pushStreakAlerts", label: "Streak Alerts", description: "Alerts when your streak is at risk" },
-                      { key: "pushJournalReminder", label: "Journal Reminder", description: "Daily reminder to write in your journal" },
-                      { key: "pushMoodCheckin", label: "Mood Check-in", description: "Periodic reminders to log your mood" },
-                      { key: "pushTimerComplete", label: "Timer Complete", description: "Notification when your focus timer ends" },
-                      { key: "pushGoalMilestones", label: "Goal Milestones", description: "Celebrate when you hit goal milestones" },
-                      { key: "pushDailyPlanner", label: "Daily Planner", description: "Reminders about your planned tasks" },
-                    ].map(({ key, label, description }) => (
-                      <div key={key} className="flex items-center justify-between gap-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-sm font-medium" data-testid={`label-${key}`}>{label}</Label>
-                          <p className="text-xs text-muted-foreground">{description}</p>
+                      { key: "pushHabitReminders", label: "Habit Reminders", description: "Get reminded to complete your habits", timeKey: "habitReminderTime", timeDefault: "08:00", timeLabel: "Daily reminder time" },
+                      { key: "pushStreakAlerts", label: "Streak Alerts", description: "Alerts when your streak is at risk", timeKey: "streakAlertTime", timeDefault: "19:00", timeLabel: "Streak check time" },
+                      { key: "pushJournalReminder", label: "Journal Reminder", description: "Daily reminder to write in your journal", timeKey: "journalReminderTime", timeDefault: "20:00", timeLabel: "Journal reminder time" },
+                      { key: "pushMoodCheckin", label: "Mood Check-in", description: "Periodic reminders to log your mood", timeKey: "moodCheckinTimes", timeDefault: null, timeLabel: "Check-in times" },
+                      { key: "pushTimerComplete", label: "Timer Complete", description: "Notification when your focus timer ends", timeKey: null, timeDefault: null, timeLabel: null },
+                      { key: "pushGoalMilestones", label: "Goal Milestones", description: "Celebrate when you hit goal milestones", timeKey: null, timeDefault: null, timeLabel: null },
+                      { key: "pushDailyPlanner", label: "Daily Planner", description: "Reminders about your planned tasks", timeKey: "dailyPlannerTime", timeDefault: "07:00", timeLabel: "Planner summary time" },
+                    ].map(({ key, label, description, timeKey, timeDefault, timeLabel }) => (
+                      <div key={key} className="space-y-2">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="space-y-0.5">
+                            <Label className="text-sm font-medium" data-testid={`label-${key}`}>{label}</Label>
+                            <p className="text-xs text-muted-foreground">{description}</p>
+                          </div>
+                          <Switch
+                            checked={(user as any)?.[key] !== false}
+                            onCheckedChange={(checked) => {
+                              apiRequest("PATCH", "/api/user/notification-preferences", { [key]: checked })
+                                .then(() => {
+                                  queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                                  toast({ title: `${label} ${checked ? "enabled" : "disabled"}` });
+                                })
+                                .catch(() => {
+                                  toast({ title: "Failed to update preference", variant: "destructive" });
+                                });
+                            }}
+                            data-testid={`switch-${key}`}
+                          />
                         </div>
-                        <Switch
-                          checked={(user as any)?.[key] !== false}
-                          onCheckedChange={(checked) => {
-                            apiRequest("PATCH", "/api/user/notification-preferences", { [key]: checked })
-                              .then(() => {
-                                queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                                toast({ title: `${label} ${checked ? "enabled" : "disabled"}` });
-                              })
-                              .catch(() => {
-                                toast({ title: "Failed to update preference", variant: "destructive" });
-                              });
-                          }}
-                          data-testid={`switch-${key}`}
-                        />
+                        {(user as any)?.[key] !== false && timeKey && timeKey !== "moodCheckinTimes" && (
+                          <div className="flex items-center gap-2 pl-1">
+                            <Input
+                              type="time"
+                              value={(user as any)?.[timeKey] || timeDefault || "08:00"}
+                              onChange={(e) => {
+                                const time = e.target.value;
+                                apiRequest("PATCH", "/api/user/notification-preferences", { [timeKey]: time })
+                                  .then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                                    toast({ title: `${timeLabel} set to ${time}` });
+                                  })
+                                  .catch(() => {
+                                    toast({ title: "Failed to update time", variant: "destructive" });
+                                  });
+                              }}
+                              className="w-32"
+                              data-testid={`input-${timeKey}`}
+                            />
+                            <p className="text-xs text-muted-foreground">{timeLabel}</p>
+                          </div>
+                        )}
+                        {(user as any)?.[key] !== false && timeKey === "moodCheckinTimes" && (
+                          <div className="space-y-2 pl-1">
+                            <p className="text-xs text-muted-foreground">{timeLabel}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {((user as any)?.moodCheckinTimes || ["09:00", "14:00", "20:00"]).map((time: string, idx: number) => (
+                                <div key={idx} className="flex items-center gap-1">
+                                  <Input
+                                    type="time"
+                                    value={time}
+                                    onChange={(e) => {
+                                      const newTimes = [...((user as any)?.moodCheckinTimes || ["09:00", "14:00", "20:00"])];
+                                      newTimes[idx] = e.target.value;
+                                      apiRequest("PATCH", "/api/user/notification-preferences", { moodCheckinTimes: newTimes })
+                                        .then(() => {
+                                          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                                          toast({ title: `Mood check-in time ${idx + 1} set to ${e.target.value}` });
+                                        })
+                                        .catch(() => {
+                                          toast({ title: "Failed to update check-in time", variant: "destructive" });
+                                        });
+                                    }}
+                                    className="w-32"
+                                    data-testid={`input-moodCheckinTime-${idx}`}
+                                  />
+                                  {idx < 2 && <span className="text-xs text-muted-foreground">,</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                   <div className="border-t pt-4 space-y-3">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium" data-testid="label-journal-reminder-time">Journal Reminder Time</Label>
+                      <Label className="text-sm font-medium" data-testid="label-daily-reminder-time">Daily Morning Reminder Time</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="time"
-                          value={user?.journalReminderTime || "20:00"}
+                          value={user?.dailyReminderTime || "08:00"}
                           onChange={(e) => {
                             const time = e.target.value;
-                            apiRequest("PATCH", "/api/user/notification-preferences", { journalReminderTime: time })
+                            apiRequest("PATCH", "/api/user/email-preferences", { dailyReminderTime: time })
                               .then(() => {
                                 queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                                toast({ title: `Journal reminder set to ${time}` });
+                                toast({ title: `Daily morning reminder set to ${time}` });
                               })
                               .catch(() => {
                                 toast({ title: "Failed to update reminder time", variant: "destructive" });
                               });
                           }}
                           className="w-32"
-                          data-testid="input-journal-reminder-time"
+                          data-testid="input-daily-reminder-time"
                         />
-                        <p className="text-xs text-muted-foreground">When to receive your journal reminder</p>
+                        <p className="text-xs text-muted-foreground">When to receive your daily morning reminder</p>
                       </div>
                     </div>
                   </div>
