@@ -50,6 +50,10 @@ export default function Analytics() {
   const { isPremium, canUseFeature, getUpgradeMessage } = useSubscription();
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("month");
+  const [aiReport, setAiReport] = useState<string | null>(() => {
+    try { return sessionStorage.getItem("aiReport"); } catch { return null; }
+  });
+  const [activeTab, setActiveTab] = useState("trends");
 
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics", timeRange],
@@ -73,6 +77,10 @@ export default function Analytics() {
       return res.json();
     },
     onSuccess: (data) => {
+      const insights = data.insights || null;
+      setAiReport(insights);
+      try { if (insights) sessionStorage.setItem("aiReport", insights); } catch {}
+      setActiveTab("insights");
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       toast({
         title: "Report Generated",
@@ -295,7 +303,7 @@ export default function Analytics() {
             </motion.div>
           </div>
 
-          <Tabs defaultValue="trends" className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList>
               <TabsTrigger value="trends" data-testid="tab-trends">Trends</TabsTrigger>
               <TabsTrigger value="habits" data-testid="tab-habits">By Habit</TabsTrigger>
@@ -400,11 +408,56 @@ export default function Analytics() {
             </TabsContent>
 
             <TabsContent value="insights" className="space-y-4">
+              {aiReport && (
+                <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-purple-500/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      AI Coach Report
+                      <Badge variant="secondary" className="ml-auto text-xs">AI Generated</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Personalized insights based on your habit data
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3" data-testid="ai-report-content">
+                      {aiReport.split("\n").filter(line => line.trim()).map((line, i) => (
+                        <motion.p
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="text-sm leading-relaxed"
+                        >
+                          {line}
+                        </motion.p>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => generateReportMutation.mutate()}
+                      disabled={generateReportMutation.isPending}
+                      data-testid="button-regenerate-report"
+                    >
+                      {generateReportMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      Regenerate Report
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    AI-Powered Insights
+                    <Brain className="w-5 h-5 text-primary" />
+                    Data Patterns
                   </CardTitle>
                   <CardDescription>
                     Patterns and correlations discovered in your habit data
@@ -437,17 +490,18 @@ export default function Analytics() {
                         </div>
                       </motion.div>
                     ))}
-                    {analyticsData.correlations.length === 0 && (
+                    {!aiReport && analyticsData.correlations.length === 0 && (
                       <div className="text-center py-8">
                         <Brain className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
                         <p className="text-muted-foreground">
-                          Keep tracking your habits to unlock AI insights
+                          Generate an AI report to get personalized insights
                         </p>
                         <Button
                           variant="outline"
                           className="mt-4"
                           onClick={() => generateReportMutation.mutate()}
                           disabled={generateReportMutation.isPending}
+                          data-testid="button-generate-insights"
                         >
                           {generateReportMutation.isPending ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
