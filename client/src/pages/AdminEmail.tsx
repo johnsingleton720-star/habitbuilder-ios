@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Link } from "wouter";
 import {
-  Mail, Send, Users, ArrowLeft, Loader2, CheckCircle, AlertCircle, Crown, Star
+  Mail, Send, Users, ArrowLeft, Loader2, CheckCircle, AlertCircle, Crown, Star, Sparkles
 } from "lucide-react";
 
 interface Recipient {
@@ -50,6 +50,32 @@ export default function AdminEmail() {
   const [singleEmail, setSingleEmail] = useState("");
   const [sendMode, setSendMode] = useState<"bulk" | "single">("bulk");
   const [lastResult, setLastResult] = useState<SendResult | null>(null);
+  const [campaignResult, setCampaignResult] = useState<SendResult | null>(null);
+
+  const { data: campaignPreview } = useQuery<{ count: number }>({
+    queryKey: ["/api/admin/emails/welcome-campaign/preview"],
+  });
+
+  const campaignMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/emails/welcome-campaign");
+      return res.json() as Promise<SendResult>;
+    },
+    onSuccess: (result) => {
+      setCampaignResult(result);
+      toast({
+        title: "Welcome Campaign Sent",
+        description: `Successfully sent ${result.sent} email(s)${result.failed > 0 ? `, ${result.failed} failed` : ''}.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Campaign Failed",
+        description: err.message || "Could not send welcome campaign.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: recipientData, isLoading: isLoadingRecipients } = useQuery<RecipientsResponse>({
     queryKey: ["/api/admin/emails/recipients", recipientFilter],
@@ -139,6 +165,72 @@ export default function AdminEmail() {
           </Link>
         </div>
       </div>
+
+      <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
+            Welcome Campaign
+          </CardTitle>
+          <CardDescription>
+            Send a polished welcome + upgrade email to all free-tier users
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">
+                This sends a professionally designed email that welcomes free users, highlights what they can already do, shows what Pro and Premium unlock, and invites feedback.
+              </p>
+              <p className="text-sm font-medium mt-2" data-testid="text-campaign-recipient-count">
+                {campaignPreview?.count ?? "..."} free-tier user(s) will receive this email
+              </p>
+            </div>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
+              disabled={campaignMutation.isPending || (campaignPreview?.count ?? 0) === 0}
+              data-testid="button-send-welcome-campaign"
+              onClick={() => {
+                const count = campaignPreview?.count ?? 0;
+                if (window.confirm(`Send the welcome + upgrade email to ${count} free-tier user(s)? This cannot be undone.`)) {
+                  campaignMutation.mutate();
+                }
+              }}
+            >
+              {campaignMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              Send Welcome Campaign
+            </Button>
+          </div>
+
+          {campaignResult && (
+            <div className="mt-4 p-3 rounded-lg border bg-background">
+              <div className="flex items-start gap-2">
+                {campaignResult.failed === 0 ? (
+                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {campaignResult.sent} sent{campaignResult.failed > 0 ? `, ${campaignResult.failed} failed` : ''}
+                  </p>
+                  {campaignResult.errors.length > 0 && (
+                    <ul className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                      {campaignResult.errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

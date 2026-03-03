@@ -13,7 +13,7 @@ import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushT
 import crypto from "crypto";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
-import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail } from "./email";
+import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
 import { format } from "date-fns";
 
 function getUserToday(timezone?: string | null): string {
@@ -5356,6 +5356,65 @@ Return JSON with:
     } catch (error) {
       console.error("Error fetching email recipients:", error);
       res.status(500).json({ error: "Failed to fetch recipients" });
+    }
+  });
+
+  app.get("/api/admin/emails/welcome-campaign/preview", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const testDomains = ['@example.com', '@test.com', '@example.org'];
+      const allUsers = await db.select({ email: users.email, tier: users.subscriptionTier }).from(users);
+      const freeUsers = allUsers
+        .filter(u => u.email && !testDomains.some(d => u.email!.toLowerCase().endsWith(d)))
+        .filter(u => u.tier === "free");
+
+      res.json({ count: freeUsers.length });
+    } catch (error) {
+      console.error("Error previewing welcome campaign:", error);
+      res.status(500).json({ error: "Failed to preview campaign" });
+    }
+  });
+
+  app.post("/api/admin/emails/welcome-campaign", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const testDomains = ['@example.com', '@test.com', '@example.org'];
+      const allUsers = await db.select({ email: users.email, tier: users.subscriptionTier }).from(users);
+      const freeEmails = allUsers
+        .filter(u => u.email && !testDomains.some(d => u.email!.toLowerCase().endsWith(d)))
+        .filter(u => u.tier === "free")
+        .map(u => u.email!);
+
+      if (freeEmails.length === 0) {
+        return res.status(400).json({ error: "No free-tier users with email addresses found" });
+      }
+
+      console.log(`Welcome campaign: sending to ${freeEmails.length} free-tier users`);
+
+      const results = await sendWelcomeCampaignEmail({ toEmails: freeEmails });
+
+      console.log(`Welcome campaign result: sent=${results.sent}, failed=${results.failed}`);
+
+      res.json({
+        success: true,
+        totalRecipients: freeEmails.length,
+        sent: results.sent,
+        failed: results.failed,
+        errors: results.errors.slice(0, 10),
+      });
+    } catch (error) {
+      console.error("Error sending welcome campaign:", error);
+      res.status(500).json({ error: "Failed to send welcome campaign" });
     }
   });
 
