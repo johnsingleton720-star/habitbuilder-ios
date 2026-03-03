@@ -20,34 +20,20 @@ workflows:
         script: npx cap sync ios
       - name: Fix Podfile for archive
         script: |
-          cat > ios/App/Podfile << 'EOF'
-          require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
-
-          platform :ios, '16.0'
-          use_frameworks!
-
-          install! 'cocoapods', :disable_input_output_paths => true
-
-          def capacitor_pods
-            pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
-            pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-          end
-
-          target 'App' do
-            capacitor_pods
-          end
-
-          post_install do |installer|
-            assertDeploymentTarget(installer)
-            installer.pods_project.targets.each do |target|
-              target.shell_script_build_phases.each do |phase|
-                if phase.name == '[CP] Embed Pods Frameworks'
-                  phase.shell_script = "echo 'Skipping embed frameworks'"
-                end
-              end
+          cd ios/App
+          ruby -i -pe '
+            if /assertDeploymentTarget\(installer\)/ =~ $_
+              $_ += "    installer.pods_project.targets.each do |target|\n"
+              $_ += "      target.shell_script_build_phases.each do |phase|\n"
+              $_ += "        if phase.name == \"[CP] Embed Pods Frameworks\"\n"
+              $_ += "          phase.shell_script = \"echo Skipping embed frameworks\"\n"
+              $_ += "        end\n"
+              $_ += "      end\n"
+              $_ += "    end\n"
             end
-          end
-          EOF
+          ' Podfile
+          echo "=== Final Podfile ==="
+          cat Podfile
       - name: Install CocoaPods
         script: |
           cd ios/App
@@ -90,6 +76,16 @@ workflows:
           }
           ICONEOF
           fi
+      - name: Register URL scheme for deep links
+        script: |
+          cd ios/App/App
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string habitbuilder" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
+          echo "=== Registered URL Schemes ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
       - name: Build archive
         script: |
           cd ios/App

@@ -17,12 +17,12 @@ const AUTH_BASE_URL = 'https://habitbuilder.pro';
 async function openAuthFlow() {
   if (isNative()) {
     try {
-      const CdvBrowser = (window as any).Capacitor?.Plugins?.Browser;
-      if (CdvBrowser) {
-        await CdvBrowser.open({ url: `${AUTH_BASE_URL}/api/login` });
-        return;
-      }
-    } catch {}
+      const { Browser } = await import('@capacitor/browser');
+      await Browser.open({ url: `${AUTH_BASE_URL}/api/login?returnTo=/api/auth/native-complete` });
+      return;
+    } catch (e) {
+      console.warn('Browser plugin not available, using webview redirect:', e);
+    }
   }
   window.location.href = "/api/login";
 }

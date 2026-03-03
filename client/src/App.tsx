@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { PageTransition } from "@/components/PageTransition";
+import { isNative } from "@/lib/platform";
+import { apiRequest } from "@/lib/queryClient";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -155,12 +157,50 @@ function Router() {
   );
 }
 
+function NativeAuthHandler() {
+  useEffect(() => {
+    if (!isNative()) return;
+
+    let cleanup: (() => void) | undefined;
+
+    (async () => {
+      try {
+        const { App: CapApp } = await import('@capacitor/app');
+        const listener = await CapApp.addListener('appUrlOpen', async (event: { url: string }) => {
+          const url = event.url;
+          if (url.startsWith('habitbuilder://auth')) {
+            const params = new URL(url.replace('habitbuilder://', 'https://placeholder/'));
+            const token = params.searchParams.get('token');
+            if (token) {
+              try {
+                await apiRequest('POST', '/api/auth/exchange-token', { token });
+                queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+                window.location.href = '/';
+              } catch (err) {
+                console.error('Token exchange failed:', err);
+              }
+            }
+          }
+        });
+        cleanup = () => listener.remove();
+      } catch (e) {
+        console.warn('Capacitor App plugin not available:', e);
+      }
+    })();
+
+    return () => { if (cleanup) cleanup(); };
+  }, []);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
           <Toaster />
+          <NativeAuthHandler />
           <Router />
           <MobileBottomNav />
           <CookieConsent />

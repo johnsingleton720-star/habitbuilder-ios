@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@bubblewrap/cli": "^1.24.1",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/browser": "^8.0.1",
     "@capacitor/cli": "^7.5.0",
     "@capacitor/core": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
@@ -56,6 +58,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
+    "cordova-plugin-purchase": "^13.13.1",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.1",

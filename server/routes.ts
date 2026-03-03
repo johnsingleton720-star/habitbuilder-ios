@@ -134,11 +134,70 @@ async function autoSeedTemplates() {
   }
 }
 
+const nativeAuthTokens = new Map<string, { userId: number; expiresAt: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of nativeAuthTokens) {
+    if (data.expiresAt < now) nativeAuthTokens.delete(token);
+  }
+}, 60000);
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
+
+  app.get("/api/auth/native-complete", (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.redirect("/api/login?returnTo=/api/auth/native-complete");
+    }
+    const claims = (req.user as any).claims;
+    if (!claims?.sub) {
+      return res.status(400).send("Invalid user session");
+    }
+    const token = crypto.randomBytes(32).toString("hex");
+    const userId = parseInt(claims.sub, 10) || 0;
+    nativeAuthTokens.set(token, { userId, expiresAt: Date.now() + 120000 });
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1a12;color:#fff"><div style="text-align:center"><p>Login successful! Returning to app...</p><script>window.location.href="habitbuilder://auth?token=${token}";</script><p style="margin-top:20px;font-size:14px;opacity:0.7"><a href="habitbuilder://auth?token=${token}" style="color:#4ade80">Tap here if not redirected automatically</a></p></div></body></html>`);
+  });
+
+  app.post("/api/auth/exchange-token", async (req, res) => {
+    const { token } = req.body;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ error: "Token required" });
+    }
+    const data = nativeAuthTokens.get(token);
+    if (!data) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+    if (data.expiresAt < Date.now()) {
+      nativeAuthTokens.delete(token);
+      return res.status(401).json({ error: "Token expired" });
+    }
+    nativeAuthTokens.delete(token);
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, data.userId)).limit(1);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const sessionUser = { claims: { sub: String(user.id), email: user.email, first_name: user.firstName, last_name: user.lastName, profile_image: user.profileImageUrl } };
+      req.login(sessionUser, (err) => {
+        if (err) {
+          console.error("Native token exchange login error:", err);
+          return res.status(500).json({ error: "Session creation failed" });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) console.error("Session save error:", saveErr);
+          res.json({ success: true, user });
+        });
+      });
+    } catch (err) {
+      console.error("Token exchange error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   app.get("/playstore-assets.zip", (_req, res) => {
     const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "playstore-assets.zip");

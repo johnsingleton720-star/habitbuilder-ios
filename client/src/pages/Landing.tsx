@@ -210,12 +210,12 @@ async function openAuthFlowWithUtm() {
   const { isNative } = await import("@/lib/platform");
   if (isNative()) {
     try {
-      const CdvBrowser = (window as any).Capacitor?.Plugins?.Browser;
-      if (CdvBrowser) {
-        await CdvBrowser.open({ url: 'https://habitbuilder.pro/api/login' });
-        return;
-      }
-    } catch {}
+      const { Browser } = await import('@capacitor/browser');
+      await Browser.open({ url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete' });
+      return;
+    } catch (e) {
+      console.warn('Browser plugin not available, using webview redirect:', e);
+    }
   }
   window.location.href = "/api/login";
 }

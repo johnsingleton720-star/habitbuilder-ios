@@ -8,8 +8,6 @@ const config: CapacitorConfig = {
     url: 'https://habitbuilder.pro',
     cleartext: false,
     allowNavigation: [
-      'replit.com',
-      '*.replit.com',
       'habitbuilder.pro',
       '*.habitbuilder.pro',
     ],
