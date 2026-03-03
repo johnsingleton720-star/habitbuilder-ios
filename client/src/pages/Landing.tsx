@@ -195,21 +195,35 @@ function useIsMobile() {
   return isMobile;
 }
 
+async function openAuthFlowWithUtm() {
+  const stored = sessionStorage.getItem("utm_params");
+  if (stored) {
+    try {
+      await fetch("/api/store-utm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: stored,
+      });
+    } catch {}
+  }
+  const { isNative } = await import("@/lib/platform");
+  if (isNative()) {
+    try {
+      const CdvBrowser = (window as any).Capacitor?.Plugins?.Browser;
+      if (CdvBrowser) {
+        await CdvBrowser.open({ url: 'https://habitbuilder.pro/api/login' });
+        return;
+      }
+    } catch {}
+  }
+  window.location.href = "/api/login";
+}
+
 function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const handleContinue = async () => {
     onOpenChange(false);
-    const stored = sessionStorage.getItem("utm_params");
-    if (stored) {
-      try {
-        await fetch("/api/store-utm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: stored,
-        });
-      } catch {}
-    }
-    window.location.href = "/api/login";
+    await openAuthFlowWithUtm();
   };
 
   return (
@@ -220,7 +234,7 @@ function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         </DialogHeader>
         <div className="space-y-6 py-4">
           <p className="text-center text-muted-foreground text-sm">
-            Sign in securely with your existing account. No new password to remember.
+            Sign in securely — use your Google, Apple, or email account.
           </p>
           <div className="space-y-3">
             <button
@@ -272,7 +286,7 @@ function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             </button>
           </div>
           <p className="text-xs text-center text-muted-foreground bg-muted/40 rounded-lg p-3">
-            You'll be taken to a secure login page powered by Replit. Just tap <span className="font-semibold text-foreground">Allow</span> to sign in — or create a new account with email & password.
+            You'll be taken to a secure sign-in page. Choose Google, Apple, or create an account with email & password.
           </p>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">

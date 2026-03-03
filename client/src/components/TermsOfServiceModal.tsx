@@ -20,8 +20,8 @@ export function TermsOfServiceModal() {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-card text-card-foreground border rounded-md shadow-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 safe-bottom">
+      <div className="w-full max-w-2xl max-h-[85vh] flex flex-col bg-card text-card-foreground border rounded-md shadow-sm mb-[env(safe-area-inset-bottom,0px)]">
         <div className="p-6 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-primary" />

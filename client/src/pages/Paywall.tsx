@@ -482,11 +482,20 @@ export default function Paywall() {
         </div>
 
         <p className="text-xs text-center text-muted-foreground mt-6">
-          Secure payment powered by Stripe. Cancel anytime.
+          {isIOS() ? "Subscriptions managed through Apple. " : "Secure payment powered by Stripe. "}Cancel anytime.
         </p>
         <p className="text-xs text-center text-muted-foreground mt-1">
-          Prices in USD. International payments accepted worldwide.
+          Prices in USD. {isIOS() ? "Payment will be charged to your Apple ID account." : "International payments accepted worldwide."}
         </p>
+        <div className="flex items-center justify-center gap-3 mt-3">
+          <Link href="/terms">
+            <span className="text-xs text-primary underline underline-offset-2 cursor-pointer" data-testid="link-paywall-terms">Terms of Use</span>
+          </Link>
+          <span className="text-xs text-muted-foreground">|</span>
+          <Link href="/privacy">
+            <span className="text-xs text-primary underline underline-offset-2 cursor-pointer" data-testid="link-paywall-privacy">Privacy Policy</span>
+          </Link>
+        </div>
       </motion.div>
     </div>
   );

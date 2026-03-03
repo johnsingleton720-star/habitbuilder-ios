@@ -36,7 +36,7 @@ export function CookieConsent() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 40 }}
           transition={{ duration: 0.3 }}
-          className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none"
+          className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none pb-[env(safe-area-inset-bottom,0px)] mb-16 sm:mb-0"
         >
           <Card className="max-w-lg w-full p-4 pointer-events-auto shadow-lg" data-testid="card-cookie-consent">
             <div className="flex items-start gap-3">

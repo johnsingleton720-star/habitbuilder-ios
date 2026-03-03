@@ -16,6 +16,7 @@ export const APPLE_PRODUCT_IDS = {
 } as const;
 
 let storePlugin: any = null;
+let initialized = false;
 
 function getStore(): any {
   if (storePlugin) return storePlugin;
@@ -29,14 +30,65 @@ function getStore(): any {
   return null;
 }
 
+async function validateReceipt(receiptData: string, productId: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/apple/validate-receipt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ receiptData, productId }),
+    });
+    const data = await res.json();
+    return data.valid === true;
+  } catch (err) {
+    console.error('Receipt validation failed:', err);
+    return false;
+  }
+}
+
 export async function initializeAppleIAP(): Promise<boolean> {
   if (!isIOS()) return false;
+  if (initialized) return true;
+
   const store = getStore();
   if (!store) {
     console.warn('Apple IAP plugin not available - will be available in native build');
     return false;
   }
-  return true;
+
+  try {
+    const CdvPurchase = (window as any).CdvPurchase;
+    const Platform = CdvPurchase?.Platform;
+
+    if (Platform) {
+      const productList = Object.values(APPLE_PRODUCT_IDS).map(id => ({
+        id,
+        type: CdvPurchase.ProductType.PAID_SUBSCRIPTION,
+        platform: Platform.APPLE_APPSTORE,
+      }));
+      store.register(productList);
+
+      store.when()
+        .approved((transaction: any) => {
+          const receipt = transaction.parentReceipt?.nativeData?.appStoreReceipt;
+          if (receipt) {
+            validateReceipt(receipt, transaction.products?.[0]?.id || '');
+          }
+          transaction.verify();
+        })
+        .verified((receipt: any) => {
+          receipt.finish();
+        });
+
+      await store.initialize([Platform.APPLE_APPSTORE]);
+    }
+
+    initialized = true;
+    return true;
+  } catch (err) {
+    console.error('IAP initialization error:', err);
+    return false;
+  }
 }
 
 export async function purchaseProduct(productId: string): Promise<boolean> {
@@ -51,18 +103,36 @@ export async function purchaseProduct(productId: string): Promise<boolean> {
     return false;
   }
 
+  if (!initialized) {
+    const ready = await initializeAppleIAP();
+    if (!ready) return false;
+  }
+
   try {
+    const offer = store.get(productId);
+    if (!offer) {
+      console.error('Product not found:', productId);
+      return false;
+    }
+
     return new Promise((resolve) => {
-      store.order(productId).then(
-        () => resolve(true),
+      store.order(offer).then(
+        (result: any) => {
+          if (result && result.isError) {
+            console.error('Purchase error:', result);
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        },
         (err: any) => {
           console.error('Purchase failed:', err);
           resolve(false);
         }
       );
     });
-  } catch {
-    console.error('Purchase failed - IAP not available');
+  } catch (err) {
+    console.error('Purchase failed:', err);
     return false;
   }
 }
@@ -72,8 +142,13 @@ export async function restorePurchases(): Promise<boolean> {
   const store = getStore();
   if (!store) return false;
 
+  if (!initialized) {
+    const ready = await initializeAppleIAP();
+    if (!ready) return false;
+  }
+
   try {
-    store.refresh();
+    await store.restorePurchases();
     return true;
   } catch {
     return false;

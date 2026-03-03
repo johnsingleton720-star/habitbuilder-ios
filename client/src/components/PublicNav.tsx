@@ -10,11 +10,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { isNative } from "@/lib/platform";
+
+const AUTH_BASE_URL = 'https://habitbuilder.pro';
+
+async function openAuthFlow() {
+  if (isNative()) {
+    try {
+      const CdvBrowser = (window as any).Capacitor?.Plugins?.Browser;
+      if (CdvBrowser) {
+        await CdvBrowser.open({ url: `${AUTH_BASE_URL}/api/login` });
+        return;
+      }
+    } catch {}
+  }
+  window.location.href = "/api/login";
+}
 
 function NavLoginDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const handleContinue = () => {
     onOpenChange(false);
-    window.location.href = "/api/login";
+    openAuthFlow();
   };
 
   return (
@@ -25,7 +41,7 @@ function NavLoginDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
         </DialogHeader>
         <div className="space-y-6 py-4">
           <p className="text-center text-muted-foreground text-sm">
-            Sign in securely with your existing account. No new password to remember.
+            Sign in securely — use your Google, Apple, or email account.
           </p>
           <div className="space-y-3">
             <button
@@ -77,7 +93,7 @@ function NavLoginDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
             </button>
           </div>
           <p className="text-xs text-center text-muted-foreground bg-muted/40 rounded-lg p-3">
-            You'll be taken to a secure login page powered by Replit. Just tap <span className="font-semibold text-foreground">Allow</span> to sign in — or create a new account with email & password.
+            You'll be taken to a secure sign-in page. Choose Google, Apple, or create an account with email & password.
           </p>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
@@ -115,7 +131,7 @@ export function PublicNav() {
 
   const handleSignInClick = () => {
     setMobileMenuOpen(false);
-    window.location.href = "/api/login";
+    openAuthFlow();
   };
 
   return (

@@ -111,7 +111,7 @@ Preferred communication style: Simple, everyday language.
 -   **Usage**: Sending accountability invites, progress updates, daily reminders, weekly digests, and admin-triggered emails.
 
 ### Mobile Applications
--   **iOS App**: Capacitor framework with iOS safe area insets (viewport-fit=cover, safe-top/safe-bottom CSS utilities), Keyboard/StatusBar/SplashScreen plugin config, allowNavigation for Replit OIDC auth flow. Uses Apple In-App Purchase for payments. Build instructions in `ios-build-instructions.md` cover MacinCloud, Codemagic CI/CD, and direct Mac options.
+-   **iOS App**: Capacitor framework with iOS safe area insets (viewport-fit=cover, safe-top/safe-bottom CSS utilities), Keyboard/StatusBar/SplashScreen plugin config, allowNavigation for Replit OIDC auth flow. Uses Apple In-App Purchase (CdvPurchase plugin) for payments with server-side receipt validation (`/api/apple/validate-receipt`). Auth flow on native iOS opens system browser via Capacitor Browser plugin (hardcoded to `https://habitbuilder.pro/api/login`). Build instructions in `ios-build-instructions.md` cover MacinCloud, Codemagic CI/CD, and direct Mac options.
 -   **Android App**: Separate TWA build (`twa-project/` directory).
 
 ### Third-Party Services
