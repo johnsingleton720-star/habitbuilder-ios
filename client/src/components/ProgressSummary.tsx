@@ -186,7 +186,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
               transition={{ delay: index * 0.1 }}
               whileHover={{ scale: 1.02 }}
             >
-              <Card className={`border-0 ${stat.bgColor} shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden`} data-testid={`stat-card-${stat.label.toLowerCase().replace(' ', '-')}`}>
+              <Card className={`border-2 border-white/60 dark:border-white/10 ${stat.bgColor} shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden`} data-testid={`stat-card-${stat.label.toLowerCase().replace(' ', '-')}`}>
                 <CardContent className="p-4 relative">
                   <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.color} opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`} />
                   {isFreeUser && stat.label === "Best Streak" && (
@@ -228,7 +228,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="border-border/50 shadow-sm">
+        <Card className="border-2 border-primary/20 dark:border-primary/30 shadow-md bg-gradient-to-br from-card via-card to-primary/5 dark:to-primary/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-4 h-4 text-primary" />
@@ -306,10 +306,10 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                         {selectedDateHabits.map(({ habit, plan, isComplete, hasTasks, completedTasks, skippedTasks, totalTasks }) => (
                           <Link key={habit.id} href={`/habit/${habit.id}`}>
                             <div
-                              className={`flex items-center gap-3 p-2.5 rounded-lg transition-all cursor-pointer ${
+                              className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
                                 isComplete 
-                                  ? 'bg-primary/5 border border-primary/10' 
-                                  : 'hover:bg-muted/50'
+                                  ? 'bg-primary/10 border border-primary/20 shadow-sm' 
+                                  : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
                               }`}
                               data-testid={`day-view-habit-${habit.id}`}
                             >

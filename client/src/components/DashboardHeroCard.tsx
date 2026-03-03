@@ -45,7 +45,7 @@ export function DashboardHeroCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.01 }}
     >
-      <Card className="border-primary/15 bg-gradient-to-r from-primary/5 via-card to-accent/5 dark:from-primary/10 dark:via-card dark:to-accent/10 overflow-hidden relative" data-testid="card-dashboard-hero">
+      <Card className="border-2 border-primary/25 dark:border-primary/35 bg-gradient-to-r from-primary/10 via-card to-accent/10 dark:from-primary/15 dark:via-card dark:to-accent/15 overflow-hidden relative shadow-md" data-testid="card-dashboard-hero">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
         <CardContent className="p-4">
           <div className="flex items-center gap-4">

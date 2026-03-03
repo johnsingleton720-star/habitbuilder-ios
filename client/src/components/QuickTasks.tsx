@@ -20,10 +20,10 @@ type TabType = "today" | "upcoming" | "completed";
 type Priority = "low" | "normal" | "high" | "urgent";
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; dotColor: string; borderColor: string; bgAccent: string }> = {
-  low: { label: "Low", dotColor: "bg-gray-400", borderColor: "border-l-gray-400", bgAccent: "from-gray-500/5 to-gray-400/5" },
-  normal: { label: "Normal", dotColor: "bg-blue-500", borderColor: "border-l-blue-500", bgAccent: "from-blue-500/5 to-blue-400/5" },
-  high: { label: "High", dotColor: "bg-amber-500", borderColor: "border-l-amber-500", bgAccent: "from-amber-500/5 to-amber-400/5" },
-  urgent: { label: "Urgent", dotColor: "bg-red-500", borderColor: "border-l-red-500", bgAccent: "from-red-500/5 to-red-400/5" },
+  low: { label: "Low", dotColor: "bg-gray-400", borderColor: "border-l-gray-400", bgAccent: "from-gray-100/80 to-gray-50/60 dark:from-gray-800/30 dark:to-gray-900/20" },
+  normal: { label: "Normal", dotColor: "bg-blue-500", borderColor: "border-l-blue-500", bgAccent: "from-blue-100/60 to-blue-50/40 dark:from-blue-900/30 dark:to-blue-950/20" },
+  high: { label: "High", dotColor: "bg-amber-500", borderColor: "border-l-amber-500", bgAccent: "from-amber-100/70 to-amber-50/50 dark:from-amber-900/30 dark:to-amber-950/20" },
+  urgent: { label: "Urgent", dotColor: "bg-red-500", borderColor: "border-l-red-500", bgAccent: "from-red-100/60 to-red-50/40 dark:from-red-900/30 dark:to-red-950/20" },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -270,8 +270,8 @@ export function QuickTasks() {
   const isDateFuture = newDate > todayStr;
 
   return (
-    <Card className="overflow-hidden" data-testid="card-quick-tasks">
-      <CardHeader className="pb-2 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-rose-500/10">
+    <Card className="overflow-hidden border-2 border-amber-200/50 dark:border-amber-700/40 shadow-md" data-testid="card-quick-tasks">
+      <CardHeader className="pb-2 bg-gradient-to-r from-amber-100/60 via-orange-50/40 to-rose-100/50 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-rose-950/30">
         <CardTitle className="flex items-center gap-2 text-base flex-wrap">
           <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/15">
             <ListChecks className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -772,11 +772,11 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-center gap-2.5 group p-2.5 rounded-xl transition-all",
+        "flex items-center gap-2.5 group p-2.5 rounded-xl transition-all border",
         isSubtask && "ml-6 pl-3 border-l-2 border-muted-foreground/10",
         task.completed
-          ? "bg-muted/20"
-          : cn("bg-gradient-to-r", config.bgAccent, "hover:shadow-sm")
+          ? "bg-muted/30 border-muted/50"
+          : cn("bg-gradient-to-r", config.bgAccent, "border-border/40 hover:shadow-sm")
       )}
       data-testid={`quick-task-${task.id}`}
     >

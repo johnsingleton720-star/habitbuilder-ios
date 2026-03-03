@@ -19,14 +19,14 @@ import { Link } from "wouter";
 import type { HabitStack, Habit } from "@shared/schema";
 
 const STACK_COLORS: { id: string; label: string; border: string; bg: string; accent: string; text: string; dot: string }[] = [
-  { id: "primary", label: "Default", border: "border-border", bg: "", accent: "bg-primary/10", text: "text-primary", dot: "bg-primary" },
-  { id: "emerald", label: "Forest", border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", accent: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
-  { id: "blue", label: "Ocean", border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50/50 dark:bg-blue-950/20", accent: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", dot: "bg-blue-500" },
-  { id: "purple", label: "Lavender", border: "border-purple-300 dark:border-purple-700", bg: "bg-purple-50/50 dark:bg-purple-950/20", accent: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300", dot: "bg-purple-500" },
-  { id: "orange", label: "Sunset", border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50/50 dark:bg-orange-950/20", accent: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", dot: "bg-orange-500" },
-  { id: "pink", label: "Rose", border: "border-pink-300 dark:border-pink-700", bg: "bg-pink-50/50 dark:bg-pink-950/20", accent: "bg-pink-100 dark:bg-pink-900/40", text: "text-pink-700 dark:text-pink-300", dot: "bg-pink-500" },
-  { id: "cyan", label: "Sky", border: "border-cyan-300 dark:border-cyan-700", bg: "bg-cyan-50/50 dark:bg-cyan-950/20", accent: "bg-cyan-100 dark:bg-cyan-900/40", text: "text-cyan-700 dark:text-cyan-300", dot: "bg-cyan-500" },
-  { id: "amber", label: "Honey", border: "border-amber-300 dark:border-amber-700", bg: "bg-amber-50/50 dark:bg-amber-950/20", accent: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300", dot: "bg-amber-500" },
+  { id: "primary", label: "Default", border: "border-primary/30 dark:border-primary/40", bg: "bg-primary/5 dark:bg-primary/10", accent: "bg-primary/15", text: "text-primary", dot: "bg-primary" },
+  { id: "emerald", label: "Forest", border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-950/30", accent: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-500" },
+  { id: "blue", label: "Ocean", border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50 dark:bg-blue-950/30", accent: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", dot: "bg-blue-500" },
+  { id: "purple", label: "Lavender", border: "border-purple-300 dark:border-purple-700", bg: "bg-purple-50 dark:bg-purple-950/30", accent: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300", dot: "bg-purple-500" },
+  { id: "orange", label: "Sunset", border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50 dark:bg-orange-950/30", accent: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", dot: "bg-orange-500" },
+  { id: "pink", label: "Rose", border: "border-pink-300 dark:border-pink-700", bg: "bg-pink-50 dark:bg-pink-950/30", accent: "bg-pink-100 dark:bg-pink-900/40", text: "text-pink-700 dark:text-pink-300", dot: "bg-pink-500" },
+  { id: "cyan", label: "Sky", border: "border-cyan-300 dark:border-cyan-700", bg: "bg-cyan-50 dark:bg-cyan-950/30", accent: "bg-cyan-100 dark:bg-cyan-900/40", text: "text-cyan-700 dark:text-cyan-300", dot: "bg-cyan-500" },
+  { id: "amber", label: "Honey", border: "border-amber-300 dark:border-amber-700", bg: "bg-amber-50 dark:bg-amber-950/30", accent: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300", dot: "bg-amber-500" },
 ];
 
 function getStackColor(colorId: string | null | undefined) {
@@ -106,9 +106,9 @@ export function HabitStacks() {
 
   if (!features.hasHabitStacking) {
     return (
-      <Card className="overflow-hidden" data-testid="card-habit-stacks-locked">
-        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
-        <CardHeader className="pb-3 bg-gradient-to-r from-violet-500/5 to-purple-500/5">
+      <Card className="overflow-hidden border-2 border-violet-200/60 dark:border-violet-700/40 shadow-md" data-testid="card-habit-stacks-locked">
+        <div className="h-1.5 bg-gradient-to-r from-violet-500 to-purple-500" />
+        <CardHeader className="pb-3 bg-gradient-to-r from-violet-100/50 to-purple-50/40 dark:from-violet-950/30 dark:to-purple-950/20">
           <CardTitle className="flex items-center gap-2 text-base">
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/10">
               <Layers className="w-4 h-4 text-violet-500" />
@@ -136,9 +136,9 @@ export function HabitStacks() {
   }
 
   return (
-    <Card className="overflow-hidden" data-testid="card-habit-stacks">
-      <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
-      <CardHeader className="pb-3 bg-gradient-to-r from-violet-500/5 to-purple-500/5">
+    <Card className="overflow-hidden border-2 border-violet-200/60 dark:border-violet-700/40 shadow-md" data-testid="card-habit-stacks">
+      <div className="h-1.5 bg-gradient-to-r from-violet-500 to-purple-500" />
+      <CardHeader className="pb-3 bg-gradient-to-r from-violet-100/50 to-purple-50/40 dark:from-violet-950/30 dark:to-purple-950/20">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <button
             className="flex items-center gap-2 cursor-pointer"

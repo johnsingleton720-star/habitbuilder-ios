@@ -434,7 +434,7 @@ export default function Dashboard() {
         >
           {features.hasJournal ? (
             <Link href="/journal">
-              <Card className="hover-elevate cursor-pointer border-indigo-200/50 dark:border-indigo-800/30" data-testid="card-journal-link">
+              <Card className="hover-elevate cursor-pointer border-2 border-indigo-200/60 dark:border-indigo-700/40 bg-gradient-to-r from-indigo-50/80 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/20 shadow-sm" data-testid="card-journal-link">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
@@ -450,7 +450,7 @@ export default function Dashboard() {
               </Card>
             </Link>
           ) : (
-            <Card className="border-muted" data-testid="card-journal-locked">
+            <Card className="border-2 border-muted shadow-sm" data-testid="card-journal-locked">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -483,7 +483,7 @@ export default function Dashboard() {
         >
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="feature-links">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-amber-200/50 dark:border-amber-800/30 h-full" data-testid="card-focus-timer-link">
+              <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-sm h-full" data-testid="card-focus-timer-link">
                 <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                   <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
                     <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -497,7 +497,7 @@ export default function Dashboard() {
             </Link>
 
             <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-teal-200/50 dark:border-teal-800/30 h-full" data-testid="card-mood-tracker-link">
+              <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-sm h-full" data-testid="card-mood-tracker-link">
                 <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                   <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
@@ -511,7 +511,7 @@ export default function Dashboard() {
             </Link>
 
             <Link href={features.hasGoals ? "/goals" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-rose-200/50 dark:border-rose-800/30 h-full" data-testid="card-goals-link">
+              <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-sm h-full" data-testid="card-goals-link">
                 <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                   <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
                     <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
@@ -525,7 +525,7 @@ export default function Dashboard() {
             </Link>
 
             <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-sky-200/50 dark:border-sky-800/30 h-full" data-testid="card-planner-link">
+              <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-sm h-full" data-testid="card-planner-link">
                 <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                   <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
