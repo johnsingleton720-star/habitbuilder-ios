@@ -1,0 +1,234 @@
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 2856 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/builder/clone/client/src/lib/platform.ts is dynamically imported by /Users/builder/clone/client/src/pages/Landing.tsx but also statically imported by /Users/builder/clone/client/src/App.tsx, /Users/builder/clone/client/src/components/PublicNav.tsx, /Users/builder/clone/client/src/lib/apple-iap.ts, /Users/builder/clone/client/src/pages/Paywall.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+../dist/public/index.html                    10.56 kB │ gzip:   3.24 kB
+../dist/public/assets/index-BrZ2fBLd.css    165.04 kB │ gzip:  23.44 kB
+../dist/public/assets/index-BCfmA3W4.js       0.33 kB │ gzip:   0.23 kB
+../dist/public/assets/index-DYnMpCF7.js       0.34 kB │ gzip:   0.24 kB
+../dist/public/assets/web-DhJN0MTP.js         0.38 kB │ gzip:   0.25 kB
+../dist/public/assets/web-CrKF0lzL.js         0.76 kB │ gzip:   0.35 kB
+../dist/public/assets/index-CBHMBn_o.js   2,107.68 kB │ gzip: 634.05 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.36s
+building server...
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/routes.ts:203:34:
+      203 │ ...t filePath = path.resolve(import.meta.dirname, "..", "client",...
+          ╵                              ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✘ [ERROR] No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+
+    server/routes.ts:16:85:
+      16 │ ...il, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
+         ╵                            ~~~~~~~~~~~~~~~~~~~~~~~~
+
+1 warning and 1 error
+Error: Build failed with 1 error:
+server/routes.ts:16:85: ERROR: No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+    at failureErrorWithLog (/Users/builder/clone/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:926:25
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/Users/builder/clone/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/builder/clone/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/builder/clone/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/builder/clone/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 2856 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/builder/clone/client/src/lib/platform.ts is dynamically imported by /Users/builder/clone/client/src/pages/Landing.tsx but also statically imported by /Users/builder/clone/client/src/App.tsx, /Users/builder/clone/client/src/components/PublicNav.tsx, /Users/builder/clone/client/src/lib/apple-iap.ts, /Users/builder/clone/client/src/pages/Paywall.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+../dist/public/index.html                    10.56 kB │ gzip:   3.24 kB
+../dist/public/assets/index-BrZ2fBLd.css    165.04 kB │ gzip:  23.44 kB
+../dist/public/assets/index-BCfmA3W4.js       0.33 kB │ gzip:   0.23 kB
+../dist/public/assets/index-DYnMpCF7.js       0.34 kB │ gzip:   0.24 kB
+../dist/public/assets/web-DhJN0MTP.js         0.38 kB │ gzip:   0.25 kB
+../dist/public/assets/web-CrKF0lzL.js         0.76 kB │ gzip:   0.35 kB
+../dist/public/assets/index-CBHMBn_o.js   2,107.68 kB │ gzip: 634.05 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.36s
+building server...
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/routes.ts:203:34:
+      203 │ ...t filePath = path.resolve(import.meta.dirname, "..", "client",...
+          ╵                              ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✘ [ERROR] No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+
+    server/routes.ts:16:85:
+      16 │ ...il, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
+         ╵                            ~~~~~~~~~~~~~~~~~~~~~~~~
+
+1 warning and 1 error
+Error: Build failed with 1 error:
+server/routes.ts:16:85: ERROR: No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+    at failureErrorWithLog (/Users/builder/clone/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:926:25
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/Users/builder/clone/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/builder/clone/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/builder/clone/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/builder/clone/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1
+✓ 2856 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/builder/clone/client/src/lib/platform.ts is dynamically imported by /Users/builder/clone/client/src/pages/Landing.tsx but also statically imported by /Users/builder/clone/client/src/App.tsx, /Users/builder/clone/client/src/components/PublicNav.tsx, /Users/builder/clone/client/src/lib/apple-iap.ts, /Users/builder/clone/client/src/pages/Paywall.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+../dist/public/index.html                    10.56 kB │ gzip:   3.24 kB
+../dist/public/assets/index-BrZ2fBLd.css    165.04 kB │ gzip:  23.44 kB
+../dist/public/assets/index-BCfmA3W4.js       0.33 kB │ gzip:   0.23 kB
+../dist/public/assets/index-DYnMpCF7.js       0.34 kB │ gzip:   0.24 kB
+../dist/public/assets/web-DhJN0MTP.js         0.38 kB │ gzip:   0.25 kB
+../dist/public/assets/web-CrKF0lzL.js         0.76 kB │ gzip:   0.35 kB
+../dist/public/assets/index-CBHMBn_o.js   2,107.68 kB │ gzip: 634.05 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.36s
+building server...
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/routes.ts:203:34:
+      203 │ ...t filePath = path.resolve(import.meta.dirname, "..", "client",...
+          ╵                              ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✘ [ERROR] No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+
+    server/routes.ts:16:85:
+      16 │ ...il, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
+         ╵                            ~~~~~~~~~~~~~~~~~~~~~~~~
+
+1 warning and 1 error
+Error: Build failed with 1 error:
+server/routes.ts:16:85: ERROR: No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+    at failureErrorWithLog (/Users/builder/clone/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:926:25
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/Users/builder/clone/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/builder/clone/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/builder/clone/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/builder/clone/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1
+✓ 2856 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/builder/clone/client/src/lib/platform.ts is dynamically imported by /Users/builder/clone/client/src/pages/Landing.tsx but also statically imported by /Users/builder/clone/client/src/App.tsx, /Users/builder/clone/client/src/components/PublicNav.tsx, /Users/builder/clone/client/src/lib/apple-iap.ts, /Users/builder/clone/client/src/pages/Paywall.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+../dist/public/index.html                    10.56 kB │ gzip:   3.24 kB
+../dist/public/assets/index-BrZ2fBLd.css    165.04 kB │ gzip:  23.44 kB
+../dist/public/assets/index-BCfmA3W4.js       0.33 kB │ gzip:   0.23 kB
+../dist/public/assets/index-DYnMpCF7.js       0.34 kB │ gzip:   0.24 kB
+../dist/public/assets/web-DhJN0MTP.js         0.38 kB │ gzip:   0.25 kB
+../dist/public/assets/web-CrKF0lzL.js         0.76 kB │ gzip:   0.35 kB
+../dist/public/assets/index-CBHMBn_o.js   2,107.68 kB │ gzip: 634.05 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.36s
+building server...
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/routes.ts:203:34:
+      203 │ ...t filePath = path.resolve(import.meta.dirname, "..", "client",...
+          ╵                              ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✘ [ERROR] No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+
+    server/routes.ts:16:85:
+      16 │ ...il, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
+         ╵                            ~~~~~~~~~~~~~~~~~~~~~~~~
+
+1 warning and 1 error
+Error: Build failed with 1 error:
+server/routes.ts:16:85: ERROR: No matching export in "server/email.ts" for import "sendWelcomeCampaignEmail"
+    at failureErrorWithLog (/Users/builder/clone/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:926:25
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/Users/builder/clone/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/builder/clone/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/builder/clone/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/builder/clone/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/builder/clone/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1
