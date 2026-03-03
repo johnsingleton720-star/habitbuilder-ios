@@ -17,16 +17,16 @@ interface TodaysFocusProps {
 }
 
 const categoryColors: Record<string, { accent: string; bg: string; border: string; progress: string }> = {
-  health: { accent: "text-emerald-500", bg: "from-emerald-500/5 to-green-500/5", border: "border-emerald-200/40 dark:border-emerald-800/40", progress: "bg-emerald-500" },
-  fitness: { accent: "text-orange-500", bg: "from-orange-500/5 to-amber-500/5", border: "border-orange-200/40 dark:border-orange-800/40", progress: "bg-orange-500" },
-  mindfulness: { accent: "text-violet-500", bg: "from-violet-500/5 to-purple-500/5", border: "border-violet-200/40 dark:border-violet-800/40", progress: "bg-violet-500" },
-  productivity: { accent: "text-blue-500", bg: "from-blue-500/5 to-cyan-500/5", border: "border-blue-200/40 dark:border-blue-800/40", progress: "bg-blue-500" },
-  learning: { accent: "text-indigo-500", bg: "from-indigo-500/5 to-blue-500/5", border: "border-indigo-200/40 dark:border-indigo-800/40", progress: "bg-indigo-500" },
-  creativity: { accent: "text-pink-500", bg: "from-pink-500/5 to-rose-500/5", border: "border-pink-200/40 dark:border-pink-800/40", progress: "bg-pink-500" },
-  social: { accent: "text-amber-500", bg: "from-amber-500/5 to-yellow-500/5", border: "border-amber-200/40 dark:border-amber-800/40", progress: "bg-amber-500" },
-  finance: { accent: "text-teal-500", bg: "from-teal-500/5 to-emerald-500/5", border: "border-teal-200/40 dark:border-teal-800/40", progress: "bg-teal-500" },
+  health: { accent: "text-emerald-600 dark:text-emerald-400", bg: "from-emerald-100/80 to-green-50/60 dark:from-emerald-900/40 dark:to-green-900/30", border: "border-emerald-300/60 dark:border-emerald-700/50", progress: "bg-emerald-500" },
+  fitness: { accent: "text-orange-600 dark:text-orange-400", bg: "from-orange-100/80 to-amber-50/60 dark:from-orange-900/40 dark:to-amber-900/30", border: "border-orange-300/60 dark:border-orange-700/50", progress: "bg-orange-500" },
+  mindfulness: { accent: "text-violet-600 dark:text-violet-400", bg: "from-violet-100/80 to-purple-50/60 dark:from-violet-900/40 dark:to-purple-900/30", border: "border-violet-300/60 dark:border-violet-700/50", progress: "bg-violet-500" },
+  productivity: { accent: "text-blue-600 dark:text-blue-400", bg: "from-blue-100/80 to-cyan-50/60 dark:from-blue-900/40 dark:to-cyan-900/30", border: "border-blue-300/60 dark:border-blue-700/50", progress: "bg-blue-500" },
+  learning: { accent: "text-indigo-600 dark:text-indigo-400", bg: "from-indigo-100/80 to-blue-50/60 dark:from-indigo-900/40 dark:to-blue-900/30", border: "border-indigo-300/60 dark:border-indigo-700/50", progress: "bg-indigo-500" },
+  creativity: { accent: "text-pink-600 dark:text-pink-400", bg: "from-pink-100/80 to-rose-50/60 dark:from-pink-900/40 dark:to-rose-900/30", border: "border-pink-300/60 dark:border-pink-700/50", progress: "bg-pink-500" },
+  social: { accent: "text-amber-600 dark:text-amber-400", bg: "from-amber-100/80 to-yellow-50/60 dark:from-amber-900/40 dark:to-yellow-900/30", border: "border-amber-300/60 dark:border-amber-700/50", progress: "bg-amber-500" },
+  finance: { accent: "text-teal-600 dark:text-teal-400", bg: "from-teal-100/80 to-emerald-50/60 dark:from-teal-900/40 dark:to-emerald-900/30", border: "border-teal-300/60 dark:border-teal-700/50", progress: "bg-teal-500" },
 };
-const defaultColor = { accent: "text-primary", bg: "from-primary/5 to-accent/5", border: "border-gray-100 dark:border-gray-800", progress: "bg-primary" };
+const defaultColor = { accent: "text-primary", bg: "from-primary/15 to-accent/10 dark:from-primary/25 dark:to-accent/20", border: "border-primary/30 dark:border-primary/20", progress: "bg-primary" };
 
 function getHabitColor(habit: HabitResponse) {
   const cat = (habit.category || "").toLowerCase();
@@ -144,7 +144,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
   const otherRemaining = remainingHabits.filter(h => h.id !== nextHabit?.id);
 
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/15 dark:from-primary/25 dark:via-primary/15 dark:to-accent/20 shadow-lg dark:border dark:border-primary/20">
+    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 dark:from-primary/30 dark:via-primary/20 dark:to-accent/25 shadow-lg shadow-primary/10 dark:shadow-primary/20 dark:border dark:border-primary/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -202,7 +202,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-black/40 backdrop-blur-sm">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/90 dark:bg-black/40 backdrop-blur-sm border border-white/60 dark:border-white/10 shadow-sm">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm mb-1.5">
               <span className="text-gray-600 dark:text-gray-300 font-medium">Daily Progress</span>
@@ -267,7 +267,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className={cn(
-                  "group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r shadow-sm hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
+                  "group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r shadow-md hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
                   getHabitColor(nextHabit).bg,
                   getHabitColor(nextHabit).border
                 )}

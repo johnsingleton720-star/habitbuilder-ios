@@ -108,16 +108,14 @@ function getCardBackgroundFromColor(hexColor: string | null | undefined, isDarkM
     return { useCustomBg: false };
   }
   
-  // Convert hex to RGB and create a very light pastel version (10% opacity equivalent)
   const r = parseInt(hexColor.slice(1, 3), 16);
   const g = parseInt(hexColor.slice(3, 5), 16);
   const b = parseInt(hexColor.slice(5, 7), 16);
   
-  // Create light pastel gradient - darker for dark mode
-  const lightOpacity1 = isDarkMode ? 0.25 : 0.15;
-  const lightOpacity2 = isDarkMode ? 0.15 : 0.08;
+  const lightOpacity1 = isDarkMode ? 0.30 : 0.22;
+  const lightOpacity2 = isDarkMode ? 0.18 : 0.10;
   const lightBg = `linear-gradient(to bottom right, rgba(${r}, ${g}, ${b}, ${lightOpacity1}), rgba(${r}, ${g}, ${b}, ${lightOpacity2}))`;
-  const borderColor = `rgba(${r}, ${g}, ${b}, ${isDarkMode ? 0.4 : 0.3})`;
+  const borderColor = `rgba(${r}, ${g}, ${b}, ${isDarkMode ? 0.5 : 0.45})`;
   
   return { 
     bgStyle: { 
@@ -255,7 +253,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
         exit={{ opacity: 0, scale: 0.95 }}
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         className={cn(
-          "group relative overflow-hidden rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer",
+          "group relative overflow-hidden rounded-3xl p-5 border-2 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer",
           !useCustomBg && pastelClass,
           isPlanCompleted && "opacity-70"
         )}

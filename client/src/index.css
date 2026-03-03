@@ -34,6 +34,7 @@
 
   --card: 0 0% 100%;
   --card-foreground: 164 45% 15%;
+  --card-border: 164 25% 82%;
   
   --popover: 0 0% 100%;
   --popover-foreground: 164 45% 15%;
@@ -67,6 +68,7 @@
 
   --card: 164 40% 12%;
   --card-foreground: 160 20% 94%;
+  --card-border: 164 30% 22%;
   
   --popover: 164 40% 12%;
   --popover-foreground: 160 20% 94%;
@@ -102,21 +104,26 @@
     @apply bg-gradient-to-br from-background via-background to-secondary/30;
   }
 
-  /* Pastel habit card color variants - using teal/green palette */
+  /* Pastel habit card color variants - vivid bubbly pastels */
   .habit-pastel-1 {
-    @apply bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/70 dark:to-emerald-900/60 border-teal-200/50 dark:border-teal-600/60;
+    @apply bg-gradient-to-br from-teal-100 to-emerald-50 dark:from-teal-900/70 dark:to-emerald-900/60 border-teal-300/70 dark:border-teal-600/60;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
   }
   .habit-pastel-2 {
-    @apply bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/70 dark:to-teal-900/60 border-cyan-200/50 dark:border-cyan-600/60;
+    @apply bg-gradient-to-br from-cyan-100 to-teal-50 dark:from-cyan-900/70 dark:to-teal-900/60 border-cyan-300/70 dark:border-cyan-600/60;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
   }
   .habit-pastel-3 {
-    @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/70 dark:to-green-900/60 border-emerald-200/50 dark:border-emerald-600/60;
+    @apply bg-gradient-to-br from-emerald-100 to-green-50 dark:from-emerald-900/70 dark:to-green-900/60 border-emerald-300/70 dark:border-emerald-600/60;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
   }
   .habit-pastel-4 {
-    @apply bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-900/70 dark:to-lime-900/60 border-green-200/50 dark:border-green-600/60;
+    @apply bg-gradient-to-br from-green-100 to-lime-50 dark:from-green-900/70 dark:to-lime-900/60 border-green-300/70 dark:border-green-600/60;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
   }
   .habit-pastel-5 {
-    @apply bg-gradient-to-br from-teal-100/80 to-cyan-50 dark:from-teal-800/70 dark:to-cyan-900/60 border-teal-300/50 dark:border-teal-500/60;
+    @apply bg-gradient-to-br from-teal-200/90 to-cyan-100/80 dark:from-teal-800/70 dark:to-cyan-900/60 border-teal-400/60 dark:border-teal-500/60;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.18);
   }
 
   /* Enhanced stat cards */

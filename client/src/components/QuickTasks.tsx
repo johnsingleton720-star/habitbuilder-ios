@@ -261,10 +261,10 @@ export function QuickTasks() {
     return groups;
   }, {} as Record<string, QuickTask[]>);
 
-  const tabs: { id: TabType; label: string; count: number; icon: any }[] = [
-    { id: "today", label: "Today", count: todayPending.length, icon: Calendar },
-    { id: "upcoming", label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays },
-    { id: "completed", label: "Done", count: allCompleted.length, icon: CheckCircle2 },
+  const tabs: { id: TabType; label: string; count: number; icon: any; activeClasses: string; inactiveClasses: string; countClasses: string }[] = [
+    { id: "today", label: "Today", count: todayPending.length, icon: Calendar, activeClasses: "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 shadow-sm", inactiveClasses: "text-teal-600/70 dark:text-teal-400/60 hover:bg-teal-50 dark:hover:bg-teal-900/30", countClasses: "bg-teal-200/70 text-teal-800 dark:bg-teal-800/50 dark:text-teal-200" },
+    { id: "upcoming", label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays, activeClasses: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shadow-sm", inactiveClasses: "text-blue-600/70 dark:text-blue-400/60 hover:bg-blue-50 dark:hover:bg-blue-900/30", countClasses: "bg-blue-200/70 text-blue-800 dark:bg-blue-800/50 dark:text-blue-200" },
+    { id: "completed", label: "Done", count: allCompleted.length, icon: CheckCircle2, activeClasses: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 shadow-sm", inactiveClasses: "text-emerald-600/70 dark:text-emerald-400/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/30", countClasses: "bg-emerald-200/70 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-200" },
   ];
 
   const isDateFuture = newDate > todayStr;
@@ -295,29 +295,26 @@ export function QuickTasks() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-3 space-y-3">
-        <div className="flex gap-1 p-1 bg-muted/50 rounded-lg" data-testid="quick-tasks-tabs">
+        <div className="flex gap-1.5 p-1.5 bg-muted/40 rounded-xl" data-testid="quick-tasks-tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-md text-xs font-medium transition-all",
-                  activeTab === tab.id
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200",
+                  isActive ? tab.activeClasses : tab.inactiveClasses
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.count > 0 && (
                   <span className={cn(
-                    "text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full",
-                    activeTab === tab.id
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted text-muted-foreground"
+                    "text-[10px] min-w-[20px] h-[20px] flex items-center justify-center rounded-full font-bold",
+                    isActive ? tab.countClasses : "bg-muted/60 text-muted-foreground"
                   )}>
                     {tab.count}
                   </span>
