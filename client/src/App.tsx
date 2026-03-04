@@ -158,6 +158,9 @@ function Router() {
 }
 
 function NativeAuthHandler() {
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+
   useEffect(() => {
     if (!isNative()) return;
 
@@ -180,6 +183,12 @@ function NativeAuthHandler() {
                 window.location.href = '/';
               } catch (err) {
                 console.error('Token exchange failed:', err);
+                toast({
+                  title: 'Sign-in failed',
+                  description: 'Something went wrong. Please try signing in again.',
+                  variant: 'destructive',
+                });
+                navigate('/');
               }
             }
           }
@@ -191,7 +200,7 @@ function NativeAuthHandler() {
     })();
 
     return () => { if (cleanup) cleanup(); };
-  }, []);
+  }, [toast, navigate]);
 
   return null;
 }

@@ -3,12 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq, and, isNotNull, gte, lte, desc } from "drizzle-orm";
+import { sql, eq, and, isNotNull, gte, lte, desc, gt } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens } from "@shared/schema";
 import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
@@ -134,12 +134,11 @@ async function autoSeedTemplates() {
   }
 }
 
-const nativeAuthTokens = new Map<string, { userId: string; expiresAt: number }>();
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, data] of nativeAuthTokens) {
-    if (data.expiresAt < now) nativeAuthTokens.delete(token);
+setInterval(async () => {
+  try {
+    await db.delete(nativeAuthTokens).where(lte(nativeAuthTokens.expiresAt, new Date()));
+  } catch (e) {
+    console.error("Failed to clean up expired native auth tokens:", e);
   }
 }, 60000);
 
@@ -149,7 +148,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
 
-  app.get("/api/auth/native-complete", (req, res) => {
+  app.get("/api/auth/native-complete", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
       return res.redirect("/api/login?returnTo=/api/auth/native-complete");
     }
@@ -159,8 +158,69 @@ export async function registerRoutes(
     }
     const token = crypto.randomBytes(32).toString("hex");
     const userId = String(claims.sub);
-    nativeAuthTokens.set(token, { userId, expiresAt: Date.now() + 120000 });
-    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1a12;color:#fff"><div style="text-align:center"><p>Login successful! Returning to app...</p><script>window.location.href="habitbuilder://auth?token=${token}";</script><p style="margin-top:20px;font-size:14px;opacity:0.7"><a href="habitbuilder://auth?token=${token}" style="color:#4ade80">Tap here if not redirected automatically</a></p></div></body></html>`);
+    const expiresAt = new Date(Date.now() + 300000);
+    try {
+      await db.insert(nativeAuthTokens).values({ token, userId, expiresAt });
+    } catch (err) {
+      console.error("Failed to store native auth token:", err);
+      return res.status(500).send("Authentication error. Please try again.");
+    }
+    const deepLink = `habitbuilder://auth?token=${token}`;
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In Complete</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1a12;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card {
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    p { font-size: 15px; color: #9ca3af; margin-bottom: 32px; line-height: 1.5; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 18px 24px;
+      background: #4ade80;
+      color: #0f1a12;
+      font-size: 17px;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Sign-in successful!</h1>
+    <p>Tap the button below to return to HabitBuilder and complete sign-in.</p>
+    <a class="btn" href="${deepLink}">Return to HabitBuilder</a>
+  </div>
+  <script>
+    setTimeout(function() { window.location.href = "${deepLink}"; }, 500);
+  </script>
+</body>
+</html>`);
   });
 
   app.post("/api/auth/exchange-token", async (req, res) => {
@@ -168,17 +228,28 @@ export async function registerRoutes(
     if (!token || typeof token !== "string") {
       return res.status(400).json({ error: "Token required" });
     }
-    const data = nativeAuthTokens.get(token);
-    if (!data) {
-      return res.status(401).json({ error: "Invalid or expired token" });
-    }
-    if (data.expiresAt < Date.now()) {
-      nativeAuthTokens.delete(token);
-      return res.status(401).json({ error: "Token expired" });
-    }
-    nativeAuthTokens.delete(token);
+    let tokenData: { userId: string; expiresAt: Date } | undefined;
     try {
-      const [user] = await db.select().from(users).where(eq(users.id, data.userId)).limit(1);
+      const [row] = await db
+        .select()
+        .from(nativeAuthTokens)
+        .where(eq(nativeAuthTokens.token, token))
+        .limit(1);
+      if (!row) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+      if (row.expiresAt < new Date()) {
+        await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
+        return res.status(401).json({ error: "Token expired" });
+      }
+      tokenData = { userId: row.userId, expiresAt: row.expiresAt };
+      await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
+    } catch (err) {
+      console.error("Token lookup error:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, tokenData.userId)).limit(1);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }

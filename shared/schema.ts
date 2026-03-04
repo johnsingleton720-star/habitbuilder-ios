@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -857,3 +857,16 @@ export const insertCommitmentSchema = createInsertSchema(userCommitments).omit({
 
 export type UserCommitment = typeof userCommitments.$inferSelect;
 export type InsertUserCommitment = z.infer<typeof insertCommitmentSchema>;
+
+// ==========================================
+// NATIVE AUTH TOKENS (iOS deep-link bridge)
+// ==========================================
+
+export const nativeAuthTokens = pgTable("native_auth_tokens", {
+  token: varchar("token", { length: 64 }).primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("native_auth_tokens_expires_at_idx").on(table.expiresAt),
+]);
