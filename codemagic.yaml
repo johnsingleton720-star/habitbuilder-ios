@@ -97,9 +97,7 @@ workflows:
             -archivePath build/App.xcarchive \
             clean archive \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="XWGZCDT3XH" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
             -authenticationKeyID $APP_STORE_CONNECT_KEY_IDENTIFIER \
