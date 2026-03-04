@@ -38,6 +38,12 @@ workflows:
           echo ""
           echo "=== Installing pods ==="
           pod install
+      - name: Fix App deployment target
+        script: |
+          cd ios/App
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
+          echo "=== Deployment targets after fix ==="
+          grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
       - name: Set up code signing
         script: |
           keychain initialize
