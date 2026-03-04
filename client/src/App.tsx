@@ -173,8 +173,10 @@ function NativeAuthHandler() {
             const token = params.searchParams.get('token');
             if (token) {
               try {
+                const { Browser } = await import('@capacitor/browser');
+                await Browser.close();
                 await apiRequest('POST', '/api/auth/exchange-token', { token });
-                queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+                await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
                 window.location.href = '/';
               } catch (err) {
                 console.error('Token exchange failed:', err);

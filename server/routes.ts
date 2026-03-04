@@ -134,7 +134,7 @@ async function autoSeedTemplates() {
   }
 }
 
-const nativeAuthTokens = new Map<string, { userId: number; expiresAt: number }>();
+const nativeAuthTokens = new Map<string, { userId: string; expiresAt: number }>();
 
 setInterval(() => {
   const now = Date.now();
@@ -158,7 +158,7 @@ export async function registerRoutes(
       return res.status(400).send("Invalid user session");
     }
     const token = crypto.randomBytes(32).toString("hex");
-    const userId = parseInt(claims.sub, 10) || 0;
+    const userId = String(claims.sub);
     nativeAuthTokens.set(token, { userId, expiresAt: Date.now() + 120000 });
     res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1a12;color:#fff"><div style="text-align:center"><p>Login successful! Returning to app...</p><script>window.location.href="habitbuilder://auth?token=${token}";</script><p style="margin-top:20px;font-size:14px;opacity:0.7"><a href="habitbuilder://auth?token=${token}" style="color:#4ade80">Tap here if not redirected automatically</a></p></div></body></html>`);
   });
