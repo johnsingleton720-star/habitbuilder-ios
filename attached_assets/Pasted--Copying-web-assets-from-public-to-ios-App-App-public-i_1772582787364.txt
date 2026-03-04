@@ -1,0 +1,84 @@
+✔ Copying web assets from public to ios/App/App/public in 34.83ms
+✔ Creating capacitor.config.json in ios/App/App in 589.38μs
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✔ copy ios in 105.09ms
+✔ Updating iOS plugins in 12.48ms
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✖ Updating iOS native dependencies with pod install - failed!
+✖ update ios - failed!
+[error] Analyzing dependencies
+        [!] CocoaPods could not find compatible versions for pod "Capacitor":
+        In Podfile:
+        Capacitor (from `../../node_modules/@capacitor/ios`)
+        
+        Specs satisfying the `Capacitor (from `../../node_modules/@capacitor/ios`)` dependency were found, but they required a higher minimum deployment target.
+        
+
+
+Build failed :|
+Step 5 script `Sync Capacitor` exited with status code 1
+✔ Copying web assets from public to ios/App/App/public in 34.83ms
+✔ Creating capacitor.config.json in ios/App/App in 589.38μs
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✔ copy ios in 105.09ms
+✔ Updating iOS plugins in 12.48ms
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✖ Updating iOS native dependencies with pod install - failed!
+✖ update ios - failed!
+[error] Analyzing dependencies
+        [!] CocoaPods could not find compatible versions for pod "Capacitor":
+        In Podfile:
+        Capacitor (from `../../node_modules/@capacitor/ios`)
+        
+        Specs satisfying the `Capacitor (from `../../node_modules/@capacitor/ios`)` dependency were found, but they required a higher minimum deployment target.
+        
+
+
+Build failed :|
+Step 5 script `Sync Capacitor` exited with status code 1
+✔ Copying web assets from public to ios/App/App/public in 34.83ms
+✔ Creating capacitor.config.json in ios/App/App in 589.38μs
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✔ copy ios in 105.09ms
+✔ Updating iOS plugins in 12.48ms
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✖ Updating iOS native dependencies with pod install - failed!
+✖ update ios - failed!
+[error] Analyzing dependencies
+        [!] CocoaPods could not find compatible versions for pod "Capacitor":
+        In Podfile:
+        Capacitor (from `../../node_modules/@capacitor/ios`)
+        
+        Specs satisfying the `Capacitor (from `../../node_modules/@capacitor/ios`)` dependency were found, but they required a higher minimum deployment target.
+        
+
+
+Build failed :|
+Step 5 script `Sync Capacitor` exited with status code 1
+✔ Copying web assets from public to ios/App/App/public in 34.83ms
+✔ Creating capacitor.config.json in ios/App/App in 589.38μs
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✔ copy ios in 105.09ms
+✔ Updating iOS plugins in 12.48ms
+[info] Found 1 Cordova plugin for ios:
+       cordova-plugin-purchase@13.13.1
+✖ Updating iOS native dependencies with pod install - failed!
+✖ update ios - failed!
+[error] Analyzing dependencies
+        [!] CocoaPods could not find compatible versions for pod "Capacitor":
+        In Podfile:
+        Capacitor (from `../../node_modules/@capacitor/ios`)
+        
+        Specs satisfying the `Capacitor (from `../../node_modules/@capacitor/ios`)` dependency were found, but they required a higher minimum deployment target.
+        
+
+
+Build failed :|
+Step 5 script `Sync Capacitor` exited with status code 1

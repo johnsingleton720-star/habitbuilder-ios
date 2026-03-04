@@ -16,11 +16,13 @@ workflows:
         script: npm run build
       - name: Add iOS platform
         script: npx cap add ios || true
-      - name: Sync Capacitor
-        script: npx cap sync ios
-      - name: Fix Podfile for archive
+      - name: Sync Capacitor (allow pod install failure)
+        script: npx cap sync ios 2>&1 || echo "cap sync completed with warnings - will fix Podfile next"
+        ignore_failure: true
+      - name: Fix Podfile and install pods
         script: |
           cd ios/App
+          sed -i '' "s/platform :ios, '.*'/platform :ios, '16.0'/" Podfile
           ruby -i -pe '
             if /assertDeploymentTarget\(installer\)/ =~ $_
               $_ += "    installer.pods_project.targets.each do |target|\n"
@@ -34,9 +36,8 @@ workflows:
           ' Podfile
           echo "=== Final Podfile ==="
           cat Podfile
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
+          echo ""
+          echo "=== Installing pods ==="
           pod install
       - name: Save App Store Connect API key
         script: |
