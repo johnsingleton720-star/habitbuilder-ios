@@ -30,11 +30,6 @@ workflows:
               $_ += "        config.build_settings[\"CODE_SIGNING_ALLOWED\"] = \"NO\"\n"
               $_ += "        config.build_settings[\"CODE_SIGNING_REQUIRED\"] = \"NO\"\n"
               $_ += "      end\n"
-              $_ += "      target.shell_script_build_phases.each do |phase|\n"
-              $_ += "        if phase.name == \"[CP] Embed Pods Frameworks\"\n"
-              $_ += "          phase.shell_script = \"echo Skipping embed frameworks\"\n"
-              $_ += "        end\n"
-              $_ += "      end\n"
               $_ += "    end\n"
             end
           ' Podfile
@@ -43,18 +38,14 @@ workflows:
           echo ""
           echo "=== Installing pods ==="
           pod install
-      - name: Save App Store Connect API key
+      - name: Set up code signing
         script: |
-          mkdir -p ~/private_keys
-          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8
-      - name: Set up signing
-        script: |
-          cd ios/App
-          sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = ".*"/PROVISIONING_PROFILE_SPECIFIER = ""/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*;/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/PROVISIONING_PROFILE = ".*"/PROVISIONING_PROFILE = ""/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/"ProvisioningStyle" = "Manual"/"ProvisioningStyle" = "Automatic"/g' App.xcodeproj/project.pbxproj || true
+          keychain initialize
+          app-store-connect fetch-signing-files "pro.habitbuilder.app" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Set app icon
         script: |
           if [ -f "client/public/playstore-icon.png" ]; then
@@ -87,35 +78,14 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
           echo "=== Registered URL Schemes ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
-      - name: Build archive
+      - name: Build and export IPA
         script: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath build/App.xcarchive \
-            clean archive \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="XWGZCDT3XH" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
-            -authenticationKeyID $APP_STORE_CONNECT_KEY_IDENTIFIER \
-            -authenticationKeyIssuerID $APP_STORE_CONNECT_ISSUER_ID
-      - name: Export IPA
-        script: |
-          cd ios/App
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ../../exportOptions.plist \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
-            -authenticationKeyID $APP_STORE_CONNECT_KEY_IDENTIFIER \
-            -authenticationKeyIssuerID $APP_STORE_CONNECT_ISSUER_ID
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App"
     artifacts:
-      - ios/App/build/ipa/*.ipa
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
