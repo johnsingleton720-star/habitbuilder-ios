@@ -148,6 +148,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
 
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   app.get("/api/auth/native-complete", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
       return res.redirect("/api/login?returnTo=/api/auth/native-complete");
@@ -305,10 +308,6 @@ export async function registerRoutes(
     next();
   });
 
-  // Auth setup
-  await setupAuth(app);
-  registerAuthRoutes(app);
-  
   // Object storage routes
   registerObjectStorageRoutes(app);
   
