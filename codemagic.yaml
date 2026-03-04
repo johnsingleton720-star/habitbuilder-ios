@@ -26,6 +26,10 @@ workflows:
           ruby -i -pe '
             if /assertDeploymentTarget\(installer\)/ =~ $_
               $_ += "    installer.pods_project.targets.each do |target|\n"
+              $_ += "      target.build_configurations.each do |config|\n"
+              $_ += "        config.build_settings[\"CODE_SIGNING_ALLOWED\"] = \"NO\"\n"
+              $_ += "        config.build_settings[\"CODE_SIGNING_REQUIRED\"] = \"NO\"\n"
+              $_ += "      end\n"
               $_ += "      target.shell_script_build_phases.each do |phase|\n"
               $_ += "        if phase.name == \"[CP] Embed Pods Frameworks\"\n"
               $_ += "          phase.shell_script = \"echo Skipping embed frameworks\"\n"
@@ -43,18 +47,14 @@ workflows:
         script: |
           mkdir -p ~/private_keys
           echo "$APP_STORE_CONNECT_PRIVATE_KEY" > ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8
-      - name: Set up automatic signing
+      - name: Set up signing
         script: |
           cd ios/App
           sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/CODE_SIGN_IDENTITY = ".*"/CODE_SIGN_IDENTITY = "Apple Development"/g' App.xcodeproj/project.pbxproj || true
-          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = ".*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development"/g' App.xcodeproj/project.pbxproj || true
           sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = ".*"/PROVISIONING_PROFILE_SPECIFIER = ""/g' App.xcodeproj/project.pbxproj || true
           sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*;/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj || true
           sed -i '' 's/PROVISIONING_PROFILE = ".*"/PROVISIONING_PROFILE = ""/g' App.xcodeproj/project.pbxproj || true
           sed -i '' 's/"ProvisioningStyle" = "Manual"/"ProvisioningStyle" = "Automatic"/g' App.xcodeproj/project.pbxproj || true
-          echo "=== Signing settings after cleanup ==="
-          grep -i "CODE_SIGN_IDENTITY\|CODE_SIGN_STYLE\|PROVISIONING_PROFILE\|ProvisioningStyle" App.xcodeproj/project.pbxproj || true
       - name: Set app icon
         script: |
           if [ -f "client/public/playstore-icon.png" ]; then
@@ -97,6 +97,7 @@ workflows:
             -archivePath build/App.xcarchive \
             clean archive \
             CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="XWGZCDT3XH" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8 \
