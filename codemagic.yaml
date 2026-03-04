@@ -84,6 +84,10 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
           echo "=== Registered URL Schemes ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
+      - name: Set build number
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+          echo "Build number set to: $BUILD_NUMBER"
       - name: Build and export IPA
         script: |
           xcode-project build-ipa \

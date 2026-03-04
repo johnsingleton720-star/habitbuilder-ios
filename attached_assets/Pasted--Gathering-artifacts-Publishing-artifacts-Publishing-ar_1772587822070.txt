@@ -1,0 +1,295 @@
+
+== Gathering artifacts ==
+
+== Publishing artifacts ==
+
+Publishing artifact App.ipa
+== Gathering artifacts ==
+
+== Publishing artifacts ==
+
+Publishing artifact App.ipa
+Publishing artifact habitbuilder-ios_16_artifacts.zip
+Publishing artifact habitbuilder-ios_16_artifacts.zip
+Publishing App.ipa to App Store Connect
+> app-store-connect publish --path /Users/builder/clone/build/ios/ipa/App.ipa --key-id ******** --issuer-id ******** --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY
+
+Publishing App.ipa to App Store Connect
+> app-store-connect publish --path /Users/builder/clone/build/ios/ipa/App.ipa --key-id ******** --issuer-id ******** --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY
+
+Publish "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+App name: HabitBuilder
+Bundle identifier: pro.habitbuilder.app
+Certificate expires: 2027-03-01T06:47:18.000+0000
+Distribution type: App Store
+Min OS version: 16.0
+Provisioned devices: N/A
+Provisions all devices: No
+Supported platforms: iPhoneOS
+Version code: 1
+Version: 1.0
+
+Upload "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+26.10.1 (171001)
+
+Publish "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+App name: HabitBuilder
+Bundle identifier: pro.habitbuilder.app
+Certificate expires: 2027-03-01T06:47:18.000+0000
+Distribution type: App Store
+Min OS version: 16.0
+Provisioned devices: N/A
+Provisions all devices: No
+Supported platforms: iPhoneOS
+Version code: 1
+Version: 1.0
+
+Upload "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+26.10.1 (171001)
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-03-04 01:24:25.341 ERROR: [ContentDelivery.Uploader.102E32F90] The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)
+   NSUnderlyingError : The provided entity includes an attribute with a value that has already been used (-19241) The bundle version must be higher than the previously uploaded version.
+      status : 409
+      detail : The bundle version must be higher than the previously uploaded version.
+      source : 
+         pointer : /data/attributes/cfBundleVersion
+      id : d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45
+      code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+      title : The provided entity includes an attribute with a value that has already been used
+      meta : 
+         previousBundleVersion : 1
+   previousBundleVersion : 1
+   iris-code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+2026-03-04 01:24:25.342 ERROR: [altool.102E32F90] Failed to upload package.
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : -19232,
+      "message" : "The provided entity includes an attribute with a value that has already been used",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "The provided entity includes an attribute with a value that has already been used",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+            "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version.",
+            "code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+            "detail" : "The bundle version must be higher than the previously uploaded version.",
+            "id" : "d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45",
+            "meta" : "{\n    previousBundleVersion = 1;\n}",
+            "source" : "{\n    pointer = \"/data/attributes/cfBundleVersion\";\n}",
+            "status" : "409",
+            "title" : "The provided entity includes an attribute with a value that has already been used"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+        "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"The provided entity includes an attribute with a value that has already been used\" UserInfo={status=409, detail=The bundle version must be higher than the previously uploaded version., source={\n    pointer = \"/data/attributes/cfBundleVersion\";\n}, id=d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45, code=ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE, title=The provided entity includes an attribute with a value that has already been used, meta={\n    previousBundleVersion = 1;\n}, NSLocalizedDescription=The provided entity includes an attribute with a value that has already been used, NSLocalizedFailureReason=The bundle version must be higher than the previously uploaded version.}",
+        "iris-code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+        "previousBundleVersion" : "1"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-03-04 01:24:25.341 ERROR: [ContentDelivery.Uploader.102E32F90] The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)
+   NSUnderlyingError : The provided entity includes an attribute with a value that has already been used (-19241) The bundle version must be higher than the previously uploaded version.
+      status : 409
+      detail : The bundle version must be higher than the previously uploaded version.
+      source : 
+         pointer : /data/attributes/cfBundleVersion
+      id : d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45
+      code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+      title : The provided entity includes an attribute with a value that has already been used
+      meta : 
+         previousBundleVersion : 1
+   previousBundleVersion : 1
+   iris-code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+2026-03-04 01:24:25.342 ERROR: [altool.102E32F90] Failed to upload package.
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : -19232,
+      "message" : "The provided entity includes an attribute with a value that has already been used",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "The provided entity includes an attribute with a value that has already been used",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+            "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version.",
+            "code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+            "detail" : "The bundle version must be higher than the previously uploaded version.",
+            "id" : "d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45",
+            "meta" : "{\n    previousBundleVersion = 1;\n}",
+            "source" : "{\n    pointer = \"/data/attributes/cfBundleVersion\";\n}",
+            "status" : "409",
+            "title" : "The provided entity includes an attribute with a value that has already been used"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+        "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"The provided entity includes an attribute with a value that has already been used\" UserInfo={status=409, detail=The bundle version must be higher than the previously uploaded version., source={\n    pointer = \"/data/attributes/cfBundleVersion\";\n}, id=d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45, code=ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE, title=The provided entity includes an attribute with a value that has already been used, meta={\n    previousBundleVersion = 1;\n}, NSLocalizedDescription=The provided entity includes an attribute with a value that has already been used, NSLocalizedFailureReason=The bundle version must be higher than the previously uploaded version.}",
+        "iris-code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+        "previousBundleVersion" : "1"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Failed to upload archive at "/Users/builder/clone/build/ios/ipa/App.ipa":
+The provided entity includes an attribute with a value that has already been used
+Failed to publish /Users/builder/clone/build/ios/ipa/App.ipa
+
+Failed to publish App.ipa to App Store Connect.
+
+Build failed :|
+
+
+Publishing failed :|
+Failed to publish App.ipa to App Store Connect.
+
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-03-04 01:24:25.341 ERROR: [ContentDelivery.Uploader.102E32F90] The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)
+   NSUnderlyingError : The provided entity includes an attribute with a value that has already been used (-19241) The bundle version must be higher than the previously uploaded version.
+      status : 409
+      detail : The bundle version must be higher than the previously uploaded version.
+      source : 
+         pointer : /data/attributes/cfBundleVersion
+      id : d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45
+      code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+      title : The provided entity includes an attribute with a value that has already been used
+      meta : 
+         previousBundleVersion : 1
+   previousBundleVersion : 1
+   iris-code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+2026-03-04 01:24:25.342 ERROR: [altool.102E32F90] Failed to upload package.
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : -19232,
+      "message" : "The provided entity includes an attribute with a value that has already been used",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "The provided entity includes an attribute with a value that has already been used",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+            "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version.",
+            "code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+            "detail" : "The bundle version must be higher than the previously uploaded version.",
+            "id" : "d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45",
+            "meta" : "{\n    previousBundleVersion = 1;\n}",
+            "source" : "{\n    pointer = \"/data/attributes/cfBundleVersion\";\n}",
+            "status" : "409",
+            "title" : "The provided entity includes an attribute with a value that has already been used"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+        "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"The provided entity includes an attribute with a value that has already been used\" UserInfo={status=409, detail=The bundle version must be higher than the previously uploaded version., source={\n    pointer = \"/data/attributes/cfBundleVersion\";\n}, id=d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45, code=ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE, title=The provided entity includes an attribute with a value that has already been used, meta={\n    previousBundleVersion = 1;\n}, NSLocalizedDescription=The provided entity includes an attribute with a value that has already been used, NSLocalizedFailureReason=The bundle version must be higher than the previously uploaded version.}",
+        "iris-code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+        "previousBundleVersion" : "1"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-03-04 01:24:25.341 ERROR: [ContentDelivery.Uploader.102E32F90] The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)
+   NSUnderlyingError : The provided entity includes an attribute with a value that has already been used (-19241) The bundle version must be higher than the previously uploaded version.
+      status : 409
+      detail : The bundle version must be higher than the previously uploaded version.
+      source : 
+         pointer : /data/attributes/cfBundleVersion
+      id : d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45
+      code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+      title : The provided entity includes an attribute with a value that has already been used
+      meta : 
+         previousBundleVersion : 1
+   previousBundleVersion : 1
+   iris-code : ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+2026-03-04 01:24:25.342 ERROR: [altool.102E32F90] Failed to upload package.
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : -19232,
+      "message" : "The provided entity includes an attribute with a value that has already been used",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "The provided entity includes an attribute with a value that has already been used",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+            "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version.",
+            "code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+            "detail" : "The bundle version must be higher than the previously uploaded version.",
+            "id" : "d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45",
+            "meta" : "{\n    previousBundleVersion = 1;\n}",
+            "source" : "{\n    pointer = \"/data/attributes/cfBundleVersion\";\n}",
+            "status" : "409",
+            "title" : "The provided entity includes an attribute with a value that has already been used"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "The provided entity includes an attribute with a value that has already been used",
+        "NSLocalizedFailureReason" : "The bundle version must be higher than the previously uploaded version: ‘1’. (ID: d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"The provided entity includes an attribute with a value that has already been used\" UserInfo={status=409, detail=The bundle version must be higher than the previously uploaded version., source={\n    pointer = \"/data/attributes/cfBundleVersion\";\n}, id=d4a5eb59-5bf4-4ed1-9c12-64868a1b9c45, code=ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE, title=The provided entity includes an attribute with a value that has already been used, meta={\n    previousBundleVersion = 1;\n}, NSLocalizedDescription=The provided entity includes an attribute with a value that has already been used, NSLocalizedFailureReason=The bundle version must be higher than the previously uploaded version.}",
+        "iris-code" : "ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE",
+        "previousBundleVersion" : "1"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Failed to upload archive at "/Users/builder/clone/build/ios/ipa/App.ipa":
+The provided entity includes an attribute with a value that has already been used
+Failed to publish /Users/builder/clone/build/ios/ipa/App.ipa
+
+Failed to publish App.ipa to App Store Connect.
+
+Build failed :|
+
+
+Publishing failed :|
+Failed to publish App.ipa to App Store Connect.
