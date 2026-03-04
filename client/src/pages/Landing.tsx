@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn, ChevronLeft, ChevronRight, PenLine, Timer, Heart, Bell } from "lucide-react";
+import { ArrowRight, CheckCircle2, Leaf, ShieldCheck, Sparkles, Smartphone, Trophy, Target, Flame, BarChart3, Users, Zap, Crown, Check, X, CreditCard, BookOpen, Dumbbell, Brain, Apple, Moon, Pencil, Loader2, Send, Link2, Clock, Star, MessageCircle, Layers, ExternalLink, Lightbulb, Calendar, TrendingUp, Video, FileText, LogIn, ChevronLeft, ChevronRight, PenLine, Timer, Heart, Bell, CheckSquare } from "lucide-react";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { LoginTroubleshootDialog } from "@/components/LoginTroubleshootDialog";
 import { SocialShare } from "@/components/SocialShare";
@@ -942,6 +942,21 @@ export default function Landing() {
             <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
               Your personal AI coach creates custom action plans, guides you through daily sessions, and keeps you motivated with streaks and achievements.
             </p>
+
+            <div className="flex flex-wrap gap-2" data-testid="hero-use-case-chips">
+              {[
+                { icon: <Brain className="w-3 h-3" />, label: "AI Habit Coaching" },
+                { icon: <Calendar className="w-3 h-3" />, label: "Daily Planner" },
+                { icon: <PenLine className="w-3 h-3" />, label: "Journal" },
+                { icon: <Heart className="w-3 h-3" />, label: "Mood Tracker" },
+                { icon: <CheckSquare className="w-3 h-3" />, label: "Quick Tasks" },
+              ].map((chip) => (
+                <span key={chip.label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 border border-border/50 rounded-full px-2.5 py-1">
+                  {chip.icon}
+                  {chip.label}
+                </span>
+              ))}
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <Button onClick={scrollToLogin} size="lg" className="w-full sm:w-auto text-base shadow-lg shadow-primary/25" data-testid="button-hero-cta">
