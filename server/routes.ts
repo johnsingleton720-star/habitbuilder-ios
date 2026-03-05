@@ -1645,7 +1645,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: `You are an expert behavioral psychologist and habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow DESIGNED FOR REAL BEHAVIOR CHANGE.
+          content: `You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow DESIGNED FOR REAL BEHAVIOR CHANGE.
 
 Your unified routines must apply these behavior science principles:
 - HABIT STACKING: Each habit in the sequence should serve as the CUE for the next habit. The completion of one activity naturally triggers the start of the next.
@@ -1678,7 +1678,7 @@ Return valid JSON with this exact structure:
           "coachingTip": "Expert insight citing specific behavior science — WHY this works, not just what to do"
         }
       ],
-      "coachingTip": "Expert coaching insight grounded in behavior science — reference a specific principle (e.g., 'This leverages what BJ Fogg calls Shine — the positive emotion you feel after a small success, which is what actually wires the habit into your brain')",
+      "coachingTip": "Expert coaching insight grounded in behavior science — reference a specific principle (e.g., 'This leverages the positive emotion you feel after a small success — that feeling is what actually wires the habit into your brain')",
       "resources": [
         {
           "name": "Resource Name",
@@ -1704,7 +1704,7 @@ Return valid JSON with this exact structure:
 
 RULES:
 1. Create 2-4 micro-steps per habit, each with 1-3 sub-steps with specific, granular instructions.
-2. The FIRST micro-step of each habit should be an "activation" step — nearly effortless, designed to overcome starting friction (BJ Fogg's "Starter Step").
+2. The FIRST micro-step of each habit should be an "activation" step — nearly effortless, designed to overcome starting friction (the "Starter Step" principle from behavior design).
 3. Each task MUST have a "coachingTip" that references specific behavior science, not generic motivation.
 4. Include 1-2 resources per task — real educational resources (NOT habit tracking apps). For searchQuery, use descriptive search terms. Do NOT include brand names or specific product names to avoid copyright issues. Use generic descriptions like 'beginner meditation technique guide' or 'morning exercise warm up routine'.
 5. Create a "transition" entry for every habit change in the sequence. Transitions must explain the psychological connection between the habits and why this order leverages momentum.
@@ -3099,7 +3099,7 @@ Be specific and practical. Never mention specific third-party apps, brands, or s
         messages: [
           {
             role: "system",
-            content: "You are a behavioral psychologist and expert habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. Your plans are rooted in real behavior science — every step serves a specific psychological purpose in the habit formation process. You help users understand not just WHAT to do, but WHY it works. Always return valid JSON. IMPORTANT: Never mention specific third-party apps, brands, services, or competitors by name. Use generic descriptions instead. SAFETY: Do not generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.",
+            content: "You are a behavioral psychologist and expert habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. Your plans are rooted in real behavior science — every step serves a specific psychological purpose in the habit formation process. You help users understand not just WHAT to do, but WHY it works. Always return valid JSON. IMPORTANT: Never mention specific third-party apps, brands, services, or competitors by name. Use generic descriptions instead. SAFETY: Do not generate content promoting violence, illegal activities, exploitation, self-harm, or explicit content.",
           },
           {
             role: "user",
@@ -3228,7 +3228,7 @@ Return JSON:
         messages: [
           {
             role: "system",
-            content: "You are a behavioral psychologist and expert habit coach trained in techniques from BJ Fogg (behavior design), James Clear (Atomic Habits), and Charles Duhigg (The Power of Habit). Your intake interviews are deeply personal and specific — you never ask generic questions. You probe for exact details about the person's life, routine, past failures, emotional drivers, and environment so you can build a plan rooted in proven behavior change science. Always return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Do not generate content that promotes violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. If a habit request seems harmful, respond with questions that redirect toward positive, healthy alternatives.",
+            content: "You are a behavioral psychologist and expert habit coach trained in evidence-based behavior design, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. Your intake interviews are deeply personal and specific — you never ask generic questions. You probe for exact details about the person's life, routine, past failures, emotional drivers, and environment so you can build a plan rooted in proven behavior change science. Always return valid JSON. Never mention specific third-party apps, brands, or services by name. SAFETY: Do not generate content that promotes violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. If a habit request seems harmful, respond with questions that redirect toward positive, healthy alternatives.",
           },
           { role: "user", content: prompt },
         ],
@@ -3353,7 +3353,7 @@ You are applying proven behavior change science. Design exactly 4 weeks followin
 
 WEEK 1 — FOUNDATION (Micro-Habits + Environment Design)
 Theme should reflect "Building the Trigger" or similar.
-Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (BJ Fogg's micro-habits method). The user should feel like they CANNOT fail.
+Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (the micro-habits method from behavioral research). The user should feel like they CANNOT fail.
 Tasks must:
 - Identify and set up a specific CUE (time, location, or existing habit to stack onto)
 - Practice the "2-minute version" of the habit — absurdly easy, just to build the neural pathway
@@ -3428,7 +3428,7 @@ REQUIREMENTS:
           messages: [
             {
               role: "system",
-              content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+              content: "You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -3518,7 +3518,7 @@ You are applying proven behavior change science. Create ${daysCount} daily plans
 ${daysCount === 1 ? `SINGLE DAY PLAN — BEHAVIOR ACTIVATION
 Since this is a one-day plan, focus on establishing the complete habit loop:
 - Task 1: ENVIRONMENT SETUP — Prepare the physical space and remove friction (make the habit obvious and easy)
-- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (BJ Fogg's 2-minute rule). The goal is just to START.
+- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (the 2-minute rule from behavioral science). The goal is just to START.
 - Task 3: THE FULL PRACTICE — Do the habit at a comfortable level with full presence and intention
 - Task 4: REFLECTION & REWARD — Celebrate completion, note what worked, and set up tomorrow's cue
 Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).` : `WEEKLY PROGRESSION (7 days):
@@ -3574,7 +3574,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "system",
-            content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -3702,7 +3702,7 @@ You are applying proven behavior change science. Design exactly 4 weeks followin
 
 WEEK 1 — FOUNDATION (Micro-Habits + Environment Design)
 Theme should reflect "Building the Trigger" or similar.
-Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (BJ Fogg's micro-habits method). The user should feel like they CANNOT fail.
+Focus: Establish the cue-routine-reward loop with the SMALLEST possible version of the habit (the micro-habits method from behavioral research). The user should feel like they CANNOT fail.
 Tasks must:
 - Identify and set up a specific CUE (time, location, or existing habit to stack onto)
 - Practice the "2-minute version" of the habit — absurdly easy, just to build the neural pathway
@@ -3769,7 +3769,7 @@ REQUIREMENTS:
           messages: [
             {
               role: "system",
-              content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+              content: "You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. You design progressive behavior change programs that start with tiny actions and systematically build to full habits through scientifically proven phases. Every task you create includes a clear cue, specific routine, and satisfying reward. Always return valid JSON with exactly 4 weeks. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
             },
             { role: "user", content: weekPrompt },
           ],
@@ -3833,7 +3833,7 @@ You are applying proven behavior change science. Create ${daysCount} daily plans
 ${daysCount === 1 ? `SINGLE DAY PLAN — BEHAVIOR ACTIVATION
 Since this is a one-day plan, focus on establishing the complete habit loop:
 - Task 1: ENVIRONMENT SETUP — Prepare the physical space and remove friction (make the habit obvious and easy)
-- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (BJ Fogg's 2-minute rule). The goal is just to START.
+- Task 2: THE TINY VERSION — Practice the absolute smallest version of the habit (the 2-minute rule from behavioral science). The goal is just to START.
 - Task 3: THE FULL PRACTICE — Do the habit at a comfortable level with full presence and intention
 - Task 4: REFLECTION & REWARD — Celebrate completion, note what worked, and set up tomorrow's cue
 Each task must include CUE (what triggers it), ROUTINE (exactly what to do), and REWARD (how to celebrate).` : `WEEKLY PROGRESSION (7 days):
@@ -3880,7 +3880,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "system",
-            content: "You are an expert behavioral psychologist and habit coach trained in BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework (4 Laws of Behavior Change), and Charles Duhigg's Habit Loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
+            content: "You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. You design behavior change plans where every task includes a clear cue, specific routine, and satisfying reward. You understand that consistency matters more than intensity — starting tiny and building up is scientifically proven to create lasting habits. Always return valid JSON. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content. Focus only on positive, healthy habit-building.",
           },
           { role: "user", content: prompt },
         ],
@@ -4871,7 +4871,7 @@ Return JSON exactly like this:
 
 CRITICAL RULES:
 1. RESOURCES must have a "searchQuery" field (NOT a URL). The system will generate working search links automatically. Do NOT include any "url" field.
-2. For books, include the book title and author in searchQuery (e.g., "Atomic Habits James Clear book").
+2. For books, include the book title and topic in searchQuery (e.g., "habit formation behavior change book").
 3. For articles, include the site name in searchQuery (e.g., "morning routine tips site:psychologytoday.com").
 4. For courses, include the platform (e.g., "meditation beginner course Coursera").
 5. NEVER recommend habit tracking apps, habit building apps, goal setting apps, or productivity apps that compete with a habit coaching platform (no Habitica, Streaks, HabitNow, Loop, Fabulous, Strides, Way of Life, Coach.me, Todoist, etc.).
@@ -6111,7 +6111,7 @@ Return JSON with:
         messages: [
           {
             role: "system",
-            content: `You are an expert habit coaching AI powered by behavioral psychology. You design plans using proven behavior change science: BJ Fogg's behavior design principles (start absurdly small), James Clear's 4 Laws (make it obvious, attractive, easy, satisfying), and the Cue-Routine-Reward loop. Generate a habit plan that shows users how REAL behavior change works. Return ONLY valid JSON with this structure:
+            content: `You are an expert habit coaching AI powered by behavioral psychology. You design plans using proven behavior change science: behavior design principles (start absurdly small), the 4 Laws of Behavior Change (make it obvious, attractive, easy, satisfying), and the Cue-Routine-Reward loop. Generate a habit plan that shows users how REAL behavior change works. Return ONLY valid JSON with this structure:
 {
   "title": "Compelling plan title that hints at the science-backed approach",
   "summary": "1-2 sentence summary explaining the behavior change approach — mention why starting small works",
@@ -6128,14 +6128,14 @@ Return JSON with:
     {"task": "Monthly identity reflection — 'I am now someone who...' assessment", "xp": 150},
     {"task": "Monthly progressive overload — plan next month's increased targets", "xp": 100}
   ],
-  "insight": "One specific insight from behavior change research (cite the principle, e.g., 'BJ Fogg's research shows that emotions create habits, not repetition — celebrating tiny wins literally wires the habit into your brain')",
+  "insight": "One specific insight from behavior change research (cite the principle, e.g., 'Research shows that emotions create habits, not repetition — celebrating tiny wins literally wires the habit into your brain')",
   "tips": ["Tip grounded in specific science", "Practical technique tip", "Mindset/identity tip"],
   "resources": [
     {"name": "Resource name", "type": "article", "searchQuery": "descriptive generic search terms without brand names"},
     {"name": "Resource name", "type": "book", "searchQuery": "topic area guide for beginners"},
     {"name": "Resource name", "type": "video", "searchQuery": "descriptive technique tutorial"}
   ],
-  "coachMessage": "A personalized message that explains WHY starting small works and how this plan will progressively build to their full goal. Reference BJ Fogg's behavior design approach. 2-3 sentences.",
+  "coachMessage": "A personalized message that explains WHY starting small works and how this plan will progressively build to their full goal. Reference behavior design principles. 2-3 sentences.",
   "stackSuggestion": "Suggest a complementary habit that pairs well and explain the habit stacking principle behind it"
 }
 Be specific, practical, and grounded in behavior science. Every task should make the user think 'this coach really knows how habits actually form.' Include realistic time estimates and XP rewards. IMPORTANT: Never mention specific third-party apps, brands, or services by name (no Duolingo, Headspace, Calm, etc.). Use generic descriptions instead. Do not generate any harmful, violent, or explicit content. Resources should have searchQuery fields, NOT urls. IMPORTANT: searchQuery values must use generic descriptive terms only — do NOT include brand names, author names, specific product names, or trademarked terms. Use topic-based descriptions like "beginner meditation breathing technique guide" instead.`

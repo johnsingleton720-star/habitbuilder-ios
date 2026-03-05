@@ -840,7 +840,7 @@ export default function Landing() {
         "name": "HabitBuilder.pro",
         "url": "https://habitbuilder.pro",
         "logo": "https://habitbuilder.pro/icon-192.png",
-        "description": "AI-powered habit coaching application grounded in behavioral science by BJ Fogg, James Clear, and Charles Duhigg.",
+        "description": "AI-powered habit coaching application grounded in evidence-based behavioral science.",
         "founder": {
           "@type": "Person",
           "name": "John Singleton",

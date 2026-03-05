@@ -16,7 +16,7 @@ export default function About() {
     {
       icon: Brain,
       title: "Behavioral Science",
-      description: "Every feature is grounded in proven research from BJ Fogg's behavior design methodology, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.",
+      description: "Every feature is grounded in proven behavior design methodology, the science of small habits, and the cue-routine-reward framework.",
     },
     {
       icon: Target,
@@ -104,7 +104,7 @@ export default function About() {
             Our Mission
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            We believe everyone deserves a personal coach for building better habits. Traditional habit trackers just give you a checkbox — we give you a plan, a guide, and the science to back it up. HabitBuilder.pro combines AI-powered personalization with proven behavioral science frameworks from researchers like BJ Fogg, James Clear, and Charles Duhigg to create coaching experiences that actually work.
+            We believe everyone deserves a personal coach for building better habits. Traditional habit trackers just give you a checkbox — we give you a plan, a guide, and the science to back it up. HabitBuilder.pro combines AI-powered personalization with proven behavioral science frameworks from leading psychology research to create coaching experiences that actually work.
           </p>
         </motion.div>
       </section>
@@ -133,7 +133,7 @@ export default function About() {
                 Based in Dallas, Texas, John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After spending years cycling through various productivity and habit tracking apps, he kept hitting the same wall. The apps were great at tracking what he did, but none of them helped him figure out what to do or how to stick with it when motivation faded.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                That gap between tracking and actual behavior change became the foundation for HabitBuilder.pro. Drawing on research from BJ Fogg's behavior design methodology, James Clear's Atomic Habits framework, and Charles Duhigg's habit loop model, John designed an AI coaching system that interviews you about your goals, understands your schedule and constraints, and generates a personalized action plan — not a generic checklist.
+                That gap between tracking and actual behavior change became the foundation for HabitBuilder.pro. Drawing on evidence-based behavior design research — micro-habit methodology, the 4 Laws of Behavior Change, and the cue-routine-reward framework — John designed an AI coaching system that interviews you about your goals, understands your schedule and constraints, and generates a personalized action plan — not a generic checklist.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 What makes HabitBuilder different is the guided session experience. Instead of just checking a box and moving on, the app walks you through each task with coaching tips, built-in timers, and post-session AI summaries that help you reflect on what worked. It is the difference between having a to-do list and having a coach in your pocket. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone — not just people who can afford a personal coach.

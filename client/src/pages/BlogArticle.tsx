@@ -161,7 +161,7 @@ export default function BlogArticle() {
                   <div>
                     <p className="font-semibold mb-1" data-testid="text-author-name">Written by the HabitBuilder.pro Team</p>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Our content is grounded in behavioral science research from experts like BJ Fogg, James Clear, and Charles Duhigg. Every article is designed to give you practical, evidence-based strategies for building lasting habits.
+                      Our content is grounded in behavioral science research from leading experts in behavioral psychology. Every article is designed to give you practical, evidence-based strategies for building lasting habits.
                     </p>
                     <Link href="/about" className="text-sm text-primary hover:underline mt-2 inline-block" data-testid="link-about-author">
                       Learn more about us

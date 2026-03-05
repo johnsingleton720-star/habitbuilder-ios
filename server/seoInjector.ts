@@ -62,7 +62,7 @@ function getHomepageSeo(): { meta: string; schemas: string; noscript: string } {
       name: "HabitBuilder.pro",
       url: BASE_URL,
       logo: `${BASE_URL}/icon-192.png`,
-      description: "AI-powered habit coaching application grounded in behavioral science by BJ Fogg, James Clear, and Charles Duhigg.",
+      description: "AI-powered habit coaching application grounded in evidence-based behavioral science.",
       founder: {
         "@type": "Person",
         name: "John Singleton",
@@ -89,7 +89,7 @@ function getHomepageSeo(): { meta: string; schemas: string; noscript: string } {
   const noscript = `<noscript>
     ${NAV_LINKS}
     <h1>HabitBuilder.pro - AI-Powered Habit Coaching</h1>
-    <p>Build lasting habits with personalized AI coaching. Get daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Grounded in behavioral science from BJ Fogg, James Clear, and Charles Duhigg.</p>
+    <p>Build lasting habits with personalized AI coaching. Get daily action plans, guided sessions with timers, streak tracking, XP leveling, and progress analytics. Grounded in evidence-based behavioral science research.</p>
     <h2>Pricing</h2>
     <ul>
       <li>Free: 1 habit forever with AI coaching, personalized plans, and streak tracking</li>
@@ -116,7 +116,7 @@ function getHomepageSeo(): { meta: string; schemas: string; noscript: string } {
 function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
   const meta = `
     <title>About HabitBuilder.pro - AI-Powered Habit Coaching | Meet the Founder</title>
-    <meta name="description" content="Learn about HabitBuilder.pro, founded by John Singleton in Dallas, Texas. Our AI-powered habit coaching app combines personalized plans with behavioral science from BJ Fogg, James Clear, and Charles Duhigg." />
+    <meta name="description" content="Learn about HabitBuilder.pro, founded by John Singleton in Dallas, Texas. Our AI-powered habit coaching app combines personalized plans with evidence-based behavioral science." />
     <meta property="og:title" content="About HabitBuilder.pro - Meet the Founder" />
     <meta property="og:description" content="Built in Dallas, Texas by John Singleton. AI-powered habit coaching grounded in behavioral science." />
     <meta property="og:url" content="${BASE_URL}/about" />
@@ -153,12 +153,12 @@ function getAboutSeo(): { meta: string; schemas: string; noscript: string } {
     ${NAV_LINKS}
     <h1>About HabitBuilder.pro</h1>
     <h2>Our Mission</h2>
-    <p>We believe everyone deserves a personal coach for building better habits. HabitBuilder.pro combines AI-powered personalization with proven behavioral science frameworks from researchers like BJ Fogg, James Clear, and Charles Duhigg.</p>
+    <p>We believe everyone deserves a personal coach for building better habits. HabitBuilder.pro combines AI-powered personalization with proven behavioral science frameworks from leading psychology research.</p>
     <h2>Founder</h2>
-    <p>John Singleton - Founder &amp; Developer, based in Dallas, Texas. John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After years of cycling through productivity apps, he realized the missing piece was not tracking but guidance. Drawing on behavioral science from BJ Fogg, James Clear, and Charles Duhigg, he designed an AI coaching system that interviews you about your goals, understands your constraints, and generates a personalized action plan. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone.</p>
+    <p>John Singleton - Founder &amp; Developer, based in Dallas, Texas. John built HabitBuilder.pro from a simple but powerful idea: what if a habit tracker could actually coach you? After years of cycling through productivity apps, he realized the missing piece was not tracking but guidance. Drawing on evidence-based behavior design research, he designed an AI coaching system that interviews you about your goals, understands your constraints, and generates a personalized action plan. John continues to build and improve HabitBuilder.pro based on real user feedback, with the goal of making expert-level habit coaching accessible to everyone.</p>
     <h2>The Science Behind It</h2>
     <ul>
-      <li>Behavioral Science: Every feature grounded in research from BJ Fogg's behavior design methodology, James Clear's Atomic Habits, and Charles Duhigg's habit loop framework.</li>
+      <li>Behavioral Science: Every feature grounded in proven behavior design methodology, the science of small habits, and the cue-routine-reward framework.</li>
       <li>Personalized Coaching: AI interviews you, understands your goals, and builds a plan tailored to your life.</li>
       <li>Guided Sessions: Walk through each task with timers, coaching tips, and post-session summaries.</li>
     </ul>
@@ -333,7 +333,7 @@ function getBlogArticleSeo(slug: string): { meta: string; schemas: string; noscr
       ${sectionContent}
       ${faqContent ? `<h2>Frequently Asked Questions</h2>\n    ${faqContent}` : ""}
     </article>
-    <p>Written by the HabitBuilder.pro Team. Our content is grounded in behavioral science research from BJ Fogg, James Clear, and Charles Duhigg.</p>
+    <p>Written by the HabitBuilder.pro Team. Our content is grounded in behavioral science research from leading behavioral psychology experts.</p>
     <p><a href="/blog">More Articles</a> | <a href="/templates">Browse Habit Templates</a> | <a href="/about">About Us</a></p>
   </noscript>`;
 

@@ -58,7 +58,7 @@ export const blogArticles: BlogArticle[] = [
     publishedDate: "2026-01-22",
     readTime: "6 min read",
     category: "Techniques",
-    keywords: ["habit stacking", "build habits", "habit formation", "behavior change", "atomic habits"],
+    keywords: ["habit stacking", "build habits", "habit formation", "behavior change"],
     sections: [
       {
         heading: "What Is Habit Stacking?",
