@@ -16,8 +16,23 @@ workflows:
         script: npm run build
       - name: Add iOS platform
         script: npx cap add ios || true
-      - name: Sync Capacitor (allow pod install failure)
-        script: npx cap sync ios 2>&1 || echo "cap sync completed with warnings - will fix Podfile next"
+      - name: Sync Capacitor
+        script: |
+          npx cap sync ios 2>&1 || echo "cap sync had warnings (expected - Podfile will be fixed next)"
+          echo ""
+          echo "=== Verifying Cordova plugin files ==="
+          if [ -d "ios/App/App/plugins" ]; then
+            ls -la ios/App/App/plugins/
+            find ios/App/App/plugins/ -name "*purchase*" -o -name "*Purchase*" -o -name "*store*" -o -name "*Store*" 2>/dev/null
+          else
+            echo "WARNING: No plugins directory found"
+          fi
+          echo ""
+          echo "=== Checking capacitor.cordova.podspec ==="
+          cat ios/App/capacitor.cordova.podspec 2>/dev/null || echo "No cordova podspec found"
+          echo ""
+          echo "=== Cordova plugin list ==="
+          find ios/ -path "*/cordova-plugin-purchase*" 2>/dev/null | head -20
         ignore_failure: true
       - name: Fix Podfile and install pods
         script: |
@@ -44,6 +59,53 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
           echo "=== Deployment targets after fix ==="
           grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
+      - name: Add In-App Purchase capability and StoreKit framework
+        script: |
+          cd ios/App
+
+          # Create entitlements file
+          cat > App/App.entitlements << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict/>
+          </plist>
+          EOF
+
+          # Add entitlements file and StoreKit framework to Xcode project
+          ruby << 'RUBYEOF'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('App.xcodeproj')
+          project.targets.each do |target|
+            next unless target.name == 'App'
+
+            # Set entitlements file
+            target.build_configurations.each do |config|
+              config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
+            end
+            puts "Set CODE_SIGN_ENTITLEMENTS for all configurations"
+
+            # Add StoreKit framework
+            frameworks_group = project.frameworks_group
+            storekit_ref = project.files.find { |f| f.path == 'StoreKit.framework' }
+            unless storekit_ref
+              storekit_ref = frameworks_group.new_reference('System/Library/Frameworks/StoreKit.framework', :sdk_root)
+              target.frameworks_build_phase.add_file_reference(storekit_ref, true)
+              puts "Added StoreKit.framework to project"
+            else
+              puts "StoreKit.framework already in project"
+            end
+          end
+          project.save
+          puts "Xcode project updated successfully"
+          RUBYEOF
+
+          echo ""
+          echo "=== Verifying entitlements file ==="
+          cat App/App.entitlements
+          echo ""
+          echo "=== Verifying StoreKit in project ==="
+          grep -c "StoreKit" App.xcodeproj/project.pbxproj && echo "StoreKit references found" || echo "WARNING: No StoreKit in project"
       - name: Set up code signing
         script: |
           keychain initialize
