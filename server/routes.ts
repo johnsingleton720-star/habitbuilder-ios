@@ -2351,62 +2351,58 @@ SAFETY: Never generate harmful, violent, or explicit content.`
       const userId = req.user!.claims.sub;
       const { receiptData, productId } = req.body;
 
+      console.log("[Apple IAP] Validating receipt for user:", userId, "product:", productId);
+
       if (!receiptData || !productId) {
         return res.status(400).json({ error: "Receipt data and product ID required" });
       }
 
-      const isProduction = process.env.NODE_ENV === 'production';
-      const verifyUrl = isProduction
-        ? 'https://buy.itunes.apple.com/verifyReceipt'
-        : 'https://sandbox.itunes.apple.com/verifyReceipt';
+      const sharedSecret = process.env.APPLE_SHARED_SECRET || '';
+      if (!sharedSecret) {
+        console.error("[Apple IAP] APPLE_SHARED_SECRET not configured");
+      }
 
-      const appleResponse = await fetch(verifyUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          'receipt-data': receiptData,
-          password: process.env.APPLE_SHARED_SECRET || '',
-        }),
+      const receiptPayload = JSON.stringify({
+        'receipt-data': receiptData,
+        password: sharedSecret,
       });
 
-      const result = await appleResponse.json();
+      let appleResult: any = null;
 
-      if (result.status === 0) {
+      const prodResponse = await fetch('https://buy.itunes.apple.com/verifyReceipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: receiptPayload,
+      });
+      appleResult = await prodResponse.json();
+      console.log("[Apple IAP] Production validation status:", appleResult.status);
+
+      if (appleResult.status === 21007) {
+        console.log("[Apple IAP] Sandbox receipt detected, retrying with sandbox URL");
+        const sandboxResponse = await fetch('https://sandbox.itunes.apple.com/verifyReceipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: receiptPayload,
+        });
+        appleResult = await sandboxResponse.json();
+        console.log("[Apple IAP] Sandbox validation status:", appleResult.status);
+      }
+
+      if (appleResult.status === 0) {
         const tier = productId.startsWith('pro') ? 'pro' : 'premium';
         await db.update(users).set({
           subscriptionTier: tier,
           hasPaid: true,
         }).where(eq(users.id, userId));
 
-        return res.json({ success: true, tier });
+        console.log("[Apple IAP] Receipt valid, updated user", userId, "to tier:", tier);
+        return res.json({ success: true, valid: true, tier });
       }
 
-      if (result.status === 21007) {
-        const sandboxResponse = await fetch('https://sandbox.itunes.apple.com/verifyReceipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            'receipt-data': receiptData,
-            password: process.env.APPLE_SHARED_SECRET || '',
-          }),
-        });
-        const sandboxResult = await sandboxResponse.json();
-
-        if (sandboxResult.status === 0) {
-          const tier = productId.startsWith('pro') ? 'pro' : 'premium';
-          await db.update(users).set({
-            subscriptionTier: tier,
-            hasPaid: true,
-          }).where(eq(users.id, userId));
-
-          return res.json({ success: true, tier });
-        }
-      }
-
-      console.error("Apple receipt validation failed:", result.status);
-      return res.status(400).json({ error: "Invalid receipt", appleStatus: result.status });
+      console.error("[Apple IAP] Receipt validation failed with status:", appleResult.status);
+      return res.status(400).json({ error: "Invalid receipt", appleStatus: appleResult.status });
     } catch (error) {
-      console.error("Apple receipt validation error:", error);
+      console.error("[Apple IAP] Receipt validation error:", error);
       res.status(500).json({ error: "Failed to validate receipt" });
     }
   });

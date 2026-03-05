@@ -9,12 +9,12 @@ import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { SeoSchema } from "@/components/SeoSchema";
 import { isIOS } from "@/lib/platform";
-import { APPLE_PRODUCT_IDS, purchaseProduct, restorePurchases } from "@/lib/apple-iap";
+import { APPLE_PRODUCT_IDS, purchaseProduct, restorePurchases, initializeAppleIAP } from "@/lib/apple-iap";
 
 interface PricingTier {
   tier: string;
@@ -61,6 +61,14 @@ export default function Paywall() {
     staleTime: 30000,
   });
   
+  useEffect(() => {
+    if (isIOS()) {
+      initializeAppleIAP().then(ready => {
+        if (!ready) console.warn('[Paywall] IAP initialization returned false');
+      });
+    }
+  }, []);
+
   const paidTiers = pricingData?.tiers.filter(tier => tier.tier !== 'free') || [];
 
   const hasAnyAnnualSlots = slotsData && (
