@@ -256,7 +256,8 @@ export async function registerRoutes(
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      const sessionUser = { claims: { sub: String(user.id), email: user.email, first_name: user.firstName, last_name: user.lastName, profile_image: user.profileImageUrl } };
+      const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+      const sessionUser = { claims: { sub: String(user.id), email: user.email, first_name: user.firstName, last_name: user.lastName, profile_image: user.profileImageUrl }, expires_at: expiresAtSeconds };
       req.login(sessionUser, (err) => {
         if (err) {
           console.error("Native token exchange login error:", err);
