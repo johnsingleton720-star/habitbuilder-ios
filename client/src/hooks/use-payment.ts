@@ -2,8 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 
 interface PaymentStatus {
   hasPaid: boolean;
-  isTrialActive: boolean;
-  trialEndsAt: string | null;
 }
 
 export function usePaymentStatus() {
@@ -15,8 +13,8 @@ export function usePaymentStatus() {
 
   return {
     hasPaid: data?.hasPaid || false,
-    isTrialActive: data?.isTrialActive || false,
-    trialEndsAt: data?.trialEndsAt || null,
+    isTrialActive: false,
+    trialEndsAt: null,
     hasAccess: true,
     isLoading,
     refetch,

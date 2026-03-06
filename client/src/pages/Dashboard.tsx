@@ -54,7 +54,7 @@ export default function Dashboard() {
   const [showTour, setShowTour] = useState(false);
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { features, isFreeUser, isInTrial } = useSubscription();
+  const { features, isFreeUser } = useSubscription();
 
   useEffect(() => {
     if (window.location.hash === "#tour") {
@@ -690,7 +690,7 @@ export default function Dashboard() {
         } : undefined}
       />
 
-      {isFreeUser && !isInTrial && !user?.isAdmin && activeHabits && activeHabits.length > 1 && (
+      {isFreeUser && !user?.isAdmin && activeHabits && activeHabits.length > 1 && (
         <DowngradeHabitPicker habits={habits || []} open={true} />
       )}
 

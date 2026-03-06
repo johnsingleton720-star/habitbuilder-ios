@@ -420,7 +420,7 @@ function TimezoneSettings({ user }: { user: any }) {
 export default function Account() {
   usePageTitle("Account", "Manage your HabitBuilder.pro account settings, email preferences, timezone, and subscription.");
   const { user, logout } = useAuth();
-  const { hasPaid, isTrialActive, trialEndsAt } = usePaymentStatus();
+  const { hasPaid } = usePaymentStatus();
   const { tier, isPro, isPremium, isFreeUser } = useSubscription();
   const { data: habits } = useHabits();
   const { toast } = useToast();
@@ -771,7 +771,7 @@ export default function Account() {
                       ? `Premium (${subDetails?.interval === 'year' ? '$140 USD/year' : '$15 USD/month'})`
                       : isPro
                       ? `Pro (${subDetails?.interval === 'year' ? '$48 USD/year' : '$6 USD/month'})`
-                      : isTrialActive ? "Free Trial" : "No Active Plan"}
+                      : "Free Plan"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -781,7 +781,7 @@ export default function Account() {
                     </Badge>
                   )}
                   <Badge 
-                    variant={hasPaid ? "default" : isTrialActive ? "secondary" : "destructive"}
+                    variant={hasPaid ? "default" : "secondary"}
                     className="gap-1"
                     data-testid="badge-subscription-status"
                   >
@@ -789,10 +789,8 @@ export default function Account() {
                       <><Crown className="w-3 h-3" /> Premium</>
                     ) : isPro ? (
                       <><Check className="w-3 h-3" /> Pro</>
-                    ) : isTrialActive ? (
-                      <><Sparkles className="w-3 h-3" /> Trial</>
                     ) : (
-                      "Expired"
+                      "Free"
                     )}
                   </Badge>
                 </div>
@@ -809,16 +807,7 @@ export default function Account() {
                 </div>
               )}
 
-              {isTrialActive && trialEndsAt && (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm text-amber-800 dark:text-amber-200">
-                    Trial ends {format(new Date(trialEndsAt), "MMM d, yyyy 'at' h:mm a")}
-                  </span>
-                </div>
-              )}
-
-              {isFreeUser && !isTrialActive && (
+              {isFreeUser && (
                 <div className="p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10" data-testid="card-account-upgrade">
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
@@ -1146,16 +1135,10 @@ export default function Account() {
                     </div>
 
                     <div className="pt-2">
-                      <p className="text-sm font-medium mb-2">Signups & Trials</p>
+                      <p className="text-sm font-medium mb-2">Signups</p>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" data-testid="badge-new-registrations">
                           +{adminAnalytics.newRegistrations} registrations
-                        </Badge>
-                        <Badge variant="default" data-testid="badge-new-free-trials">
-                          +{adminAnalytics.newFreeTrialSignups} free trial signups
-                        </Badge>
-                        <Badge variant="outline" data-testid="badge-active-trials">
-                          {adminAnalytics.freeTrialUsers} active trials
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">

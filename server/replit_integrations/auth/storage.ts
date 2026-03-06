@@ -22,10 +22,6 @@ class AuthStorage implements IAuthStorage {
     const isOwner = userData.email === OWNER_EMAIL;
     const existingUser = await this.getUser(userData.id!);
     
-    const trialEndsAt = !existingUser && !isOwner 
-      ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
-      : existingUser?.trialEndsAt;
-
     const utmFields = !existingUser && utmData ? {
       signupSource: utmData.gclid ? "google_ads" : utmData.utm_source || "direct",
       signupUtmSource: utmData.utm_source || null,
@@ -39,7 +35,6 @@ class AuthStorage implements IAuthStorage {
       .values({
         ...userData,
         ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
-        ...(!existingUser && !isOwner && { trialEndsAt }),
         ...utmFields,
       })
       .onConflictDoUpdate({

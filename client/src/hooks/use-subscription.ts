@@ -28,33 +28,7 @@ interface SubscriptionFeatures {
   hasDailyPlanner: boolean;
 }
 
-const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = {
-  trial: {
-    maxHabits: 3, // Limited during trial
-    hasAiCoaching: true, // Can try AI coaching
-    hasPersonalizedPlans: true, // Can generate one plan
-    hasSessionSummaries: false, // Premium feature
-    hasStreaksAchievements: true, // Basic tracking
-    hasTemplates: true, // Can view templates
-    hasEditableTemplates: false, // Premium only
-    hasDownloadablePdf: false, // Premium only
-    hasWeeklyReports: false, // Pro+ feature
-    hasEmailReminders: false, // Pro+ feature
-    hasVoiceNotes: false, // Premium only
-    hasAccountabilityPartners: false, // Premium only
-    hasPrioritySupport: false, // Premium only
-    hasAdvancedAnalytics: false, // Premium only
-    hasCoachChat: false, // Premium only
-    hasHabitStacking: false, // Premium only
-    hasAiResources: true,
-    hasPlanRefresh: true,
-    hasUnlimitedSessions: true,
-    hasJournal: true,
-    hasFocusTimer: true,
-    hasMoodTracker: true,
-    hasGoals: false,
-    hasDailyPlanner: false,
-  },
+const TIER_FEATURES: Record<SubscriptionTier, SubscriptionFeatures> = {
   free: {
     maxHabits: 1,
     hasAiCoaching: false,
@@ -138,24 +112,11 @@ const TIER_FEATURES: Record<SubscriptionTier | 'trial', SubscriptionFeatures> = 
 export function useSubscription() {
   const { user } = useAuth();
   
-  // Check trial status
-  const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-  const isInTrial = trialEndsAt && trialEndsAt > new Date();
-  const trialExpired = trialEndsAt && trialEndsAt <= new Date();
-  const trialDaysRemaining = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
-  
-  // Determine effective tier
-  // If hasPaid is true but tier is still 'free', treat them as 'pro' (fallback for webhook edge cases)
   const storedTier: SubscriptionTier = (user?.subscriptionTier as SubscriptionTier) || 'free';
   const baseTier: SubscriptionTier = user?.hasPaid && storedTier === 'free' ? 'pro' : storedTier;
   const hasPaidSubscription = user?.hasPaid === true;
   
-  // Effective tier: paid subscription > trial > expired free
-  const effectiveTier: SubscriptionTier | 'trial' = hasPaidSubscription 
-    ? baseTier 
-    : isInTrial 
-      ? 'trial' 
-      : 'free';
+  const effectiveTier: SubscriptionTier = hasPaidSubscription ? baseTier : 'free';
   
   const isAdmin = user?.isAdmin === true;
   const isActive = true;
@@ -177,9 +138,6 @@ export function useSubscription() {
     if (effectiveTier === 'free' && !features[feature]) {
       return 'Upgrade to Pro ($6/mo) to unlock this feature';
     }
-    if (effectiveTier === 'trial' && !features[feature]) {
-      return 'Subscribe to Pro to keep this feature after your trial';
-    }
     if (effectiveTier === 'pro' && !features[feature]) {
       return 'Upgrade to Premium to unlock this feature';
     }
@@ -190,10 +148,10 @@ export function useSubscription() {
     tier: effectiveTier,
     baseTier,
     isActive,
-    isInTrial,
-    trialExpired,
-    trialDaysRemaining,
-    trialEndsAt,
+    isInTrial: false,
+    trialExpired: false,
+    trialDaysRemaining: 0,
+    trialEndsAt: null,
     features,
     canUseFeature,
     canAddMoreHabits,

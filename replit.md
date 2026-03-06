@@ -45,14 +45,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Payment System
 -   **Subscription Tiers**: Free, Pro, Premium, managed via Stripe for web/Android and Apple In-App Purchase for iOS.
--   **Trial System**: 2-day free trial, with free tier limitations designed to encourage upgrades.
+-   **Free Tier**: Permanent free plan with 1 habit limit and basic features. No time-limited trial.
 
 ### Customer Feedback System
 -   Allows users to submit various types of feedback (General, Bug, Feature Request, Support).
 -   Admins can manage feedback via a dashboard.
 
 ### Analytics
--   **Admin Analytics**: Tracks page views, unique visitors, registrations, and trial sign-ups.
+-   **Admin Analytics**: Tracks page views, unique visitors, and registrations.
 -   **Advanced Analytics (Premium)**: Includes trend charts, habit performance breakdowns, and AI-generated insights.
 
 ### Achievements & Gamification

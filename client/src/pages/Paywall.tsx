@@ -47,7 +47,7 @@ export default function Paywall() {
   usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. 1 habit free forever. Pro at $6 USD/month for unlimited habits, or Premium at $15 USD/month with advanced analytics and community features.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const { isInTrial, trialExpired, trialDaysRemaining } = useSubscription();
+  const { isFreeUser } = useSubscription();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
@@ -180,7 +180,7 @@ export default function Paywall() {
             <Logo size="lg" />
           </div>
           
-          {trialExpired ? (
+          {isFreeUser ? (
             <>
               <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -191,19 +191,6 @@ export default function Paywall() {
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
                 You can keep using 1 habit for free with 3 sessions per week. Upgrade for unlimited sessions, AI coaching insights, streaks, plan updates, and more.
-              </p>
-            </>
-          ) : isInTrial ? (
-            <>
-              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
-                <Clock className="w-5 h-5 text-primary" />
-                <span className="text-primary font-medium">{trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left in your trial</span>
-              </div>
-              <h1 className="font-display text-4xl font-bold text-foreground mb-3">
-                Upgrade to Continue Building Great Habits
-              </h1>
-              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                Subscribe now to unlock unlimited habits and premium features.
               </p>
             </>
           ) : (

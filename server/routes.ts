@@ -1189,25 +1189,14 @@ export async function registerRoutes(
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      // Check trial/subscription limits for habit creation
       const existingHabits = await storage.getHabits(userId);
-      const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-      const isInTrial = trialEndsAt && trialEndsAt > new Date();
       const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
       const isAdmin = user?.isAdmin === true;
       
-      // Free users: max 1 habit, Trial users: max 3 habits, Pro/Premium/Admin: unlimited
-      if (!hasPaidSubscription && !isAdmin) {
-        if (isInTrial && existingHabits.length >= 3) {
-          return res.status(403).json({ 
-            error: "Trial users can create up to 3 habits. Subscribe to Pro or Premium for unlimited habits." 
-          });
-        }
-        if (!isInTrial && existingHabits.length >= 1) {
-          return res.status(403).json({ 
-            error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits." 
-          });
-        }
+      if (!hasPaidSubscription && !isAdmin && existingHabits.length >= 1) {
+        return res.status(403).json({ 
+          error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits." 
+        });
       }
       
       const input = api.habits.create.input.parse(req.body);
@@ -4382,10 +4371,7 @@ REQUIREMENTS:
         const user = await storage.getUser(userId);
         const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
         const isAdmin = user?.isAdmin === true;
-        const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-        const isInTrial = trialEndsAt && trialEndsAt > new Date();
-
-        if (!hasPaidSubscription && !isAdmin && !isInTrial) {
+        if (!hasPaidSubscription && !isAdmin) {
           const allHabits = await storage.getHabits(userId);
           const activeCount = allHabits.filter(h => !h.archived).length;
           if (activeCount >= 1) {
@@ -5274,17 +5260,10 @@ Return JSON with:
         }
       }
       
-      // Check if trial is still active using trialEndsAt field
-      const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-      const isTrialActive = trialEndsAt ? Date.now() < trialEndsAt.getTime() : false;
-      
-      // Admin users always have access
       const isAdmin = user?.isAdmin || false;
       
       res.json({ 
         hasPaid: user?.hasPaid || isAdmin,
-        isTrialActive,
-        trialEndsAt: trialEndsAt?.toISOString() || null,
       });
     } catch (error) {
       console.error("Error checking payment status:", error);
