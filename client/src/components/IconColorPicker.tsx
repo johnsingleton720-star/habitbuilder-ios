@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
@@ -82,89 +81,80 @@ export function IconColorPicker({
   onIconChange, 
   onColorChange 
 }: IconColorPickerProps) {
-  const [iconOpen, setIconOpen] = useState(false);
-  const [colorOpen, setColorOpen] = useState(false);
-
-  const SelectedIconComponent = ICON_OPTIONS.find(i => i.name === selectedIcon)?.icon || Star;
+  const [activeTab, setActiveTab] = useState<"icon" | "color">("icon");
 
   return (
-    <div className="flex gap-2">
-      <Popover open={iconOpen} onOpenChange={setIconOpen}>
-        <PopoverTrigger asChild>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-14 h-14 p-0"
-            data-testid="button-select-icon"
-          >
-            <SelectedIconComponent className="w-6 h-6" style={{ color: selectedColor }} />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-2" align="start">
-          <p className="text-sm font-medium mb-2 px-1">Choose Icon</p>
-          <ScrollArea className="h-48">
-            <div className="grid grid-cols-6 gap-1">
-              {ICON_OPTIONS.map((option) => (
-                <Button
-                  key={option.name}
-                  type="button"
-                  variant={selectedIcon === option.name ? "default" : "ghost"}
-                  size="icon"
-                  className="h-9 w-9"
-                  onClick={() => {
-                    onIconChange(option.name);
-                    setIconOpen(false);
-                  }}
-                  data-testid={`icon-option-${option.name}`}
-                >
-                  <option.icon className="w-4 h-4" />
-                </Button>
-              ))}
-            </div>
-          </ScrollArea>
-        </PopoverContent>
-      </Popover>
+    <div className="space-y-3">
+      <div className="flex gap-1 border-b border-border">
+        <button
+          type="button"
+          className={cn(
+            "px-3 py-1.5 text-sm font-medium transition-colors",
+            activeTab === "icon"
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          onClick={() => setActiveTab("icon")}
+          data-testid="tab-select-icon"
+        >
+          Icon
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "px-3 py-1.5 text-sm font-medium transition-colors",
+            activeTab === "color"
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          onClick={() => setActiveTab("color")}
+          data-testid="tab-select-color"
+        >
+          Color
+        </button>
+      </div>
 
-      <Popover open={colorOpen} onOpenChange={setColorOpen}>
-        <PopoverTrigger asChild>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-14 h-14 p-0"
-            data-testid="button-select-color"
-          >
-            <div 
-              className="w-6 h-6 rounded-full" 
-              style={{ backgroundColor: selectedColor }}
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-48 p-2" align="start">
-          <p className="text-sm font-medium mb-2 px-1">Choose Color</p>
-          <div className="grid grid-cols-4 gap-2">
-            {COLOR_OPTIONS.map((color) => (
-              <button
-                key={color.name}
+      {activeTab === "icon" && (
+        <ScrollArea className="h-40">
+          <div className="grid grid-cols-7 gap-1">
+            {ICON_OPTIONS.map((option) => (
+              <Button
+                key={option.name}
                 type="button"
-                className={cn(
-                  "w-8 h-8 rounded-full transition-transform hover:scale-110 flex items-center justify-center",
-                  color.class
-                )}
-                onClick={() => {
-                  onColorChange(color.value);
-                  setColorOpen(false);
-                }}
-                title={color.name}
-                data-testid={`color-option-${color.name}`}
+                variant={selectedIcon === option.name ? "default" : "ghost"}
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => onIconChange(option.name)}
+                data-testid={`icon-option-${option.name}`}
               >
-                {selectedColor === color.value && (
-                  <Check className="w-4 h-4 text-white" />
-                )}
-              </button>
+                <option.icon className="w-4 h-4" />
+              </Button>
             ))}
           </div>
-        </PopoverContent>
-      </Popover>
+        </ScrollArea>
+      )}
+
+      {activeTab === "color" && (
+        <div className="grid grid-cols-6 gap-2 py-1">
+          {COLOR_OPTIONS.map((color) => (
+            <button
+              key={color.name}
+              type="button"
+              className={cn(
+                "w-8 h-8 rounded-full transition-transform hover:scale-110 flex items-center justify-center",
+                color.class
+              )}
+              onClick={() => onColorChange(color.value)}
+              title={color.name}
+              data-testid={`color-option-${color.name}`}
+            >
+              {selectedColor === color.value && (
+                <Check className="w-4 h-4 text-white" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

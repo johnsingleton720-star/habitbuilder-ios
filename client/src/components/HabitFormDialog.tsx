@@ -17,7 +17,6 @@ import { useLocation } from "wouter";
 import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const habitFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -185,33 +184,15 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Icon/Color Picker with Title */}
             <div className="flex gap-3 items-start">
-              <Popover open={showIconPicker} onOpenChange={setShowIconPicker}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex-shrink-0 w-14 h-14 rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors flex items-center justify-center bg-muted/30 hover:bg-muted/50"
-                    data-testid="button-customize-icon"
-                    title="Click to customize icon and color"
-                  >
-                    <SelectedIcon className="w-7 h-7" style={{ color: customColor }} />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-4" align="start">
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">Customize your habit</p>
-                    <IconColorPicker
-                      selectedIcon={customIcon}
-                      selectedColor={customColor}
-                      onIconChange={(icon) => {
-                        setCustomIcon(icon);
-                      }}
-                      onColorChange={(color) => {
-                        setCustomColor(color);
-                      }}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <button
+                type="button"
+                className="flex-shrink-0 w-14 h-14 rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors flex items-center justify-center bg-muted/30 hover:bg-muted/50"
+                data-testid="button-customize-icon"
+                title="Click to customize icon and color"
+                onClick={() => setShowIconPicker(!showIconPicker)}
+              >
+                <SelectedIcon className="w-7 h-7" style={{ color: customColor }} />
+              </button>
               
               <FormField
                 control={form.control}
@@ -232,6 +213,21 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               />
             </div>
             <p className="text-xs text-muted-foreground -mt-2">Click the icon to customize color and style</p>
+
+            {showIconPicker && (
+              <div className="border border-border rounded-lg p-3 bg-muted/20" data-testid="inline-icon-color-picker">
+                <IconColorPicker
+                  selectedIcon={customIcon}
+                  selectedColor={customColor}
+                  onIconChange={(icon) => {
+                    setCustomIcon(icon);
+                  }}
+                  onColorChange={(color) => {
+                    setCustomColor(color);
+                  }}
+                />
+              </div>
+            )}
 
             <FormField
               control={form.control}

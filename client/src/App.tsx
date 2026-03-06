@@ -106,7 +106,15 @@ function Router() {
     );
   }
 
-  if (isAuthLoading || !user) {
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loader-auth" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Landing />;
   }
 
