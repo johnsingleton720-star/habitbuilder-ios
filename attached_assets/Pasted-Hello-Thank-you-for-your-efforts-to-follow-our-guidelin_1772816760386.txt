@@ -1,0 +1,57 @@
+Hello,
+
+Thank you for your efforts to follow our guidelines. There are some outstanding issues that still need your attention.
+
+If you have any questions, we are here to help. Reply to this message in App Store Connect and let us know.
+
+Review Environment
+
+Submission ID: 8289e940-b3ff-4149-bbcf-4259bf0b7549
+Review date: March 06, 2026
+Review Device: iPhone 17 Pro Max
+Version reviewed: 1.0
+
+Guideline 3.1.2(c) - Business - Payments - Subscriptions
+
+
+Issue Description
+
+One or more auto-renewable subscriptions are marketed in the purchase flow in a way that may mislead or confuse users about the subscription terms or pricing. Specifically:
+
+
+
+
+- The auto-renewable subscription displays the monthly calculated pricing for the subscription more clearly and conspicuously than the billed amount.
+
+
+
+Next Steps
+
+To resolve this issue, it would be appropriate to:
+
+
+- Revise the auto-renewable subscription purchase flow to ensure that the billed amount is the most clear and conspicuous pricing element in the layout. Any other pricing elements, including free trial, introductory pricing, and calculated pricing information, must be displayed in a subordinate position and size to the total billed amount. Factors that contribute to whether the billed amount is clear and conspicuous include, but are not limited to, the font, size, color, and location of the billed amount in the auto-renewable subscription purchase flow.
+
+
+Resources
+
+See design guidance for auto-renewable subscriptions in the Human Interface Guidelines, including how to create a positive onboarding experience.
+Learn more about offering auto-renewable subscriptions in the app.
+Guideline 2.1(a) - Performance
+
+Issue Description
+
+The app crashed during review. Apps that crash negatively impact users. 
+
+Steps leading to crash:
+
+- tapping Take Photo
+
+Review device details:
+
+- Device type: iPhone 17 Pro Max 
+- OS version: iOS 26.3.1
+
+Next Steps
+
+Test the app on supported devices to identify crashes and stability issues before resubmitting for review. Crash logs have been attached to help resolve this issue:

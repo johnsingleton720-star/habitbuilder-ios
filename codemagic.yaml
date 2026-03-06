@@ -136,6 +136,16 @@ workflows:
           }
           ICONEOF
           fi
+      - name: Add privacy usage descriptions
+        script: |
+          cd ios/App/App
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'HabitBuilder needs camera access to take a profile photo.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'HabitBuilder needs photo library access to select a profile photo.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'HabitBuilder needs microphone access for voice notes during coaching sessions.'" Info.plist 2>/dev/null || true
+          echo "=== Privacy descriptions ==="
+          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" Info.plist
       - name: Register URL scheme for deep links
         script: |
           cd ios/App/App

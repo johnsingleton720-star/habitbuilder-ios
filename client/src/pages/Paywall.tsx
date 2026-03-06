@@ -330,15 +330,12 @@ export default function Paywall() {
                       <div className="text-center mb-6">
                         {isAnnual ? (
                           <>
-                            <div className="flex items-center justify-center gap-2 mb-1">
-                              <span className="text-2xl text-muted-foreground line-through">${formatPrice(monthlyPrice)}/mo</span>
-                            </div>
-                            <span className={`text-5xl font-display font-bold ${colorClass}`} data-testid={`text-annual-price-${tier.tier}`}>
-                              ${formatPrice(annualMonthly)}
+                            <span className={`text-5xl font-display font-bold ${colorClass}`} data-testid={`text-annual-total-${tier.tier}`}>
+                              ${formatPrice(annualTotal)}
                             </span>
-                            <span className="text-muted-foreground">/mo</span>
-                            <span className="block text-sm text-muted-foreground mt-1" data-testid={`text-annual-total-${tier.tier}`}>
-                              ${formatPrice(annualTotal)}/year, billed annually
+                            <span className="text-muted-foreground">/year</span>
+                            <span className="block text-sm text-muted-foreground mt-2" data-testid={`text-annual-price-${tier.tier}`}>
+                              That's just ${formatPrice(annualMonthly)}/mo
                             </span>
                             {savings > 0 && (
                               <Badge variant="secondary" className="mt-2" data-testid={`badge-savings-${tier.tier}`}>
