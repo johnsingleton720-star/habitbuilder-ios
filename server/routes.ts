@@ -9,7 +9,7 @@ import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens } from "@shared/schema";
-import { saveSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
+import { saveSubscription, syncSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
@@ -501,6 +501,21 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error saving push subscription:", error);
       res.status(500).json({ error: "Failed to save subscription" });
+    }
+  });
+
+  app.post("/api/push/sync", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { subscription } = req.body;
+      if (!subscription || !subscription.endpoint || !subscription.keys) {
+        return res.status(400).json({ error: "Invalid subscription" });
+      }
+      const result = await syncSubscription(userId, subscription);
+      res.json({ success: true, cleaned: result.cleaned });
+    } catch (error) {
+      console.error("Error syncing push subscription:", error);
+      res.status(500).json({ error: "Failed to sync subscription" });
     }
   });
 

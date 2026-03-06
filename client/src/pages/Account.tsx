@@ -1558,8 +1558,23 @@ export default function Account() {
                     size="sm"
                     onClick={async () => {
                       try {
-                        await apiRequest("POST", "/api/push/test");
-                        toast({ title: "Test notification sent!" });
+                        const res = await apiRequest("POST", "/api/push/test");
+                        const data = await res.json();
+                        if (data.total === 0) {
+                          toast({
+                            title: "No active subscriptions",
+                            description: "Try toggling notifications off and on again, or check browser notification permissions.",
+                            variant: "destructive",
+                          });
+                        } else if (data.sent === 0) {
+                          toast({
+                            title: "Notification failed to deliver",
+                            description: "Your subscription may be expired. Try toggling notifications off and on.",
+                            variant: "destructive",
+                          });
+                        } else {
+                          toast({ title: "Test notification sent!" });
+                        }
                       } catch {
                         toast({ title: "Failed to send test notification", variant: "destructive" });
                       }

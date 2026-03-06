@@ -20,23 +20,28 @@ export function usePushNotifications() {
     (async () => {
       try {
         const registration = await navigator.serviceWorker.ready;
-        const existingSub = await registration.pushManager.getSubscription();
-        if (existingSub) return;
+        let subscription = await registration.pushManager.getSubscription();
 
-        if (Notification.permission === "denied") return;
+        if (!subscription) {
+          if (Notification.permission === "denied") return;
 
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
+          const permission = Notification.permission === "granted"
+            ? "granted"
+            : await Notification.requestPermission();
+          if (permission !== "granted") return;
 
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) return;
+          const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          if (!vapidKey) return;
 
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: vapidKey,
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: vapidKey,
+          });
+        }
+
+        await apiRequest("POST", "/api/push/sync", {
+          subscription: subscription.toJSON(),
         });
-
-        await apiRequest("POST", "/api/push/subscribe", { subscription: subscription.toJSON() });
       } catch (err) {
         console.error("[Push] Auto-subscribe error:", err);
       }
