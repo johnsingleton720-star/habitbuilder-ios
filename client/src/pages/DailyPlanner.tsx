@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -61,8 +62,10 @@ import {
   Briefcase,
   Pencil,
   Trash2,
+  MessageSquare,
+  Check,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { PlannerBlock, PlannerInsights, DailyPlannerEntry, UserCommitment } from "@shared/schema";
 
 const BLOCK_TYPE_STYLES: Record<string, { bg: string; border: string; icon: typeof Zap; label: string }> = {
@@ -191,22 +194,38 @@ function TimeBlock({
   block,
   onToggle,
   onSkip,
+  onEdit,
   isUpdating,
+  dateStr,
 }: {
   block: PlannerBlock;
   onToggle: () => void;
   onSkip: () => void;
+  onEdit: () => void;
   isUpdating: boolean;
+  dateStr: string;
 }) {
   const style = BLOCK_TYPE_STYLES[block.type] || BLOCK_TYPE_STYLES.custom;
   const Icon = style.icon;
   const isSkipped = block.skipped;
   const isCommitment = block.type === "commitment";
+  const isHabitWithLink = block.type === "habit" && block.habitId;
+  const [, navigate] = useLocation();
+
+  const titleContent = (
+    <span
+      className={`text-sm font-medium ${isCommitment ? "text-muted-foreground" : block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"} ${isHabitWithLink ? "underline decoration-primary/30 underline-offset-2" : ""}`}
+      data-testid={`block-title-${block.id}`}
+    >
+      {block.title}
+    </span>
+  );
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-md border-l-4 ${style.border} ${isSkipped ? "bg-muted/30 opacity-60" : style.bg} transition-all`}
+      className={`flex items-start gap-3 p-3 rounded-md border-l-4 ${style.border} ${isSkipped ? "bg-muted/30 opacity-60" : style.bg} transition-all ${isHabitWithLink ? "cursor-pointer hover:shadow-sm" : ""}`}
       data-testid={`block-${block.id}`}
+      onClick={isHabitWithLink ? () => navigate(`/habit/${block.habitId}?date=${dateStr}`) : undefined}
     >
       {isCommitment ? (
         <div className="flex-shrink-0 pt-0.5">
@@ -215,7 +234,7 @@ function TimeBlock({
       ) : (
         <div
           className="flex-shrink-0 pt-0.5 cursor-pointer"
-          onClick={onToggle}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
         >
           {isUpdating ? (
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -230,16 +249,22 @@ function TimeBlock({
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`text-sm font-medium ${isCommitment ? "text-muted-foreground" : block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"}`}
-            data-testid={`block-title-${block.id}`}
-          >
-            {block.title}
-          </span>
+          {isHabitWithLink ? (
+            <Link href={`/habit/${block.habitId}?date=${dateStr}`}>
+              {titleContent}
+            </Link>
+          ) : (
+            titleContent
+          )}
           <Badge variant="outline" className={`text-xs no-default-hover-elevate no-default-active-elevate ${isCommitment ? "border-slate-300 dark:border-slate-600 text-slate-500" : ""}`}>
             <Icon className="w-3 h-3 mr-1" />
             {style.label}
           </Badge>
+          {isHabitWithLink && (
+            <Link href={`/habit/${block.habitId}?date=${dateStr}`}>
+              <ChevronRight className="w-3.5 h-3.5 text-primary/60 hover:text-primary" data-testid={`link-habit-${block.id}`} />
+            </Link>
+          )}
           {block.priority === "high" && !block.completed && !isSkipped && !isCommitment && (
             <Badge variant="outline" className={`text-[10px] py-0 ${PRIORITY_STYLES.high}`}>
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
@@ -267,17 +292,30 @@ function TimeBlock({
           )}
         </div>
       </div>
-      {!block.completed && !isSkipped && block.type !== "break" && !isCommitment && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={(e) => { e.stopPropagation(); onSkip(); }}
-          data-testid={`button-skip-${block.id}`}
-        >
-          <SkipForward className="w-3.5 h-3.5" />
-        </Button>
-      )}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {!isCommitment && !isSkipped && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-1.5 text-muted-foreground hover:text-foreground"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            data-testid={`button-edit-${block.id}`}
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {!block.completed && !isSkipped && block.type !== "break" && !isCommitment && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-1.5 text-muted-foreground hover:text-foreground"
+            onClick={(e) => { e.stopPropagation(); onSkip(); }}
+            data-testid={`button-skip-${block.id}`}
+          >
+            <SkipForward className="w-3.5 h-3.5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -744,6 +782,10 @@ export default function DailyPlanner() {
     duration: 30,
   });
   const [updatingBlockId, setUpdatingBlockId] = useState<string | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<{ id: string; time: string; duration: number } | null>(null);
+  const [showAdjustDialog, setShowAdjustDialog] = useState(false);
+  const [adjustInstruction, setAdjustInstruction] = useState("");
   const [showRoutine, setShowRoutine] = useState(false);
   const [showCommitmentDialog, setShowCommitmentDialog] = useState(false);
   const [editingCommitment, setEditingCommitment] = useState<UserCommitment | null>(null);
@@ -911,6 +953,53 @@ export default function DailyPlanner() {
     },
     onError: (err: Error) => {
       toast({ title: "Reschedule failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const editBlockMutation = useMutation({
+    mutationFn: async ({ blockId, time, duration }: { blockId: string; time: string; duration: number }) => {
+      const clampedDuration = Math.max(5, Math.min(480, duration));
+      const hours = parseInt(time.split(":")[0]);
+      const mins = parseInt(time.split(":")[1]);
+      const endTotalMins = hours * 60 + mins + clampedDuration;
+      const cappedEnd = Math.min(endTotalMins, 23 * 60 + 59);
+      const endH = Math.floor(cappedEnd / 60);
+      const endM = cappedEnd % 60;
+      const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+      const res = await apiRequest("PATCH", "/api/planner/block", {
+        date: dateStr,
+        blockId,
+        updates: { time, endTime, duration },
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      setShowEditDialog(false);
+      setEditingBlock(null);
+      toast({ title: "Block updated", description: "Time has been changed." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const adjustScheduleMutation = useMutation({
+    mutationFn: async (instruction: string) => {
+      const res = await apiRequest("POST", "/api/planner/adjust", {
+        date: dateStr,
+        instruction,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/planner", dateStr] });
+      setShowAdjustDialog(false);
+      setAdjustInstruction("");
+      toast({ title: "Schedule adjusted", description: "Your AI coach updated your schedule." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Adjustment failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -1272,6 +1361,17 @@ export default function DailyPlanner() {
               <Plus className="w-4 h-4 mr-2" />
               Add Block
             </Button>
+            {blocks.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setShowAdjustDialog(true)}
+                className="border-primary/30 text-primary hover:bg-primary/5"
+                data-testid="button-adjust-schedule"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Ask AI to Adjust
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -1303,6 +1403,7 @@ export default function DailyPlanner() {
                   key={block.id}
                   block={block}
                   isUpdating={updatingBlockId === block.id}
+                  dateStr={dateStr}
                   onToggle={() => {
                     if (!block.skipped) {
                       toggleBlockMutation.mutate({
@@ -1312,6 +1413,10 @@ export default function DailyPlanner() {
                     }
                   }}
                   onSkip={() => skipMutation.mutate(block.id)}
+                  onEdit={() => {
+                    setEditingBlock({ id: block.id, time: block.time, duration: block.duration });
+                    setShowEditDialog(true);
+                  }}
                 />
               ))}
               {skippedCount > 0 && (
@@ -1586,6 +1691,104 @@ export default function DailyPlanner() {
                 <Briefcase className="w-4 h-4 mr-2" />
               )}
               {editingCommitment ? "Update" : "Save"} Commitment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent data-testid="dialog-edit-block">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" />
+              Edit Time
+            </DialogTitle>
+          </DialogHeader>
+          {editingBlock && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-foreground">Start Time</label>
+                  <Select
+                    value={editingBlock.time}
+                    onValueChange={(v) => setEditingBlock({ ...editingBlock, time: v })}
+                  >
+                    <SelectTrigger data-testid="select-edit-time">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">Duration (min)</label>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={480}
+                    value={editingBlock.duration}
+                    onChange={(e) => setEditingBlock({ ...editingBlock, duration: parseInt(e.target.value) || 30 })}
+                    data-testid="input-edit-duration"
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => editBlockMutation.mutate({
+                  blockId: editingBlock.id,
+                  time: editingBlock.time,
+                  duration: editingBlock.duration,
+                })}
+                disabled={editBlockMutation.isPending}
+                data-testid="button-confirm-edit"
+              >
+                {editBlockMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 mr-2" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAdjustDialog} onOpenChange={setShowAdjustDialog}>
+        <DialogContent data-testid="dialog-adjust-schedule">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Ask AI to Adjust Your Schedule
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tell the AI what you'd like to change. For example: "Move dinner prep to 5pm", "I have a meeting from 3-4pm", or "Make the afternoon lighter".
+            </p>
+            <Textarea
+              placeholder="What would you like to change?"
+              value={adjustInstruction}
+              onChange={(e) => setAdjustInstruction(e.target.value.slice(0, 1000))}
+              rows={3}
+              maxLength={1000}
+              data-testid="input-adjust-instruction"
+            />
+            <Button
+              className="w-full"
+              onClick={() => adjustScheduleMutation.mutate(adjustInstruction)}
+              disabled={adjustScheduleMutation.isPending || !adjustInstruction.trim()}
+              data-testid="button-confirm-adjust"
+            >
+              {adjustScheduleMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {adjustScheduleMutation.isPending ? "Adjusting..." : "Adjust My Schedule"}
             </Button>
           </div>
         </DialogContent>

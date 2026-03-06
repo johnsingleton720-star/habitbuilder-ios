@@ -304,7 +304,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                     ) : (
                       <div className="space-y-1.5">
                         {selectedDateHabits.map(({ habit, plan, isComplete, hasTasks, completedTasks, skippedTasks, totalTasks }) => (
-                          <Link key={habit.id} href={`/habit/${habit.id}`}>
+                          <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || new Date().toISOString().split('T')[0]}`}>
                             <div
                               className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
                                 isComplete 

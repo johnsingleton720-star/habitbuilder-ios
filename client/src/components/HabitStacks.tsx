@@ -295,7 +295,7 @@ function StackItem({
               const habit = habits.find(h => h.id === item.habitId);
               return (
                 <span key={item.habitId} className="flex items-center gap-1.5">
-                  <Link href={`/habit/${item.habitId}`}>
+                  <Link href={`/habit/${item.habitId}?date=${new Date().toISOString().split('T')[0]}`}>
                     <Badge variant="outline" className="text-[10px] cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
                       {habit?.title || item.habitTitle}
                     </Badge>

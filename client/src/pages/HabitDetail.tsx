@@ -33,6 +33,10 @@ export default function HabitDetail() {
   const queryClient = useQueryClient();
   const { features, isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
+
+  const urlDate = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("date")
+    : null;
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -187,9 +191,16 @@ export default function HabitDetail() {
     },
   });
 
-  // Find today's plan or the next upcoming plan
+  // Find today's plan or the next upcoming plan, respecting URL date parameter
   useEffect(() => {
     if (habit?.dailyPlans?.length && !selectedDay) {
+      if (urlDate) {
+        const urlPlan = habit.dailyPlans.find(p => p.date === urlDate);
+        if (urlPlan) {
+          setSelectedDay(urlDate);
+          return;
+        }
+      }
       const today = format(new Date(), "yyyy-MM-dd");
       const todayPlan = habit.dailyPlans.find(p => p.date === today);
       if (todayPlan) {
@@ -203,7 +214,7 @@ export default function HabitDetail() {
         }
       }
     }
-  }, [habit?.dailyPlans, selectedDay]);
+  }, [habit?.dailyPlans, selectedDay, urlDate]);
 
   // Auto-open setup wizard for new habits
   useEffect(() => {

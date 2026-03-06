@@ -9442,6 +9442,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
           p.date === date && p.tasks?.some((t: any) => t.completed));
 
       return {
+        id: h.id,
         title: h.title,
         currentStreak: h.currentStreak || 0,
         longestStreak: h.longestStreak || 0,
@@ -9467,7 +9468,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
     let habitDetails = "";
     if (habitAnalytics.length > 0) {
       habitDetails = habitAnalytics.map(h => {
-        let detail = `- "${h.title}" (preferred: ${h.preferredTime}, streak: ${h.currentStreak} days`;
+        let detail = `- "${h.title}" [habitId=${h.id}] (preferred: ${h.preferredTime}, streak: ${h.currentStreak} days`;
         if (h.peakHour >= 0) detail += `, usually done around ${h.peakHour}:00`;
         if (h.streakAtRisk) detail += `, STREAK AT RISK`;
         detail += `)`;
@@ -9510,7 +9511,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
       "endTime": "07:30",
       "title": "Morning Routine",
       "type": "habit",
-      "habitId": null,
+      "habitId": 123,
       "taskId": null,
       "duration": 30,
       "completed": false,
@@ -9532,6 +9533,7 @@ SCHEDULING RULES:
 - Put streak-at-risk habits at their peak productivity times
 - Include strategic breaks (not just filler) - suggest activities like stretching, walking, hydrating
 - Type must be one of: "habit", "task", "break", "custom", "commitment"
+- For habit blocks: set habitId to the numeric ID shown in brackets [habitId=X] from the habit list. This is required for habit blocks.
 - For commitment blocks: use type "commitment", set completed to false, do NOT schedule any other blocks during commitment times
 - Do not generate harmful content`
       }, {
@@ -9592,11 +9594,29 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
       }
     }
 
+    const habitTitleToId = new Map<string, number>();
+    for (const h of scheduledHabits) {
+      habitTitleToId.set(h.title.toLowerCase().trim(), h.id);
+    }
+
+    const taskTitleToId = new Map<string, number>();
+    for (const t of tasks) {
+      taskTitleToId.set(t.title.toLowerCase().trim(), t.id);
+    }
+
     blocks = blocks.map((b: any, i: number) => {
       const title = (b.title || b.name || "Untitled").trim();
       const type = b.type || "custom";
-      const habitId = b.habitId || null;
-      const taskId = b.taskId || null;
+      let habitId = b.habitId || null;
+      let taskId = b.taskId || null;
+
+      if (type === "habit" && !habitId) {
+        habitId = habitTitleToId.get(title.toLowerCase()) || null;
+      }
+      if (type === "task" && !taskId) {
+        taskId = taskTitleToId.get(title.toLowerCase()) || null;
+      }
+
       const wasCompleted = completedMap.has(title.toLowerCase()) ||
         (habitId && completedMap.has(`habit-${habitId}`)) ||
         (taskId && completedMap.has(`task-${taskId}`));
@@ -9894,6 +9914,93 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
     } catch (error) {
       console.error("Error confirming reschedule:", error);
       res.status(500).json({ error: "Failed to confirm reschedule" });
+    }
+  });
+
+  app.post("/api/planner/adjust", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { date, instruction } = req.body;
+      if (!date || !instruction) return res.status(400).json({ error: "date and instruction required" });
+      if (typeof instruction !== "string" || instruction.length > 1000) {
+        return res.status(400).json({ error: "Instruction must be under 1000 characters" });
+      }
+
+      const [entry] = await db.select().from(dailyPlannerEntries)
+        .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, date)));
+      if (!entry) return res.status(404).json({ message: "No plan for this date" });
+
+      const currentBlocks = (entry.blocks || []) as any[];
+      const blocksSummary = currentBlocks.map(b => ({
+        id: b.id,
+        time: b.time,
+        endTime: b.endTime,
+        title: b.title,
+        type: b.type,
+        duration: b.duration,
+        completed: b.completed,
+        skipped: b.skipped,
+        habitId: b.habitId,
+        taskId: b.taskId,
+        energyLevel: b.energyLevel,
+        priority: b.priority,
+      }));
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a scheduling assistant. The user has a daily schedule with time blocks. They want to adjust it based on their instruction. Return the COMPLETE updated list of blocks as a JSON array. Each block must have: id, time (HH:MM 24h), endTime (HH:MM 24h), title, type (habit/task/break/custom/commitment), duration (minutes), completed (boolean), skipped (boolean), habitId (number or null), taskId (number or null), energyLevel (high/medium/low or null), priority (high/medium/low or null). Preserve existing block IDs and properties. Only modify times/order as needed. Keep completed/skipped states. Do not remove blocks unless the user asks to. Ensure no time overlaps. Return ONLY the JSON array, no explanation.`
+          },
+          {
+            role: "user",
+            content: `Current schedule for ${date}:\n${JSON.stringify(blocksSummary, null, 2)}\n\nUser request: "${instruction}"\n\nReturn the adjusted schedule as a JSON array.`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0]?.message?.content || "[]";
+      let adjustedBlocks: any[];
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        adjustedBlocks = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+      } catch {
+        return res.status(500).json({ error: "AI returned invalid schedule format" });
+      }
+
+      const validBlocks = adjustedBlocks.map((b: any) => ({
+        id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        time: b.time || "09:00",
+        endTime: b.endTime || b.time || "09:30",
+        title: b.title || "Untitled",
+        type: b.type || "custom",
+        duration: b.duration || 30,
+        completed: b.completed || false,
+        skipped: b.skipped || false,
+        habitId: b.habitId || null,
+        taskId: b.taskId || null,
+        energyLevel: b.energyLevel || null,
+        priority: b.priority || null,
+      })).sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
+
+      const [updated] = await db.update(dailyPlannerEntries)
+        .set({ blocks: validBlocks, updatedAt: new Date() })
+        .where(eq(dailyPlannerEntries.id, entry.id))
+        .returning();
+
+      console.log(`[Planner] AI adjusted schedule for ${date}: ${validBlocks.length} blocks`);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error adjusting planner:", error);
+      res.status(500).json({ error: "Failed to adjust schedule" });
     }
   });
 

@@ -244,7 +244,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
   return (
     <>
-      <Link href={`/habit/${habit.id}`}>
+      <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
       <MotionCard
         ref={ref}
         layout

@@ -277,7 +277,7 @@ function TodayView({ stats }: { stats: { completed: number; total: number; habit
         ) : (
           stats.habits.map((habit: any, i: number) => (
             <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <Link href={`/habit/${habit.id}`}>
+              <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
                 <Card className="hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group" data-testid={`progress-habit-${habit.id}`}>
                   <CardContent className="p-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -352,7 +352,7 @@ function YesterdayView({ stats }: { stats: { completed: number; total: number; h
         ) : (
           stats.habits.map((habit: any, i: number) => (
             <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <Link href={`/habit/${habit.id}`}>
+              <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
                 <Card className="hover:border-primary/30 hover:shadow-md transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -469,7 +469,7 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
         </h3>
         {stats.habits.map((habit: any, i: number) => (
           <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <Link href={`/habit/${habit.id}`}>
+            <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
               <Card className="hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -563,7 +563,7 @@ function StreakView({ stats }: { stats: { bestStreak: number; currentStreak: num
             .sort((a, b) => b.currentStreak - a.currentStreak)
             .map((habit: any, i: number) => (
               <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Link href={`/habit/${habit.id}`}>
+                <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
                   <Card className="hover:border-orange-300/50 hover:shadow-md transition-all cursor-pointer overflow-hidden">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-3">
@@ -629,7 +629,7 @@ function StreakView({ stats }: { stats: { bestStreak: number; currentStreak: num
           </h3>
           {inactiveHabits.map((habit: any, i: number) => (
             <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <Link href={`/habit/${habit.id}`}>
+              <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
                 <Card className="hover:border-primary/20 hover:shadow-sm transition-all cursor-pointer opacity-80 hover:opacity-100">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between gap-3">
@@ -805,7 +805,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
               const pct = Math.round((habit.weekCompleted / habit.weekScheduled) * 100);
               return (
                 <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                  <Link href={`/habit/${habit.id}`}>
+                  <Link href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
                     <Card className="hover:border-violet-300/50 hover:shadow-md transition-all cursor-pointer">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between gap-3 mb-2">
