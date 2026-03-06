@@ -186,8 +186,8 @@ export default function Dashboard() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-10 w-10 rounded-full p-0" data-tour="user-menu-trigger">
-                <Avatar className="h-10 w-10 border border-border">
-                  <AvatarImage src={user?.profileImageUrl || undefined} />
+                <Avatar className="h-10 w-10 border border-border pointer-events-none">
+                  <AvatarImage src={user?.profileImageUrl || undefined} className="pointer-events-none select-none [-webkit-touch-callout:none]" draggable={false} />
                   <AvatarFallback><UserIcon className="w-5 h-5" /></AvatarFallback>
                 </Avatar>
               </Button>
