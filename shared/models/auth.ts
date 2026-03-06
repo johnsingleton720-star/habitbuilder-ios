@@ -131,9 +131,11 @@ export type InsertDailyChallenge = typeof dailyChallenges.$inferInsert;
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
-  endpoint: text("endpoint").notNull(),
-  p256dh: text("p256dh").notNull(),
-  auth: text("auth").notNull(),
+  type: varchar("type", { length: 10 }).notNull().default("web"),
+  endpoint: text("endpoint"),
+  p256dh: text("p256dh"),
+  auth: text("auth"),
+  deviceToken: text("device_token"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

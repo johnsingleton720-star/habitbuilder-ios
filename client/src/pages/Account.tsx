@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Bell, Camera, Check, Crown, LogOut, Mail, Shield
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
+import { isNative, isIOS } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1397,39 +1398,72 @@ export default function Account() {
                   onCheckedChange={async (checked) => {
                     if (checked) {
                       try {
-                        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-                          toast({ title: "Push notifications are not supported on this browser", variant: "destructive" });
-                          return;
+                        if (isNative() && isIOS()) {
+                          const { PushNotifications } = await import("@capacitor/push-notifications");
+                          const permResult = await PushNotifications.requestPermissions();
+                          if (permResult.receive !== "granted") {
+                            toast({ title: "Notification permission denied", description: "Please allow notifications in your device settings", variant: "destructive" });
+                            return;
+                          }
+                          PushNotifications.addListener("registration", async (token) => {
+                            try {
+                              await apiRequest("POST", "/api/push/register-device", {
+                                deviceToken: token.value,
+                                platform: "ios",
+                              });
+                              queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                            } catch (err) {
+                              console.error("Device token registration error:", err);
+                            }
+                          });
+                          PushNotifications.addListener("registrationError", (error) => {
+                            console.error("iOS push registration error:", error);
+                            toast({ title: "Failed to register for notifications", variant: "destructive" });
+                          });
+                          await PushNotifications.register();
+                          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                          toast({ title: "Push notifications enabled" });
+                        } else {
+                          if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+                            toast({ title: "Push notifications are not supported on this browser", variant: "destructive" });
+                            return;
+                          }
+                          const permission = await Notification.requestPermission();
+                          if (permission !== "granted") {
+                            toast({ title: "Notification permission denied", description: "Please allow notifications in your browser settings", variant: "destructive" });
+                            return;
+                          }
+                          const registration = await navigator.serviceWorker.ready;
+                          const subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
+                          });
+                          await apiRequest("POST", "/api/push/subscribe", { subscription: subscription.toJSON() });
+                          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                          toast({ title: "Push notifications enabled" });
                         }
-                        const permission = await Notification.requestPermission();
-                        if (permission !== "granted") {
-                          toast({ title: "Notification permission denied", description: "Please allow notifications in your browser settings", variant: "destructive" });
-                          return;
-                        }
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.subscribe({
-                          userVisibleOnly: true,
-                          applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
-                        });
-                        await apiRequest("POST", "/api/push/subscribe", { subscription: subscription.toJSON() });
-                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                        toast({ title: "Push notifications enabled" });
                       } catch (err) {
                         console.error("Push subscription error:", err);
                         toast({ title: "Failed to enable push notifications", variant: "destructive" });
                       }
                     } else {
                       try {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-                        if (subscription) {
-                          await subscription.unsubscribe();
-                          await apiRequest("POST", "/api/push/unsubscribe", { endpoint: subscription.endpoint });
-                        } else {
+                        if (isNative() && isIOS()) {
                           await apiRequest("POST", "/api/push/unsubscribe", {});
+                          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                          toast({ title: "Push notifications disabled" });
+                        } else {
+                          const registration = await navigator.serviceWorker.ready;
+                          const subscription = await registration.pushManager.getSubscription();
+                          if (subscription) {
+                            await subscription.unsubscribe();
+                            await apiRequest("POST", "/api/push/unsubscribe", { endpoint: subscription.endpoint });
+                          } else {
+                            await apiRequest("POST", "/api/push/unsubscribe", {});
+                          }
+                          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                          toast({ title: "Push notifications disabled" });
                         }
-                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                        toast({ title: "Push notifications disabled" });
                       } catch (err) {
                         console.error("Push unsubscribe error:", err);
                         toast({ title: "Failed to disable push notifications", variant: "destructive" });

@@ -9,7 +9,7 @@ import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens } from "@shared/schema";
-import { saveSubscription, syncSubscription, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
+import { saveSubscription, syncSubscription, syncDeviceToken, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
@@ -516,6 +516,22 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error syncing push subscription:", error);
       res.status(500).json({ error: "Failed to sync subscription" });
+    }
+  });
+
+  app.post("/api/push/register-device", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { deviceToken, platform } = req.body;
+      if (!deviceToken || !platform) {
+        return res.status(400).json({ error: "Missing deviceToken or platform" });
+      }
+      const result = await syncDeviceToken(userId, deviceToken, platform);
+      await db.update(users).set({ pushNotificationsEnabled: true, updatedAt: new Date() }).where(eq(users.id, userId));
+      res.json({ success: true, cleaned: result.cleaned });
+    } catch (error) {
+      console.error("Error registering device token:", error);
+      res.status(500).json({ error: "Failed to register device" });
     }
   });
 

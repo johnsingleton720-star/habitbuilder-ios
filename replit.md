@@ -88,7 +88,12 @@ Preferred communication style: Simple, everyday language.
 -   Users define recurring fixed time blocks (e.g., work, gym) that the AI planner respects when scheduling habits, ensuring no conflicts.
 
 ### Push Notifications & Email Notifications
--   **Push Notification Scheduler** (`server/emailScheduler.ts`): Runs every 15 minutes, checking all users' timezones and preferences. Sends push notifications via Web Push (VAPID) for:
+-   **Dual Push Architecture**: Web Push (VAPID) for browsers/PWA, Apple Push Notification service (APNs) for iOS Capacitor app.
+    - **Web Push**: Uses `web-push` library with VAPID keys. Subscriptions stored in `push_subscriptions` table with `type='web'`.
+    - **iOS Native Push**: Uses `@capacitor/push-notifications` plugin to get APNs device tokens. Tokens stored in `push_subscriptions` table with `type='apns'`. Server sends via HTTP/2 directly to APNs using JWT authentication.
+    - **Auto-sync**: On app load, `usePushNotifications` hook detects platform (via `isNative()`/`isIOS()`) and registers appropriately. Web uses `/api/push/sync`, iOS uses `/api/push/register-device`. Both clean up stale subscriptions for the user.
+    - **APNs Environment Variables**: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY_P8` (contents of .p8 file). Set `APNS_PRODUCTION=false` for sandbox.
+-   **Push Notification Scheduler** (`server/emailScheduler.ts`): Runs every 15 minutes, checking all users' timezones and preferences. Sends push notifications via `sendPushToUser` (handles both web and native) for:
     - **Daily Morning Reminders**: At user's `dailyReminderTime` (default 08:00) — today's tasks + streak info
     - **Journal Reminders**: At user's `journalReminderTime` (default 20:00) — "Time to reflect"
     - **Mood Check-ins**: At user's `moodCheckinTimes` (defaults 09:00, 14:00, 20:00) — "How are you feeling?"
@@ -134,3 +139,6 @@ Preferred communication style: Simple, everyday language.
 -   `AI_INTEGRATIONS_OPENAI_API_KEY`
 -   `AI_INTEGRATIONS_OPENAI_BASE_URL`
 -   `APPLE_SHARED_SECRET`
+-   `APNS_KEY_ID`
+-   `APNS_TEAM_ID`
+-   `APNS_KEY_P8`
