@@ -118,6 +118,7 @@ export function MoodTracker() {
   
   const { data: entries = [] } = useQuery<MoodEntry[]>({
     queryKey: ["/api/mood"],
+    staleTime: 2 * 60 * 1000,
   });
   
   const { data: insights } = useQuery<MoodInsights>({

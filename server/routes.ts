@@ -1157,6 +1157,60 @@ export async function registerRoutes(
     res.json(processedHabits);
   });
 
+  app.get("/api/habits/summary", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      const userTz = user?.timezone;
+      const habits = await storage.getHabits(userId);
+
+      const now = new Date();
+      const userNow = userTz
+        ? new Date(now.toLocaleString("en-US", { timeZone: userTz }))
+        : now;
+      const todayStr = `${userNow.getFullYear()}-${String(userNow.getMonth() + 1).padStart(2, "0")}-${String(userNow.getDate()).padStart(2, "0")}`;
+
+      const summaries = habits.map((h) => {
+        const todayPlan = h.dailyPlans?.find((p: any) => p.date === todayStr) || null;
+        return {
+          id: h.id,
+          userId: h.userId,
+          title: h.title,
+          description: h.description,
+          goal: h.goal,
+          setupComplete: h.setupComplete,
+          planDuration: h.planDuration,
+          planStartDate: h.planStartDate,
+          planEndDate: h.planEndDate,
+          schedule: h.schedule,
+          dailyPlans: todayPlan ? [todayPlan] : [],
+          progress: [],
+          totalTimeSpent: h.totalTimeSpent,
+          currentStreak: h.currentStreak,
+          longestStreak: h.longestStreak,
+          customIcon: h.customIcon,
+          customColor: h.customColor,
+          category: h.category,
+          archived: h.archived,
+          downgradeArchived: h.downgradeArchived,
+          linkedHabitId: h.linkedHabitId,
+          createdAt: h.createdAt,
+          questions: [],
+          aiTips: [],
+          aiContext: null,
+          streakFreezeUsed: h.streakFreezeUsed,
+          streakFreezeMonth: h.streakFreezeMonth,
+          missReasons: [],
+        };
+      });
+
+      res.json(summaries);
+    } catch (error) {
+      console.error("Error fetching habits summary:", error);
+      res.status(500).json({ message: "Failed to fetch habits summary" });
+    }
+  });
+
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -2390,6 +2444,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           subscriptionTier: tier,
           hasPaid: true,
         }).where(eq(users.id, userId));
+        paymentStatusCache.delete(userId);
 
         console.log("[Apple IAP] Receipt valid, updated user", userId, "to tier:", tier);
         return res.json({ success: true, valid: true, tier });
@@ -2615,6 +2670,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         subscriptionStatus: subscription.status,
         subscriptionId: subscription.id,
       }).where(eq(users.id, userId));
+      paymentStatusCache.delete(userId);
 
       const restoredHabits = await db.update(habits)
         .set({ archived: false, downgradeArchived: false })
@@ -5166,12 +5222,19 @@ Return JSON with:
   // Track last sync time per user to avoid excessive Stripe API calls
   const lastSyncTimes = new Map<string, number>();
   const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes between syncs per user
+  const paymentStatusCache = new Map<string, { result: any; timestamp: number }>();
 
   // Check user payment status and trial - AUTO-SYNC from Stripe if needed
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
       const userEmail = req.user!.claims.email;
+      
+      const cached = paymentStatusCache.get(userId);
+      if (cached && Date.now() - cached.timestamp < SYNC_INTERVAL_MS) {
+        return res.json(cached.result);
+      }
+      
       let user = await storage.getUser(userId);
       
       // Check if we should sync (rate limit: once per 5 minutes per user)
@@ -5269,9 +5332,11 @@ Return JSON with:
       
       const isAdmin = user?.isAdmin || false;
       
-      res.json({ 
+      const result = { 
         hasPaid: user?.hasPaid || isAdmin,
-      });
+      };
+      paymentStatusCache.set(userId, { result, timestamp: Date.now() });
+      res.json(result);
     } catch (error) {
       console.error("Error checking payment status:", error);
       res.status(500).json({ error: "Failed to check payment status" });
@@ -5902,8 +5967,6 @@ Return JSON with:
   app.get("/api/achievements", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
-
-      await checkAndAwardAchievements(userId);
 
       const achievements = await db.select()
         .from(userAchievements)

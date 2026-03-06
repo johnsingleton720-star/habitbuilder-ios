@@ -35,6 +35,7 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
   
   const { data: templates, isLoading } = useQuery<HabitTemplate[]>({
     queryKey: ['/api/templates'],
+    enabled: isOpen,
   });
   
   const useTemplateMutation = useMutation({

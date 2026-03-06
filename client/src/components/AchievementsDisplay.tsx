@@ -41,6 +41,7 @@ interface AchievementsDisplayProps {
 export function AchievementsDisplay({ compact = false }: AchievementsDisplayProps) {
   const { data: userAchievements } = useQuery<UserAchievement[]>({
     queryKey: ['/api/achievements'],
+    staleTime: 5 * 60 * 1000,
   });
   const { isPremium, isFreeUser } = useSubscription();
   const [selectedAchievement, setSelectedAchievement] = useState<(Achievement & { unlocked: boolean; unlockedAt?: string }) | null>(null);

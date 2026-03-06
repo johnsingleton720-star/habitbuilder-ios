@@ -27,6 +27,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage
 -   **Primary Database**: PostgreSQL, storing users, habits, conversations, feedback, quick tasks, and user commitments.
+-   **Database Indexes**: `habits_user_id_idx` on `habits.user_id`, `user_achievements_user_id_idx` on `user_achievements.user_id`.
+
+### Performance Optimizations
+-   **Lightweight Dashboard API**: `GET /api/habits/summary` returns habits with only today's daily plan (not all 30 days) and strips heavy fields (questions, aiContext, aiTips, progress history). Dashboard uses `useHabitsSummary()` hook; detail pages use full `useHabits()`.
+-   **Payment Status Cache**: In-memory cache (`paymentStatusCache`) on `/api/payment-status` avoids repeated Stripe API calls within the 5-minute sync interval. Cache invalidated on subscription changes (checkout, Apple IAP validation).
+-   **Lazy Achievement Calculation**: `GET /api/achievements` returns stored achievements without recalculating. Achievement checks run on task completion and session saving only.
+-   **Deferred Queries**: Template gallery fetches only when opened (`enabled: isOpen`). Non-critical dashboard components (achievements, gamification, mood) use `staleTime` to reduce refetches.
 
 ### AI-Powered Habit System
 -   **Personalized Coaching**: AI conducts interviews, generates detailed daily/weekly/monthly action plans, and provides interactive guided sessions with post-session summaries.

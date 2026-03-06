@@ -150,6 +150,7 @@ export function GamificationDisplay() {
   
   const { data: stats, isLoading } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
+    staleTime: 2 * 60 * 1000,
   });
 
   useEffect(() => {

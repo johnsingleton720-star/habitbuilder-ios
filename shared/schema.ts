@@ -138,7 +138,9 @@ export const habits = pgTable("habits", {
   linkedHabitId: integer("linked_habit_id"), // "After completing this habit, do linked habit next"
   
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("habits_user_id_idx").on(table.userId),
+]);
 
 export const insertHabitSchema = createInsertSchema(habits).omit({
   id: true,
@@ -198,7 +200,9 @@ export const userAchievements = pgTable("user_achievements", {
   userId: varchar("user_id").notNull().references(() => users.id),
   achievementId: text("achievement_id").notNull(), // matches Achievement.id
   unlockedAt: timestamp("unlocked_at").defaultNow(),
-});
+}, (table) => [
+  index("user_achievements_user_id_idx").on(table.userId),
+]);
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 

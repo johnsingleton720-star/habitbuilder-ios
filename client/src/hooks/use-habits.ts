@@ -13,6 +13,18 @@ export function useHabits() {
   });
 }
 
+export function useHabitsSummary() {
+  return useQuery({
+    queryKey: ["/api/habits/summary"],
+    queryFn: async () => {
+      const res = await fetch("/api/habits/summary", { credentials: "include" });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error("Failed to fetch habits summary");
+      return res.json() as Promise<HabitResponse[]>;
+    },
+  });
+}
+
 export function useHabit(id: number) {
   return useQuery({
     queryKey: ["/api/habits", id],
@@ -51,6 +63,7 @@ export function useCreateHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.habits.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
     },
   });
 }
@@ -72,6 +85,7 @@ export function useUpdateHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.habits.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
     },
   });
 }
@@ -90,6 +104,7 @@ export function useDeleteHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.habits.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
     },
   });
 }

@@ -29,6 +29,7 @@ const TIER_LABELS: Record<string, { label: string; color: string }> = {
 export function DashboardHeroCard() {
   const { data: stats } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
+    staleTime: 2 * 60 * 1000,
   });
   const { tier } = useSubscription();
 

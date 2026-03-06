@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useHabits } from "@/hooks/use-habits";
+import { useHabitsSummary } from "@/hooks/use-habits";
 import { HabitCard } from "@/components/HabitCard";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
@@ -45,7 +45,7 @@ interface BrokenStreakInfo {
 export default function Dashboard() {
   usePageTitle("Dashboard", "Your personal habit coaching dashboard. Track progress, complete guided sessions, earn XP, and stay on top of your daily habits.");
   const { user, logout } = useAuth();
-  const { data: habits, isLoading } = useHabits();
+  const { data: habits, isLoading } = useHabitsSummary();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
