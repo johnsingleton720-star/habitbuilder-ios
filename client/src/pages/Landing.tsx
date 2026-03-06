@@ -850,19 +850,6 @@ export default function Landing() {
         "contactPoint": { "@type": "ContactPoint", "email": "admin@habitbuilder.pro", "contactType": "customer service" },
         "sameAs": ["https://www.instagram.com/habitbuilder.pro"]
       }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          { "@type": "Question", "name": "Is HabitBuilder really free to start?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! The free plan lets you try 1 habit with your first AI-generated action plan, 3 guided sessions per week, and access to the template library. No credit card required. Upgrade to Pro to unlock unlimited sessions, AI coaching insights, streaks, plan updates, and unlimited habits." }},
-          { "@type": "Question", "name": "How does the AI coaching work?", "acceptedAnswer": { "@type": "Answer", "text": "When you create a habit, our AI conducts a short interview to understand your goals, schedule, and experience level. Based on your answers, it generates a personalized daily, weekly, and monthly action plan grounded in behavioral science. During guided sessions, you get step-by-step coaching with timers and tips." }},
-          { "@type": "Question", "name": "Can I cancel my subscription anytime?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. You can cancel your Pro or Premium subscription at any time from your account settings. You'll keep access to your paid features until the end of your billing period, and your data is never deleted." }},
-          { "@type": "Question", "name": "Is my data private and secure?", "acceptedAnswer": { "@type": "Answer", "text": "Your privacy is a priority. All data is encrypted and stored securely. We use Stripe for payment processing, so we never see or store your card details." }},
-          { "@type": "Question", "name": "What's the difference between Pro and Premium?", "acceptedAnswer": { "@type": "Answer", "text": "Pro ($6/month) gives you unlimited habits, guided sessions, achievements, and weekly reports. Premium ($15/month) adds AI Coach Chat, advanced analytics, habit stacking with unified routines, accountability partners, voice notes, and CSV data export." }},
-          { "@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support." }},
-          { "@type": "Question", "name": "Do I have to use the AI sessions?", "acceptedAnswer": { "@type": "Answer", "text": "Not at all! The AI coaching sessions are completely optional. If you prefer to simply track your habits, check off daily tasks, and go at your own pace, you can do exactly that. The AI is there for those who want personalized plans and guided coaching, but it's never required." }}
-        ]
-      }) }} />
       <SeoSchema breadcrumbs={[
         { name: "Home", url: "https://habitbuilder.pro/" }
       ]} />
