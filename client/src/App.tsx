@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
@@ -48,6 +48,24 @@ import MoodTracker from "@/pages/MoodTracker";
 import Goals from "@/pages/Goals";
 import DailyPlanner from "@/pages/DailyPlanner";
 
+function VersionUpdateBanner() {
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-primary text-primary-foreground px-4 py-3 shadow-lg safe-top" data-testid="banner-version-update">
+      <div className="flex items-center justify-center gap-3 max-w-lg mx-auto">
+        <RefreshCw className="w-4 h-4 flex-shrink-0" />
+        <p className="text-sm font-medium">A new version is available.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-md bg-primary-foreground text-primary px-4 py-1.5 text-sm font-semibold whitespace-nowrap"
+          data-testid="button-refresh-update"
+        >
+          Refresh Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account"];
 
 function Router() {
@@ -58,7 +76,7 @@ function Router() {
   
   useTracking();
   usePushNotifications();
-  useVersionCheck();
+  const { updateAvailable } = useVersionCheck();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -137,6 +155,8 @@ function Router() {
   }
 
   return (
+    <>
+    {updateAvailable && <VersionUpdateBanner />}
     <Switch>
       <Route path="/"><PageTransition><Dashboard /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
@@ -164,6 +184,7 @@ function Router() {
       <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
       <Route><PageTransition><NotFound /></PageTransition></Route>
     </Switch>
+    </>
   );
 }
 
