@@ -28,6 +28,8 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
@@ -52,6 +54,8 @@ export default function Dashboard() {
     return localStorage.getItem('welcomeBannerDismissed') === 'true';
   });
   const [showTour, setShowTour] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features, isFreeUser } = useSubscription();
@@ -183,11 +187,116 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {isMobile ? (
+            <>
+              <Button variant="ghost" className="h-10 w-10 rounded-full p-0" data-tour="user-menu-trigger" onClick={() => setMenuOpen(true)} data-testid="button-user-menu">
+                <Avatar className="h-10 w-10 border border-border">
+                  <AvatarImage src={user?.profileImageUrl || undefined} className="select-none [-webkit-touch-callout:none]" draggable={false} />
+                  <AvatarFallback><UserIcon className="w-5 h-5" /></AvatarFallback>
+                </Avatar>
+              </Button>
+              <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                <SheetContent side="bottom" className="rounded-t-2xl pb-safe-bottom max-h-[80vh] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>My Account</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-1">
+                    <Link href="/analytics" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-analytics">
+                        <BarChart3 className="mr-3 h-4 w-4" />
+                        Advanced Analytics
+                      </button>
+                    </Link>
+                    <Link href="/accountability" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-accountability">
+                        <Users className="mr-3 h-4 w-4" />
+                        Accountability Partners
+                      </button>
+                    </Link>
+                    <Link href="/coach" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-coach-chat">
+                        <Sparkles className="mr-3 h-4 w-4" />
+                        Coach Chat
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/journal" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-journal">
+                        <BookOpen className="mr-3 h-4 w-4" />
+                        Daily Journal
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/focus" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-focus-timer">
+                        <Timer className="mr-3 h-4 w-4" />
+                        Focus Timer
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/mood" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-mood-tracker">
+                        <Heart className="mr-3 h-4 w-4" />
+                        Mood Insights
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/goals" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-goals">
+                        <Target className="mr-3 h-4 w-4" />
+                        Goals
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/planner" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-planner">
+                        <Calendar className="mr-3 h-4 w-4" />
+                        Daily Planner
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/resources" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-resources">
+                        <BookOpen className="mr-3 h-4 w-4" />
+                        Resource Library
+                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                      </button>
+                    </Link>
+                    <Link href="/community" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-community">
+                        <MessageSquare className="mr-3 h-4 w-4" />
+                        Community Forum
+                        <span className="ml-auto text-xs text-muted-foreground">Soon</span>
+                      </button>
+                    </Link>
+                    <Link href="/account" onClick={() => setMenuOpen(false)}>
+                      <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-account">
+                        <Settings className="mr-3 h-4 w-4" />
+                        Account Settings
+                      </button>
+                    </Link>
+                    <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" onClick={() => { toggleTheme(); setMenuOpen(false); }} data-testid="menu-theme-toggle">
+                      {theme === "light" ? (
+                        <><Moon className="mr-3 h-4 w-4" /> Dark Mode</>
+                      ) : (
+                        <><Sun className="mr-3 h-4 w-4" /> Light Mode</>
+                      )}
+                    </button>
+                    <div className="border-t my-2" />
+                    <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm text-destructive" onClick={() => { logout(); setMenuOpen(false); }}>
+                      <LogOut className="mr-3 h-4 w-4" />
+                      Log out
+                    </button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </>
+          ) : (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-10 w-10 rounded-full p-0" data-tour="user-menu-trigger">
-                <Avatar className="h-10 w-10 border border-border pointer-events-none">
-                  <AvatarImage src={user?.profileImageUrl || undefined} className="pointer-events-none select-none [-webkit-touch-callout:none]" draggable={false} />
+                <Avatar className="h-10 w-10 border border-border">
+                  <AvatarImage src={user?.profileImageUrl || undefined} />
                   <AvatarFallback><UserIcon className="w-5 h-5" /></AvatarFallback>
                 </Avatar>
               </Button>
@@ -291,6 +400,7 @@ export default function Dashboard() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </header>
 
         {/* Trial Banner */}
