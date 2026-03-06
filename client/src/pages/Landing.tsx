@@ -859,7 +859,8 @@ export default function Landing() {
           { "@type": "Question", "name": "Can I cancel my subscription anytime?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. You can cancel your Pro or Premium subscription at any time from your account settings. You'll keep access to your paid features until the end of your billing period, and your data is never deleted." }},
           { "@type": "Question", "name": "Is my data private and secure?", "acceptedAnswer": { "@type": "Answer", "text": "Your privacy is a priority. All data is encrypted and stored securely. We use Stripe for payment processing, so we never see or store your card details." }},
           { "@type": "Question", "name": "What's the difference between Pro and Premium?", "acceptedAnswer": { "@type": "Answer", "text": "Pro ($6/month) gives you unlimited habits, guided sessions, achievements, and weekly reports. Premium ($15/month) adds AI Coach Chat, advanced analytics, habit stacking with unified routines, accountability partners, voice notes, and CSV data export." }},
-          { "@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support." }}
+          { "@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! HabitBuilder works on any device with a web browser. You can also install it as an app on your phone for a native-like experience with home screen access and offline support." }},
+          { "@type": "Question", "name": "Do I have to use the AI sessions?", "acceptedAnswer": { "@type": "Answer", "text": "Not at all! The AI coaching sessions are completely optional. If you prefer to simply track your habits, check off daily tasks, and go at your own pace, you can do exactly that. The AI is there for those who want personalized plans and guided coaching, but it's never required." }}
         ]
       }) }} />
       <SeoSchema breadcrumbs={[
@@ -1861,6 +1862,10 @@ export default function Landing() {
               {
                 q: "How do I sign up?",
                 a: "Just click any 'Get Started' button and sign in with your Google or Apple account. It takes about 30 seconds — no new password to create or remember. You'll be building your first habit right away."
+              },
+              {
+                q: "Do I have to use the AI sessions?",
+                a: "Not at all! The AI coaching sessions are completely optional. If you prefer to simply track your habits, check off daily tasks, and go at your own pace, you can do exactly that. The AI is there for those who want personalized plans and guided coaching, but it's never required."
               },
             ].map((faq, i) => (
               <motion.div
