@@ -1,0 +1,48 @@
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    },
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "This bundle is invalid. The value for key CFBundleShortVersionString [1.0] in the Info.plist file must contain a higher version than that of the previously approved version [1.0]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "This bundle is invalid. The value for key CFBundleShortVersionString [1.0] in the Info.plist file must contain a higher version than that of the previously approved version [1.0]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring",
+            "id" : "65f43f40-fdce-4c8e-a178-98b3bcc08f62",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "This bundle is invalid. The value for key CFBundleShortVersionString [1.0] in the Info.plist file must contain a higher version than that of the previously approved version [1.0]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring (ID: 65f43f40-fdce-4c8e-a178-98b3bcc08f62)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=This bundle is invalid. The value for key CFBundleShortVersionString [1.0] in the Info.plist file must contain a higher version than that of the previously approved version [1.0]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring, id=65f43f40-fdce-4c8e-a178-98b3bcc08f62, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=This bundle is invalid. The value for key CFBundleShortVersionString [1.0] in the Info.plist file must contain a higher version than that of the previously approved version [1.0]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring, NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Failed to upload archive at "/Users/builder/clone/build/ios/ipa/App.ipa":
+Validation failed
+Validation failed
+Failed to publish /Users/builder/clone/build/ios/ipa/App.ipa
+
+Failed to publish App.ipa to App Store Connect.
+
+Build failed :|
+
+
+Publishing failed :|
+Failed to publish App.ipa to App Store Connect.

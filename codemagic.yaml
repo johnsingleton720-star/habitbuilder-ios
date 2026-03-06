@@ -158,10 +158,16 @@ workflows:
           /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
       - name: Set version and build number
         script: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.1" ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+          cd ios/App
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.1" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.1/g' App.xcodeproj/project.pbxproj
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
           echo "Marketing version set to: 1.1"
           echo "Build number set to: $BUILD_NUMBER"
+          echo "=== Verify versions ==="
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
+          grep "CFBundleShortVersionString" App/Info.plist || echo "Version set via project file"
       - name: Build and export IPA
         script: |
           xcode-project build-ipa \
