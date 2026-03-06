@@ -9338,7 +9338,47 @@ Be specific, practical, and grounded in behavior science. Every task should make
       const userId = req.user!.claims.sub;
       const [entry] = await db.select().from(dailyPlannerEntries)
         .where(and(eq(dailyPlannerEntries.userId, userId), eq(dailyPlannerEntries.date, req.params.date)));
-      res.json(entry || null);
+      if (!entry) return res.json(null);
+
+      const blocks = (entry.blocks || []) as any[];
+      let needsUpdate = false;
+      const fixedBlocks = blocks.map(b => {
+        if (b.type === "habit" && b.habitId && typeof b.habitId !== "number") {
+          needsUpdate = true;
+          return { ...b, habitId: null };
+        }
+        return b;
+      });
+
+      if (needsUpdate) {
+        const userHabits = await db.select().from(habits).where(eq(habits.userId, userId));
+        const habitTitleMap = new Map<string, number>();
+        for (const h of userHabits) {
+          habitTitleMap.set(h.title.toLowerCase().trim(), h.id);
+        }
+        const correctedBlocks = fixedBlocks.map(b => {
+          if (b.type === "habit" && !b.habitId) {
+            const title = (b.title || "").toLowerCase().trim();
+            let matchedId = habitTitleMap.get(title) || null;
+            if (!matchedId) {
+              for (const [hTitle, hId] of habitTitleMap.entries()) {
+                if (title.includes(hTitle) || hTitle.includes(title)) {
+                  matchedId = hId;
+                  break;
+                }
+              }
+            }
+            return { ...b, habitId: matchedId };
+          }
+          return b;
+        });
+        await db.update(dailyPlannerEntries)
+          .set({ blocks: correctedBlocks, updatedAt: new Date() })
+          .where(eq(dailyPlannerEntries.id, entry.id));
+        return res.json({ ...entry, blocks: correctedBlocks });
+      }
+
+      res.json(entry);
     } catch (error) {
       console.error("Error fetching planner entry:", error);
       res.status(500).json({ error: "Failed to fetch planner entry" });
@@ -9604,14 +9644,24 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
       taskTitleToId.set(t.title.toLowerCase().trim(), t.id);
     }
 
+    const validHabitIds = new Set(Array.from(habitTitleToId.values()));
+    const validTaskIds = new Set(Array.from(taskTitleToId.values()));
     blocks = blocks.map((b: any, i: number) => {
       const title = (b.title || b.name || "Untitled").trim();
       const type = b.type || "custom";
-      let habitId = b.habitId || null;
-      let taskId = b.taskId || null;
+      let habitId = (typeof b.habitId === "number" && validHabitIds.has(b.habitId)) ? b.habitId : null;
+      let taskId = (typeof b.taskId === "number" && validTaskIds.has(b.taskId)) ? b.taskId : null;
 
       if (type === "habit" && !habitId) {
         habitId = habitTitleToId.get(title.toLowerCase()) || null;
+        if (!habitId) {
+          for (const [hTitle, hId] of habitTitleToId.entries()) {
+            if (title.toLowerCase().includes(hTitle) || hTitle.includes(title.toLowerCase())) {
+              habitId = hId;
+              break;
+            }
+          }
+        }
       }
       if (type === "task" && !taskId) {
         taskId = taskTitleToId.get(title.toLowerCase()) || null;
@@ -9976,20 +10026,26 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         return res.status(500).json({ error: "AI returned invalid schedule format" });
       }
 
-      const validBlocks = adjustedBlocks.map((b: any) => ({
-        id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        time: b.time || "09:00",
-        endTime: b.endTime || b.time || "09:30",
-        title: b.title || "Untitled",
-        type: b.type || "custom",
-        duration: b.duration || 30,
-        completed: b.completed || false,
-        skipped: b.skipped || false,
-        habitId: b.habitId || null,
-        taskId: b.taskId || null,
-        energyLevel: b.energyLevel || null,
-        priority: b.priority || null,
-      })).sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
+      const originalBlockMap = new Map(currentBlocks.map(ob => [ob.id, ob]));
+      const validBlocks = adjustedBlocks.map((b: any) => {
+        const orig = originalBlockMap.get(b.id);
+        const habitId = (typeof b.habitId === "number") ? b.habitId : (orig?.habitId && typeof orig.habitId === "number" ? orig.habitId : null);
+        const taskId = (typeof b.taskId === "number") ? b.taskId : (orig?.taskId && typeof orig.taskId === "number" ? orig.taskId : null);
+        return {
+          id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          time: b.time || "09:00",
+          endTime: b.endTime || b.time || "09:30",
+          title: b.title || "Untitled",
+          type: b.type || "custom",
+          duration: b.duration || 30,
+          completed: b.completed || false,
+          skipped: b.skipped || false,
+          habitId,
+          taskId,
+          energyLevel: b.energyLevel || null,
+          priority: b.priority || null,
+        };
+      }).sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
 
       const [updated] = await db.update(dailyPlannerEntries)
         .set({ blocks: validBlocks, updatedAt: new Date() })
