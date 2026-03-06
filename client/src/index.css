@@ -11,16 +11,16 @@
 
   /* Base Light Theme */
   --background: 160 20% 98%;      /* Soft Mint White */
-  --foreground: 164 45% 15%;      /* Deep Forest Green */
+  --foreground: 164 45% 12%;      /* Deep Forest Green - darkened for readability */
   
   --primary: 164 75% 35%;         /* Rich Emerald */
   --primary-foreground: 160 30% 98%;
 
-  --secondary: 162 30% 90%;       /* Pale Sage */
-  --secondary-foreground: 164 45% 15%;
+  --secondary: 162 30% 88%;       /* Pale Sage - slightly stronger */
+  --secondary-foreground: 164 45% 12%;
 
-  --muted: 162 20% 94%;
-  --muted-foreground: 164 25% 35%;
+  --muted: 162 20% 92%;
+  --muted-foreground: 164 30% 28%;
 
   --accent: 172 60% 45%;          /* Teal Accent */
   --accent-foreground: 0 0% 100%;
@@ -28,16 +28,16 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 164 20% 88%;
-  --input: 164 20% 88%;
+  --border: 164 22% 82%;
+  --input: 164 22% 82%;
   --ring: 164 75% 35%;
 
   --card: 0 0% 100%;
-  --card-foreground: 164 45% 15%;
-  --card-border: 164 25% 82%;
+  --card-foreground: 164 45% 12%;
+  --card-border: 164 25% 78%;
   
   --popover: 0 0% 100%;
-  --popover-foreground: 164 45% 15%;
+  --popover-foreground: 164 45% 12%;
 
   --radius: 1rem;
 }
@@ -75,14 +75,26 @@
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+  }
+
+  @media (max-width: 767px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
     font-family: var(--font-body);
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply font-bold tracking-tight text-foreground;
+    line-height: 1.3;
   }
 }
 

@@ -440,7 +440,7 @@ export default function Dashboard() {
                         Your AI coach will create a personalized plan just for you. Pick a habit you care about, answer a few quick questions, and you'll have a step-by-step plan in minutes.
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> Personalized AI plans</span>
                       <span className="text-border">|</span>
                       <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5 text-primary" /> Guided daily sessions</span>
@@ -478,16 +478,16 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">Upgrade to unlock the full experience</p>
                     <ul className="mt-1.5 space-y-1">
-                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span>Unlimited habits & AI-powered action plans</span>
                       </li>
-                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span>Streak tracking, achievements & XP multipliers</span>
                       </li>
-                      <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span>AI session summaries & curated resources</span>
                       </li>
                     </ul>
@@ -552,7 +552,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">Daily Journal</p>
-                      <p className="text-xs text-muted-foreground">Write reflections and get AI insights</p>
+                      <p className="text-sm text-muted-foreground">Write reflections and get AI insights</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   </div>
@@ -571,7 +571,7 @@ export default function Dashboard() {
                       Daily Journal
                       <Badge variant="secondary" className="text-[10px]">Pro+</Badge>
                     </p>
-                    <p className="text-xs text-muted-foreground">Upgrade to write reflections and get AI insights</p>
+                    <p className="text-sm text-muted-foreground">Upgrade to write reflections and get AI insights</p>
                   </div>
                   <Link href="/paywall">
                     <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
@@ -599,7 +599,7 @@ export default function Dashboard() {
                     <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Focus Timer</p>
+                    <p className="text-sm font-semibold text-foreground">Focus Timer</p>
                     {!features.hasFocusTimer && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
@@ -613,7 +613,7 @@ export default function Dashboard() {
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Mood Check-in</p>
+                    <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
                     {!features.hasMoodTracker && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
@@ -627,7 +627,7 @@ export default function Dashboard() {
                     <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Goals</p>
+                    <p className="text-sm font-semibold text-foreground">Goals</p>
                     {!features.hasGoals && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
@@ -641,7 +641,7 @@ export default function Dashboard() {
                     <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Daily Planner</p>
+                    <p className="text-sm font-semibold text-foreground">Daily Planner</p>
                     {!features.hasDailyPlanner && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
@@ -702,7 +702,7 @@ export default function Dashboard() {
             >
               <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
                 Your Habits
-                <span className="bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full">
+                <span className="bg-secondary text-secondary-foreground text-sm px-2 py-0.5 rounded-full">
                   {activeHabits?.length || 0}
                 </span>
               </h2>

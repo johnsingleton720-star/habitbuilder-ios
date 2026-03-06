@@ -384,7 +384,7 @@ export default function HabitDetail() {
                         ? "All sessions used this week"
                         : `${3 - sessionUsage.used} session${3 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {sessionUsage.used >= 3
                         ? "New sessions available Monday"
                         : "Free plan: 3 sessions per week"}
@@ -479,7 +479,7 @@ export default function HabitDetail() {
                       )}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">{completedDays}/{totalDays} days completed</p>
+                  <p className="text-sm text-muted-foreground">{completedDays}/{totalDays} days completed</p>
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     {isFreeUser ? (
@@ -628,7 +628,7 @@ export default function HabitDetail() {
                       <p className="font-semibold text-sm" data-testid="text-adjust-plan-title">
                         This plan doesn't seem to be fitting your schedule
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         Your completion rate is {Math.round(pastRate)}% after {pastDays.length} days. The AI can redesign your remaining days to be easier and better adapted to your patterns.
                       </p>
                       <Button
@@ -1427,7 +1427,7 @@ function HabitStackInfo({ habitId, features }: { habitId: number; features: any 
             return (
               <div key={stack.id} className="p-3 bg-muted/50 rounded-lg space-y-2" data-testid={`stack-info-${stack.id}`}>
                 <p className="text-sm font-medium">{stack.name}</p>
-                <div className="flex items-center gap-1.5 flex-wrap text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 flex-wrap text-sm text-muted-foreground">
                   {order.map((item: any, idx: number) => (
                     <span key={item.habitId} className="flex items-center gap-1.5">
                       <span className={cn(
@@ -1443,7 +1443,7 @@ function HabitStackInfo({ habitId, features }: { habitId: number; features: any 
                 <div className="flex gap-2 flex-wrap">
                   {prevHabit && (
                     <Link href={`/habit/${prevHabit.habitId}`}>
-                      <Button variant="ghost" size="sm" className="text-xs gap-1" data-testid={`link-prev-habit-${prevHabit.habitId}`}>
+                      <Button variant="ghost" size="sm" className="text-sm gap-1" data-testid={`link-prev-habit-${prevHabit.habitId}`}>
                         <ArrowLeft className="w-3 h-3" />
                         {prevHabit.habitTitle}
                       </Button>
@@ -1451,7 +1451,7 @@ function HabitStackInfo({ habitId, features }: { habitId: number; features: any 
                   )}
                   {nextHabit && (
                     <Link href={`/habit/${nextHabit.habitId}`}>
-                      <Button variant="ghost" size="sm" className="text-xs gap-1" data-testid={`link-next-habit-${nextHabit.habitId}`}>
+                      <Button variant="ghost" size="sm" className="text-sm gap-1" data-testid={`link-next-habit-${nextHabit.habitId}`}>
                         {nextHabit.habitTitle}
                         <ArrowRight className="w-3 h-3" />
                       </Button>

@@ -304,7 +304,7 @@ export function QuickTasks() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200",
+                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200",
                   isActive ? tab.activeClasses : tab.inactiveClasses
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
@@ -373,7 +373,7 @@ export function QuickTasks() {
                   type="time"
                   value={newTime}
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
                   disabled={createMutation.isPending}
                   data-testid="input-quick-task-time"
                 />
@@ -385,7 +385,7 @@ export function QuickTasks() {
                   value={newDate}
                   min={todayStr}
                   onChange={(e) => setNewDate(e.target.value)}
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
                   disabled={createMutation.isPending}
                   data-testid="input-quick-task-date"
                 />
@@ -404,7 +404,7 @@ export function QuickTasks() {
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="Category (optional)"
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
                   disabled={createMutation.isPending}
                   data-testid="input-quick-task-category"
                 />
@@ -629,7 +629,7 @@ export function QuickTasks() {
             <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
             <div>
               <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">All done for today!</p>
-              <p className="text-xs text-emerald-600/70 dark:text-emerald-400/60">Great job staying on top of things</p>
+              <p className="text-sm text-emerald-600/70 dark:text-emerald-400/60">Great job staying on top of things</p>
             </div>
           </motion.div>
         )}
@@ -715,7 +715,7 @@ function TaskItemWithSubtasks({
               onChange={(e) => onSubtaskTitleChange(e.target.value)}
               onKeyDown={onSubtaskKeyDown}
               placeholder="Add subtask..."
-              className="flex-1 text-xs h-8 bg-muted/30"
+              className="flex-1 text-sm h-9 bg-muted/30"
               autoFocus
               data-testid={`input-subtask-${task.id}`}
             />
