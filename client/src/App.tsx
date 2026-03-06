@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { useVersionCheck } from "@/hooks/use-version-check";
 import { PageTransition } from "@/components/PageTransition";
 import { isNative } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,6 +58,7 @@ function Router() {
   
   useTracking();
   usePushNotifications();
+  useVersionCheck();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

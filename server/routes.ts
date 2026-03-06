@@ -142,11 +142,18 @@ setInterval(async () => {
   }
 }, 60000);
 
+const APP_VERSION = Date.now().toString();
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   const PRIMARY_DOMAIN = "habitbuilder.pro";
+
+  app.get("/api/version", (_req, res) => {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json({ version: APP_VERSION });
+  });
 
   await setupAuth(app);
   registerAuthRoutes(app);
