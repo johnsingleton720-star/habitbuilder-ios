@@ -2620,12 +2620,22 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         subscriptionId: subscription.id,
       }).where(eq(users.id, userId));
 
+      const restoredHabits = await db.update(habits)
+        .set({ archived: false, downgradeArchived: false })
+        .where(and(eq(habits.userId, userId), eq(habits.downgradeArchived, true)))
+        .returning({ id: habits.id });
+
+      if (restoredHabits.length > 0) {
+        console.log(`Restored ${restoredHabits.length} downgrade-archived habits for user ${userEmail}`);
+      }
+
       console.log(`Synced subscription for user ${userEmail}: tier=${tier}, status=${subscription.status}`);
       
       res.json({ 
         synced: true, 
         tier, 
         status: subscription.status,
+        habitsRestored: restoredHabits.length,
         message: "Subscription synced from Stripe" 
       });
     } catch (error: any) {

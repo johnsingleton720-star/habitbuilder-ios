@@ -1,4 +1,5 @@
 import { isIOS } from './platform';
+import { queryClient } from './queryClient';
 
 export interface AppleProduct {
   productId: string;
@@ -88,16 +89,21 @@ export async function initializeAppleIAP(): Promise<boolean> {
 
           if (receipt) {
             console.log('[IAP] Found receipt, validating on server...');
-            await validateReceiptOnServer(receipt, productId);
+            const success = await validateReceiptOnServer(receipt, productId);
+
+            if (success) {
+              transaction.finish();
+              console.log('[IAP] Transaction finished after successful validation');
+              queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+              console.log('[IAP] User session cache invalidated - tier will update');
+            } else {
+              console.warn('[IAP] Server validation failed - transaction NOT finished (will retry on next launch)');
+            }
           } else {
             console.warn('[IAP] No receipt data found in transaction');
           }
-
-          transaction.finish();
-          console.log('[IAP] Transaction finished');
         } catch (err) {
           console.error('[IAP] Error processing approved transaction:', err);
-          transaction.finish();
         }
       })
       .finished((transaction: any) => {
