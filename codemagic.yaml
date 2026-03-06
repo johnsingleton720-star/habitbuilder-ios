@@ -16,7 +16,7 @@ workflows:
         script: npm run build
       - name: Set app version
         script: |
-          sed -i 's/"version": "1.0.0"/"version": "1.1.0"/' package.json
+          sed -i '' 's/"version": "1.0.0"/"version": "1.1.0"/' package.json
           echo "App version set to 1.1.0"
           grep '"version"' package.json
       - name: Add iOS platform
@@ -164,15 +164,15 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.1" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.1" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.1" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
           sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.1/g' App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
-          echo "Marketing version set to: 1.1"
-          echo "Build number set to: $BUILD_NUMBER"
-          echo "=== Verify versions ==="
+          echo "=== Verify Info.plist ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist
+          echo "=== Verify project.pbxproj ==="
           grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
-          grep "CFBundleShortVersionString" App/Info.plist || echo "Version set via project file"
       - name: Build and export IPA
         script: |
           xcode-project build-ipa \
