@@ -10039,17 +10039,30 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         const matchingTask = tasks.find(t =>
           (block.taskId && t.id === block.taskId) || t.title.toLowerCase().trim() === block.title?.toLowerCase()?.trim()
         );
-        if (matchingTask && matchingTask.completed && !block.completed) {
-          block.completed = true;
+        if (matchingTask) {
+          if (matchingTask.completed && !block.completed) {
+            block.completed = true;
+          }
+          if (matchingTask.scheduledTime) {
+            const startTime = matchingTask.scheduledTime as string;
+            const [sh, sm] = startTime.split(":").map(Number);
+            const endMins = sh * 60 + sm + (block.duration || 30);
+            block.time = startTime;
+            block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+          }
         }
       }
 
       for (const task of tasks) {
         if (!existingTitles.has(task.title.toLowerCase().trim())) {
+          const startTime = (task.scheduledTime as string | null) || "09:00";
+          const [sh, sm] = startTime.split(":").map(Number);
+          const endMins = sh * 60 + sm + 30;
+          const endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
           taskBlocks.push({
             id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            time: "09:00",
-            endTime: "09:30",
+            time: startTime,
+            endTime,
             title: task.title,
             type: "task",
             habitId: null,
@@ -10060,34 +10073,8 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         }
       }
 
-      const occupiedSlots = fixedBlocks
-        .filter((b: any) => b.time && b.endTime)
-        .map((b: any) => ({ start: b.time, end: b.endTime }));
-
-      const findNextAvailableSlot = (duration: number) => {
-        const sortedSlots = [...occupiedSlots].sort((a, b) => a.start.localeCompare(b.start));
-        let candidate = toMinutes("09:00");
-        const dayEnd = toMinutes("21:00");
-        for (const slot of sortedSlots) {
-          const slotStart = toMinutes(slot.start);
-          const slotEnd = toMinutes(slot.end);
-          if (candidate + duration <= slotStart) {
-            return { time: fromMinutes(candidate), endTime: fromMinutes(candidate + duration) };
-          }
-          if (candidate < slotEnd) {
-            candidate = slotEnd;
-          }
-        }
-        return { time: fromMinutes(candidate), endTime: fromMinutes(Math.min(candidate + duration, dayEnd + duration)) };
-      };
-
-      for (const block of taskBlocks) {
-        const dur = block.duration || 30;
-        const slot = findNextAvailableSlot(dur);
-        block.time = slot.time;
-        block.endTime = slot.endTime;
-        occupiedSlots.push({ start: slot.time, end: slot.endTime });
-      }
+      // Restore saved times for existing task blocks (keep user's preferred times)
+      // Only reschedule if they have no time set at all
 
       const mergedBlocks = [...fixedBlocks, ...taskBlocks].sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 
