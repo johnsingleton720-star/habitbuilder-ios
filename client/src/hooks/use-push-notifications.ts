@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { isNative, isIOS } from "@/lib/platform";
 
-let nativeListenersAdded = false;
+let tokenReceived = false;
 
 async function diagnose(step: string, data?: any, error?: string) {
   try {
@@ -13,21 +13,24 @@ async function diagnose(step: string, data?: any, error?: string) {
 
 export function usePushNotifications() {
   const { user } = useAuth();
-  const webAttemptedRef = useRef(false);
+  const attemptedRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
-      webAttemptedRef.current = false;
-      nativeListenersAdded = false;
+      attemptedRef.current = false;
+      tokenReceived = false;
       return;
     }
     if (!user.pushNotificationsEnabled) return;
 
     if (isNative() && isIOS()) {
-      registerNativePush();
+      if (!attemptedRef.current) {
+        attemptedRef.current = true;
+        registerNativePush();
+      }
     } else {
-      if (!webAttemptedRef.current) {
-        webAttemptedRef.current = true;
+      if (!attemptedRef.current) {
+        attemptedRef.current = true;
         registerWebPush();
       }
     }
@@ -35,65 +38,77 @@ export function usePushNotifications() {
 }
 
 export async function registerNativePush() {
+  tokenReceived = false;
   try {
     await diagnose("start", { isNative: isNative(), isIOS: isIOS() });
 
     const { PushNotifications } = await import("@capacitor/push-notifications");
     await diagnose("plugin-loaded");
 
-    const permResult = await PushNotifications.checkPermissions();
-    await diagnose("permissions-checked", { receive: permResult.receive });
+    await PushNotifications.removeAllListeners();
+    await diagnose("listeners-cleared");
 
-    if (permResult.receive === "denied") {
-      await diagnose("permissions-denied");
-      return;
-    }
-
-    if (permResult.receive === "prompt" || permResult.receive === "prompt-with-rationale") {
-      const reqResult = await PushNotifications.requestPermissions();
-      await diagnose("permissions-requested", { receive: reqResult.receive });
-      if (reqResult.receive !== "granted") {
-        await diagnose("permissions-not-granted");
-        return;
+    PushNotifications.addListener("registration", async (token) => {
+      tokenReceived = true;
+      await diagnose("token-received", { tokenLength: token.value.length, tokenPrefix: token.value.substring(0, 8) });
+      try {
+        await apiRequest("POST", "/api/push/register-device", {
+          deviceToken: token.value,
+          platform: "ios",
+        });
+        await diagnose("token-registered");
+      } catch (err: any) {
+        await diagnose("register-failed", null, err?.message || String(err));
       }
-    }
+    });
 
-    if (!nativeListenersAdded) {
-      nativeListenersAdded = true;
+    PushNotifications.addListener("registrationError", async (error) => {
+      tokenReceived = true;
+      await diagnose("registration-error", null, JSON.stringify(error));
+    });
 
-      PushNotifications.addListener("registration", async (token) => {
-        await diagnose("token-received", { tokenLength: token.value.length });
-        try {
-          await apiRequest("POST", "/api/push/register-device", {
-            deviceToken: token.value,
-            platform: "ios",
-          });
-          await diagnose("token-registered");
-        } catch (err: any) {
-          await diagnose("register-failed", null, err?.message || String(err));
-        }
-      });
+    PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      console.log("[Push] Foreground notification:", notification.title);
+    });
 
-      PushNotifications.addListener("registrationError", async (error) => {
-        await diagnose("registration-error", null, JSON.stringify(error));
-      });
+    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      const url = action.notification?.data?.url;
+      if (url && typeof url === "string") {
+        window.location.href = url;
+      }
+    });
 
-      PushNotifications.addListener("pushNotificationReceived", (notification) => {
-        console.log("[Push] Foreground notification:", notification.title);
-      });
+    await diagnose("listeners-added");
 
-      PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-        const url = action.notification?.data?.url;
-        if (url && typeof url === "string") {
-          window.location.href = url;
-        }
-      });
+    const reqResult = await PushNotifications.requestPermissions();
+    await diagnose("permissions-requested", { receive: reqResult.receive });
 
-      await diagnose("listeners-added");
+    if (reqResult.receive !== "granted") {
+      await diagnose("permissions-not-granted", { receive: reqResult.receive });
+      return;
     }
 
     await PushNotifications.register();
     await diagnose("register-called");
+
+    setTimeout(async () => {
+      if (!tokenReceived) {
+        await diagnose("no-token-after-5s", { retrying: true });
+        try {
+          await PushNotifications.register();
+          await diagnose("retry-register-called");
+        } catch (err: any) {
+          await diagnose("retry-register-error", null, err?.message || String(err));
+        }
+      }
+    }, 5000);
+
+    setTimeout(async () => {
+      if (!tokenReceived) {
+        await diagnose("no-token-after-15s", { finalCheck: true });
+      }
+    }, 15000);
+
   } catch (err: any) {
     await diagnose("setup-error", null, err?.message || String(err));
   }

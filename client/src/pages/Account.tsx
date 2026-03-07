@@ -1400,28 +1400,7 @@ export default function Account() {
                     if (checked) {
                       try {
                         if (isNative() && isIOS()) {
-                          const { PushNotifications } = await import("@capacitor/push-notifications");
-                          const permResult = await PushNotifications.requestPermissions();
-                          if (permResult.receive !== "granted") {
-                            toast({ title: "Notification permission denied", description: "Please allow notifications in your device settings", variant: "destructive" });
-                            return;
-                          }
-                          PushNotifications.addListener("registration", async (token) => {
-                            try {
-                              await apiRequest("POST", "/api/push/register-device", {
-                                deviceToken: token.value,
-                                platform: "ios",
-                              });
-                              queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                            } catch (err) {
-                              console.error("Device token registration error:", err);
-                            }
-                          });
-                          PushNotifications.addListener("registrationError", (error) => {
-                            console.error("iOS push registration error:", error);
-                            toast({ title: "Failed to register for notifications", variant: "destructive" });
-                          });
-                          await PushNotifications.register();
+                          await registerNativePush();
                           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                           toast({ title: "Push notifications enabled" });
                         } else {
