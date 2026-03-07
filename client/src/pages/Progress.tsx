@@ -34,9 +34,16 @@ export default function ProgressPage() {
     return { completed, total: plan.tasks.length, isComplete };
   };
 
+  const dayName = format(today, "EEEE").toLowerCase();
+
   const getTodayStats = () => {
     if (!habits) return { completed: 0, total: 0, habits: [] };
     const habitsWithTasks = habits.filter(h => {
+      if (h.archived) return false;
+      const scheduleDays = h.schedule?.days as string[] | undefined;
+      if (scheduleDays && scheduleDays.length > 0) {
+        if (!scheduleDays.includes(dayName)) return false;
+      }
       const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
       return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
     });
