@@ -1,6 +1,6 @@
 import { habits, users, habitStacks, userCommitments, type Habit, type InsertHabit, type User, type HabitTip, type HabitQuestion, type DailyPlan, type ProgressEntry, type HabitStack, type InsertHabitStack, type UserCommitment, type InsertUserCommitment } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 export interface HabitUpdates extends Partial<InsertHabit> {
   questions?: HabitQuestion[];
@@ -39,7 +39,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getHabits(userId: string): Promise<Habit[]> {
-    return await db.select().from(habits).where(eq(habits.userId, userId));
+    return await db.select().from(habits).where(eq(habits.userId, userId)).orderBy(asc(habits.id));
   }
 
   async getHabit(id: number): Promise<Habit | undefined> {

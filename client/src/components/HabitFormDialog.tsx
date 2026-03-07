@@ -78,8 +78,13 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
     },
   });
 
+  const prevOpenRef = useRef(false);
+
   useEffect(() => {
-    if (open) {
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    if (justOpened) {
       form.reset({
         title: habitToEdit?.title || initialValues?.title || "",
         description: habitToEdit?.description || initialValues?.description || "",
@@ -93,7 +98,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setShowIconPicker(false);
       setIconColorSaved(false);
       document.body.style.overflow = 'hidden';
-    } else {
+    } else if (!open) {
       document.body.style.overflow = '';
     }
     return () => {
@@ -186,9 +191,8 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
-      onTouchEnd={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       data-testid="habit-form-dialog"
@@ -196,9 +200,8 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       <div className="fixed inset-0 bg-black/80" aria-hidden="true" />
       <div
         ref={contentRef}
-        className="relative z-50 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto border bg-background p-6 shadow-lg rounded-lg"
+        className="relative z-50 w-full max-w-md max-h-[85vh] overflow-y-auto border bg-background p-6 shadow-lg rounded-lg"
         onClick={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col space-y-1.5 text-left">
           <h2 className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
