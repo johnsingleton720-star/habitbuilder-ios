@@ -78,12 +78,11 @@ export default function ProgressPage() {
 
   const getTotalStats = () => {
     if (!habits) return { totalSessions: 0, totalTime: 0, totalTasks: 0, habits: [] };
-    const activeHabits = habits.filter(h => !h.archived);
     let totalSessions = 0;
     let totalTime = 0;
     let totalTasks = 0;
     
-    activeHabits.forEach(h => {
+    habits.forEach(h => {
       const progress = (h.progress || []) as ProgressEntry[];
       totalSessions += progress.length;
       totalTime += h.totalTimeSpent || 0;
@@ -96,7 +95,7 @@ export default function ProgressPage() {
       totalSessions, 
       totalTime, 
       totalTasks,
-      habits: activeHabits.map(h => {
+      habits: habits.map(h => {
         const progress = (h.progress || []) as ProgressEntry[];
         const lastSession = progress.length > 0 ? progress[progress.length - 1] : null;
         return {
