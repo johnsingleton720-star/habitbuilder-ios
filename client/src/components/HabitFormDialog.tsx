@@ -5,7 +5,6 @@ import { type HabitSchedule } from "@shared/schema";
 import { type HabitResponse } from "@shared/routes";
 import { useCreateHabit, useUpdateHabit, useHabits } from "@/hooks/use-habits";
 import { useSubscription } from "@/hooks/use-subscription";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +13,7 @@ import { SchedulePicker } from "@/components/SchedulePicker";
 import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, Check } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, X, Check } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -65,6 +64,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const [customColor, setCustomColor] = useState<string>("#0d9488");
   const [iconColorSaved, setIconColorSaved] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const contentRef = useRef<HTMLDivElement>(null);
   
   const SelectedIcon = ICON_OPTIONS.find(i => i.name === customIcon)?.icon || Star;
 
@@ -92,7 +92,13 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setCustomColor(habitToEdit?.customColor || "#0d9488");
       setShowIconPicker(false);
       setIconColorSaved(false);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [open, habitToEdit, initialValues, form]);
 
   useEffect(() => {
@@ -100,6 +106,12 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, []);
+
+  const closeDialog = useCallback(() => {
+    onOpenChange(false);
+    setShowIconPicker(false);
+    setIconColorSaved(false);
+  }, [onOpenChange]);
 
   const autoSaveIconColor = useCallback((icon: string, color: string) => {
     if (!isEditing || !habitToEdit) return;
@@ -126,13 +138,11 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
     autoSaveIconColor(customIcon, color);
   }, [customIcon, autoSaveIconColor]);
 
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    onOpenChange(newOpen);
-    if (!newOpen) {
-      setShowIconPicker(false);
-      setIconColorSaved(false);
+  const handleBackdropClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (contentRef.current && !contentRef.current.contains(e.target as Node)) {
+      closeDialog();
     }
-  }, [onOpenChange]);
+  }, [closeDialog]);
 
   const onSubmit = async (data: HabitFormData) => {
     try {
@@ -149,7 +159,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customColor,
           category: data.category || null,
         });
-        handleOpenChange(false);
+        closeDialog();
       } else {
         const newHabit = await createHabit.mutateAsync({
           title: data.title,
@@ -160,7 +170,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customColor,
           category: data.category || null,
         });
-        handleOpenChange(false);
+        closeDialog();
         if (newHabit?.id) {
           setLocation(`/habit/${newHabit.id}`);
         }
@@ -172,31 +182,49 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
 
   const isPending = createHabit.isPending || updateHabit.isPending;
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange} modal={true}>
-      <DialogContent 
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
-        onInteractOutside={(e) => {
-          e.preventDefault();
-          handleOpenChange(false);
-        }}
-        onEscapeKeyDown={() => handleOpenChange(false)}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={handleBackdropClick}
+      onTouchEnd={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      data-testid="habit-form-dialog"
+    >
+      <div className="fixed inset-0 bg-black/80" aria-hidden="true" />
+      <div
+        ref={contentRef}
+        className="relative z-50 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto border bg-background p-6 shadow-lg rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+        <div className="flex flex-col space-y-1.5 text-left">
+          <h2 className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
             {isEditing ? "Edit Habit" : (
               <>
                 <Sparkles className="w-5 h-5 text-primary" />
                 Create New Habit
               </>
             )}
-          </DialogTitle>
-          <DialogDescription>
+          </h2>
+          <p className="text-sm text-muted-foreground">
             {isEditing 
               ? "Update your habit details below."
               : "Enter your habit details. After creating, you'll answer a few questions to build a personalized action plan."}
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={closeDialog}
+          className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          data-testid="button-close-dialog"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </button>
 
         {hasReachedFreeLimit ? (
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
@@ -210,7 +238,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               </p>
             </div>
             <Button
-              onClick={() => { handleOpenChange(false); setLocation('/paywall'); }}
+              onClick={() => { closeDialog(); setLocation('/paywall'); }}
               className="gap-2"
               data-testid="button-upgrade-habit-limit"
             >
@@ -221,7 +249,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleOpenChange(false)}
+              onClick={closeDialog}
               className="text-muted-foreground"
             >
               Maybe later
@@ -229,7 +257,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           </div>
         ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
             <div className="flex gap-3 items-start">
               <button
                 type="button"
@@ -361,11 +389,11 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               </CollapsibleContent>
             </Collapsible>
 
-            <DialogFooter>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleOpenChange(false)}
+                onClick={closeDialog}
                 disabled={isPending}
               >
                 Cancel
@@ -390,11 +418,11 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                   </>
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
         )}
-        </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
