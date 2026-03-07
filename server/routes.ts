@@ -10289,7 +10289,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         messages: [
           {
             role: "system",
-            content: `You are a scheduling assistant. The user has a daily schedule with time blocks. They want to adjust it based on their instruction. Return the COMPLETE updated list of blocks as a JSON array. Each block must have: id, time (HH:MM 24h), endTime (HH:MM 24h), title, type (habit/task/break/custom/commitment), duration (minutes), completed (boolean), skipped (boolean), habitId (number or null), taskId (number or null), energyLevel (high/medium/low or null), priority (high/medium/low or null). Preserve existing block IDs and properties. Only modify times/order as needed. Keep completed/skipped states. Do not remove blocks unless the user asks to. Ensure no time overlaps. Return ONLY the JSON array, no explanation.`
+            content: `You are a scheduling assistant. The user has a daily schedule with time blocks. They want to adjust it based on their instruction. Return the COMPLETE updated list of blocks as a JSON array. Each block must have: id, time (HH:MM 24h), endTime (HH:MM 24h), title, type (habit/task/break/custom/commitment), duration (minutes), completed (boolean), skipped (boolean), habitId (number or null), taskId (number or null), energyLevel (high/medium/low or null), priority (high/medium/low or null). Preserve existing block IDs and properties. Only modify times/order as needed. Keep completed/skipped states. Do not remove blocks unless the user asks to. Ensure no time overlaps. CRITICAL RULE: Any block where taskId is a number (not null) is a user-scheduled quick task with a FIXED, user-chosen time. You must NEVER change the time or endTime of these task blocks. Only rearrange habit, break, and custom blocks around them. Return ONLY the JSON array, no explanation.`
           },
           {
             role: "user",
@@ -10329,6 +10329,29 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
           priority: b.priority || null,
         };
       }).sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
+
+      // Override any task block times with the quick task's user-set scheduledTime.
+      // The AI may ignore the CRITICAL RULE — this is the safety net.
+      const tasksForAdjust = await db.select().from(quickTasks)
+        .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+
+      if (tasksForAdjust.length > 0) {
+        for (const block of validBlocks) {
+          if (block.type !== "task") continue;
+          const match = tasksForAdjust.find(t =>
+            (block.taskId && t.id === block.taskId) ||
+            t.title.toLowerCase().trim() === (block.title || "").toLowerCase().trim()
+          );
+          if (match && (match.scheduledTime as string | null)) {
+            const startTime = match.scheduledTime as string;
+            const [sh, sm] = startTime.split(":").map(Number);
+            const endMins = sh * 60 + sm + (block.duration || 30);
+            block.time = startTime;
+            block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+          }
+        }
+        validBlocks.sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
+      }
 
       const [updated] = await db.update(dailyPlannerEntries)
         .set({ blocks: validBlocks, updatedAt: new Date() })
