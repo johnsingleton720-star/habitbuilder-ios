@@ -79,6 +79,10 @@ function Router() {
   const { updateAvailable } = useVersionCheck();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get('payment');
     
