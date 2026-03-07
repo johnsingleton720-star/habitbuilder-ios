@@ -71,9 +71,12 @@ workflows:
         script: |
           cd ios/App
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" App/Info.plist
-          echo "=== iOS Version ==="
+          sed -i '' 's/MARKETING_VERSION = [0-9]*\.[0-9]*\.[0-9]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [0-9]*\.[0-9]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
+          echo "=== iOS Version in Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
-          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist
+          echo "=== MARKETING_VERSION in project ==="
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
       - name: Add capabilities (IAP, Push Notifications) and StoreKit framework
         script: |
           cd ios/App
