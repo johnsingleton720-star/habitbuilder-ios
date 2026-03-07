@@ -34,7 +34,7 @@ import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { features, isFreeUser } = useSubscription();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (window.location.hash === "#tour") {
@@ -161,6 +162,8 @@ export default function Dashboard() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ reason }),
           });
+          queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
         } catch (err) {
           console.error("Failed to save miss reason:", err);
         }

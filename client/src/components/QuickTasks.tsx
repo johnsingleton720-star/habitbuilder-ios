@@ -110,6 +110,7 @@ export function QuickTasks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks/range"] });
       setNewTitle("");
       setNewTime("");
       setNewDate(todayStr);
@@ -132,6 +133,7 @@ export function QuickTasks() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks/range"] });
       queryClient.invalidateQueries({ queryKey: ["/api/planner"] });
       if (variables.completed) {
         celebrate(lastToggleEvent.current);
@@ -148,6 +150,7 @@ export function QuickTasks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quick-tasks/range"] });
     },
     onError: (error: Error) => {
       toast({ title: "Failed to delete task", description: error.message, variant: "destructive" });
