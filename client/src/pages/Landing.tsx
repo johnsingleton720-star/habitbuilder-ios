@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 
 // Update these URLs once the app is live in each store
-const APP_STORE_URL = "https://apps.apple.com/app/habit-builder-ai-coach/id6741447813";
+const APP_STORE_URL = "https://apps.apple.com/us/app/habitbuilder-pro/id6759849704";
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=pro.habitbuilder.app";
 
 import { Button } from "@/components/ui/button";
