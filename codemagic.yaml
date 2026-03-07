@@ -223,9 +223,9 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.1" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2/g' App.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
