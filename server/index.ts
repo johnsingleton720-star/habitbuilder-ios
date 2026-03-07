@@ -9,7 +9,49 @@ import { startEmailScheduler } from './emailScheduler';
 import { injectSeo } from './seoInjector';
 import { db } from './db';
 import { foundingMemberSlots } from '@shared/models/auth';
-import { sql } from 'drizzle-orm';
+import { habits } from '@shared/schema';
+import { sql, eq } from 'drizzle-orm';
+
+async function backfillProgressEntries() {
+  try {
+    const allHabits = await db.select().from(habits);
+    let totalAdded = 0;
+    for (const habit of allHabits) {
+      const dailyPlans = (habit.dailyPlans || []) as any[];
+      const progress = [...((habit.progress as any[]) || [])];
+      const existingDates = new Set(progress.map((p: any) => p.date));
+      let added = 0;
+
+      for (const plan of dailyPlans) {
+        if (!plan.completed || !plan.date || existingDates.has(plan.date)) continue;
+        const activeTasks = (plan.tasks || []).filter((t: any) => !t.skipped);
+        if (activeTasks.length === 0) continue;
+        const completedTasks = (plan.tasks || []).filter((t: any) => t.completed);
+        progress.push({
+          date: plan.date,
+          tasksCompleted: completedTasks.length,
+          totalTasks: activeTasks.length,
+          timeSpent: plan.timeSpent || 0,
+          notes: "",
+          autoRecorded: true,
+        });
+        existingDates.add(plan.date);
+        added++;
+      }
+
+      if (added > 0) {
+        progress.sort((a: any, b: any) => a.date.localeCompare(b.date));
+        await db.update(habits).set({ progress }).where(eq(habits.id, habit.id));
+        totalAdded += added;
+      }
+    }
+    if (totalAdded > 0) {
+      console.log(`[Backfill] Added ${totalAdded} missing progress entries`);
+    }
+  } catch (err) {
+    console.error("[Backfill] Error:", err);
+  }
+}
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception (server kept running):', err.message);
@@ -159,6 +201,7 @@ async function seedFoundingMemberSlots() {
   await seedFoundingMemberSlots();
   await registerRoutes(httpServer, app);
   startEmailScheduler();
+  backfillProgressEntries();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

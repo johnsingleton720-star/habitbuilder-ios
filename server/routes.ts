@@ -4537,6 +4537,7 @@ REQUIREMENTS:
       const dailyPlans = [...(habit.dailyPlans || [])];
       let taskFound = false;
       let totalTimeSpent = habit.totalTimeSpent || 0;
+      let modifiedPlan: any = null;
 
       for (const plan of dailyPlans) {
         const taskIndex = plan.tasks.findIndex(t => t.id === taskId);
@@ -4565,6 +4566,7 @@ REQUIREMENTS:
           const allResolved = plan.tasks.every(t => t.completed || t.skipped);
           const anyCompleted = plan.tasks.some(t => t.completed);
           plan.completed = allResolved && anyCompleted;
+          modifiedPlan = plan;
           taskFound = true;
           break;
         }
@@ -4588,24 +4590,20 @@ REQUIREMENTS:
       // When all tasks for a day are manually completed, add a progress entry
       // so the All-Time Progress page reflects this session
       const progress = [...(habit.progress as any[] || [])];
-      const completedPlan = dailyPlans.find(p => {
-        const taskIndex = p.tasks.findIndex(t => t.id === taskId);
-        return taskIndex !== -1;
-      });
-      if (completedPlan) {
-        const existingIdx = progress.findIndex((entry: any) => entry.date === completedPlan.date);
-        if (completedPlan.completed && existingIdx === -1) {
-          const completedTasks = completedPlan.tasks.filter((t: any) => t.completed);
-          const activeTasks = completedPlan.tasks.filter((t: any) => !t.skipped);
+      if (modifiedPlan) {
+        const existingIdx = progress.findIndex((entry: any) => entry.date === modifiedPlan.date);
+        if (modifiedPlan.completed && existingIdx === -1) {
+          const completedTasks = modifiedPlan.tasks.filter((t: any) => t.completed);
+          const activeTasks = modifiedPlan.tasks.filter((t: any) => !t.skipped);
           progress.push({
-            date: completedPlan.date,
+            date: modifiedPlan.date,
             tasksCompleted: completedTasks.length,
             totalTasks: activeTasks.length,
-            timeSpent: completedPlan.timeSpent || 0,
+            timeSpent: modifiedPlan.timeSpent || 0,
             notes: "",
             autoRecorded: true,
           });
-        } else if (!completedPlan.completed && existingIdx !== -1 && (progress[existingIdx] as any).autoRecorded) {
+        } else if (!modifiedPlan.completed && existingIdx !== -1 && (progress[existingIdx] as any).autoRecorded) {
           progress.splice(existingIdx, 1);
         }
       }
