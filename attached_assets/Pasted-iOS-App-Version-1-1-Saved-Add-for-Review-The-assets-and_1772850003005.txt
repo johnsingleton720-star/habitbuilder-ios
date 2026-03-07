@@ -1,0 +1,169 @@
+iOS App Version 1.1
+Saved
+Add for Review
+The assets and metadata below appear on your app’s product page, when users install your app, and will be used for web engine search results once you release your app.
+English (U.S.)
+?
+Previews and Screenshots
+?
+Adding accurate screenshots of your app on the newest devices can help you represent the app's user experience. Keep in mind that we'll use these screenshots for all display sizes and localizations. Screenshots are only required for iOS apps, and only the first 3 will be used on the app installation sheets.
+
+iPhone
+iPad
+Apple Watch
+View All Sizes in Media Manager
+
+Please save new locales before uploading screenshots or previews.
+
+iPhone
+6.5" Display
+Drag up to 3 app previews and 10 screenshots here.
+
+(1242 × 2688px, 2688 × 1242px, 1284 × 2778px or 2778 × 1284px)
+
+0 of 3 App Previews
+
+0 of 10 Screenshots
+
+Choose File
+
+Delete All
+
+Promotional Text
+Build life-changing habits with your personal AI coach. Start free today!
+97
+Description
+Build lasting habits with AI-powered coaching. HabitBuilder.pro creates personalized action plans tailored to your goals, then guides you through daily sessions with timers, notes, and progress tracking.
+
+FEATURES:
+• AI Coaching Interview — Answer questions about your goals, and AI creates a custom action plan
+• Guided Sessions — Step-by-step walkthroughs with built-in timers and note-taking
+• Smart Daily Planner — AI-optimized daily schedule that adapts to your energy levels
+• Streaks & Achievements — Stay motivated with streak tracking and milestone rewards
+• XP & Leveling — Earn experience points and level up as you build consistency
+• Progress Analytics — Track your journey with charts and insights
+• Community Forum — Connect with others on their habit-building journey
+• Mood & Journal — Track your wellbeing alongside your habits
+• Accountability Partners — Share progress with friends for extra motivation
+
+FREE FEATURES:
+• 1 habit with AI-generated action plan
+• 3 guided sessions per week
+• Template library access
+• Basic progress tracking
+
+PRO ($6/month or $48/year):
+• Unlimited habits and sessions
+• AI coaching insights and summaries
+• Streak tracking and achievements
+• Weekly progress reports
+• Adaptive coaching check-ins
+
+PREMIUM ($15/month or $140/year):
+• Everything in Pro
+• Smart Daily Planner with AI scheduling
+• Advanced analytics with trend insights
+• Accountability partners
+• Community forum access
+• Mood tracking and journaling
+• Voice-enabled coaching
+
+Start your habit-building journey today with a free trial!
+
+Terms of Use: https://habitbuilder.pro/terms | Privacy Policy: https://habitbuilder.pro/privacy
+2,351
+What's New in This Version
+Added push notification support for timely habit reminders. Bug fixes and performance improvements.
+3,901
+Keywords
+habit tracker,habits,AI coach,daily planner,goal setting,productivity,wellness,self improvement
+5
+Support URL
+https://habitbuilder.pro/about
+Marketing URL
+https://habitbuilder.pro
+Version
+1.1
+Copyright
+© 2026 HabitBuilder.pro
+Routing App Coverage File
+
+Choose File (Optional)
+
+
+iMessage App
+?
+Build
+Build
+Version
+Has App Clip
+28
+1.1
+No
+
+Included Assets
+
+App Icon
+Game Center
+Game Center components can now be added for review directly from the Game Center section. You can no longer select them from the app version page. Learn More
+
+
+App Review Information
+Sign-In Information
+Provide a user name and password so we can sign in to your app. We’ll need this to complete your app review.
+
+Sign-in required
+jayriles2412@gmail.com
+Silverton25!
+Contact Information
+John
+Singleton
+8178056154
+admin@habitbuilder.pro
+Notes
+Chinese law requires apps with news, religious, book, and magazine content to have relevant permits in order to be available on the App Store in China mainland. If applicable, enter information about your permits below. Learn More
+
+HabitBuilder.pro is a web-based app wrapped in a Capacitor WebView for native iOS distribution.
+
+The app requires an internet connection. Users sign in via third-party authentication (OpenID Connect) which opens a brief browser window for login — no username/password is needed.
+
+To test the app:
+1. Open the app and tap "Get Started"
+2. Create an account through the sign-in flow
+3. The onboarding wizard will guide you to create your first habit
+4. The AI will generate a personalized action plan
+5. Explore the dashboard, track habits, and view progress
+
+In-App Purchases: The app offers free tier functionality (1 habit, 3 sessions/week). Pro and Premium subscriptions unlock additional features. A "Restore Purchases" button is available in Settings.
+
+The app uses OpenAI for AI-powered coaching via API. No user data is stored by OpenAI.
+3,157
+Attachment
+
+Choose File (Optional)
+
+App Store Version Release
+To make your app available on the App Store, you can automatically release it after it’s been approved by App Review. You can also manually release it on the App Store at a later date.
+
+
+Manually release this version
+
+Automatically release this version
+
+Automatically release this version after App Review, no earlier than
+Your local date and time.
+
+March 6, 2026 8:00 PM
+Mar 7, 2026 2:00 AM (GMT)
+Phased Release for App Store Automatic Updates
+Phased release for automatic updates lets you gradually release this update over a 7-day period to users who have turned on automatic updates from the App Store. Keep in mind that this version will still be available to all users as a manual update from the App Store. You can pause the phased release for up to 30 days or release this update to all users at any time. Learn More
+
+Release update to all users immediately
+Release update over 7-day period using phased release
+Reset iOS App Store Summary Rating
+You can reset your app’s App Store summary rating for all countries or regions when you release this version. Keep in mind that once this version is released, you won’t be able to restore the rating. Your app’s existing customer reviews will still appear on the App Store. View Ratings and Reviews
+
+
+Keep existing rating
+
+Reset rating when this version is released
