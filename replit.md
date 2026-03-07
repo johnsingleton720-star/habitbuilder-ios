@@ -101,7 +101,7 @@ Preferred communication style: Simple, everyday language.
     - **Habit Reminders**: Per-habit times from `habitReminders` table on matching days
     - **Daily Planner**: At user's `dailyPlannerTime` (default 07:00) — task count summary
     - **Goal Milestones**: On achievement — celebrates new milestones
-    - **Weekly Digests**: Sunday 9am — email summary of week's progress
+    - **Weekly Digests**: Sunday 9am — tiered email digest. Free users get basic summary; Pro/Premium users get rich visual HTML reports with daily activity bar charts, per-habit performance tables with progress bars, streak/XP summaries, achievement badges, and a "View Full Analytics" CTA. Premium users additionally receive mood/wellness overview, miss-reasons breakdown, and journal insights. Built via `sendPaidWeeklyDigestEmail()` in `server/email.ts`
 -   All notification types have individual toggle switches and configurable times in Account settings.
 -   Deduplication tracking fields prevent duplicate sends across scheduler cycles.
 -   **Time-Aware Greeting**: `DailyMotivation.tsx` dynamically shows "Good Morning/Afternoon/Evening/Night" with matching icon based on user's local time. AI motivation prompt also receives time-of-day context.

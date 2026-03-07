@@ -334,6 +334,236 @@ export async function sendWeeklyDigestEmail(params: {
   });
 }
 
+export async function sendPaidWeeklyDigestEmail(params: {
+  toEmail: string;
+  userName: string;
+  tier: "pro" | "premium";
+  weekDateRange: string;
+  overallCompletion: number;
+  taskCompletionRate: number;
+  dailyBreakdown: { day: string; date: string; scheduled: number; completed: number; percent: number }[];
+  habitPerformance: { title: string; streak: number; completionPercent: number; daysCompleted: number; daysScheduled: number; timeMinutes: number; category: string }[];
+  streakInfo: { current: number; topHabit?: string; topHabitStreak: number };
+  xp: { earned: number; goal: number };
+  achievements: string[];
+  totalMinutes: number;
+  bestDay?: { day: string; percent: number };
+  worstDay?: { day: string; percent: number };
+  moodData?: { avgEnergy: number; avgStress: number; avgSleep: number; avgMood: string; entries: number };
+  missReasons?: { reason: string; count: number }[];
+  journalSummary?: string;
+}) {
+  const p = params;
+  const completionColor = p.overallCompletion >= 75 ? "#059669" : p.overallCompletion >= 50 ? "#d97706" : "#dc2626";
+  const tierLabel = p.tier === "premium" ? "Premium" : "Pro";
+  const tierColor = p.tier === "premium" ? "#7c3aed" : "#059669";
+
+  const moodEmoji: Record<string, string> = { great: "&#128512;", good: "&#128578;", okay: "&#128528;", bad: "&#128543;", terrible: "&#128557;" };
+  const energyBar = (val: number) => {
+    const pct = Math.round((val / 5) * 100);
+    return `<div style="background:#e5e7eb;border-radius:4px;height:8px;width:80px;display:inline-block;vertical-align:middle;"><div style="background:#059669;border-radius:4px;height:8px;width:${pct}%;"></div></div> ${val}/5`;
+  };
+
+  const dailyChartBars = p.dailyBreakdown.map(d => {
+    const barHeight = Math.max(d.percent * 0.8, 4);
+    const barColor = d.percent >= 75 ? "#059669" : d.percent >= 50 ? "#d97706" : d.percent > 0 ? "#ef4444" : "#e5e7eb";
+    return `<td style="vertical-align:bottom;text-align:center;padding:0 4px;width:14%;">
+      <div style="font-size:11px;color:#666;margin-bottom:2px;">${d.percent}%</div>
+      <div style="background:${barColor};border-radius:4px 4px 0 0;height:${barHeight}px;min-width:24px;margin:0 auto;"></div>
+      <div style="font-size:11px;color:#444;margin-top:4px;font-weight:600;">${d.day}</div>
+    </td>`;
+  }).join("");
+
+  const habitRows = p.habitPerformance.slice(0, 8).map(h => {
+    const barColor = h.completionPercent >= 75 ? "#059669" : h.completionPercent >= 50 ? "#d97706" : "#ef4444";
+    const streakText = h.streak > 0 ? `&#128293; ${h.streak}d` : "-";
+    const timeText = h.timeMinutes > 0 ? `${h.timeMinutes}m` : "-";
+    return `<tr>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;color:#1a1a2e;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(h.title)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:center;">
+        <div style="background:#e5e7eb;border-radius:4px;height:8px;width:60px;display:inline-block;vertical-align:middle;"><div style="background:${barColor};border-radius:4px;height:8px;width:${h.completionPercent}%;"></div></div>
+        <span style="font-size:12px;color:#666;margin-left:4px;">${h.completionPercent}%</span>
+      </td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px;">${streakText}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px;color:#666;">${timeText}</td>
+    </tr>`;
+  }).join("");
+
+  const xpPercent = p.xp.goal > 0 ? Math.min(Math.round((p.xp.earned / p.xp.goal) * 100), 100) : 0;
+
+  const achievementBadges = p.achievements.length > 0
+    ? p.achievements.slice(0, 5).map(a => {
+      const name = a.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      return `<span style="display:inline-block;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#78350f;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin:3px;">${name}</span>`;
+    }).join("")
+    : '<span style="color:#999;font-size:13px;">Keep going — achievements are within reach!</span>';
+
+  let premiumSections = "";
+  if (p.tier === "premium") {
+    if (p.moodData && p.moodData.entries > 0) {
+      premiumSections += `
+        <div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:12px;padding:20px;margin:20px 0;border:1px solid #ddd6fe;">
+          <h3 style="color:#5b21b6;margin:0 0 12px 0;font-size:16px;">&#128156; Wellness Overview</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:6px 0;color:#666;font-size:14px;">Overall Mood</td>
+              <td style="padding:6px 0;text-align:right;font-size:14px;">${moodEmoji[p.moodData.avgMood] || "&#128528;"} ${p.moodData.avgMood} (${p.moodData.entries} check-ins)</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:#666;font-size:14px;">Energy</td>
+              <td style="padding:6px 0;text-align:right;font-size:14px;">${energyBar(p.moodData.avgEnergy)}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:#666;font-size:14px;">Sleep Quality</td>
+              <td style="padding:6px 0;text-align:right;font-size:14px;">${energyBar(p.moodData.avgSleep)}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:#666;font-size:14px;">Stress Level</td>
+              <td style="padding:6px 0;text-align:right;font-size:14px;">${energyBar(p.moodData.avgStress)}</td>
+            </tr>
+          </table>
+        </div>`;
+    }
+
+    if (p.missReasons && p.missReasons.length > 0) {
+      const maxCount = p.missReasons[0].count;
+      const reasonBars = p.missReasons.map(r => {
+        const barWidth = Math.round((r.count / maxCount) * 100);
+        return `<div style="margin:6px 0;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+            <span style="font-size:13px;color:#444;">${escapeHtml(r.reason)}</span>
+            <span style="font-size:13px;color:#666;">${r.count}x</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:4px;height:6px;">
+            <div style="background:#f59e0b;border-radius:4px;height:6px;width:${barWidth}%;"></div>
+          </div>
+        </div>`;
+      }).join("");
+      premiumSections += `
+        <div style="background:#fffbeb;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #fde68a;">
+          <h3 style="color:#92400e;margin:0 0 12px 0;font-size:16px;">&#128161; What Got in the Way</h3>
+          ${reasonBars}
+        </div>`;
+    }
+
+    if (p.journalSummary) {
+      premiumSections += `
+        <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #bbf7d0;">
+          <h3 style="color:#166534;margin:0 0 8px 0;font-size:16px;">&#128221; Journal Insights</h3>
+          <p style="color:#444;font-size:14px;line-height:1.6;margin:0;">${escapeHtml(p.journalSummary)}</p>
+        </div>`;
+    }
+  }
+
+  const hours = Math.floor(p.totalMinutes / 60);
+  const mins = p.totalMinutes % 60;
+  const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+  const formatDate = (d: string) => {
+    const parts = d.split("-");
+    return `${parts[1]}/${parts[2]}`;
+  };
+  const weekLabel = `${formatDate(p.weekDateRange.split(" to ")[0])} - ${formatDate(p.weekDateRange.split(" to ")[1])}`;
+
+  const html = wrapEmail(`
+    <div style="text-align:center;margin-bottom:8px;">
+      <span style="display:inline-block;background:${tierColor};color:white;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:0.5px;">${tierLabel} WEEKLY REPORT</span>
+    </div>
+    <h2 style="color:#1a1a2e;margin:8px 0 4px;text-align:center;">Your Week in Review</h2>
+    <p style="color:#888;font-size:13px;text-align:center;margin:0 0 20px;">
+      ${params.userName ? escapeHtml(params.userName) + ' &middot; ' : ''}${weekLabel}
+    </p>
+
+    <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-radius:16px;padding:24px;text-align:center;margin:0 0 20px;border:1px solid #bbf7d0;">
+      <div style="font-size:48px;font-weight:800;color:${completionColor};line-height:1;">${p.overallCompletion}%</div>
+      <div style="color:#666;font-size:14px;margin-top:4px;">Overall Completion</div>
+      <div style="margin-top:12px;">
+        <span style="display:inline-block;background:white;border-radius:8px;padding:8px 16px;margin:4px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <span style="font-weight:700;color:#1a1a2e;">${p.taskCompletionRate}%</span>
+          <span style="color:#888;font-size:12px;"> tasks done</span>
+        </span>
+        <span style="display:inline-block;background:white;border-radius:8px;padding:8px 16px;margin:4px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <span style="font-weight:700;color:#1a1a2e;">${timeStr}</span>
+          <span style="color:#888;font-size:12px;"> invested</span>
+        </span>
+      </div>
+    </div>
+
+    <div style="background:#f8faf9;border-radius:12px;padding:20px;margin:0 0 20px;border:1px solid #e5e7eb;">
+      <h3 style="color:#1a1a2e;margin:0 0 12px;font-size:16px;">&#128202; Daily Activity</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>${dailyChartBars}</tr>
+      </table>
+      ${p.bestDay ? `<p style="font-size:13px;color:#666;margin:12px 0 0;text-align:center;">&#127942; Best day: <strong>${p.bestDay.day}</strong> (${p.bestDay.percent}%)${p.worstDay && p.worstDay.day !== p.bestDay.day ? ` &middot; Needs work: <strong>${p.worstDay.day}</strong> (${p.worstDay.percent}%)` : ""}</p>` : ""}
+    </div>
+
+    ${p.habitPerformance.length > 0 ? `
+    <div style="background:#f8faf9;border-radius:12px;padding:20px;margin:0 0 20px;border:1px solid #e5e7eb;">
+      <h3 style="color:#1a1a2e;margin:0 0 12px;font-size:16px;">&#127919; Habit Performance</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <th style="text-align:left;padding:8px;font-size:12px;color:#888;font-weight:600;border-bottom:2px solid #e5e7eb;">HABIT</th>
+          <th style="text-align:center;padding:8px;font-size:12px;color:#888;font-weight:600;border-bottom:2px solid #e5e7eb;">COMPLETION</th>
+          <th style="text-align:center;padding:8px;font-size:12px;color:#888;font-weight:600;border-bottom:2px solid #e5e7eb;">STREAK</th>
+          <th style="text-align:center;padding:8px;font-size:12px;color:#888;font-weight:600;border-bottom:2px solid #e5e7eb;">TIME</th>
+        </tr>
+        ${habitRows}
+      </table>
+    </div>` : ""}
+
+    <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+      <tr>
+        <td style="width:50%;padding-right:8px;vertical-align:top;">
+          <div style="background:#fff7ed;border-radius:12px;padding:16px;border:1px solid #fed7aa;text-align:center;">
+            <div style="font-size:24px;margin-bottom:4px;">&#128293;</div>
+            <div style="font-size:22px;font-weight:800;color:#ea580c;">${p.streakInfo.current}</div>
+            <div style="font-size:12px;color:#888;">day streak</div>
+            ${p.streakInfo.topHabit ? `<div style="font-size:11px;color:#666;margin-top:4px;">${escapeHtml(p.streakInfo.topHabit)}</div>` : ""}
+          </div>
+        </td>
+        <td style="width:50%;padding-left:8px;vertical-align:top;">
+          <div style="background:#eff6ff;border-radius:12px;padding:16px;border:1px solid #bfdbfe;text-align:center;">
+            <div style="font-size:24px;margin-bottom:4px;">&#9889;</div>
+            <div style="font-size:22px;font-weight:800;color:#2563eb;">${p.xp.earned}</div>
+            <div style="font-size:12px;color:#888;">XP earned</div>
+            <div style="background:#e5e7eb;border-radius:4px;height:6px;margin-top:8px;">
+              <div style="background:#2563eb;border-radius:4px;height:6px;width:${xpPercent}%;"></div>
+            </div>
+            <div style="font-size:11px;color:#666;margin-top:2px;">${xpPercent}% of weekly goal</div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div style="background:#fefce8;border-radius:12px;padding:16px;margin:0 0 20px;border:1px solid #fde68a;text-align:center;">
+      <h3 style="color:#854d0e;margin:0 0 8px;font-size:14px;">${p.achievements.length > 0 ? "Achievements Unlocked This Week" : "Achievements"}</h3>
+      ${achievementBadges}
+    </div>
+
+    ${premiumSections}
+
+    <div style="text-align:center;margin:24px 0;">
+      <a href="https://habitbuilder.pro/progress" style="background-color:${tierColor};color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block;font-size:15px;">
+        View Full Analytics
+      </a>
+    </div>
+    <p style="color:#999;font-size:12px;text-align:center;">
+      To stop receiving weekly digests, visit your Account settings on HabitBuilder.pro.
+    </p>
+  `);
+
+  const completedCount = p.habitPerformance.filter(h => h.completionPercent === 100).length;
+  const subject = completedCount > 0
+    ? `Weekly Report: ${p.overallCompletion}% completion, ${completedCount} habits perfected`
+    : `Weekly Report: ${p.overallCompletion}% completion this week`;
+
+  return sendEmail({
+    to: params.toEmail,
+    subject,
+    html,
+  });
+}
+
 export async function sendWelcomeCampaignEmail(params: {
   toEmails: string[];
 }) {

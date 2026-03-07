@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { users, habits, habitReminders, quickTasks, goalMilestones, goals } from "@shared/schema";
-import { eq, and, isNotNull, or } from "drizzle-orm";
-import { sendDailyReminderEmail, sendWeeklyDigestEmail } from "./email";
+import { users, habits, habitReminders, quickTasks, goalMilestones, goals, moodEntries, journalEntries, userAchievements } from "@shared/schema";
+import { eq, and, isNotNull, or, gte } from "drizzle-orm";
+import { sendDailyReminderEmail, sendWeeklyDigestEmail, sendPaidWeeklyDigestEmail } from "./email";
 import { sendPushToUser } from "./pushNotifications";
 
 function getUserLocalTime(timezone: string | null): { hour: number; minute: number; dayOfWeek: number; dateStr: string; dayName: string } {
@@ -137,6 +137,20 @@ async function processDailyReminders() {
   }
 }
 
+function getWeekDates(todayStr: string): string[] {
+  const today = new Date(todayStr + "T12:00:00Z");
+  const dayOfWeek = today.getUTCDay();
+  const monday = new Date(today);
+  monday.setUTCDate(today.getUTCDate() - ((dayOfWeek + 6) % 7));
+  const dates: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setUTCDate(monday.getUTCDate() + i);
+    dates.push(d.toISOString().split("T")[0]);
+  }
+  return dates;
+}
+
 async function processWeeklyDigests() {
   try {
     const eligibleUsers = await db.query.users.findMany({
@@ -159,6 +173,9 @@ async function processWeeklyDigests() {
           where: eq(habits.userId, u.id),
         });
 
+        const isPaidUser = u.hasPaid && (u.subscriptionTier === "pro" || u.subscriptionTier === "premium");
+        const isPremium = u.hasPaid && u.subscriptionTier === "premium";
+
         let totalMinutes = 0;
         let longestStreak = 0;
         let topHabit = "";
@@ -179,22 +196,179 @@ async function processWeeklyDigests() {
         }, 0);
         const completionRate = userHabits.length > 0 ? Math.min(Math.round((progressEntries / (userHabits.length * 7)) * 100), 100) : 0;
 
-        await sendWeeklyDigestEmail({
-          toEmail: u.email,
-          userName: u.firstName || "",
-          weekStats: {
-            habitsWorkedOn: userHabits.length,
-            sessionsCompleted: progressEntries,
+        if (!isPaidUser) {
+          await sendWeeklyDigestEmail({
+            toEmail: u.email,
+            userName: u.firstName || "",
+            weekStats: {
+              habitsWorkedOn: userHabits.length,
+              sessionsCompleted: progressEntries,
+              totalMinutes,
+              longestStreak,
+              completionRate,
+            },
+            topHabit: topHabit || undefined,
+          });
+        } else {
+          const weekDates = getWeekDates(localTime.dateStr);
+          const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+          const dailyBreakdown = weekDates.map((dateStr, i) => {
+            let scheduled = 0;
+            let completed = 0;
+            for (const h of userHabits) {
+              const plans = (h.dailyPlans || []) as any[];
+              const plan = plans.find((p: any) => p.date === dateStr);
+              if (plan && plan.tasks && plan.tasks.length > 0) {
+                scheduled++;
+                const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+                if (activeTasks.length > 0 && (plan.completed || activeTasks.every((t: any) => t.completed))) {
+                  completed++;
+                }
+              }
+            }
+            return { day: dayNames[i], date: dateStr, scheduled, completed, percent: scheduled > 0 ? Math.round((completed / scheduled) * 100) : 0 };
+          });
+
+          let totalTasks = 0;
+          let completedTasks = 0;
+          const habitPerformance = userHabits
+            .filter(h => h.setupComplete && !h.archived)
+            .map(h => {
+              const plans = (h.dailyPlans || []) as any[];
+              let habitCompleted = 0;
+              let habitScheduled = 0;
+              let habitTime = 0;
+              for (const dateStr of weekDates) {
+                const plan = plans.find((p: any) => p.date === dateStr);
+                if (plan && plan.tasks && plan.tasks.length > 0) {
+                  habitScheduled++;
+                  const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+                  const doneCount = activeTasks.filter((t: any) => t.completed).length;
+                  totalTasks += activeTasks.length;
+                  completedTasks += doneCount;
+                  if (activeTasks.length > 0 && (plan.completed || activeTasks.every((t: any) => t.completed))) {
+                    habitCompleted++;
+                  }
+                  if (plan.timeSpent) habitTime += plan.timeSpent;
+                }
+              }
+              return {
+                title: h.title,
+                streak: h.currentStreak || 0,
+                completionPercent: habitScheduled > 0 ? Math.round((habitCompleted / habitScheduled) * 100) : 0,
+                daysCompleted: habitCompleted,
+                daysScheduled: habitScheduled,
+                timeMinutes: habitTime,
+                category: h.category || "general",
+              };
+            })
+            .sort((a, b) => b.completionPercent - a.completionPercent);
+
+          const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+          const bestDay = [...dailyBreakdown].sort((a, b) => b.percent - a.percent)[0];
+          const worstDay = [...dailyBreakdown].filter(d => d.scheduled > 0).sort((a, b) => a.percent - b.percent)[0];
+
+          const xpEarned = u.xpPoints || 0;
+          const weeklyXpGoal = u.weeklyXpGoal || 500;
+
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const recentAchievements = await db.query.userAchievements.findMany({
+            where: and(
+              eq(userAchievements.userId, u.id),
+              gte(userAchievements.unlockedAt, oneWeekAgo)
+            ),
+          });
+
+          let moodData: { avgEnergy: number; avgStress: number; avgSleep: number; avgMood: string; entries: number } | undefined;
+          let missReasons: { reason: string; count: number }[] | undefined;
+          let journalSummary: string | undefined;
+
+          if (isPremium) {
+            const weekMoods = await db.query.moodEntries.findMany({
+              where: and(eq(moodEntries.userId, u.id)),
+            });
+            const thisWeekMoods = weekMoods.filter(m => weekDates.includes(m.date));
+
+            if (thisWeekMoods.length > 0) {
+              const energyVals = thisWeekMoods.filter(m => m.energy).map(m => m.energy!);
+              const stressVals = thisWeekMoods.filter(m => m.stress).map(m => m.stress!);
+              const sleepVals = thisWeekMoods.filter(m => m.sleep).map(m => m.sleep!);
+              const moodMap: Record<string, number> = {};
+              thisWeekMoods.forEach(m => { moodMap[m.mood] = (moodMap[m.mood] || 0) + 1; });
+              const topMood = Object.entries(moodMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "okay";
+
+              moodData = {
+                avgEnergy: energyVals.length > 0 ? Math.round((energyVals.reduce((a, b) => a + b, 0) / energyVals.length) * 10) / 10 : 0,
+                avgStress: stressVals.length > 0 ? Math.round((stressVals.reduce((a, b) => a + b, 0) / stressVals.length) * 10) / 10 : 0,
+                avgSleep: sleepVals.length > 0 ? Math.round((sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length) * 10) / 10 : 0,
+                avgMood: topMood,
+                entries: thisWeekMoods.length,
+              };
+            }
+
+            const allMissReasons: string[] = [];
+            for (const h of userHabits) {
+              const reasons = (h.missReasons || []) as any[];
+              for (const r of reasons) {
+                if (r.reason && weekDates.includes(r.date)) {
+                  allMissReasons.push(r.reason);
+                }
+              }
+            }
+            if (allMissReasons.length > 0) {
+              const reasonCounts: Record<string, number> = {};
+              allMissReasons.forEach(r => { reasonCounts[r] = (reasonCounts[r] || 0) + 1; });
+              missReasons = Object.entries(reasonCounts)
+                .map(([reason, count]) => ({ reason, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            }
+
+            const weekJournals = await db.query.journalEntries.findMany({
+              where: eq(journalEntries.userId, u.id),
+            });
+            const thisWeekJournals = weekJournals.filter(j => weekDates.includes(j.date));
+            if (thisWeekJournals.length > 0) {
+              const insights = thisWeekJournals.filter(j => j.aiInsights).map(j => j.aiInsights!);
+              if (insights.length > 0) {
+                journalSummary = insights[insights.length - 1];
+              } else {
+                journalSummary = `${thisWeekJournals.length} journal ${thisWeekJournals.length === 1 ? "entry" : "entries"} this week`;
+              }
+            }
+          }
+
+          await sendPaidWeeklyDigestEmail({
+            toEmail: u.email,
+            userName: u.firstName || "",
+            tier: isPremium ? "premium" : "pro",
+            weekDateRange: `${weekDates[0]} to ${weekDates[6]}`,
+            overallCompletion: completionRate,
+            taskCompletionRate,
+            dailyBreakdown,
+            habitPerformance,
+            streakInfo: {
+              current: longestStreak,
+              topHabit: topHabit || undefined,
+              topHabitStreak,
+            },
+            xp: { earned: xpEarned, goal: weeklyXpGoal },
+            achievements: recentAchievements.map(a => a.achievementId),
             totalMinutes,
-            longestStreak,
-            completionRate,
-          },
-          topHabit: topHabit || undefined,
-        });
+            bestDay: bestDay ? { day: bestDay.day, percent: bestDay.percent } : undefined,
+            worstDay: worstDay ? { day: worstDay.day, percent: worstDay.percent } : undefined,
+            moodData,
+            missReasons,
+            journalSummary,
+          });
+        }
 
         await db.update(users).set({ lastWeeklyDigestSent: weekId }).where(eq(users.id, u.id));
         sent++;
-        console.log(`[EmailScheduler] Weekly digest sent to ${u.email}`);
+        console.log(`[EmailScheduler] Weekly digest sent to ${u.email} (${isPaidUser ? u.subscriptionTier : 'free'})`);
       } catch (err) {
         console.error(`[EmailScheduler] Failed weekly digest for ${u.email}:`, err);
       }
