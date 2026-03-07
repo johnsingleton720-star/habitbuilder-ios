@@ -9946,9 +9946,11 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         if (match && (match.scheduledTime as string | null)) {
           const startTime = match.scheduledTime as string;
           const [sh, sm] = startTime.split(":").map(Number);
-          const endMins = sh * 60 + sm + (block.duration || 30);
+          const dur = (match.duration as number | null) || block.duration || 30;
+          const endMins = sh * 60 + sm + dur;
           block.time = startTime;
           block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+          block.duration = dur;
         }
       }
       // Re-sort after time corrections
@@ -10071,9 +10073,11 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
           if (matchingTask.scheduledTime) {
             const startTime = matchingTask.scheduledTime as string;
             const [sh, sm] = startTime.split(":").map(Number);
-            const endMins = sh * 60 + sm + (block.duration || 30);
+            const dur = (matchingTask.duration as number | null) || block.duration || 30;
+            const endMins = sh * 60 + sm + dur;
             block.time = startTime;
             block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+            block.duration = dur;
           }
         }
       }
@@ -10082,7 +10086,8 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         if (!existingTitles.has(task.title.toLowerCase().trim())) {
           const startTime = (task.scheduledTime as string | null) || "09:00";
           const [sh, sm] = startTime.split(":").map(Number);
-          const endMins = sh * 60 + sm + 30;
+          const dur = (task.duration as number | null) || 30;
+          const endMins = sh * 60 + sm + dur;
           const endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
           taskBlocks.push({
             id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -10092,7 +10097,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
             type: "task",
             habitId: null,
             taskId: task.id,
-            duration: 30,
+            duration: dur,
             completed: task.completed || false,
           });
         }
@@ -10130,17 +10135,22 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         .where(eq(dailyPlannerEntries.id, entry.id))
         .returning();
 
-      if (typeof updates.completed === "boolean" && originalBlock) {
+      // Sync any task block changes back to the quick task record
+      if (originalBlock?.type === "task") {
         try {
-          if (originalBlock.type === "task") {
-            const userTasks = await db.select().from(quickTasks)
-              .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
-            const matchingTask = userTasks.find(t =>
-              (originalBlock.taskId && t.id === originalBlock.taskId) || t.title === originalBlock.title
-            );
-            if (matchingTask) {
+          const userTasks = await db.select().from(quickTasks)
+            .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+          const matchingTask = userTasks.find(t =>
+            (originalBlock.taskId && t.id === originalBlock.taskId) || t.title === originalBlock.title
+          );
+          if (matchingTask) {
+            const taskUpdates: Record<string, any> = {};
+            if (typeof updates.completed === "boolean") taskUpdates.completed = updates.completed;
+            if (typeof updates.time === "string") taskUpdates.scheduledTime = updates.time;
+            if (typeof updates.duration === "number") taskUpdates.duration = updates.duration;
+            if (Object.keys(taskUpdates).length > 0) {
               await db.update(quickTasks)
-                .set({ completed: updates.completed })
+                .set(taskUpdates)
                 .where(eq(quickTasks.id, matchingTask.id));
             }
           }
@@ -10345,9 +10355,22 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
           if (match && (match.scheduledTime as string | null)) {
             const startTime = match.scheduledTime as string;
             const [sh, sm] = startTime.split(":").map(Number);
-            const endMins = sh * 60 + sm + (block.duration || 30);
+            const dur = (match.duration as number | null) || block.duration || 30;
+            const endMins = sh * 60 + sm + dur;
             block.time = startTime;
             block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+            block.duration = dur;
+          } else if (block.duration && block.duration !== 30) {
+            // AI changed the duration — sync it back to the quick task
+            const syncMatch = tasksForAdjust.find(t =>
+              (block.taskId && t.id === block.taskId) ||
+              t.title.toLowerCase().trim() === (block.title || "").toLowerCase().trim()
+            );
+            if (syncMatch) {
+              await db.update(quickTasks)
+                .set({ duration: block.duration })
+                .where(eq(quickTasks.id, syncMatch.id));
+            }
           }
         }
         validBlocks.sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));

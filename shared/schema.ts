@@ -364,6 +364,7 @@ export const quickTasks = pgTable("quick_tasks", {
   completed: boolean("completed").default(false),
   date: text("date").notNull(),
   scheduledTime: text("scheduled_time"),
+  duration: integer("duration").default(30),
   sortOrder: integer("sort_order").default(0),
   priority: text("priority").default("normal"),
   category: text("category"),
