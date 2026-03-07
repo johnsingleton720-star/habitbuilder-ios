@@ -80,6 +80,27 @@ workflows:
           </plist>
           EOF
 
+          # Add required push notification delegate methods to AppDelegate.swift
+          # Capacitor docs: https://capacitorjs.com/docs/apis/push-notifications#ios
+          # Without these, iOS gets a token from APNs but never forwards it to Capacitor JS bridge
+          if ! grep -q "capacitorDidRegisterForRemoteNotifications" App/AppDelegate.swift; then
+            sed -i '' '/^}[[:space:]]*$/i\
+\
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)\
+    }\
+\
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {\
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)\
+    }\
+' App/AppDelegate.swift
+            echo "Added push notification delegate methods to AppDelegate.swift"
+          else
+            echo "Push notification delegate methods already present in AppDelegate.swift"
+          fi
+          echo "=== AppDelegate.swift ==="
+          cat App/AppDelegate.swift
+
           # Add entitlements file and StoreKit framework to Xcode project
           ruby << 'RUBYEOF'
           require 'xcodeproj'
