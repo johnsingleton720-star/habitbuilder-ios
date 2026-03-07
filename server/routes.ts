@@ -10022,13 +10022,52 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
       const tasks = await db.select().from(quickTasks)
         .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
 
+      const occupiedSlots = currentBlocks
+        .filter((b: any) => b.time && b.endTime)
+        .map((b: any) => ({ start: b.time, end: b.endTime }));
+
+      const findNextAvailableSlot = (duration: number) => {
+        const toMinutes = (t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          return h * 60 + m;
+        };
+        const fromMinutes = (m: number) => {
+          const h = Math.floor(m / 60);
+          const min = m % 60;
+          return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+        };
+
+        const sortedSlots = [...occupiedSlots].sort((a, b) => a.start.localeCompare(b.start));
+
+        let candidate = toMinutes("09:00");
+        const dayEnd = toMinutes("21:00");
+
+        for (const slot of sortedSlots) {
+          const slotStart = toMinutes(slot.start);
+          const slotEnd = toMinutes(slot.end);
+          if (candidate + duration <= slotStart) {
+            return { time: fromMinutes(candidate), endTime: fromMinutes(candidate + duration) };
+          }
+          if (candidate < slotEnd) {
+            candidate = slotEnd;
+          }
+        }
+
+        if (candidate + duration <= dayEnd) {
+          return { time: fromMinutes(candidate), endTime: fromMinutes(candidate + duration) };
+        }
+        return { time: fromMinutes(candidate), endTime: fromMinutes(candidate + duration) };
+      };
+
       const newBlocks: any[] = [];
       for (const task of tasks) {
         if (!existingTitles.has(task.title.toLowerCase().trim())) {
+          const slot = findNextAvailableSlot(30);
+          occupiedSlots.push({ start: slot.time, end: slot.endTime });
           newBlocks.push({
             id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            time: "09:00",
-            endTime: "09:30",
+            time: slot.time,
+            endTime: slot.endTime,
             title: task.title,
             type: "task",
             habitId: null,
