@@ -16,9 +16,12 @@ workflows:
         script: npm run build
       - name: Set app version
         script: |
-          sed -i '' 's/"version": "1.[0-9]\.[0-9]"/"version": "1.2.1"/' package.json
-          echo "App version set to 1.2.1"
+          sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.1"/' package.json
+          echo "App version set to 1.2.1 in package.json"
           grep '"version"' package.json
+          sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '1.2.1'/" capacitor.config.ts
+          echo "App version set to 1.2.1 in capacitor.config.ts"
+          grep "version" capacitor.config.ts
       - name: Add iOS platform
         script: npx cap add ios || true
       - name: Sync Capacitor
