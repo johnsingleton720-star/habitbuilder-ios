@@ -16,8 +16,8 @@ workflows:
         script: npm run build
       - name: Set app version
         script: |
-          sed -i '' 's/"version": "1.[0-9].[0-9]"/"version": "1.2.0"/' package.json
-          echo "App version set to 1.2.0"
+          sed -i '' 's/"version": "1.[0-9]\.[0-9]"/"version": "1.2.1"/' package.json
+          echo "App version set to 1.2.1"
           grep '"version"' package.json
       - name: Add iOS platform
         script: npx cap add ios || true
@@ -83,21 +83,27 @@ workflows:
           # Add required push notification delegate methods to AppDelegate.swift
           # Capacitor docs: https://capacitorjs.com/docs/apis/push-notifications#ios
           # Without these, iOS gets a token from APNs but never forwards it to Capacitor JS bridge
-          if ! grep -q "capacitorDidRegisterForRemoteNotifications" App/AppDelegate.swift; then
-            sed -i '' '/^}[[:space:]]*$/i\
-\
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\
-        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)\
-    }\
-\
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {\
-        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)\
-    }\
-' App/AppDelegate.swift
-            echo "Added push notification delegate methods to AppDelegate.swift"
+          ruby << 'PUSHRUBY'
+          path = "App/AppDelegate.swift"
+          content = File.read(path)
+          if content.include?("capacitorDidRegisterForRemoteNotifications")
+            puts "Push notification delegate methods already present in AppDelegate.swift"
           else
-            echo "Push notification delegate methods already present in AppDelegate.swift"
-          fi
+            push_methods = <<~SWIFT
+
+              func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+                  NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+              }
+
+              func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+                  NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+              }
+            SWIFT
+            content.sub!(/\n\}\s*\z/, "\n#{push_methods}\n}\n")
+            File.write(path, content)
+            puts "Added push notification delegate methods to AppDelegate.swift"
+          end
+          PUSHRUBY
           echo "=== AppDelegate.swift ==="
           cat App/AppDelegate.swift
 
