@@ -262,7 +262,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                 </>
               )}
             </p>
-            <Link href={`/habit/${nextHabit.id}?date=${new Date().toISOString().split('T')[0]}`}>
+            <Link href={`/habit/${nextHabit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
               <motion.div
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
@@ -444,7 +444,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                       const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
                       const isInStack = habits.some(h => h.linkedHabitId === habit.id) || !!habit.linkedHabitId;
                       return (
-                        <Link key={habit.id} href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
+                        <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                           <div
                             className={cn(
                               "group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r border hover:border-primary/30 transition-all cursor-pointer",
@@ -507,7 +507,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
             </p>
             <div className="space-y-1">
               {completedToday.map((habit) => (
-                <Link key={habit.id} href={`/habit/${habit.id}?date=${new Date().toISOString().split('T')[0]}`}>
+                <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                   <div
                     className="group flex items-center gap-3 p-2.5 rounded-xl bg-primary/5 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
                     data-testid={`completed-habit-${habit.id}`}

@@ -101,6 +101,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
@@ -125,6 +126,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },

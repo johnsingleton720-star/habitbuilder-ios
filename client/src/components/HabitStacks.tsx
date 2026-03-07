@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useHabits } from "@/hooks/use-habits";
@@ -295,7 +296,7 @@ function StackItem({
               const habit = habits.find(h => h.id === item.habitId);
               return (
                 <span key={item.habitId} className="flex items-center gap-1.5">
-                  <Link href={`/habit/${item.habitId}?date=${new Date().toISOString().split('T')[0]}`}>
+                  <Link href={`/habit/${item.habitId}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                     <Badge variant="outline" className="text-[10px] cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
                       {habit?.title || item.habitTitle}
                     </Badge>
