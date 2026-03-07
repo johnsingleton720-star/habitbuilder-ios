@@ -10,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { isNative, isIOS } from "@/lib/platform";
+import { registerNativePush } from "@/hooks/use-push-notifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1587,36 +1588,56 @@ export default function Account() {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        const res = await apiRequest("POST", "/api/push/test");
-                        const data = await res.json();
-                        if (data.total === 0) {
-                          toast({
-                            title: "No active subscriptions",
-                            description: "Try toggling notifications off and on again, or check browser notification permissions.",
-                            variant: "destructive",
-                          });
-                        } else if (data.sent === 0) {
-                          toast({
-                            title: "Notification failed to deliver",
-                            description: "Your subscription may be expired. Try toggling notifications off and on.",
-                            variant: "destructive",
-                          });
-                        } else {
-                          toast({ title: "Test notification sent!" });
+                  <div className="flex gap-2 flex-wrap">
+                    {isNative() && isIOS() && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          toast({ title: "Re-registering push notifications..." });
+                          try {
+                            await registerNativePush();
+                            toast({ title: "Push registration sent", description: "Device token sent to server. Try a test notification now." });
+                          } catch {
+                            toast({ title: "Registration failed", description: "Check that notifications are allowed in iOS Settings.", variant: "destructive" });
+                          }
+                        }}
+                        data-testid="button-fix-push"
+                      >
+                        Fix Push Notifications
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await apiRequest("POST", "/api/push/test");
+                          const data = await res.json();
+                          if (data.total === 0) {
+                            toast({
+                              title: "No active subscriptions",
+                              description: "Tap \"Fix Push Notifications\" to re-register this device.",
+                              variant: "destructive",
+                            });
+                          } else if (data.sent === 0) {
+                            toast({
+                              title: "Notification failed to deliver",
+                              description: "Your subscription may be expired. Tap \"Fix Push Notifications\".",
+                              variant: "destructive",
+                            });
+                          } else {
+                            toast({ title: "Test notification sent!" });
+                          }
+                        } catch {
+                          toast({ title: "Failed to send test notification", variant: "destructive" });
                         }
-                      } catch {
-                        toast({ title: "Failed to send test notification", variant: "destructive" });
-                      }
-                    }}
-                    data-testid="button-test-push"
-                  >
-                    Send Test Notification
-                  </Button>
+                      }}
+                      data-testid="button-test-push"
+                    >
+                      Send Test Notification
+                    </Button>
+                  </div>
                 </>
               )}
             </CardContent>

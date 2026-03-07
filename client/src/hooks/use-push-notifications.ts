@@ -3,70 +3,83 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { isNative, isIOS } from "@/lib/platform";
 
+let nativeListenersAdded = false;
+
 export function usePushNotifications() {
   const { user } = useAuth();
-  const attemptedRef = useRef(false);
+  const webAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
-      attemptedRef.current = false;
+      webAttemptedRef.current = false;
+      nativeListenersAdded = false;
       return;
     }
-    if (attemptedRef.current) return;
     if (!user.pushNotificationsEnabled) return;
-
-    attemptedRef.current = true;
 
     if (isNative() && isIOS()) {
       registerNativePush();
     } else {
-      registerWebPush();
+      if (!webAttemptedRef.current) {
+        webAttemptedRef.current = true;
+        registerWebPush();
+      }
     }
   }, [user]);
 }
 
-async function registerNativePush() {
+export async function registerNativePush() {
   try {
     const { PushNotifications } = await import("@capacitor/push-notifications");
 
     const permResult = await PushNotifications.checkPermissions();
-    if (permResult.receive === "denied") return;
+    if (permResult.receive === "denied") {
+      console.log("[Push] iOS notifications permission denied");
+      return;
+    }
 
     if (permResult.receive === "prompt" || permResult.receive === "prompt-with-rationale") {
       const reqResult = await PushNotifications.requestPermissions();
-      if (reqResult.receive !== "granted") return;
+      if (reqResult.receive !== "granted") {
+        console.log("[Push] iOS notification permission not granted by user");
+        return;
+      }
     }
 
-    PushNotifications.addListener("registration", async (token) => {
-      console.log("[Push] iOS device token:", token.value);
-      try {
-        await apiRequest("POST", "/api/push/register-device", {
-          deviceToken: token.value,
-          platform: "ios",
-        });
-        console.log("[Push] Device token registered with server");
-      } catch (err) {
-        console.error("[Push] Failed to register device token:", err);
-      }
-    });
+    if (!nativeListenersAdded) {
+      nativeListenersAdded = true;
 
-    PushNotifications.addListener("registrationError", (error) => {
-      console.error("[Push] iOS registration error:", error);
-    });
+      PushNotifications.addListener("registration", async (token) => {
+        console.log("[Push] iOS device token received");
+        try {
+          await apiRequest("POST", "/api/push/register-device", {
+            deviceToken: token.value,
+            platform: "ios",
+          });
+          console.log("[Push] Device token registered with server");
+        } catch (err) {
+          console.error("[Push] Failed to register device token:", err);
+        }
+      });
 
-    PushNotifications.addListener("pushNotificationReceived", (notification) => {
-      console.log("[Push] Notification received in foreground:", notification);
-    });
+      PushNotifications.addListener("registrationError", (error) => {
+        console.error("[Push] iOS registration error:", JSON.stringify(error));
+      });
 
-    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-      console.log("[Push] Notification action:", action);
-      const url = action.notification?.data?.url;
-      if (url && typeof url === "string") {
-        window.location.href = url;
-      }
-    });
+      PushNotifications.addListener("pushNotificationReceived", (notification) => {
+        console.log("[Push] Foreground notification:", notification.title);
+      });
+
+      PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+        const url = action.notification?.data?.url;
+        if (url && typeof url === "string") {
+          window.location.href = url;
+        }
+      });
+    }
 
     await PushNotifications.register();
+    console.log("[Push] register() called");
   } catch (err) {
     console.error("[Push] Native push setup error:", err);
   }
