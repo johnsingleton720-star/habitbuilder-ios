@@ -175,6 +175,11 @@ workflows:
           grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
       - name: Build and export IPA
         script: |
+          cd ios/App
+          echo "=== Final version check before build ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -3
+          cd /Users/builder/clone
           xcode-project build-ipa \
             --workspace "ios/App/App.xcworkspace" \
             --scheme "App"

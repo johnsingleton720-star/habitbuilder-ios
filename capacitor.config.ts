@@ -3,6 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'pro.habitbuilder.app',
   appName: 'HabitBuilder',
+  version: '1.1.0',
   webDir: 'dist/public',
   server: {
     url: 'https://habitbuilder.pro',
