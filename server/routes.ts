@@ -552,6 +552,13 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/push/diagnose", isAuthenticated, async (req: any, res) => {
+    const userId = req.user!.claims.sub;
+    const { step, data, error } = req.body;
+    console.log(`[Push Diagnose] user=${userId} step=${step} data=${JSON.stringify(data)} error=${error || 'none'}`);
+    res.json({ success: true });
+  });
+
   app.post("/api/push/test", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

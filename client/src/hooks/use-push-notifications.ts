@@ -5,6 +5,12 @@ import { isNative, isIOS } from "@/lib/platform";
 
 let nativeListenersAdded = false;
 
+async function diagnose(step: string, data?: any, error?: string) {
+  try {
+    await apiRequest("POST", "/api/push/diagnose", { step, data, error });
+  } catch {}
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const webAttemptedRef = useRef(false);
@@ -30,18 +36,24 @@ export function usePushNotifications() {
 
 export async function registerNativePush() {
   try {
+    await diagnose("start", { isNative: isNative(), isIOS: isIOS() });
+
     const { PushNotifications } = await import("@capacitor/push-notifications");
+    await diagnose("plugin-loaded");
 
     const permResult = await PushNotifications.checkPermissions();
+    await diagnose("permissions-checked", { receive: permResult.receive });
+
     if (permResult.receive === "denied") {
-      console.log("[Push] iOS notifications permission denied");
+      await diagnose("permissions-denied");
       return;
     }
 
     if (permResult.receive === "prompt" || permResult.receive === "prompt-with-rationale") {
       const reqResult = await PushNotifications.requestPermissions();
+      await diagnose("permissions-requested", { receive: reqResult.receive });
       if (reqResult.receive !== "granted") {
-        console.log("[Push] iOS notification permission not granted by user");
+        await diagnose("permissions-not-granted");
         return;
       }
     }
@@ -50,20 +62,20 @@ export async function registerNativePush() {
       nativeListenersAdded = true;
 
       PushNotifications.addListener("registration", async (token) => {
-        console.log("[Push] iOS device token received");
+        await diagnose("token-received", { tokenLength: token.value.length });
         try {
           await apiRequest("POST", "/api/push/register-device", {
             deviceToken: token.value,
             platform: "ios",
           });
-          console.log("[Push] Device token registered with server");
-        } catch (err) {
-          console.error("[Push] Failed to register device token:", err);
+          await diagnose("token-registered");
+        } catch (err: any) {
+          await diagnose("register-failed", null, err?.message || String(err));
         }
       });
 
-      PushNotifications.addListener("registrationError", (error) => {
-        console.error("[Push] iOS registration error:", JSON.stringify(error));
+      PushNotifications.addListener("registrationError", async (error) => {
+        await diagnose("registration-error", null, JSON.stringify(error));
       });
 
       PushNotifications.addListener("pushNotificationReceived", (notification) => {
@@ -76,12 +88,14 @@ export async function registerNativePush() {
           window.location.href = url;
         }
       });
+
+      await diagnose("listeners-added");
     }
 
     await PushNotifications.register();
-    console.log("[Push] register() called");
-  } catch (err) {
-    console.error("[Push] Native push setup error:", err);
+    await diagnose("register-called");
+  } catch (err: any) {
+    await diagnose("setup-error", null, err?.message || String(err));
   }
 }
 
