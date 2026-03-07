@@ -10096,7 +10096,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
         .where(eq(dailyPlannerEntries.id, existing.id))
         .returning();
 
-      console.log(`[Planner] Refreshed plan for ${date}: added ${newBlocks.length} new blocks`);
+      console.log(`[Planner] Refreshed plan for ${date}: ${taskBlocks.length} task blocks scheduled`);
       res.json(updated);
     } catch (error) {
       console.error("Error refreshing planner:", error);
