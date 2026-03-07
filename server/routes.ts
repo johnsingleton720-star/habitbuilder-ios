@@ -1420,6 +1420,75 @@ export async function registerRoutes(
     }
   });
 
+  // Server-side streak break detection endpoints
+  app.get("/api/habits/streak-breaks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const dbUser = await storage.getUser(userId);
+      const userTz = dbUser?.timezone || "UTC";
+      const today = getUserToday(userTz);
+      const userHabits = await storage.getHabits(userId);
+
+      for (const habit of userHabits) {
+        if (habit.archived || !habit.setupComplete) continue;
+        const storedStreak = habit.currentStreak || 0;
+        if (storedStreak > 0) {
+          const dailyPlans = habit.dailyPlans || [];
+          let actualStreak = 0;
+          const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+          for (const plan of sorted) {
+            if (plan.completed) {
+              actualStreak++;
+            } else if (plan.date <= today) {
+              break;
+            }
+          }
+          if (actualStreak === 0 && storedStreak > 0) {
+            await storage.updateHabit(habit.id, userId, {
+              currentStreak: 0,
+              previousStreak: storedStreak,
+              streakBrokenAt: today,
+              streakBrokenDismissed: false,
+            });
+            habit.currentStreak = 0;
+            habit.previousStreak = storedStreak;
+            habit.streakBrokenAt = today;
+            habit.streakBrokenDismissed = false;
+          }
+        }
+      }
+
+      const breaks = userHabits
+        .filter(h => h.streakBrokenAt && !h.streakBrokenDismissed && !h.archived && h.setupComplete)
+        .map(h => ({
+          habitId: h.id,
+          habitTitle: h.title,
+          previousStreak: h.previousStreak || 0,
+          brokenAt: h.streakBrokenAt,
+        }));
+      res.json(breaks);
+    } catch (error) {
+      console.error("Error fetching streak breaks:", error);
+      res.status(500).json({ error: "Failed to fetch streak breaks" });
+    }
+  });
+
+  app.post("/api/habits/:id/dismiss-streak-break", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+      await storage.updateHabit(habitId, userId, { streakBrokenDismissed: true });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error dismissing streak break:", error);
+      res.status(500).json({ error: "Failed to dismiss streak break" });
+    }
+  });
+
   // Habit Stacking/Linking (Premium feature)
   const linkHabitSchema = z.object({
     linkedHabitId: z.number().int().positive(),
@@ -1944,12 +2013,24 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           }
         }
 
+        const oldStreak = habit.currentStreak || 0;
+        const streakBreakFields: any = {};
+        if (oldStreak > 0 && currentStreak === 0) {
+          streakBreakFields.previousStreak = oldStreak;
+          streakBreakFields.streakBrokenAt = date;
+          streakBreakFields.streakBrokenDismissed = false;
+        } else if (currentStreak > 0 && habit.streakBrokenAt) {
+          streakBreakFields.streakBrokenAt = null;
+        }
+
+        const finalStreak = Math.max(oldStreak, currentStreak);
         const newTotalTime = (habit.totalTimeSpent || 0) + Math.max(1, habitTime);
         await storage.updateHabit(habitId, userId, {
           dailyPlans,
           progress,
           totalTimeSpent: newTotalTime,
-          currentStreak: Math.max(habit.currentStreak || 0, currentStreak),
+          currentStreak: finalStreak,
+          ...streakBreakFields,
         });
       }
 
@@ -4587,6 +4668,17 @@ REQUIREMENTS:
         }
       }
 
+      // Detect streak break: old streak was positive, new streak is 0
+      const oldStreak = habit.currentStreak || 0;
+      const streakBreakFields: any = {};
+      if (oldStreak > 0 && currentStreak === 0) {
+        streakBreakFields.previousStreak = oldStreak;
+        streakBreakFields.streakBrokenAt = todayForStreak;
+        streakBreakFields.streakBrokenDismissed = false;
+      } else if (currentStreak > 0 && habit.streakBrokenAt) {
+        streakBreakFields.streakBrokenAt = null;
+      }
+
       // When all tasks for a day are manually completed, add a progress entry
       // so the All-Time Progress page reflects this session
       const progress = [...(habit.progress as any[] || [])];
@@ -4614,6 +4706,7 @@ REQUIREMENTS:
         totalTimeSpent,
         currentStreak,
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
+        ...streakBreakFields,
       });
 
       if (completed) {
@@ -4761,6 +4854,17 @@ REQUIREMENTS:
         }
       }
 
+      // Detect streak break
+      const oldStreak = habit.currentStreak || 0;
+      const streakBreakFields: any = {};
+      if (oldStreak > 0 && currentStreak === 0) {
+        streakBreakFields.previousStreak = oldStreak;
+        streakBreakFields.streakBrokenAt = date;
+        streakBreakFields.streakBrokenDismissed = false;
+      } else if (currentStreak > 0 && habit.streakBrokenAt) {
+        streakBreakFields.streakBrokenAt = null;
+      }
+
       const newTotalTime = (habit.totalTimeSpent || 0) + timeSpent;
 
       await storage.updateHabit(habitId, userId, {
@@ -4769,6 +4873,7 @@ REQUIREMENTS:
         totalTimeSpent: newTotalTime,
         currentStreak,
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
+        ...streakBreakFields,
       });
 
       try {

@@ -97,57 +97,17 @@ export default function Dashboard() {
     setIsDialogOpen(true);
   };
 
-  // Detect broken streaks when habits load (skip for free users - streaks are a paid feature)
+  // Server-side streak break detection
+  const { data: streakBreaks } = useQuery<BrokenStreakInfo[]>({
+    queryKey: ["/api/habits/streak-breaks"],
+    enabled: !!user,
+  });
+
   useEffect(() => {
-    if (!habits || habits.length === 0 || isFreeUser) return;
-
-    // Get stored streaks from localStorage
-    const storedStreaksJson = localStorage.getItem('habitStreaks');
-    const storedStreaks: Record<number, number> = storedStreaksJson ? JSON.parse(storedStreaksJson) : {};
-
-    // Check each habit for broken streaks
-    let brokenFound: BrokenStreakInfo | null = null;
-    const newStreaks: Record<number, number> = {};
-
-    for (const habit of habits) {
-      const currentStreak = habit.currentStreak || 0;
-      const previousStreak = storedStreaks[habit.id];
-
-      // Only check habits that have a setup complete and had a streak before
-      if (habit.setupComplete && previousStreak !== undefined && previousStreak > 0 && currentStreak === 0) {
-        // Check if we've already notified about this break
-        const notifiedKey = `streakBrokenNotified_${habit.id}`;
-        const alreadyNotified = localStorage.getItem(notifiedKey);
-        
-        if (!alreadyNotified) {
-          brokenFound = {
-            habitId: habit.id,
-            habitTitle: habit.title,
-            previousStreak: previousStreak,
-          };
-          // Mark as notified
-          localStorage.setItem(notifiedKey, 'true');
-          break; // Show one at a time
-        }
-      }
-
-      newStreaks[habit.id] = currentStreak;
+    if (streakBreaks && streakBreaks.length > 0) {
+      setBrokenStreak(streakBreaks[0]);
     }
-
-    // Update stored streaks
-    localStorage.setItem('habitStreaks', JSON.stringify(newStreaks));
-
-    // Clear notification flags for habits with active streaks (so they can be notified again if broken later)
-    for (const habit of habits) {
-      if ((habit.currentStreak || 0) > 0) {
-        localStorage.removeItem(`streakBrokenNotified_${habit.id}`);
-      }
-    }
-
-    if (brokenFound) {
-      setBrokenStreak(brokenFound);
-    }
-  }, [habits]);
+  }, [streakBreaks]);
 
   // Get greeting based on time of day
   const hour = new Date().getHours();
@@ -155,18 +115,23 @@ export default function Dashboard() {
 
   const handleStartFresh = async (reason?: MissReason) => {
     if (brokenStreak) {
-      if (reason) {
-        try {
+      try {
+        if (reason) {
           await fetch(`/api/habits/${brokenStreak.habitId}/streak-miss-reason`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ reason }),
           });
-          queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
-        } catch (err) {
-          console.error("Failed to save miss reason:", err);
         }
+        await fetch(`/api/habits/${brokenStreak.habitId}/dismiss-streak-break`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/habits/streak-breaks"] });
+      } catch (err) {
+        console.error("Failed to save miss reason:", err);
       }
       navigate(`/habit/${brokenStreak.habitId}`);
     }
@@ -822,7 +787,17 @@ export default function Dashboard() {
           habitTitle={brokenStreak.habitTitle}
           previousStreak={brokenStreak.previousStreak}
           open={!!brokenStreak}
-          onOpenChange={(open) => !open && setBrokenStreak(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              fetch(`/api/habits/${brokenStreak.habitId}/dismiss-streak-break`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              }).then(() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/habits/streak-breaks"] });
+              }).catch(() => {});
+              setBrokenStreak(null);
+            }
+          }}
           onStartFresh={handleStartFresh}
         />
       )}
