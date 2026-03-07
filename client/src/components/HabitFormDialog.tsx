@@ -12,9 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { SchedulePicker } from "@/components/SchedulePicker";
 import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, Check } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -63,8 +63,9 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
   const [customIcon, setCustomIcon] = useState<string>("Star");
   const [customColor, setCustomColor] = useState<string>("#0d9488");
+  const [iconColorSaved, setIconColorSaved] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   
-  // Get the selected icon component
   const SelectedIcon = ICON_OPTIONS.find(i => i.name === customIcon)?.icon || Star;
 
   const form = useForm<HabitFormData>({
@@ -90,8 +91,48 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setCustomIcon(habitToEdit?.customIcon || "Star");
       setCustomColor(habitToEdit?.customColor || "#0d9488");
       setShowIconPicker(false);
+      setIconColorSaved(false);
     }
   }, [open, habitToEdit, initialValues, form]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const autoSaveIconColor = useCallback((icon: string, color: string) => {
+    if (!isEditing || !habitToEdit) return;
+    updateHabit.mutate({
+      id: habitToEdit.id,
+      customIcon: icon,
+      customColor: color,
+    }, {
+      onSuccess: () => {
+        setIconColorSaved(true);
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => setIconColorSaved(false), 1500);
+      },
+    });
+  }, [isEditing, habitToEdit, updateHabit]);
+
+  const handleIconChange = useCallback((icon: string) => {
+    setCustomIcon(icon);
+    autoSaveIconColor(icon, customColor);
+  }, [customColor, autoSaveIconColor]);
+
+  const handleColorChange = useCallback((color: string) => {
+    setCustomColor(color);
+    autoSaveIconColor(customIcon, color);
+  }, [customIcon, autoSaveIconColor]);
+
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    onOpenChange(newOpen);
+    if (!newOpen) {
+      setShowIconPicker(false);
+      setIconColorSaved(false);
+    }
+  }, [onOpenChange]);
 
   const onSubmit = async (data: HabitFormData) => {
     try {
@@ -108,7 +149,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customColor,
           category: data.category || null,
         });
-        onOpenChange(false);
+        handleOpenChange(false);
       } else {
         const newHabit = await createHabit.mutateAsync({
           title: data.title,
@@ -119,7 +160,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customColor,
           category: data.category || null,
         });
-        onOpenChange(false);
+        handleOpenChange(false);
         if (newHabit?.id) {
           setLocation(`/habit/${newHabit.id}`);
         }
@@ -132,8 +173,15 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const isPending = createHabit.isPending || updateHabit.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleOpenChange} modal={true}>
+      <DialogContent 
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          handleOpenChange(false);
+        }}
+        onEscapeKeyDown={() => handleOpenChange(false)}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? "Edit Habit" : (
@@ -162,7 +210,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               </p>
             </div>
             <Button
-              onClick={() => { onOpenChange(false); setLocation('/paywall'); }}
+              onClick={() => { handleOpenChange(false); setLocation('/paywall'); }}
               className="gap-2"
               data-testid="button-upgrade-habit-limit"
             >
@@ -173,7 +221,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               className="text-muted-foreground"
             >
               Maybe later
@@ -182,7 +230,6 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
         ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Icon/Color Picker with Title */}
             <div className="flex gap-3 items-start">
               <button
                 type="button"
@@ -219,13 +266,15 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                 <IconColorPicker
                   selectedIcon={customIcon}
                   selectedColor={customColor}
-                  onIconChange={(icon) => {
-                    setCustomIcon(icon);
-                  }}
-                  onColorChange={(color) => {
-                    setCustomColor(color);
-                  }}
+                  onIconChange={handleIconChange}
+                  onColorChange={handleColorChange}
                 />
+                {isEditing && iconColorSaved && (
+                  <div className="flex items-center gap-1 mt-2 text-xs text-green-600 dark:text-green-400">
+                    <Check className="w-3 h-3" />
+                    Saved
+                  </div>
+                )}
               </div>
             )}
 
@@ -316,7 +365,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={isPending}
               >
                 Cancel
