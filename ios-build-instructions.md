@@ -54,6 +54,7 @@ Before building, you need Apple signing credentials:
    - Click **+** → choose **App IDs** → **App**
    - Bundle ID: **pro.habitbuilder.app** (Explicit)
    - Enable **In-App Purchase** capability
+   - Enable **Push Notifications** capability
 
 3. **Create a Provisioning Profile:**
    - Go to https://developer.apple.com/account/resources/profiles
@@ -114,6 +115,8 @@ npx cap open ios
    - Select your Team (your Apple Developer account)
    - Bundle Identifier should be: **pro.habitbuilder.app**
    - Click **+ Capability** and add **In-App Purchase**
+   - Click **+ Capability** and add **Push Notifications**
+   - Click **+ Capability** and add **Background Modes**, then check **Remote notifications**
 3. Under **General**:
    - Display Name: **HabitBuilder**
    - Deployment Target: **iOS 16.0**
