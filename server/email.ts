@@ -542,12 +542,7 @@ export async function sendPaidWeeklyDigestEmail(params: {
 
     ${premiumSections}
 
-    <div style="text-align:center;margin:24px 0;">
-      <a href="https://habitbuilder.pro/progress" style="background-color:${tierColor};color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block;font-size:15px;">
-        View Full Analytics
-      </a>
-    </div>
-    <p style="color:#999;font-size:12px;text-align:center;">
+    <p style="color:#999;font-size:12px;text-align:center;margin-top:24px;">
       To stop receiving weekly digests, visit your Account settings on HabitBuilder.pro.
     </p>
   `);
