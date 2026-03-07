@@ -4585,8 +4585,34 @@ REQUIREMENTS:
         }
       }
 
+      // When all tasks for a day are manually completed, add a progress entry
+      // so the All-Time Progress page reflects this session
+      const progress = [...(habit.progress as any[] || [])];
+      const completedPlan = dailyPlans.find(p => {
+        const taskIndex = p.tasks.findIndex(t => t.id === taskId);
+        return taskIndex !== -1;
+      });
+      if (completedPlan) {
+        const existingIdx = progress.findIndex((entry: any) => entry.date === completedPlan.date);
+        if (completedPlan.completed && existingIdx === -1) {
+          const completedTasks = completedPlan.tasks.filter((t: any) => t.completed);
+          const activeTasks = completedPlan.tasks.filter((t: any) => !t.skipped);
+          progress.push({
+            date: completedPlan.date,
+            tasksCompleted: completedTasks.length,
+            totalTasks: activeTasks.length,
+            timeSpent: completedPlan.timeSpent || 0,
+            notes: "",
+            autoRecorded: true,
+          });
+        } else if (!completedPlan.completed && existingIdx !== -1 && (progress[existingIdx] as any).autoRecorded) {
+          progress.splice(existingIdx, 1);
+        }
+      }
+
       await storage.updateHabit(habitId, userId, {
         dailyPlans,
+        progress,
         totalTimeSpent,
         currentStreak,
         longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
