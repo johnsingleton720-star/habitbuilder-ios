@@ -813,8 +813,8 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
               </div>
 
               <div className="space-y-1">
-                <Progress value={overallProgress} className="h-1.5" />
-                <p className="text-[10px] text-muted-foreground text-right">
+                <Progress value={overallProgress} className="h-2.5" />
+                <p className="text-xs text-muted-foreground text-right">
                   {Math.round(overallProgress)}% overall
                 </p>
               </div>
@@ -871,7 +871,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{resource.description}</p>
                               </div>
-                              <Badge variant="secondary" className="text-[10px] shrink-0">
+                              <Badge variant="secondary" className="text-xs shrink-0">
                                 {resource.type}
                               </Badge>
                             </a>
@@ -998,7 +998,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                         <p className="text-2xl font-mono font-bold tabular-nums" data-testid="text-routine-timer">
                           {formatTime(taskTimeElapsed)}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           suggested {currentTask.duration}m
                         </p>
                       </div>
@@ -1140,7 +1140,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                     <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-completed-count">
                       {completedTasks.length}/{tasks.length}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Steps Done</p>
+                    <p className="text-xs text-muted-foreground">Steps Done</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -1148,7 +1148,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                     <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-habits-count">
                       {uniqueHabitIds.length}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Habits</p>
+                    <p className="text-xs text-muted-foreground">Habits</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -1156,7 +1156,7 @@ export function UnifiedRoutineSession({ stack, open, onOpenChange }: UnifiedRout
                     <p className="text-xl font-bold text-primary tabular-nums" data-testid="stat-routine-time">
                       {Math.round(allTaskNotes.reduce((s, n) => s + n.timeSpent, 0) / 60)}m
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Time</p>
+                    <p className="text-xs text-muted-foreground">Time</p>
                   </CardContent>
                 </Card>
               </div>

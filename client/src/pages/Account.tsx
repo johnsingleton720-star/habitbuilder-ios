@@ -100,7 +100,7 @@ function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () =>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <p className="font-semibold text-sm">{user.firstName} {user.lastName}</p>
-          <p className="text-xs text-muted-foreground">{user.email}</p>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
         </div>
         <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-activity">
           <X className="w-4 h-4" />
@@ -109,20 +109,20 @@ function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () =>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="text-center p-2 rounded-md bg-background border">
-          <p className="text-lg font-bold">{user.level || 0}</p>
-          <p className="text-xs text-muted-foreground">Level</p>
+          <p className="text-xl font-bold">{user.level || 0}</p>
+          <p className="text-sm text-muted-foreground">Level</p>
         </div>
         <div className="text-center p-2 rounded-md bg-background border">
-          <p className="text-lg font-bold">{user.xpPoints || 0}</p>
-          <p className="text-xs text-muted-foreground">XP</p>
+          <p className="text-xl font-bold">{user.xpPoints || 0}</p>
+          <p className="text-sm text-muted-foreground">XP</p>
         </div>
         <div className="text-center p-2 rounded-md bg-background border">
-          <p className="text-lg font-bold">{bestStreak}</p>
-          <p className="text-xs text-muted-foreground">Best Streak</p>
+          <p className="text-xl font-bold">{bestStreak}</p>
+          <p className="text-sm text-muted-foreground">Best Streak</p>
         </div>
         <div className="text-center p-2 rounded-md bg-background border">
-          <p className="text-lg font-bold">{totalMinutes < 60 ? `${totalMinutes}m` : `${Math.round(totalMinutes / 60)}h`}</p>
-          <p className="text-xs text-muted-foreground">Time Invested</p>
+          <p className="text-xl font-bold">{totalMinutes < 60 ? `${totalMinutes}m` : `${Math.round(totalMinutes / 60)}h`}</p>
+          <p className="text-sm text-muted-foreground">Time Invested</p>
         </div>
       </div>
 
@@ -166,9 +166,9 @@ function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () =>
       </div>
 
       <div>
-        <p className="text-xs font-semibold mb-2">Habits ({activeHabits.length} active, {userHabits.length - activeHabits.length} archived)</p>
+        <p className="text-sm font-semibold mb-2">Habits ({activeHabits.length} active, {userHabits.length - activeHabits.length} archived)</p>
         {userHabits.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic">No habits created yet</p>
+          <p className="text-sm text-muted-foreground italic">No habits created yet</p>
         ) : (
           <div className="space-y-1.5">
             {userHabits.map((h) => (
@@ -373,7 +373,7 @@ function TimezoneSettings({ user }: { user: any }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="timezone-select">Your Timezone</Label>
+          <Label htmlFor="timezone-select" className="text-base">Your Timezone</Label>
           <Select value={selectedTz} onValueChange={setSelectedTz}>
             <SelectTrigger data-testid="select-timezone">
               <SelectValue placeholder="Select timezone" />
@@ -683,7 +683,7 @@ export default function Account() {
                 {editingName ? (
                   <div className="mt-4 w-full max-w-xs space-y-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="edit-first-name" className="text-xs text-muted-foreground">First Name</Label>
+                      <Label htmlFor="edit-first-name" className="text-sm text-muted-foreground">First Name</Label>
                       <Input
                         id="edit-first-name"
                         value={editFirstName}
@@ -693,7 +693,7 @@ export default function Account() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="edit-last-name" className="text-xs text-muted-foreground">Last Name</Label>
+                      <Label htmlFor="edit-last-name" className="text-sm text-muted-foreground">Last Name</Label>
                       <Input
                         id="edit-last-name"
                         value={editLastName}
@@ -766,7 +766,7 @@ export default function Account() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2 p-4 rounded-lg bg-muted/50">
                 <div>
-                  <p className="font-medium">Current Plan</p>
+                  <p className="font-semibold">Current Plan</p>
                   <p className="text-sm text-muted-foreground">
                     {isPremium
                       ? `Premium (${subDetails?.interval === 'year' ? '$140 USD/year' : '$15 USD/month'})`
@@ -816,7 +816,7 @@ export default function Account() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">You're currently on the free demo</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         1 habit, 3 sessions/week, no AI summaries or streaks. Upgrade to unlock the full experience.
                       </p>
                       <Link href="/paywall">
@@ -1116,22 +1116,22 @@ export default function Account() {
                       <div className="text-center p-3 rounded-lg bg-muted/50 border">
                         <Eye className="w-4 h-4 mx-auto mb-1 text-blue-500" />
                         <p className="text-2xl font-bold" data-testid="text-total-page-views">{adminAnalytics.totalPageViews}</p>
-                        <p className="text-xs text-muted-foreground">Page Views</p>
+                        <p className="text-sm text-muted-foreground">Page Views</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-muted/50 border">
                         <Users className="w-4 h-4 mx-auto mb-1 text-green-500" />
                         <p className="text-2xl font-bold" data-testid="text-unique-visitors">{adminAnalytics.uniqueVisitors}</p>
-                        <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                        <p className="text-sm text-muted-foreground">Unique Visitors</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-muted/50 border">
                         <TrendingUp className="w-4 h-4 mx-auto mb-1 text-purple-500" />
                         <p className="text-2xl font-bold" data-testid="text-logged-in-users">{adminAnalytics.loggedInUsers}</p>
-                        <p className="text-xs text-muted-foreground">Logged In Users</p>
+                        <p className="text-sm text-muted-foreground">Logged In Users</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-muted/50 border">
                         <Users className="w-4 h-4 mx-auto mb-1 text-amber-500" />
                         <p className="text-2xl font-bold" data-testid="text-total-registered">{adminAnalytics.totalRegisteredUsers}</p>
-                        <p className="text-xs text-muted-foreground">Total Users</p>
+                        <p className="text-sm text-muted-foreground">Total Users</p>
                       </div>
                     </div>
 
@@ -1142,7 +1142,7 @@ export default function Account() {
                           +{adminAnalytics.newRegistrations} registrations
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {analyticsRange === '7d' ? 'Last 7 days' : analyticsRange === '30d' ? 'Last 30 days' : 'Last 90 days'}
                       </p>
                     </div>
@@ -1155,20 +1155,20 @@ export default function Account() {
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="text-center p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border">
-                            <p className="text-lg font-bold" data-testid="text-google-ads-views">{adminAnalytics.googleAds.views}</p>
-                            <p className="text-xs text-muted-foreground">Ad Clicks</p>
+                            <p className="text-xl font-bold" data-testid="text-google-ads-views">{adminAnalytics.googleAds.views}</p>
+                            <p className="text-sm text-muted-foreground">Ad Clicks</p>
                           </div>
                           <div className="text-center p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border">
-                            <p className="text-lg font-bold" data-testid="text-google-ads-visitors">{adminAnalytics.googleAds.uniqueVisitors}</p>
-                            <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                            <p className="text-xl font-bold" data-testid="text-google-ads-visitors">{adminAnalytics.googleAds.uniqueVisitors}</p>
+                            <p className="text-sm text-muted-foreground">Unique Visitors</p>
                           </div>
                           <div className="text-center p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border">
-                            <p className="text-lg font-bold" data-testid="text-google-ads-signups">{adminAnalytics.googleAds.signups}</p>
-                            <p className="text-xs text-muted-foreground">Ad Sign-ups</p>
+                            <p className="text-xl font-bold" data-testid="text-google-ads-signups">{adminAnalytics.googleAds.signups}</p>
+                            <p className="text-sm text-muted-foreground">Ad Sign-ups</p>
                           </div>
                         </div>
                         {adminAnalytics.googleAds.uniqueVisitors > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             Conversion rate: {((adminAnalytics.googleAds.signups / adminAnalytics.googleAds.uniqueVisitors) * 100).toFixed(1)}%
                           </p>
                         )}
@@ -1330,7 +1330,7 @@ export default function Account() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-medium" data-testid="label-daily-reminder">Daily Morning Reminders</Label>
+                  <Label className="text-base font-medium" data-testid="label-daily-reminder">Daily Morning Reminders</Label>
                   <p className="text-sm text-muted-foreground">Get a daily nudge with your tasks and streak info</p>
                 </div>
                 <Switch
@@ -1350,7 +1350,7 @@ export default function Account() {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-medium" data-testid="label-weekly-digest">Weekly Progress Digest</Label>
+                  <Label className="text-base font-medium" data-testid="label-weekly-digest">Weekly Progress Digest</Label>
                   <p className="text-sm text-muted-foreground">Receive a Sunday summary of your progress</p>
                 </div>
                 <Switch
@@ -1390,7 +1390,7 @@ export default function Account() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-medium" data-testid="label-push-notifications">Enable Push Notifications</Label>
+                  <Label className="text-base font-medium" data-testid="label-push-notifications">Enable Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">Receive habit reminders even when the app is closed</p>
                 </div>
                 <Switch
@@ -1489,8 +1489,8 @@ export default function Account() {
                       <div key={key} className="space-y-2">
                         <div className="flex items-center justify-between gap-4">
                           <div className="space-y-0.5">
-                            <Label className="text-sm font-medium" data-testid={`label-${key}`}>{label}</Label>
-                            <p className="text-xs text-muted-foreground">{description}</p>
+                            <Label className="text-base font-medium" data-testid={`label-${key}`}>{label}</Label>
+                            <p className="text-sm text-muted-foreground">{description}</p>
                           </div>
                           <Switch
                             checked={(user as any)?.[key] !== false}
@@ -1526,12 +1526,12 @@ export default function Account() {
                               className="w-32"
                               data-testid={`input-${timeKey}`}
                             />
-                            <p className="text-xs text-muted-foreground">{timeLabel}</p>
+                            <p className="text-sm text-muted-foreground">{timeLabel}</p>
                           </div>
                         )}
                         {(user as any)?.[key] !== false && timeKey === "moodCheckinTimes" && (
                           <div className="space-y-2 pl-1">
-                            <p className="text-xs text-muted-foreground">{timeLabel}</p>
+                            <p className="text-sm text-muted-foreground">{timeLabel}</p>
                             <div className="flex items-center gap-2 flex-wrap">
                               {((user as any)?.moodCheckinTimes || ["09:00", "14:00", "20:00"]).map((time: string, idx: number) => (
                                 <div key={idx} className="flex items-center gap-1">
@@ -1564,7 +1564,7 @@ export default function Account() {
                   </div>
                   <div className="border-t pt-4 space-y-3">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium" data-testid="label-daily-reminder-time">Daily Morning Reminder Time</Label>
+                      <Label className="text-base font-medium" data-testid="label-daily-reminder-time">Daily Morning Reminder Time</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="time"
@@ -1583,7 +1583,7 @@ export default function Account() {
                           className="w-32"
                           data-testid="input-daily-reminder-time"
                         />
-                        <p className="text-xs text-muted-foreground">When to receive your daily morning reminder</p>
+                        <p className="text-sm text-muted-foreground">When to receive your daily morning reminder</p>
                       </div>
                     </div>
                   </div>

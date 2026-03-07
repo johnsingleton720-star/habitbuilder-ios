@@ -180,7 +180,7 @@ export default function Dashboard() {
               {user?.firstName?.[0] || user?.email?.[0] || "U"}
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">{greeting},</p>
+              <p className="text-base font-semibold text-muted-foreground">{greeting},</p>
               <h1 className="font-display text-2xl font-bold text-foreground">
                 {user?.firstName || user?.email?.split('@')[0]}
               </h1>
@@ -217,56 +217,56 @@ export default function Dashboard() {
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-coach-chat">
                         <Sparkles className="mr-3 h-4 w-4" />
                         Coach Chat
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                       </button>
                     </Link>
                     <Link href="/journal" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-journal">
                         <BookOpen className="mr-3 h-4 w-4" />
                         Daily Journal
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                       </button>
                     </Link>
                     <Link href="/focus" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-focus-timer">
                         <Timer className="mr-3 h-4 w-4" />
                         Focus Timer
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                       </button>
                     </Link>
                     <Link href="/mood" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-mood-tracker">
                         <Heart className="mr-3 h-4 w-4" />
                         Mood Insights
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                       </button>
                     </Link>
                     <Link href="/goals" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-goals">
                         <Target className="mr-3 h-4 w-4" />
                         Goals
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                       </button>
                     </Link>
                     <Link href="/planner" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-planner">
                         <Calendar className="mr-3 h-4 w-4" />
                         Daily Planner
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                       </button>
                     </Link>
                     <Link href="/resources" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-resources">
                         <BookOpen className="mr-3 h-4 w-4" />
                         Resource Library
-                        <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                       </button>
                     </Link>
                     <Link href="/community" onClick={() => setMenuOpen(false)}>
                       <button className="flex items-center w-full px-3 py-3 rounded-lg hover:bg-muted text-sm" data-testid="menu-community">
                         <MessageSquare className="mr-3 h-4 w-4" />
                         Community Forum
-                        <span className="ml-auto text-xs text-muted-foreground">Soon</span>
+                        <span className="ml-auto text-sm text-muted-foreground">Soon</span>
                       </button>
                     </Link>
                     <Link href="/account" onClick={() => setMenuOpen(false)}>
@@ -320,56 +320,56 @@ export default function Dashboard() {
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-coach-chat">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Coach Chat
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/journal">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-journal">
                   <BookOpen className="mr-2 h-4 w-4" />
                   Daily Journal
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/focus">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-focus-timer">
                   <Timer className="mr-2 h-4 w-4" />
                   Focus Timer
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/mood">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-mood-tracker">
                   <Heart className="mr-2 h-4 w-4" />
                   Mood Insights
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Pro+</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Pro+</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/goals">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-goals">
                   <Target className="mr-2 h-4 w-4" />
                   Goals
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/planner">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-planner">
                   <Calendar className="mr-2 h-4 w-4" />
                   Daily Planner
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/resources">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-resources">
                   <BookOpen className="mr-2 h-4 w-4" />
                   Resource Library
-                  <Badge variant="secondary" className="ml-auto text-[10px]">Premium</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
                 </DropdownMenuItem>
               </Link>
               <Link href="/community">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-community">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Community Forum
-                  <span className="ml-auto text-xs text-muted-foreground">Soon</span>
+                  <span className="ml-auto text-sm text-muted-foreground">Soon</span>
                 </DropdownMenuItem>
               </Link>
               <Link href="/account">
@@ -569,7 +569,7 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                       Daily Journal
-                      <Badge variant="secondary" className="text-[10px]">Pro+</Badge>
+                      <Badge variant="secondary" className="text-xs">Pro+</Badge>
                     </p>
                     <p className="text-sm text-muted-foreground">Upgrade to write reflections and get AI insights</p>
                   </div>
@@ -600,7 +600,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Focus Timer</p>
-                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
+                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -614,7 +614,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
-                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-[9px] mt-1">Pro+</Badge>}
+                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -628,7 +628,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Goals</p>
-                    {!features.hasGoals && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
+                    {!features.hasGoals && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -642,7 +642,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Daily Planner</p>
-                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-[9px] mt-1">Premium</Badge>}
+                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -756,7 +756,7 @@ export default function Dashboard() {
                         <Sparkles className="w-3.5 h-3.5 text-accent" />
                       </div>
                     </div>
-                    <h3 className="font-display text-lg font-medium text-foreground">Your habits will live here</h3>
+                    <h3 className="font-display text-xl font-semibold text-foreground">Your habits will live here</h3>
                     <p className="text-muted-foreground max-w-sm mt-2 text-sm">
                       Once you create a habit, you'll see your daily plans, progress, and guided sessions right here. Most people start with something simple — like reading for 10 minutes a day.
                     </p>

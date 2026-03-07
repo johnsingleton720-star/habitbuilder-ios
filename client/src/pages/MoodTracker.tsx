@@ -167,21 +167,21 @@ export default function MoodTracker() {
             <CardContent className="p-3 text-center">
               <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{avgEnergy}</p>
-              <p className="text-[10px] text-muted-foreground">Avg Energy</p>
+              <p className="text-xs text-muted-foreground">Avg Energy</p>
             </CardContent>
           </Card>
           <Card data-testid="stat-avg-stress">
             <CardContent className="p-3 text-center">
               <Brain className="w-4 h-4 text-purple-500 mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{avgStress}</p>
-              <p className="text-[10px] text-muted-foreground">Avg Stress</p>
+              <p className="text-xs text-muted-foreground">Avg Stress</p>
             </CardContent>
           </Card>
           <Card data-testid="stat-avg-sleep">
             <CardContent className="p-3 text-center">
               <Moon className="w-4 h-4 text-blue-500 mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{avgSleep}</p>
-              <p className="text-[10px] text-muted-foreground">Avg Sleep</p>
+              <p className="text-xs text-muted-foreground">Avg Sleep</p>
             </CardContent>
           </Card>
         </div>
@@ -223,7 +223,7 @@ export default function MoodTracker() {
                           )}
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] text-muted-foreground leading-none">{dayLabel}</p>
+                          <p className="text-xs text-muted-foreground leading-none">{dayLabel}</p>
                           <p className={cn("text-xs font-medium leading-tight", date === today ? "text-teal-600 dark:text-teal-400" : "text-muted-foreground")}>{dateLabel}</p>
                         </div>
                       </div>

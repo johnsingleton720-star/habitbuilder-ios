@@ -92,7 +92,7 @@ export function MobileBottomNav() {
                   onClick={(e) => handleNavClick(e, item.path)}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <span className="text-xs font-semibold">{item.label}</span>
                 </button>
               </Link>
             );

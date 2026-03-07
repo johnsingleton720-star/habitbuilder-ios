@@ -1006,7 +1006,7 @@ export default function Landing() {
                     <Sparkles className="w-3 h-3 text-primary" />
                   </div>
                   <span className="font-display font-semibold text-xs">Today's Progress</span>
-                  <Badge variant="secondary" className="ml-auto text-[10px]">3 habits</Badge>
+                  <Badge variant="secondary" className="ml-auto text-xs">3 habits</Badge>
                 </div>
                 <div className="flex gap-2">
                   {[
@@ -1018,7 +1018,7 @@ export default function Landing() {
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.bg}`}>
                         <item.icon className={`w-4 h-4 ${item.color}`} />
                       </div>
-                      <span className="text-[10px] font-medium text-center leading-tight">{item.title}</span>
+                      <span className="text-xs font-medium text-center leading-tight">{item.title}</span>
                       <div className="w-full h-1 bg-foreground/[0.06] rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-primary' : item.progress > 0 ? 'bg-accent' : 'bg-transparent'}`}
@@ -1026,21 +1026,21 @@ export default function Landing() {
                         />
                       </div>
                       {item.progress === 100 && <CheckCircle2 className="w-3 h-3 text-primary" />}
-                      {item.progress > 0 && item.progress < 100 && <span className="text-[9px] text-muted-foreground">{item.progress}%</span>}
-                      {item.progress === 0 && <span className="text-[9px] text-muted-foreground">6 PM</span>}
+                      {item.progress > 0 && item.progress < 100 && <span className="text-xs text-muted-foreground">{item.progress}%</span>}
+                      {item.progress === 0 && <span className="text-xs text-muted-foreground">6 PM</span>}
                     </div>
                   ))}
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
                     <Flame className="w-3 h-3 text-orange-500" />
-                    <span className="text-[10px] font-medium">7-day streak</span>
+                    <span className="text-xs font-medium">7-day streak</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Trophy className="w-3 h-3 text-amber-500" />
-                    <span className="text-[10px] font-medium">Lvl 3</span>
+                    <span className="text-xs font-medium">Lvl 3</span>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
                     <Star className="w-2.5 h-2.5 mr-0.5 text-amber-500" />
                     245 XP
                   </Badge>
@@ -1430,7 +1430,7 @@ export default function Landing() {
                           <div className="flex items-center gap-2 mb-2">
                             <MessageCircle className="w-4 h-4 text-primary" />
                             <span className="font-semibold text-xs">AI Coach Chat</span>
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Premium</Badge>
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">Premium</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground italic">"{aiPlan.coachMessage}"</p>
                         </div>
@@ -1440,7 +1440,7 @@ export default function Landing() {
                           <div className="flex items-center gap-2 mb-2">
                             <Layers className="w-4 h-4 text-accent" />
                             <span className="font-semibold text-xs">Habit Stacking</span>
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Premium</Badge>
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">Premium</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">{aiPlan.stackSuggestion}</p>
                         </div>
@@ -1709,7 +1709,7 @@ export default function Landing() {
                         <div className={tool.color}>{tool.icon}</div>
                       </div>
                       {tool.tier && (
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${tool.tierColor}`} data-testid={`badge-tier-${i}`}>
+                        <Badge variant="outline" className={`text-xs shrink-0 ${tool.tierColor}`} data-testid={`badge-tier-${i}`}>
                           {tool.tier}
                         </Badge>
                       )}

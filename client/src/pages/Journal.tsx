@@ -366,7 +366,7 @@ export default function Journal() {
                     {entry.tags && (entry.tags as string[]).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {(entry.tags as string[]).slice(0, 3).map(t => (
-                          <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                          <Badge key={t} variant="secondary" className="text-xs px-1.5 py-0">{t}</Badge>
                         ))}
                       </div>
                     )}
@@ -551,7 +551,7 @@ export default function Journal() {
                   <CardTitle className="text-sm font-medium flex items-center gap-2 text-violet-700 dark:text-violet-300">
                     <Crown className="w-4 h-4" />
                     Full Journal Analysis
-                    <Badge variant="secondary" className="text-[10px]">Premium</Badge>
+                    <Badge variant="secondary" className="text-xs">Premium</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

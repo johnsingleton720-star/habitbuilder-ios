@@ -405,7 +405,7 @@ export function GamificationDisplay() {
                                     </span>
                                     <span>{lvl.title}</span>
                                     {stats.level === lvl.level && (
-                                      <Badge variant="default" className="text-[10px] px-1.5 py-0">You</Badge>
+                                      <Badge variant="default" className="text-xs px-1.5 py-0">You</Badge>
                                     )}
                                   </div>
                                   <div className="flex items-center gap-2">

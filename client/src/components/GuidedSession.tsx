@@ -483,7 +483,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                       <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 rounded-lg p-3 border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-resources">
                         <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
                         <span className="flex-1">Get AI-curated tips, articles & resources for each task</span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex-shrink-0">Pro</Badge>
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex-shrink-0">Pro</Badge>
                       </div>
                     </Link>
                   ) : (
@@ -708,19 +708,19 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
               >
                 <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
                   <p className="text-xl font-bold text-primary">{completedTasks.length}/{tasks.length}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Tasks Done</p>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Tasks Done</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
                   <p className="text-xl font-bold text-primary">
                     {totalSessionTime >= 60 ? `${Math.floor(totalSessionTime / 60)}m` : `${totalSessionTime}s`}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Time Spent</p>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Time Spent</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
                   <p className="text-xl font-bold text-primary">
                     {tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0}%
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Completion</p>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Completion</p>
                 </div>
               </motion.div>
 
@@ -752,7 +752,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                             <span className={cn("flex-1 truncate", isTaskDone ? "text-foreground" : "text-muted-foreground")}>
                               {note.task}
                             </span>
-                            <Badge variant="outline" className="text-[10px] flex-shrink-0">
+                            <Badge variant="outline" className="text-xs flex-shrink-0">
                               {timeMin}m
                             </Badge>
                           </div>

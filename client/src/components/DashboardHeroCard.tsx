@@ -82,7 +82,7 @@ export function DashboardHeroCard() {
             <div className="flex-1 min-w-0 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-foreground truncate">{stats.levelTitle}</h3>
-                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${tierConfig.color} border-0`}>
+                <Badge variant="outline" className={`text-xs px-1.5 py-0 h-4 ${tierConfig.color} border-0`}>
                   {tierConfig.label === "Premium" && <Crown className="w-2.5 h-2.5 mr-0.5" />}
                   {tierConfig.label}
                 </Badge>
@@ -111,7 +111,7 @@ export function DashboardHeroCard() {
                 </div>
               )}
               {stats.streakMultiplier > 1 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 border-0">
+                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 border-0">
                   <TrendingUp className="w-2.5 h-2.5 mr-0.5" />
                   {stats.streakMultiplierLabel}
                 </Badge>

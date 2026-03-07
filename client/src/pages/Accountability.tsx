@@ -210,9 +210,9 @@ function ProgressTimeline({ progress }: { progress: { date: string; tasksComplet
           const dayLabel = date.toLocaleDateString(undefined, { weekday: 'short' });
           return (
             <div key={i} className="flex flex-col items-center gap-1 flex-1" data-testid={`progress-day-${entry.date}`}>
-              <div className="text-[10px] text-muted-foreground">{dayLabel}</div>
+              <div className="text-xs text-muted-foreground">{dayLabel}</div>
               <div 
-                className={`w-full h-6 rounded-sm flex items-center justify-center text-[10px] font-medium ${
+                className={`w-full h-6 rounded-sm flex items-center justify-center text-xs font-medium ${
                   pct === 100 ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 
                   pct > 0 ? 'bg-primary/10 text-primary' : 
                   'bg-muted text-muted-foreground'

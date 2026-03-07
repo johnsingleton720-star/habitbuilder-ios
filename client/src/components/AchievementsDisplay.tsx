@@ -69,7 +69,7 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
               <Trophy className="w-5 h-5 text-amber-500" />
               Achievements
               {isFreeUser && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800" data-testid="badge-achievements-pro">
+                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800" data-testid="badge-achievements-pro">
                   <Crown className="w-2.5 h-2.5 mr-0.5" />
                   Pro
                 </Badge>

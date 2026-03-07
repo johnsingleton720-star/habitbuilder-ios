@@ -190,7 +190,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                 <CardContent className="p-4 relative">
                   <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.color} opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`} />
                   {isFreeUser && stat.label === "Best Streak" && (
-                    <Badge variant="secondary" className="absolute top-2 right-2 text-[10px] px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 z-10" data-testid="badge-streak-pro">
+                    <Badge variant="secondary" className="absolute top-2 right-2 text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 z-10" data-testid="badge-streak-pro">
                       <Crown className="w-2.5 h-2.5 mr-0.5" />
                       Pro
                     </Badge>
@@ -212,7 +212,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 font-medium">{stat.label}</p>
-                    <p className="text-[10px] text-muted-foreground/70">
+                    <p className="text-xs text-muted-foreground/70">
                       {isFreeUser && stat.label === "Best Streak" ? "Unlock with Pro" : stat.subtext}
                     </p>
                   </div>
@@ -338,7 +338,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
                                         style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }}
                                       />
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground">
                                       {completedTasks}/{totalTasks} tasks
                                     </span>
                                   </div>

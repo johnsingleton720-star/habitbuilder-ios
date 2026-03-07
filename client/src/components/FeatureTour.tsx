@@ -282,7 +282,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
                   }`}
                 />
               ))}
-              <span className="text-[10px] text-muted-foreground ml-1">
+              <span className="text-xs text-muted-foreground ml-1">
                 {currentStep + 1} of {steps.length}
               </span>
             </div>

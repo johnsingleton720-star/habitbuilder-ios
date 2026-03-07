@@ -156,7 +156,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               <Target className="w-6 h-6" />
             </motion.div>
             <div>
-              <CardTitle className="text-xl font-display text-foreground">Today's Focus</CardTitle>
+              <CardTitle className="text-2xl font-display text-foreground">Today's Focus</CardTitle>
               <CardDescription className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
                 <TimeIcon className="w-3.5 h-3.5" />
                 {format(today, "EEEE, MMMM d")}
@@ -195,7 +195,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-foreground">{progress}%</span>
+              <span className="text-base font-bold text-foreground">{progress}%</span>
             </div>
           </div>
         </div>
@@ -205,7 +205,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/90 dark:bg-black/40 backdrop-blur-sm border border-white/60 dark:border-white/10 shadow-sm">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">Daily Progress</span>
+              <span className="text-gray-600 dark:text-gray-300 font-semibold">Daily Progress</span>
               <span className="font-bold text-gray-900 dark:text-white">{completedToday.length}/{scheduledHabits.length}</span>
             </div>
             <div className="h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -244,7 +244,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+            <p className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
               {isStackedNext ? (
                 <>
                   <Link2 className="w-4 h-4 text-primary" />
@@ -277,7 +277,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                   <div className="flex items-center gap-2">
                     <h4 className="font-display font-bold text-lg truncate text-gray-900 dark:text-white">{nextHabit.title}</h4>
                     {!nextHabit.setupComplete && (
-                      <Badge variant="outline" className="text-xs bg-primary/10 border-primary/20">
+                      <Badge variant="outline" className="text-sm bg-primary/10 border-primary/20">
                         <Sparkles className="w-3 h-3 mr-1" />
                         Setup
                       </Badge>
@@ -298,13 +298,13 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                     if (taskProgress && taskProgress.total > 0) {
                       return (
                         <div className="flex items-center gap-2 mt-2">
-                          <div className="flex-1 h-1.5 rounded-full bg-muted/50 overflow-hidden max-w-[120px]">
+                          <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden max-w-[120px]">
                             <div 
                               className={cn("h-full rounded-full", getHabitColor(nextHabit).progress)}
                               style={{ width: `${(taskProgress.completed / taskProgress.total) * 100}%` }}
                             />
                           </div>
-                          <span className={cn("text-xs font-medium", getHabitColor(nextHabit).accent)}>
+                          <span className={cn("text-sm font-semibold", getHabitColor(nextHabit).accent)}>
                             {taskProgress.completed}/{taskProgress.total} tasks
                           </span>
                         </div>
@@ -364,22 +364,22 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                           ? "line-through text-muted-foreground"
                           : "text-gray-900 dark:text-white"
                       )}>{stack.name}</h4>
-                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                      <Badge variant="secondary" className="text-xs shrink-0">
                         {isRoutineCompleted ? "Done" : "Routine"}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       {stack.scheduledTime && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         {taskCount} tasks
                       </span>
                       {uPlan.totalDuration && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-sm text-muted-foreground">
                           ~{uPlan.totalDuration}m
                         </span>
                       )}
@@ -387,7 +387,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                   </div>
                   <div className="flex items-center gap-2 ml-3">
                     {isRoutineCompleted ? (
-                      <span className="text-xs font-medium text-primary px-3">Completed</span>
+                      <span className="text-sm font-semibold text-primary px-3">Completed</span>
                     ) : (
                       <Button
                         size="sm"
@@ -424,7 +424,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                 "w-4 h-4 text-muted-foreground transition-transform",
                 isExpanded ? "rotate-0" : "-rotate-90"
               )} />
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className="text-sm font-semibold text-muted-foreground">
                 {otherRemaining.length} more habit{otherRemaining.length > 1 ? "s" : ""} remaining
               </span>
             </button>
@@ -456,20 +456,20 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 {isInStack && <Link2 className="w-3 h-3 text-primary flex-shrink-0" />}
-                                <span className="font-medium text-sm truncate text-gray-900 dark:text-white">{habit.title}</span>
+                                <span className="font-semibold text-base truncate text-gray-900 dark:text-white">{habit.title}</span>
                                 {!habit.setupComplete && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Setup</Badge>
+                                  <Badge variant="outline" className="text-xs px-1.5 py-0">Setup</Badge>
                                 )}
                               </div>
                               {taskProgress && taskProgress.total > 0 && (
                                 <div className="flex items-center gap-2 mt-1.5">
-                                  <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
+                                  <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
                                     <div
                                       className={cn("h-full rounded-full", pct > 0 ? getHabitColor(habit).progress : "bg-muted")}
                                       style={{ width: `${pct}%` }}
                                     />
                                   </div>
-                                  <span className="text-[10px] text-muted-foreground font-medium">
+                                  <span className="text-xs text-muted-foreground font-semibold">
                                     {taskProgress.completed}/{taskProgress.total}
                                   </span>
                                 </div>
@@ -477,7 +477,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {habit.schedule?.time && (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <span className="text-sm text-muted-foreground flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
                                   {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
                                     hour: "numeric",
@@ -501,7 +501,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
         {/* Completed habits - also collapsible */}
         {completedToday.length > 0 && remainingHabits.length > 0 && (
           <div className="pt-2 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3 text-primary" />
               {completedToday.length} completed today
             </p>

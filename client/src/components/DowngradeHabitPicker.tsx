@@ -116,7 +116,7 @@ export function DowngradeHabitPicker({ habits, open }: DowngradeHabitPickerProps
               </>
             )}
           </Button>
-          <p className="text-[11px] text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground">
             Archived habits are never deleted. Resubscribe anytime to get them all back.
           </p>
         </div>

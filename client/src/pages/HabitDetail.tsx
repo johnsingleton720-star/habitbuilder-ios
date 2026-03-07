@@ -328,7 +328,7 @@ export default function HabitDetail() {
               </Button>
             </Link>
             <div className="min-w-0">
-              <h1 className="font-display text-xl font-bold truncate" data-testid="text-habit-title">
+              <h1 className="font-display text-2xl font-bold truncate" data-testid="text-habit-title">
                 {habit.title}
               </h1>
               {habit.description && (
@@ -391,12 +391,12 @@ export default function HabitDetail() {
                     ))}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-base font-semibold text-foreground">
                       {sessionUsage.used >= 3
                         ? "All sessions used this week"
                         : `${3 - sessionUsage.used} session${3 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                       {sessionUsage.used >= 3
                         ? "New sessions available Monday"
                         : "Free plan: 3 sessions per week"}
@@ -422,7 +422,7 @@ export default function HabitDetail() {
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-6 text-center">
               <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Let's personalize your journey</h3>
+              <h3 className="text-lg font-bold mb-2">Let's personalize your journey</h3>
               <p className="text-muted-foreground mb-4">
                 Answer a few questions to create your personalized action plan.
               </p>
@@ -637,7 +637,7 @@ export default function HabitDetail() {
                       <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm" data-testid="text-adjust-plan-title">
+                      <p className="font-bold text-sm" data-testid="text-adjust-plan-title">
                         This plan doesn't seem to be fitting your schedule
                       </p>
                       <p className="text-sm text-muted-foreground mt-0.5">
@@ -819,7 +819,7 @@ export default function HabitDetail() {
                           </div>
                         </div>
                         {newPlanDuration !== habit.planDuration && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             This will replace your current {habit.planDuration} plan with a new {newPlanDuration} plan. Your progress will be reset.
                           </p>
                         )}
@@ -910,14 +910,14 @@ export default function HabitDetail() {
                                 )}
                                 data-testid={`day-selector-${plan.dayNumber || index + 1}`}
                               >
-                                <p className="text-xs opacity-70">Day {plan.dayNumber || index + 1}</p>
-                                <p className="font-medium text-sm">{format(planDate, "MMM d")}</p>
+                                <p className="text-sm opacity-70">Day {plan.dayNumber || index + 1}</p>
+                                <p className="font-semibold text-sm">{format(planDate, "MMM d")}</p>
                                 {isDayCompleted ? (
                                   <CheckCircle2 className={cn("w-3 h-3 mx-auto mt-0.5", isSelected ? "text-primary-foreground" : "text-primary")} />
                                 ) : hasPartialProgress ? (
-                                  <span className={cn("text-[10px] font-medium mt-0.5 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
+                                  <span className={cn("text-xs font-semibold mt-0.5 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
                                 ) : isDayPast && !isSelected ? (
-                                  <span className="text-[10px] text-muted-foreground mt-0.5 block">missed</span>
+                                  <span className="text-xs text-muted-foreground mt-0.5 block">missed</span>
                                 ) : null}
                               </button>
                             );
@@ -959,14 +959,14 @@ export default function HabitDetail() {
                         data-testid={`day-selector-${index + 1}`}
                       >
                         <div className="text-center">
-                          <p className="text-xs opacity-70">Day {index + 1}</p>
-                          <p className="font-medium">{format(planDate, "MMM d")}</p>
+                          <p className="text-sm opacity-70">Day {index + 1}</p>
+                          <p className="font-semibold">{format(planDate, "MMM d")}</p>
                           {isDayCompleted ? (
                             <CheckCircle2 className={cn("w-3 h-3 mx-auto mt-1", isSelected ? "text-primary-foreground" : "text-primary")} />
                           ) : hasPartialProgress ? (
-                            <span className={cn("text-[10px] font-medium mt-1 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
+                            <span className={cn("text-xs font-semibold mt-1 block", isSelected ? "text-primary-foreground" : "text-amber-600 dark:text-amber-400")}>{tasksCompleted}/{taskTotal}</span>
                           ) : isDayPast && !isSelected ? (
-                            <span className="text-[10px] text-muted-foreground mt-1 block">missed</span>
+                            <span className="text-xs text-muted-foreground mt-1 block">missed</span>
                           ) : null}
                         </div>
                       </button>
@@ -980,13 +980,13 @@ export default function HabitDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <h4 className="font-medium flex items-center gap-2">
+                      <h4 className="font-semibold flex items-center gap-2">
                         {isToday(parseISO(currentPlan.date)) ? "Today's Tasks" : `Tasks for ${format(parseISO(currentPlan.date), "MMMM d")}`}
                         {currentPlan.date < todayStr && (
-                          <Badge variant="outline" className="text-xs text-muted-foreground">Past</Badge>
+                          <Badge variant="outline" className="text-sm text-muted-foreground">Past</Badge>
                         )}
                         {isToday(parseISO(currentPlan.date)) && (
-                          <Badge variant="outline" className="text-xs border-primary/30 text-primary">Today</Badge>
+                          <Badge variant="outline" className="text-sm border-primary/30 text-primary">Today</Badge>
                         )}
                       </h4>
                       {currentPlan.focus && (
@@ -1004,7 +1004,7 @@ export default function HabitDetail() {
                       const isDayDone = dayCompleted === dayActive && dayActive > 0;
                       return (
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                          <div className="w-16 h-2.5 rounded-full bg-muted/50 overflow-hidden">
                             <div 
                               className={cn("h-full rounded-full transition-all", isDayDone ? "bg-primary" : "bg-amber-500")}
                               style={{ width: `${dayPct}%` }}
@@ -1073,18 +1073,18 @@ export default function HabitDetail() {
                                     {!task.completed && !task.skipped && (
                                       isFreeUser ? (
                                         <div className="mt-1 relative">
-                                          <p className="text-sm text-muted-foreground whitespace-pre-line blur-[6px] select-none pointer-events-none" aria-hidden="true">
+                                          <p className="text-base text-muted-foreground whitespace-pre-line blur-[6px] select-none pointer-events-none" aria-hidden="true">
                                             {task.description}
                                           </p>
                                           <div className="absolute inset-0 flex items-center justify-center">
-                                            <Badge variant="outline" className="gap-1 text-xs bg-background/80 backdrop-blur-sm text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                                            <Badge variant="outline" className="gap-1 text-sm bg-background/80 backdrop-blur-sm text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
                                               <Lock className="w-3 h-3" />
                                               Start a session to view
                                             </Badge>
                                           </div>
                                         </div>
                                       ) : (
-                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
+                                        <p className="text-base text-muted-foreground mt-1 whitespace-pre-line">
                                           {task.description}
                                         </p>
                                       )
@@ -1172,7 +1172,7 @@ export default function HabitDetail() {
                                   <div className="mt-2">
                                     {task.notes ? (
                                       <div 
-                                        className="text-sm bg-muted/50 p-2 rounded cursor-pointer hover:bg-muted"
+                                        className="text-base bg-muted/50 p-2 rounded cursor-pointer hover:bg-muted"
                                         onClick={() => {
                                           setEditingTask(task.id);
                                           setNoteText(task.notes || "");
@@ -1247,17 +1247,17 @@ export default function HabitDetail() {
                                 <ArrowRight className="w-5 h-5 text-primary" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-muted-foreground" data-testid="text-next-in-stack">Next in "{myStack.name}"</p>
-                                <p className="font-semibold truncate" data-testid="text-stacked-habit-title">{nextHabit.title}</p>
+                                <p className="text-sm font-semibold text-muted-foreground" data-testid="text-next-in-stack">Next in "{myStack.name}"</p>
+                                <p className="font-bold truncate" data-testid="text-stacked-habit-title">{nextHabit.title}</p>
                                 {transition?.note && (
-                                  <p className="text-xs text-muted-foreground mt-0.5 italic">{transition.note}</p>
+                                  <p className="text-sm text-muted-foreground mt-0.5 italic">{transition.note}</p>
                                 )}
                                 {linkedTodayPlan && linkedActiveTasks.length > 0 ? (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-sm text-muted-foreground mt-0.5">
                                     {linkedActiveTasks.filter(t => t.completed).length}/{linkedActiveTasks.length} tasks done
                                   </p>
                                 ) : !linkedTodayPlan && nextHabit.setupComplete ? (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-sm text-muted-foreground mt-0.5">
                                     Not scheduled today
                                   </p>
                                 ) : null}
@@ -1309,13 +1309,13 @@ export default function HabitDetail() {
                 {habit.progress.slice(-5).reverse().map((entry, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <div>
-                      <p className="font-medium">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
+                      <p className="font-semibold">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
                       {entry.notes && (
                         <p className="text-sm text-muted-foreground">{entry.notes}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
+                      <p className="font-semibold">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
                       <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
                     </div>
                   </div>
@@ -1438,7 +1438,7 @@ function HabitStackInfo({ habitId, features }: { habitId: number; features: any 
 
             return (
               <div key={stack.id} className="p-3 bg-muted/50 rounded-lg space-y-2" data-testid={`stack-info-${stack.id}`}>
-                <p className="text-sm font-medium">{stack.name}</p>
+                <p className="text-sm font-semibold">{stack.name}</p>
                 <div className="flex items-center gap-1.5 flex-wrap text-sm text-muted-foreground">
                   {order.map((item: any, idx: number) => (
                     <span key={item.habitId} className="flex items-center gap-1.5">

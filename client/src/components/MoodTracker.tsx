@@ -369,7 +369,7 @@ export function MoodTracker() {
                             <span className="text-sm font-medium">Habits completed today</span>
                             <div className="relative group">
                               <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" data-testid="icon-habit-info" />
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2 rounded-md bg-popover border border-border shadow-md text-[11px] text-muted-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2 rounded-md bg-popover border border-border shadow-md text-xs text-muted-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
                                 Select habits you completed today. This helps track how your habits affect your mood over time.
                               </div>
                             </div>
@@ -594,7 +594,7 @@ export function MoodTracker() {
                       {moodReport.moodImpact > 0 ? <ArrowUp className="w-4 h-4" /> : moodReport.moodImpact < 0 ? <ArrowDown className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
                       {moodReport.moodImpact > 0 ? "+" : ""}{moodReport.moodImpact}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">difference</p>
+                    <p className="text-xs text-muted-foreground">difference</p>
                   </div>
                   <div className="text-center flex-1">
                     <p className="text-lg font-bold text-muted-foreground">{moodReport.avgMoodWithout}/5</p>
@@ -613,21 +613,21 @@ export function MoodTracker() {
                       <div className="text-center">
                         <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                         <p className="text-lg font-bold">{moodReport.avgEnergy}</p>
-                        <p className="text-[10px] text-muted-foreground">Energy</p>
+                        <p className="text-xs text-muted-foreground">Energy</p>
                       </div>
                     )}
                     {moodReport.avgStress > 0 && (
                       <div className="text-center">
                         <Brain className="w-4 h-4 text-purple-500 mx-auto mb-1" />
                         <p className="text-lg font-bold">{moodReport.avgStress}</p>
-                        <p className="text-[10px] text-muted-foreground">Stress</p>
+                        <p className="text-xs text-muted-foreground">Stress</p>
                       </div>
                     )}
                     {moodReport.avgSleep > 0 && (
                       <div className="text-center">
                         <Moon className="w-4 h-4 text-blue-500 mx-auto mb-1" />
                         <p className="text-lg font-bold">{moodReport.avgSleep}</p>
-                        <p className="text-[10px] text-muted-foreground">Sleep</p>
+                        <p className="text-xs text-muted-foreground">Sleep</p>
                       </div>
                     )}
                   </div>

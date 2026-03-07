@@ -437,10 +437,10 @@ export default function StackDetail() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <p className="font-medium text-sm" data-testid={`text-unified-task-${i}`}>{task.title}</p>
-                              <Badge variant="outline" className="text-[10px] shrink-0">{task.duration}m</Badge>
+                              <Badge variant="outline" className="text-xs shrink-0">{task.duration}m</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
-                            <p className="text-[10px] text-primary/70 mt-1">{task.habitTitle}</p>
+                            <p className="text-xs text-primary/70 mt-1">{task.habitTitle}</p>
                           </div>
                         </div>
                       ))}
@@ -749,10 +749,10 @@ export default function StackDetail() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="text-sm font-medium" data-testid={`text-resource-name-${i}`}>{item.resource.name}</p>
-                              <Badge variant="secondary" className="text-[10px]">{item.resource.type}</Badge>
+                              <Badge variant="secondary" className="text-xs">{item.resource.type}</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.resource.description}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1 italic">From: {item.taskTitle}</p>
+                            <p className="text-xs text-muted-foreground mt-1 italic">From: {item.taskTitle}</p>
                           </div>
                           <a
                             href={url}

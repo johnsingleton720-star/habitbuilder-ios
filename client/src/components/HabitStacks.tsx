@@ -115,7 +115,7 @@ export function HabitStacks() {
               <Layers className="w-4 h-4 text-violet-500" />
             </div>
             Habit Stacks
-            <Badge variant="secondary" className="text-[10px]">Premium</Badge>
+            <Badge variant="secondary" className="text-xs">Premium</Badge>
           </CardTitle>
           <CardDescription>
             Chain habits into powerful routines that flow naturally
@@ -297,7 +297,7 @@ function StackItem({
               return (
                 <span key={item.habitId} className="flex items-center gap-1.5">
                   <Link href={`/habit/${item.habitId}?date=${format(new Date(), "yyyy-MM-dd")}`}>
-                    <Badge variant="outline" className="text-[10px] cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
+                    <Badge variant="outline" className="text-xs cursor-pointer" data-testid={`link-stack-habit-${item.habitId}`}>
                       {habit?.title || item.habitTitle}
                     </Badge>
                   </Link>
@@ -308,7 +308,7 @@ function StackItem({
               );
             })}
             {stack.scheduledTime && (
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground ml-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground ml-1">
                 <Clock className="w-3 h-3" />
                 {stack.scheduledTime}
               </span>
@@ -487,10 +487,10 @@ function StackItem({
                     <div key={task.id || idx} className="text-xs bg-muted/50 rounded p-2 space-y-0.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-foreground">{task.title}</span>
-                        <Badge variant="outline" className="text-[9px] shrink-0">{task.duration}m</Badge>
+                        <Badge variant="outline" className="text-xs shrink-0">{task.duration}m</Badge>
                       </div>
                       <p className="text-muted-foreground">{task.description}</p>
-                      <p className="text-[10px] text-muted-foreground/70">{task.habitTitle}</p>
+                      <p className="text-xs text-muted-foreground/70">{task.habitTitle}</p>
                     </div>
                   ))}
                 </div>

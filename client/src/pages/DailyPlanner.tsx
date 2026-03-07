@@ -214,7 +214,7 @@ function TimeBlock({
 
   const titleContent = (
     <span
-      className={`text-sm font-medium ${isCommitment ? "text-muted-foreground" : block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"} ${isHabitWithLink ? "underline decoration-primary/30 underline-offset-2" : ""}`}
+      className={`text-base font-medium ${isCommitment ? "text-muted-foreground" : block.completed ? "line-through text-muted-foreground" : isSkipped ? "line-through text-muted-foreground" : "text-foreground"} ${isHabitWithLink ? "underline decoration-primary/30 underline-offset-2" : ""}`}
       data-testid={`block-title-${block.id}`}
     >
       {block.title}
@@ -266,13 +266,13 @@ function TimeBlock({
             </Link>
           )}
           {block.priority === "high" && !block.completed && !isSkipped && !isCommitment && (
-            <Badge variant="outline" className={`text-[10px] py-0 ${PRIORITY_STYLES.high}`}>
+            <Badge variant="outline" className={`text-xs py-0 ${PRIORITY_STYLES.high}`}>
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               Priority
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {formatTime12h(block.time)}
@@ -435,10 +435,10 @@ function EnergyCurve({ blocks }: { blocks: PlannerBlock[] }) {
           ))}
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[10px] text-muted-foreground">7am</span>
-          <span className="text-[10px] text-muted-foreground">12pm</span>
-          <span className="text-[10px] text-muted-foreground">5pm</span>
-          <span className="text-[10px] text-muted-foreground">10pm</span>
+          <span className="text-xs text-muted-foreground">7am</span>
+          <span className="text-xs text-muted-foreground">12pm</span>
+          <span className="text-xs text-muted-foreground">5pm</span>
+          <span className="text-xs text-muted-foreground">10pm</span>
         </div>
       </CardContent>
     </Card>
@@ -569,7 +569,7 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
               }`}
               data-testid={`weekly-day-${day.date}`}
             >
-              <p className="text-[10px] font-medium text-muted-foreground">{day.dayName}</p>
+              <p className="text-xs font-medium text-muted-foreground">{day.dayName}</p>
               <p className={`text-sm font-bold ${isCurrentDay ? "text-primary" : "text-foreground"}`}>
                 {new Date(day.date + 'T12:00:00').getDate()}
               </p>
@@ -581,10 +581,10 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
                       style={{ width: `${day.completionRate}%` }}
                     />
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{day.completionRate}%</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{day.completionRate}%</p>
                 </div>
               ) : (
-                <p className="text-[9px] text-muted-foreground mt-1">{isPast ? "—" : "Plan"}</p>
+                <p className="text-xs text-muted-foreground mt-1">{isPast ? "—" : "Plan"}</p>
               )}
             </button>
           );
@@ -636,7 +636,7 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
                       );
                     })}
                   </div>
-                  <Badge variant="outline" className="text-[10px] py-0 ml-1">
+                  <Badge variant="outline" className="text-xs py-0 ml-1">
                     {habit.currentStreak}d
                   </Badge>
                 </div>
@@ -653,19 +653,19 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                 {summary.days.reduce((s, d) => s + d.completedBlocks, 0)}
               </p>
-              <p className="text-[10px] text-muted-foreground">Completed</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
             </div>
             <div>
               <p className="text-lg font-bold text-foreground">
                 {Math.round(summary.days.reduce((s, d) => s + d.totalMinutes, 0) / 60 * 10) / 10}h
               </p>
-              <p className="text-[10px] text-muted-foreground">Planned</p>
+              <p className="text-xs text-muted-foreground">Planned</p>
             </div>
             <div>
               <p className="text-lg font-bold text-primary">
                 {daysPlanned}/7
               </p>
-              <p className="text-[10px] text-muted-foreground">Days Planned</p>
+              <p className="text-xs text-muted-foreground">Days Planned</p>
             </div>
           </div>
         </CardContent>
@@ -1223,7 +1223,7 @@ export default function DailyPlanner() {
                 <Card>
                   <CardContent className="p-3 text-center">
                     <p className="text-lg font-bold text-foreground" data-testid="stat-hours">{totalHours}</p>
-                    <p className="text-xs text-muted-foreground">Hours Planned</p>
+                    <p className="text-sm text-muted-foreground">Hours Planned</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -1231,19 +1231,19 @@ export default function DailyPlanner() {
                     <p className="text-lg font-bold text-foreground" data-testid="stat-completed">
                       {completedCount}/{blocks.length}
                     </p>
-                    <p className="text-xs text-muted-foreground">Completed</p>
+                    <p className="text-sm text-muted-foreground">Completed</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-3 text-center">
                     <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400" data-testid="stat-habits">{habitCount}</p>
-                    <p className="text-xs text-muted-foreground">Habits</p>
+                    <p className="text-sm text-muted-foreground">Habits</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-3 text-center">
                     <p className="text-lg font-bold text-sky-600 dark:text-sky-400" data-testid="stat-tasks">{taskCount}</p>
-                    <p className="text-xs text-muted-foreground">Tasks</p>
+                    <p className="text-sm text-muted-foreground">Tasks</p>
                   </CardContent>
                 </Card>
               </div>
@@ -1263,7 +1263,7 @@ export default function DailyPlanner() {
                   <Briefcase className="w-4 h-4 text-slate-500" />
                   <span className="text-sm font-medium text-foreground">My Routine</span>
                   {commitments.length > 0 && (
-                    <Badge variant="outline" className="text-[10px] py-0">{commitments.length}</Badge>
+                    <Badge variant="outline" className="text-xs py-0">{commitments.length}</Badge>
                   )}
                 </div>
                 {showRoutine ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -1420,7 +1420,7 @@ export default function DailyPlanner() {
                 />
               ))}
               {skippedCount > 0 && (
-                <p className="text-xs text-muted-foreground text-center pt-1">
+                <p className="text-sm text-muted-foreground text-center pt-1">
                   {skippedCount} block{skippedCount > 1 ? "s" : ""} skipped
                 </p>
               )}

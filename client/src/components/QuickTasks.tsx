@@ -313,7 +313,7 @@ export function QuickTasks() {
                 <span>{tab.label}</span>
                 {tab.count > 0 && (
                   <span className={cn(
-                    "text-[10px] min-w-[20px] h-[20px] flex items-center justify-center rounded-full font-bold",
+                    "text-xs min-w-[20px] h-[20px] flex items-center justify-center rounded-full font-bold",
                     isActive ? tab.countClasses : "bg-muted/60 text-muted-foreground"
                   )}>
                     {tab.count}
@@ -392,7 +392,7 @@ export function QuickTasks() {
                 <CalendarDays className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
               {isDateFuture && (
-                <Badge variant="outline" className="text-[10px] h-8 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                <Badge variant="outline" className="text-xs h-8 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                   <ArrowRight className="w-3 h-3 mr-1" />
                   {getRelativeDate(newDate)}
                 </Badge>
@@ -494,7 +494,7 @@ export function QuickTasks() {
                 {todayDone.length > 0 && todayPending.length > 0 && (
                   <div className="flex items-center gap-2 pt-2">
                     <div className="h-px flex-1 bg-border/50" />
-                    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Done</span>
+                    <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">Done</span>
                     <div className="h-px flex-1 bg-border/50" />
                   </div>
                 )}
@@ -562,7 +562,7 @@ export function QuickTasks() {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-2 pt-2 pb-1">
-                        <Badge variant="outline" className="text-[10px] bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50">
+                        <Badge variant="outline" className="text-xs bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50">
                           <Calendar className="w-2.5 h-2.5 mr-1" />
                           {getRelativeDate(dateStr)}
                         </Badge>
@@ -829,7 +829,7 @@ function TaskItem({
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {task.scheduledTime && (
             <span className={cn(
-              "text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-md",
+              "text-xs flex items-center gap-0.5 px-1.5 py-0.5 rounded-md",
               task.completed
                 ? "text-muted-foreground/40"
                 : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
@@ -839,24 +839,24 @@ function TaskItem({
             </span>
           )}
           {showDate && (
-            <span className="text-[10px] text-muted-foreground/60 flex items-center gap-0.5">
+            <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
               <Calendar className="w-2.5 h-2.5" />
               {format(new Date(task.date + "T12:00:00"), "MMM d")}
             </span>
           )}
           {task.category && (
-            <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", getCategoryColor(task.category))} data-testid={`category-${task.id}`}>
+            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", getCategoryColor(task.category))} data-testid={`category-${task.id}`}>
               {task.category}
             </span>
           )}
           {task.isRecurring && task.recurringPattern && (
-            <span className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400" data-testid={`recurring-badge-${task.id}`}>
+            <span className="text-xs flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400" data-testid={`recurring-badge-${task.id}`}>
               <RefreshCw className="w-2.5 h-2.5" />
               {RECURRING_LABELS[task.recurringPattern] || task.recurringPattern}
             </span>
           )}
           {typeof subtaskCount === "number" && subtaskCount > 0 && (
-            <span className="text-[10px] text-muted-foreground/60" data-testid={`subtask-count-${task.id}`}>
+            <span className="text-xs text-muted-foreground/60" data-testid={`subtask-count-${task.id}`}>
               {subtaskCount} subtask{subtaskCount !== 1 ? "s" : ""}
             </span>
           )}

@@ -184,7 +184,7 @@ export default function CoachChatPage() {
                   <p className={`text-xs font-medium ${isAtLimit ? "text-destructive" : isNearLimit ? "text-amber-500" : "text-muted-foreground"}`}>
                     {usage.used}/{usage.limit}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">messages</p>
+                  <p className="text-xs text-muted-foreground">messages</p>
                 </div>
                 <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                   <div 
@@ -277,7 +277,7 @@ export default function CoachChatPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {!chat.isActive && (
-                            <Badge variant="secondary" className="text-[10px]">Ended</Badge>
+                            <Badge variant="secondary" className="text-xs">Ended</Badge>
                           )}
                           <span className="text-xs text-muted-foreground">
                             {chat.createdAt ? new Date(chat.createdAt).toLocaleDateString() : ""}
@@ -322,7 +322,7 @@ export default function CoachChatPage() {
                           )}
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           {msg.createdAt && (
-                            <p className={`text-[10px] mt-1.5 ${msg.role === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                            <p className={`text-xs mt-1.5 ${msg.role === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </p>
                           )}

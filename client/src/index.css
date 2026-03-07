@@ -13,16 +13,16 @@
   --background: 160 20% 98%;      /* Soft Mint White */
   --foreground: 164 45% 12%;      /* Deep Forest Green - darkened for readability */
   
-  --primary: 164 75% 35%;         /* Rich Emerald */
+  --primary: 164 80% 32%;         /* Rich Emerald - more saturated */
   --primary-foreground: 160 30% 98%;
 
-  --secondary: 162 30% 88%;       /* Pale Sage - slightly stronger */
-  --secondary-foreground: 164 45% 12%;
+  --secondary: 162 35% 86%;       /* Pale Sage - slightly stronger */
+  --secondary-foreground: 164 50% 10%;
 
   --muted: 162 20% 92%;
-  --muted-foreground: 164 30% 28%;
+  --muted-foreground: 164 25% 38%;
 
-  --accent: 172 60% 45%;          /* Teal Accent */
+  --accent: 172 70% 40%;          /* Teal Accent - more vivid */
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -81,7 +81,7 @@
 
   @media (max-width: 767px) {
     html {
-      font-size: 17px;
+      font-size: 18px;
     }
   }
 
