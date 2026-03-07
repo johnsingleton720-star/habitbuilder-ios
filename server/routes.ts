@@ -9750,9 +9750,22 @@ Be specific, practical, and grounded in behavior science. Every task should make
       habitDetails = "No habits scheduled";
     }
 
-    const tasksList = tasks.length > 0
-      ? tasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
-      : "No tasks";
+    const fixedTasks = tasks.filter(t => t.scheduledTime);
+    const unscheduledTasks = tasks.filter(t => !t.scheduledTime);
+
+    const fixedTasksList = fixedTasks.length > 0
+      ? fixedTasks.map(t => {
+          const [sh, sm] = (t.scheduledTime as string).split(":").map(Number);
+          const dur = (t.duration as number | null) || 30;
+          const endMins = sh * 60 + sm + dur;
+          const endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+          return `- "${t.title}" from ${t.scheduledTime} to ${endTime} (${dur} min, taskId=${t.id}, priority: ${t.priority || 'normal'}) — FIXED, cannot be moved`;
+        }).join("\n")
+      : "";
+
+    const tasksList = unscheduledTasks.length > 0
+      ? unscheduledTasks.map(t => `- "${t.title}" (priority: ${t.priority || 'normal'})`).join("\n")
+      : (fixedTasks.length > 0 ? "All tasks are fixed-time (see below)" : "No tasks");
 
     const commitmentsList = todayCommitments.length > 0
       ? todayCommitments.map(c => `- "${c.title}" from ${c.startTime} to ${c.endTime} (FIXED - cannot move)`).join("\n")
@@ -9807,15 +9820,16 @@ SCHEDULING RULES:
 - Type must be one of: "habit", "task", "break", "custom", "commitment"
 - For habit blocks: set habitId to the numeric ID shown in brackets [habitId=X] from the habit list. This is required for habit blocks.
 - For commitment blocks: use type "commitment", set completed to false, do NOT schedule any other blocks during commitment times
+- CRITICAL: For fixed-time task blocks listed in FIXED TASK BLOCKS: include them as "task" blocks at EXACTLY the specified time and duration. Do NOT schedule any habit, break, or custom block during those time windows. Work all other blocks around them.
 - Do not generate harmful content`
       }, {
         role: "user",
         content: `Create my optimized schedule for ${dayOfWeek}, ${date}.
-${commitmentsList ? `\nFIXED COMMITMENTS (DO NOT schedule anything during these times — work around them and include them as "commitment" type blocks):\n${commitmentsList}\n` : ""}
+${commitmentsList ? `\nFIXED COMMITMENTS (DO NOT schedule anything during these times — work around them and include them as "commitment" type blocks):\n${commitmentsList}\n` : ""}${fixedTasksList ? `\nFIXED TASK BLOCKS (DO NOT schedule anything during these times — include them as "task" blocks at exactly these times):\n${fixedTasksList}\n` : ""}
 My habits:
 ${habitDetails}
 
-My tasks:
+My tasks (flexible, no fixed time):
 ${tasksList}${energyContext}
 
 ${atRiskHabits.length > 0 ? `\nIMPORTANT: These habits have active streaks at risk: ${atRiskHabits.join(", ")}. Prioritize them at optimal times.` : ""}
