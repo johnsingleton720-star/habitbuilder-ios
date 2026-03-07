@@ -71,12 +71,23 @@ workflows:
         script: |
           cd ios/App
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [0-9]*\.[0-9]*\.[0-9]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
-          sed -i '' 's/MARKETING_VERSION = [0-9]*\.[0-9]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
-          echo "=== iOS Version in Info.plist ==="
+          ruby << 'VERSIONRUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('App.xcodeproj')
+          project.targets.each do |target|
+            next unless target.name == 'App'
+            target.build_configurations.each do |config|
+              config.build_settings['MARKETING_VERSION'] = '1.2.1'
+              puts "Set MARKETING_VERSION = 1.2.1 for #{config.name}"
+            end
+          end
+          project.save
+          puts "Xcode project saved with version 1.2.1"
+          VERSIONRUBY
+          echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
-          echo "=== MARKETING_VERSION in project ==="
-          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
+          echo "=== Verify project.pbxproj ==="
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj
       - name: Add capabilities (IAP, Push Notifications) and StoreKit framework
         script: |
           cd ios/App
