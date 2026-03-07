@@ -16,8 +16,8 @@ workflows:
         script: npm run build
       - name: Set app version
         script: |
-          sed -i '' 's/"version": "1.0.0"/"version": "1.1.0"/' package.json
-          echo "App version set to 1.1.0"
+          sed -i '' 's/"version": "1.[0-9].[0-9]"/"version": "1.2.0"/' package.json
+          echo "App version set to 1.2.0"
           grep '"version"' package.json
       - name: Add iOS platform
         script: npx cap add ios || true
@@ -64,16 +64,19 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
           echo "=== Deployment targets after fix ==="
           grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
-      - name: Add In-App Purchase capability and StoreKit framework
+      - name: Add capabilities (IAP, Push Notifications) and StoreKit framework
         script: |
           cd ios/App
 
-          # Create entitlements file
+          # Create entitlements file with push notifications
           cat > App/App.entitlements << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
-          <dict/>
+          <dict>
+            <key>aps-environment</key>
+            <string>production</string>
+          </dict>
           </plist>
           EOF
 
@@ -147,6 +150,11 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'HabitBuilder needs camera access to take a profile photo.'" Info.plist 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'HabitBuilder needs photo library access to select a profile photo.'" Info.plist 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'HabitBuilder needs microphone access for voice notes during coaching sessions.'" Info.plist 2>/dev/null || true
+          # Add background modes for push notifications
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" Info.plist 2>/dev/null || true
+          echo "=== Background Modes ==="
+          /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" Info.plist 2>/dev/null || echo "No background modes"
           echo "=== Privacy descriptions ==="
           /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
           /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
@@ -164,9 +172,9 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.1" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.1" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.1/g' App.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2/g' App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
