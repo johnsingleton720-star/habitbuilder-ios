@@ -9930,6 +9930,31 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
 
     console.log(`[Planner] Parsed ${blocks.length} blocks for ${date} (preserved ${Array.from(completedMap.values()).filter(Boolean).length} completed states)`);
 
+    // Correct task block times to match the quick task's scheduledTime (user's intent).
+    // The AI assigns arbitrary times — we override them here so task blocks always
+    // appear at the time the user chose when creating the quick task.
+    const tasksForDate = await db.select().from(quickTasks)
+      .where(and(eq(quickTasks.userId, userId), eq(quickTasks.date, date)));
+
+    if (tasksForDate.length > 0) {
+      for (const block of blocks) {
+        if (block.type !== "task") continue;
+        const match = tasksForDate.find(t =>
+          (block.taskId && t.id === block.taskId) ||
+          t.title.toLowerCase().trim() === (block.title || "").toLowerCase().trim()
+        );
+        if (match && (match.scheduledTime as string | null)) {
+          const startTime = match.scheduledTime as string;
+          const [sh, sm] = startTime.split(":").map(Number);
+          const endMins = sh * 60 + sm + (block.duration || 30);
+          block.time = startTime;
+          block.endTime = `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+        }
+      }
+      // Re-sort after time corrections
+      blocks.sort((a: any, b: any) => (a.time || "").localeCompare(b.time || ""));
+    }
+
     if (existing) {
       const [updated] = await db.update(dailyPlannerEntries)
         .set({ blocks, insights, aiGenerated: true, updatedAt: new Date() })
