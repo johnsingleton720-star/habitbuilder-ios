@@ -61,6 +61,7 @@ export default function ProgressPage() {
   const getYesterdayStats = () => {
     if (!habits) return { completed: 0, total: 0, habits: [] };
     const habitsWithTasks = habits.filter(h => {
+      if (h.archived) return false;
       const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
       return dailyPlans.some(p => p.date === yesterdayStr && p.tasks.length > 0);
     });
@@ -77,11 +78,12 @@ export default function ProgressPage() {
 
   const getTotalStats = () => {
     if (!habits) return { totalSessions: 0, totalTime: 0, totalTasks: 0, habits: [] };
+    const activeHabits = habits.filter(h => !h.archived);
     let totalSessions = 0;
     let totalTime = 0;
     let totalTasks = 0;
     
-    habits.forEach(h => {
+    activeHabits.forEach(h => {
       const progress = (h.progress || []) as ProgressEntry[];
       totalSessions += progress.length;
       totalTime += h.totalTimeSpent || 0;
@@ -94,7 +96,7 @@ export default function ProgressPage() {
       totalSessions, 
       totalTime, 
       totalTasks,
-      habits: habits.map(h => {
+      habits: activeHabits.map(h => {
         const progress = (h.progress || []) as ProgressEntry[];
         const lastSession = progress.length > 0 ? progress[progress.length - 1] : null;
         return {
@@ -110,10 +112,11 @@ export default function ProgressPage() {
 
   const getStreakStats = () => {
     if (!habits) return { bestStreak: 0, currentStreak: 0, habits: [] };
+    const activeHabits = habits.filter(h => !h.archived);
     let bestStreak = 0;
     let currentStreakSum = 0;
     
-    habits.forEach(h => {
+    activeHabits.forEach(h => {
       bestStreak = Math.max(bestStreak, h.longestStreak || 0);
       currentStreakSum += h.currentStreak || 0;
     });
@@ -121,7 +124,7 @@ export default function ProgressPage() {
     return { 
       bestStreak, 
       currentStreak: currentStreakSum,
-      habits: habits.map(h => {
+      habits: activeHabits.map(h => {
         const progress = (h.progress || []) as ProgressEntry[];
         const lastSession = progress.length > 0 ? progress[progress.length - 1] : null;
         return {
