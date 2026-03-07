@@ -433,6 +433,12 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
         ))}
       </div>
 
+      {stats.habits.some((h: any) => h.archived) && (
+        <p className="text-xs text-muted-foreground text-center" data-testid="text-includes-archived">
+          Includes all habits, including archived ones
+        </p>
+      )}
+
       {(mostConsistent || mostTimeInvested) && (
         <div className="grid grid-cols-2 gap-3">
           {mostConsistent && mostConsistent.sessions > 0 && (

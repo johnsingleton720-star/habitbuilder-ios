@@ -625,7 +625,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <ProgressSummary habits={activeHabits || []} />
+            <ProgressSummary habits={activeHabits || []} allHabits={habits || []} />
           </motion.section>
         )}
 

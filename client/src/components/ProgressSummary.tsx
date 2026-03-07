@@ -10,9 +10,10 @@ import { useSubscription } from "@/hooks/use-subscription";
 
 interface ProgressSummaryProps {
   habits: Habit[];
+  allHabits?: Habit[];
 }
 
-export function ProgressSummary({ habits }: ProgressSummaryProps) {
+export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { isFreeUser } = useSubscription();
 
@@ -55,7 +56,8 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
   const todayTotal = habitsScheduledToday.length;
   const todayPercent = todayTotal > 0 ? Math.round((todayCompletions / todayTotal) * 100) : 0;
 
-  const totalSessions = habits.reduce((sum, h) => 
+  const habitsForTotal = allHabits || habits;
+  const totalSessions = habitsForTotal.reduce((sum, h) => 
     sum + ((h as any).progressCount ?? ((h.progress || []) as any[]).length), 0
   );
 
