@@ -1216,6 +1216,7 @@ export async function registerRoutes(
           schedule: h.schedule,
           dailyPlans: todayPlan ? [todayPlan] : [],
           progress: [],
+          progressCount: ((h.progress || []) as any[]).length,
           totalTimeSpent: h.totalTimeSpent,
           currentStreak: h.currentStreak,
           longestStreak: h.longestStreak,

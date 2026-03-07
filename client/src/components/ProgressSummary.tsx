@@ -56,7 +56,7 @@ export function ProgressSummary({ habits }: ProgressSummaryProps) {
   const todayPercent = todayTotal > 0 ? Math.round((todayCompletions / todayTotal) * 100) : 0;
 
   const totalSessions = habits.reduce((sum, h) => 
-    sum + ((h.progress || []) as any[]).length, 0
+    sum + ((h as any).progressCount ?? ((h.progress || []) as any[]).length), 0
   );
 
   const longestStreak = Math.max(...habits.map(h => h.longestStreak || 0), 0);
