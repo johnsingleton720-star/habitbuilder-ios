@@ -1,4 +1,9 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
+
+// Update these URLs once the app is live in each store
+const APP_STORE_URL = "https://apps.apple.com/app/habit-builder-ai-coach/id6741447813";
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=pro.habitbuilder.app";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -984,6 +989,35 @@ export default function Landing() {
                 <span>Cancel anytime</span>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-3 pt-1" data-testid="div-store-badges">
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-app-store"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-foreground text-background text-xs font-medium hover:opacity-80 transition-opacity shadow-sm"
+              >
+                <SiApple className="w-4 h-4 shrink-0" />
+                <span className="leading-tight">
+                  <span className="block text-[10px] font-normal opacity-80">Download on the</span>
+                  App Store
+                </span>
+              </a>
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-play-store"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-foreground text-background text-xs font-medium hover:opacity-80 transition-opacity shadow-sm"
+              >
+                <Smartphone className="w-4 h-4 shrink-0" />
+                <span className="leading-tight">
+                  <span className="block text-[10px] font-normal opacity-80">Get it on</span>
+                  Google Play
+                </span>
+              </a>
+            </div>
+
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <LoginTroubleshootDialog />
               <a href="https://replit.com/forgot" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline" data-testid="link-forgot-password">
@@ -1921,6 +1955,34 @@ export default function Landing() {
               <p className="text-xs text-muted-foreground max-w-md">
                 Build better habits with personalized AI coaching grounded in behavioral science. Daily plans, guided sessions, streak tracking, and progress analytics.
               </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-app-store-footer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background text-[11px] font-medium hover:opacity-80 transition-opacity"
+                >
+                  <SiApple className="w-3.5 h-3.5 shrink-0" />
+                  <span className="leading-tight">
+                    <span className="block text-[9px] font-normal opacity-80">Download on the</span>
+                    App Store
+                  </span>
+                </a>
+                <a
+                  href={PLAY_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-play-store-footer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background text-[11px] font-medium hover:opacity-80 transition-opacity"
+                >
+                  <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                  <span className="leading-tight">
+                    <span className="block text-[9px] font-normal opacity-80">Get it on</span>
+                    Google Play
+                  </span>
+                </a>
+              </div>
               <InstallAppDialog 
                 trigger={
                   <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" data-testid="button-get-app-landing">
