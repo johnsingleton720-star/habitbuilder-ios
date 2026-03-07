@@ -67,6 +67,13 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
           echo "=== Deployment targets after fix ==="
           grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
+      - name: Set iOS version to 1.2.1
+        script: |
+          cd ios/App
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" App/Info.plist
+          echo "=== iOS Version ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist
       - name: Add capabilities (IAP, Push Notifications) and StoreKit framework
         script: |
           cd ios/App
