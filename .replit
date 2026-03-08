@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["ffmpeg", "jdk17_headless", "zip"]
+packages = ["ffmpeg", "jdk17_headless", "zip", "glib", "nss", "nspr", "atk", "at-spi2-atk", "cups", "libdrm", "gtk3", "pango", "cairo", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "xorg.libxcb", "expat", "alsa-lib", "mesa", "dbus", "libxkbcommon"]
 
 [[ports]]
 localPort = 5000
