@@ -273,7 +273,7 @@ export default function ProgressPage() {
         )}
         
         {view === "weekly" && (
-          <WeeklyView habits={habits || []} />
+          <WeeklyView habits={(habits || []).filter(h => !h.archived)} />
         )}
       </div>
     </div>
