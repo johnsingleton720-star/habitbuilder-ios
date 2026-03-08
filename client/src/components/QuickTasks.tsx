@@ -62,7 +62,6 @@ export function QuickTasks() {
   const [addingSubtaskFor, setAddingSubtaskFor] = useState<number | null>(null);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [expandedParents, setExpandedParents] = useState<Set<number>>(new Set());
-  const [collapsedParents, setCollapsedParents] = useState<Set<number>>(new Set());
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const { celebrate, CelebrationOverlay } = useCompletionCelebration();
   const lastToggleEvent = useRef<{ clientX?: number; clientY?: number } | undefined>(undefined);
@@ -177,6 +176,7 @@ export function QuickTasks() {
   const handleAddSubtask = (parentId: number, parentDate: string) => {
     const trimmed = subtaskTitle.trim();
     if (!trimmed) return;
+    setExpandedParents(prev => new Set(prev).add(parentId));
     createMutation.mutate({
       title: trimmed,
       date: parentDate,
@@ -203,10 +203,10 @@ export function QuickTasks() {
     }
   };
 
-  const isParentExpanded = (id: number) => !collapsedParents.has(id);
+  const isParentExpanded = (id: number) => expandedParents.has(id);
 
   const toggleParentExpanded = (id: number) => {
-    setCollapsedParents(prev => {
+    setExpandedParents(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -801,8 +801,8 @@ function TaskItem({
       data-testid={`quick-task-${task.id}`}
     >
       {hasSubtasks && onToggleExpand && (
-        <button onClick={onToggleExpand} className="shrink-0 text-muted-foreground mt-0.5 p-0.5 -ml-0.5 rounded hover:bg-muted/50" data-testid={`button-expand-${task.id}`}>
-          {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        <button onClick={onToggleExpand} className="shrink-0 text-muted-foreground p-1.5 -ml-1 rounded-md active:bg-muted/70 hover:bg-muted/50" data-testid={`button-expand-${task.id}`}>
+          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
       )}
 
