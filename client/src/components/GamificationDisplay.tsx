@@ -6,14 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle, Crown, RotateCcw, Palette, Lock, TrendingUp } from "lucide-react";
+import { Zap, Trophy, Target, Star, Flame, Clock, Check, Sparkles, HelpCircle, Crown, RotateCcw, Lock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { CelebrationAnimation } from "./CelebrationAnimation";
 import { ACHIEVEMENTS, getAchievementById } from "@/lib/achievements";
-import { APP_THEMES, applyThemeToDocument } from "./ThemeSelector";
 
 interface DailyChallenge {
   id: number;
@@ -162,31 +161,6 @@ export function GamificationDisplay() {
   const isPro = stats ? (stats.subscriptionTier === 'pro' || stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
   const isPremium = stats ? (stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
   
-  const accentColorMutation = useMutation({
-    mutationFn: async (color: string) => {
-      return await apiRequest("PATCH", "/api/user/accent-color", { color });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({
-        title: "Accent color updated!",
-        description: "Your dashboard color has been changed.",
-      });
-    },
-    onError: () => {
-      const previousColor = stats?.selectedColor ?? "nature";
-      setLocalSelectedColor(previousColor);
-      const revertTheme = APP_THEMES.find(t => t.id === previousColor) || APP_THEMES[0];
-      applyThemeToDocument(revertTheme);
-      localStorage.setItem("appColorTheme", revertTheme.id);
-      toast({
-        title: "Couldn't change color",
-        description: "You may not have unlocked this color yet.",
-        variant: "destructive",
-      });
-    },
-  });
 
   useEffect(() => {
     if (!stats) return;
@@ -512,78 +486,7 @@ export function GamificationDisplay() {
         </CardContent>
       </Card>
 
-      {isPremium && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Palette className="w-5 h-5 text-violet-500" />
-                Unlockable Colors
-              </CardTitle>
-              <Badge variant="secondary" className="text-xs">
-                <Crown className="w-3 h-3 mr-1" />
-                Premium
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-3">
-              Each level unlocks a new accent color. Tap to apply an unlocked color.
-            </p>
-            <div className="grid grid-cols-6 gap-2">
-              {Object.entries(stats.levelRewards || {}).map(([lvlStr, reward]) => {
-                const lvl = parseInt(lvlStr);
-                const isUnlocked = lvl <= stats.level;
-                const isSelected = effectiveSelectedColor === reward.color;
-                
-                return (
-                  <Tooltip key={lvl}>
-                    <TooltipTrigger asChild>
-                      <button
-                        className={cn(
-                          "relative w-full aspect-square rounded-md border-2 transition-all flex items-center justify-center",
-                          isUnlocked 
-                            ? isSelected 
-                              ? "border-foreground ring-2 ring-foreground/20" 
-                              : "border-transparent hover:border-muted-foreground/40 cursor-pointer"
-                            : "border-muted cursor-not-allowed opacity-50"
-                        )}
-                        style={{ backgroundColor: reward.colorValue }}
-                        onClick={() => {
-                          if (isUnlocked && !isSelected) {
-                            setLocalSelectedColor(reward.color);
-                            const matchingTheme = APP_THEMES.find(t => t.id === reward.color);
-                            if (matchingTheme) {
-                              applyThemeToDocument(matchingTheme);
-                              localStorage.setItem("appColorTheme", reward.color);
-                            }
-                            accentColorMutation.mutate(reward.color);
-                          }
-                        }}
-                        disabled={!isUnlocked || accentColorMutation.isPending}
-                        data-testid={`color-swatch-${reward.color}`}
-                      >
-                        {!isUnlocked && (
-                          <Lock className="w-3.5 h-3.5 text-white/80" />
-                        )}
-                        {isSelected && isUnlocked && (
-                          <Check className="w-4 h-4 text-white" />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-sm font-medium">{reward.colorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {isUnlocked ? (isSelected ? "Currently active" : "Click to apply") : `Unlocks at Level ${lvl}`}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      
 
       <Card>
         <CardHeader className="pb-2">

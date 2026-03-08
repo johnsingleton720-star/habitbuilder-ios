@@ -273,15 +273,15 @@ export function QuickTasks() {
   const isDateFuture = newDate > todayStr;
 
   return (
-    <Card className="overflow-hidden border-2 border-amber-200/50 dark:border-amber-700/40 shadow-md" data-testid="card-quick-tasks">
-      <CardHeader className="pb-2 bg-gradient-to-r from-amber-100/60 via-orange-50/40 to-rose-100/50 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-rose-950/30">
+    <Card className="overflow-hidden border border-primary/15 dark:border-primary/25 card-modern" data-testid="card-quick-tasks">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/8 via-accent/5 to-secondary/20 dark:from-primary/15 dark:via-accent/10 dark:to-secondary/15">
         <CardTitle className="flex items-center gap-2 text-base flex-wrap">
-          <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/15">
-            <ListChecks className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <ListChecks className="w-4 h-4 text-primary" />
           </div>
           Quick Tasks
           {todayTasks.length > 0 && (
-            <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20" data-testid="badge-quick-tasks-count">
+            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20" data-testid="badge-quick-tasks-count">
               {todayCompleted}/{todayTasks.length} today
             </Badge>
           )}
@@ -307,7 +307,7 @@ export function QuickTasks() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200",
+                  "flex-1 flex items-center justify-center gap-1.5 py-3 px-3 rounded-lg text-sm font-semibold transition-all duration-200",
                   isActive ? tab.activeClasses : tab.inactiveClasses
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
@@ -328,7 +328,7 @@ export function QuickTasks() {
         </div>
 
         {activeTab !== "completed" && (
-          <div className="space-y-2 p-3 rounded-xl bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-rose-50/50 dark:from-amber-950/20 dark:via-orange-950/10 dark:to-rose-950/20 border border-amber-200/30 dark:border-amber-800/20">
+          <div className="space-y-2 p-3 rounded-xl bg-gradient-to-br from-primary/5 via-accent/3 to-secondary/10 dark:from-primary/10 dark:via-accent/5 dark:to-secondary/15 border border-primary/10 dark:border-primary/20">
             <div className="flex gap-2">
               <Input
                 value={newTitle}
@@ -775,7 +775,7 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-center gap-2.5 group p-2.5 rounded-xl transition-all border",
+        "flex items-center gap-2.5 group p-3 rounded-xl transition-all border",
         isSubtask && "ml-6 pl-3 border-l-2 border-muted-foreground/10",
         task.completed
           ? "bg-muted/30 border-muted/50"
@@ -784,7 +784,7 @@ function TaskItem({
       data-testid={`quick-task-${task.id}`}
     >
       {!isSubtask && (
-        <div className={cn("w-1 self-stretch rounded-full shrink-0", config.dotColor)} />
+        <div className={cn("w-1.5 self-stretch rounded-full shrink-0", config.dotColor)} />
       )}
 
       {hasSubtasks && onToggleExpand && (
@@ -821,7 +821,7 @@ function TaskItem({
           <span className={cn("w-2 h-2 rounded-full shrink-0", config.dotColor)} data-testid={`priority-dot-${task.id}`} />
           <span
             className={cn(
-              "text-sm transition-all block truncate",
+              "text-[0.9rem] transition-all block truncate",
               task.completed && "line-through text-muted-foreground/50"
             )}
             data-testid={`text-quick-task-${task.id}`}

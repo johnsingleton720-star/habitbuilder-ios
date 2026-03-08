@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus, HelpCircle, Info } from "lucide-react";
+import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, ChevronDown, ChevronUp, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus, HelpCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +112,7 @@ export function MoodTracker() {
   const [reportHabitId, setReportHabitId] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [showMoodImpactInfo, setShowMoodImpactInfo] = useState(false);
+  const [showAllCorrelations, setShowAllCorrelations] = useState(false);
   
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   const today = todayStr;
@@ -467,30 +468,74 @@ export function MoodTracker() {
               <span className="text-sm font-medium">Mood Correlations</span>
             </div>
             <div className="space-y-1">
-              {(insights as MoodInsights).correlations.map((corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
-                <button
-                  key={corr.habitId}
-                  onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
-                  className={cn(
-                    "flex items-center justify-between text-sm w-full p-2 rounded-lg transition-all text-left",
-                    corr.correlation !== null ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
-                  )}
-                  data-testid={`mood-correlation-${corr.habitId}`}
-                >
-                  <span className="text-muted-foreground">{corr.habitTitle}</span>
-                  <div className="flex items-center gap-2">
-                    {corr.correlation !== null ? (
-                      <>
-                        <TrendingUp className="w-3 h-3 text-green-600" />
-                        <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/60">No data yet</span>
+              {(() => {
+                const allCorrelations = (insights as MoodInsights).correlations;
+                const firstFour = allCorrelations.slice(0, 4);
+                const remaining = allCorrelations.slice(4);
+                const hiddenCount = remaining.length;
+
+                const renderCorrelationItem = (corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
+                  <button
+                    key={corr.habitId}
+                    onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
+                    className={cn(
+                      "flex items-center justify-between text-sm w-full p-2 rounded-lg transition-all text-left",
+                      corr.correlation !== null ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
                     )}
-                  </div>
-                </button>
-              ))}
+                    data-testid={`mood-correlation-${corr.habitId}`}
+                  >
+                    <span className="text-muted-foreground">{corr.habitTitle}</span>
+                    <div className="flex items-center gap-2">
+                      {corr.correlation !== null ? (
+                        <>
+                          <TrendingUp className="w-3 h-3 text-green-600" />
+                          <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60">No data yet</span>
+                      )}
+                    </div>
+                  </button>
+                );
+
+                return (
+                  <>
+                    {firstFour.map(renderCorrelationItem)}
+                    <AnimatePresence>
+                      {showAllCorrelations && hiddenCount > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden space-y-1"
+                        >
+                          {remaining.map(renderCorrelationItem)}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {hiddenCount > 0 && (
+                      <button
+                        onClick={() => setShowAllCorrelations(!showAllCorrelations)}
+                        className="flex items-center gap-1 text-sm text-primary w-full justify-center pt-1 pb-0.5 transition-colors"
+                        data-testid="button-toggle-correlations"
+                      >
+                        {showAllCorrelations ? (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            Show less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4" />
+                            Show {hiddenCount} more
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
