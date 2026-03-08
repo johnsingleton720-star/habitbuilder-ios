@@ -50,7 +50,11 @@ export default function Dashboard() {
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
-  const [planAdjustDismissed, setPlanAdjustDismissed] = useState(false);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const [planAdjustDismissed, setPlanAdjustDismissed] = useState(() =>
+    localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
+  );
+  const [adjustBannerReason, setAdjustBannerReason] = useState<string | null>(null);
   const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(() => {
     return localStorage.getItem('welcomeBannerDismissed') === 'true';
   });
@@ -404,34 +408,87 @@ export default function Dashboard() {
                     <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm" data-testid="text-plan-adjust-title">
-                      {filteredHabitsNeedingAdjustment.length === 1
-                        ? "Your plan might need adjusting"
-                        : filteredHabitsNeedingAdjustment.length + " plans might need adjusting"}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {filteredHabitsNeedingAdjustment.length === 1
-                        ? "Your completion rate for \u201c" + filteredHabitsNeedingAdjustment[0].title + "\u201d is low. The AI can redesign your plan to better fit your schedule."
-                        : "Some habits have low completion rates. The AI can redesign your plans to better fit your schedule."}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {filteredHabitsNeedingAdjustment.map(h => (
-                        <Button
-                          key={h.id}
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5 border-amber-300 dark:border-amber-700"
-                          onClick={() => navigate("/habit/" + h.id)}
-                          data-testid={"button-adjust-habit-" + h.id}
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          {h.title}
-                        </Button>
-                      ))}
-                    </div>
+                    {!adjustBannerReason ? (
+                      <>
+                        <p className="font-bold text-sm" data-testid="text-plan-adjust-title">
+                          {filteredHabitsNeedingAdjustment.length === 1
+                            ? `You've been missing sessions — what's been getting in the way?`
+                            : `You've been missing sessions on ${filteredHabitsNeedingAdjustment.length} habits — what's happened?`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+                          {filteredHabitsNeedingAdjustment.length === 1
+                            ? `"${filteredHabitsNeedingAdjustment[0].title}" — tap a reason and the AI can adapt your plan.`
+                            : "Tap a reason so the AI can adapt your plans."}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Too busy", emoji: "⏰" },
+                            { label: "Forgot", emoji: "🧠" },
+                            { label: "Too tired", emoji: "😴" },
+                            { label: "Schedule conflict", emoji: "📅" },
+                            { label: "Didn't feel like it", emoji: "😶" },
+                            { label: "Other", emoji: "💬" },
+                          ].map(({ label, emoji }) => (
+                            <button
+                              key={label}
+                              onClick={async () => {
+                                setAdjustBannerReason(label);
+                                try {
+                                  for (const h of filteredHabitsNeedingAdjustment) {
+                                    await fetch(`/api/habits/${h.id}/streak-miss-reason`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ reason: label }),
+                                    });
+                                  }
+                                  queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+                                } catch {}
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-white/60 dark:bg-amber-950/30 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors text-left"
+                              data-testid={`button-dashboard-miss-reason-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                            >
+                              <span className="text-base leading-none">{emoji}</span>
+                              <span className="truncate">{label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-bold text-sm" data-testid="text-adjust-plan-title">
+                          Got it — the AI can work with that
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-0.5 mb-3">
+                          {adjustBannerReason === "Too busy" && "The AI can lighten the load and find pockets of time that actually fit your day."}
+                          {adjustBannerReason === "Forgot" && "The AI can simplify your plan so it's easier to remember and build into your routine."}
+                          {adjustBannerReason === "Too tired" && "The AI can scale back intensity and schedule tasks when you're typically most energized."}
+                          {adjustBannerReason === "Schedule conflict" && "The AI can reschedule tasks around your existing commitments."}
+                          {adjustBannerReason === "Didn't feel like it" && "The AI can redesign tasks to feel more engaging and easier to start."}
+                          {adjustBannerReason === "Other" && "The AI can take a fresh look and adapt your plan to work better for you."}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {filteredHabitsNeedingAdjustment.map(h => (
+                            <Button
+                              key={h.id}
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 border-amber-300 dark:border-amber-700"
+                              onClick={() => navigate("/habit/" + h.id)}
+                              data-testid={"button-adjust-habit-" + h.id}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              {h.title}
+                            </Button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <button
-                    onClick={() => setPlanAdjustDismissed(true)}
+                    onClick={() => {
+                      setPlanAdjustDismissed(true);
+                      localStorage.setItem(`planAdjustDismissed_${todayKey}`, "true");
+                    }}
                     className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                     data-testid="button-dismiss-plan-adjustment"
                     aria-label="Dismiss"
