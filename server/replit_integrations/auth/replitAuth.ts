@@ -122,8 +122,7 @@ export async function setupAuth(app: Express) {
     }
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      maxAge: 0,
+      prompt: "login",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
@@ -175,7 +174,7 @@ export async function setupAuth(app: Express) {
           console.error("Session destroy error:", err);
         }
         res.clearCookie("connect.sid");
-        res.redirect("/?logged_out=true");
+        res.redirect("/signed-out");
       });
     });
   });

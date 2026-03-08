@@ -47,6 +47,7 @@ import FocusTimer from "@/pages/FocusTimer";
 import MoodTracker from "@/pages/MoodTracker";
 import Goals from "@/pages/Goals";
 import DailyPlanner from "@/pages/DailyPlanner";
+import SignedOut from "@/pages/SignedOut";
 
 function VersionUpdateBanner() {
   return (
@@ -66,7 +67,7 @@ function VersionUpdateBanner() {
   );
 }
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account", "/signed-out"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -125,6 +126,7 @@ function Router() {
         <Route path="/accept-invite/:token" component={AcceptInvite} />
         <Route path="/about" component={About} />
         <Route path="/delete-account" component={DeleteAccount} />
+        <Route path="/signed-out" component={SignedOut} />
         <Route component={Landing} />
       </Switch>
     );
