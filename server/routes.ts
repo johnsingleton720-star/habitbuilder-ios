@@ -1258,6 +1258,50 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/habits/needs-adjustment", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+
+      const tier = user?.subscriptionTier;
+      const isPaid = user?.hasPaid || user?.isAdmin;
+      if (!isPaid || (tier !== 'pro' && tier !== 'premium' && !user?.isAdmin)) {
+        return res.json([]);
+      }
+
+      const userHabits = await storage.getHabits(userId);
+      const userTz = user?.timezone;
+      const now = new Date();
+      const userNow = userTz ? new Date(now.toLocaleString("en-US", { timeZone: userTz })) : now;
+      const todayStr = userNow.getFullYear() + "-" + String(userNow.getMonth() + 1).padStart(2, "0") + "-" + String(userNow.getDate()).padStart(2, "0");
+
+      const needsAdjustment = userHabits
+        .filter(h => h.setupComplete && !h.archived && !h.downgradeArchived)
+        .filter(h => {
+          const dailyPlans = (h.dailyPlans || []) as any[];
+          const pastDays = dailyPlans.filter((p: any) => p.date <= todayStr);
+          if (pastDays.length < 5) return false;
+          const hasFutureDays = dailyPlans.some((p: any) => p.date > todayStr);
+          if (!hasFutureDays) return false;
+          const activeTasks = pastDays.reduce((sum: number, p: any) => sum + (p.tasks || []).filter((t: any) => !t.skipped).length, 0);
+          const completedTasks = pastDays.reduce((sum: number, p: any) => sum + (p.tasks || []).filter((t: any) => t.completed).length, 0);
+          const rate = activeTasks > 0 ? (completedTasks / activeTasks) * 100 : 100;
+          return rate < 40;
+        })
+        .map(h => ({
+          id: h.id,
+          title: h.title,
+          customIcon: h.customIcon,
+          customColor: h.customColor,
+        }));
+
+      res.json(needsAdjustment);
+    } catch (error) {
+      console.error("Error checking plan adjustment:", error);
+      res.status(500).json({ message: "Failed to check plan adjustment" });
+    }
+  });
+
   app.get(api.habits.get.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

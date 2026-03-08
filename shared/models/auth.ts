@@ -85,6 +85,7 @@ export const users = pgTable("users", {
   lastDailyPlannerSent: varchar("last_daily_planner_sent"),
   lastGoalMilestoneSent: varchar("last_goal_milestone_sent"),
   lastHabitRemindersSent: jsonb("last_habit_reminders_sent").$type<Record<string, string>>(),
+  lastPlanAdjustNotified: varchar("last_plan_adjust_notified"),
   
   signupSource: varchar("signup_source"),
   signupUtmSource: varchar("signup_utm_source"),

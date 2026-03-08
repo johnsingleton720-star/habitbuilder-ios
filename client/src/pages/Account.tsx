@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { isNative, isIOS } from "@/lib/platform";
-import { registerNativePush } from "@/hooks/use-push-notifications";
+import { registerNativePush, registerWebPush } from "@/hooks/use-push-notifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

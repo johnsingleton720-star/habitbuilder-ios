@@ -114,23 +114,31 @@ export async function registerNativePush() {
   }
 }
 
-async function registerWebPush() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
+export async function registerWebPush(): Promise<{ success: boolean; error?: string }> {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return { success: false, error: "Push notifications are not supported in this browser" };
+  }
 
   try {
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
 
     if (!subscription) {
-      if (Notification.permission === "denied") return;
+      if (Notification.permission === "denied") {
+        return { success: false, error: "Notification permission was denied" };
+      }
 
       const permission = Notification.permission === "granted"
         ? "granted"
         : await Notification.requestPermission();
-      if (permission !== "granted") return;
+      if (permission !== "granted") {
+        return { success: false, error: "Notification permission was denied" };
+      }
 
       const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) return;
+      if (!vapidKey) {
+        return { success: false, error: "Push notification configuration is missing" };
+      }
 
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -141,7 +149,9 @@ async function registerWebPush() {
     await apiRequest("POST", "/api/push/sync", {
       subscription: subscription.toJSON(),
     });
+    return { success: true };
   } catch (err) {
     console.error("[Push] Web push setup error:", err);
+    return { success: false, error: "Failed to set up push notifications" };
   }
 }

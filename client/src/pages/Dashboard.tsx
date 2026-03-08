@@ -19,7 +19,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +88,12 @@ export default function Dashboard() {
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
     enabled: features.hasHabitStacking,
+  });
+
+  const { data: habitsNeedingAdjustment } = useQuery<{ id: number; title: string; customIcon?: string; customColor?: string }[]>({
+    queryKey: ["/api/habits/needs-adjustment"],
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user,
   });
 
   const activeHabits = habits?.filter(h => !h.archived);
@@ -376,6 +382,51 @@ export default function Dashboard() {
 
         {/* Hero Card - Level, XP, Streak at a glance */}
         <DashboardHeroCard />
+
+        {habitsNeedingAdjustment && habitsNeedingAdjustment.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Card className="border-amber-500/30 bg-gradient-to-r from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 card-modern" data-testid="card-plan-adjustment-banner">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mt-0.5">
+                    <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm" data-testid="text-plan-adjust-title">
+                      {habitsNeedingAdjustment.length === 1
+                        ? "Your plan might need adjusting"
+                        : habitsNeedingAdjustment.length + " plans might need adjusting"}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {habitsNeedingAdjustment.length === 1
+                        ? "Your completion rate for \u201c" + habitsNeedingAdjustment[0].title + "\u201d is low. The AI can redesign your plan to better fit your schedule."
+                        : "Some habits have low completion rates. The AI can redesign your plans to better fit your schedule."}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {habitsNeedingAdjustment.map(h => (
+                        <Button
+                          key={h.id}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 border-amber-300 dark:border-amber-700"
+                          onClick={() => navigate("/habits/" + h.id)}
+                          data-testid={"button-adjust-habit-" + h.id}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {h.title}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+        )}
 
         {/* Welcome Banner for new users with no habits */}
         {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && (

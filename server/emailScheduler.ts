@@ -750,6 +750,74 @@ async function processGoalMilestones() {
   }
 }
 
+async function processPlanAdjustmentAlerts() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.pushNotificationsEnabled, true),
+        or(
+          eq(users.subscriptionTier, "pro"),
+          eq(users.subscriptionTier, "premium")
+        )
+      ),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+
+      if (!isTimeMatch(localTime, "12:00")) continue;
+      if (u.lastPlanAdjustNotified === localTime.dateStr) continue;
+
+      try {
+        const userHabits = await db.query.habits.findMany({
+          where: eq(habits.userId, u.id),
+        });
+
+        const struggling = userHabits.filter(h => {
+          if (!h.setupComplete || h.archived || h.downgradeArchived) return false;
+          const dailyPlans = (h.dailyPlans || []) as any[];
+          const pastDays = dailyPlans.filter((p: any) => p.date <= localTime.dateStr);
+          if (pastDays.length < 5) return false;
+          const hasFuture = dailyPlans.some((p: any) => p.date > localTime.dateStr);
+          if (!hasFuture) return false;
+          const active = pastDays.reduce((sum: number, p: any) => sum + (p.tasks || []).filter((t: any) => !t.skipped).length, 0);
+          const completed = pastDays.reduce((sum: number, p: any) => sum + (p.tasks || []).filter((t: any) => t.completed).length, 0);
+          const rate = active > 0 ? (completed / active) * 100 : 100;
+          return rate < 40;
+        });
+
+        if (struggling.length > 0) {
+          const topHabit = struggling[0];
+          const body = struggling.length === 1
+            ? `Your plan for "${topHabit.title}" might need adjusting — tap to review`
+            : `${struggling.length} habit plans need attention. "${topHabit.title}" and others have low completion rates.`;
+
+          await sendPushToUser(u.id, {
+            title: "Plan Adjustment Available",
+            body,
+            url: `/habits/${topHabit.id}`,
+            tag: "plan-adjust",
+          });
+          pushSent++;
+          console.log(`[Scheduler] Plan adjustment push sent to user ${u.id}`);
+          await db.update(users).set({ lastPlanAdjustNotified: localTime.dateStr }).where(eq(users.id, u.id));
+        }
+      } catch (err) {
+        console.error(`[Scheduler] Failed plan adjustment alert for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Plan adjustment alerts: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing plan adjustment alerts:", error);
+  }
+}
+
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
 function runAllSchedulerTasks() {
@@ -761,6 +829,7 @@ function runAllSchedulerTasks() {
   processHabitReminders();
   processDailyPlanner();
   processGoalMilestones();
+  processPlanAdjustmentAlerts();
 }
 
 export function startEmailScheduler() {
