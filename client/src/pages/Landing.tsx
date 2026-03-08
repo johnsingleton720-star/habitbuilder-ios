@@ -881,17 +881,7 @@ export default function Landing() {
             <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 relative pr-10">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span className="text-sm font-medium text-center">
-                You've been signed out. To switch accounts on a shared device,{" "}
-                <a
-                  href="https://replit.com/logout"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline font-semibold hover:text-white/90"
-                  data-testid="link-replit-logout"
-                >
-                  sign out of Replit
-                </a>{" "}
-                first, then sign back in below.
+                You've been signed out successfully. To use a different account, sign in below.
               </span>
               <button
                 onClick={() => setShowLoggedOutBanner(false)}
