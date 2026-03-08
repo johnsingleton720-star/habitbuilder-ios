@@ -26,6 +26,155 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
+const MISS_REASONS_OPTIONS = [
+  { label: "Too busy", emoji: "⏰" },
+  { label: "Forgot", emoji: "🧠" },
+  { label: "Too tired", emoji: "😴" },
+  { label: "Schedule conflict", emoji: "📅" },
+  { label: "Didn't feel like it", emoji: "😶" },
+  { label: "Other", emoji: "💬" },
+] as const;
+
+type MissReasonOption = typeof MISS_REASONS_OPTIONS[number]["label"];
+
+const REASON_MESSAGES: Record<MissReasonOption, string> = {
+  "Too busy": "Life gets hectic. The AI can lighten the load and find pockets of time that actually fit your day.",
+  "Forgot": "Out of sight, out of mind. The AI can simplify your plan and add smaller cues to help it stick.",
+  "Too tired": "Energy matters. The AI can scale back the intensity and schedule tasks when you're typically at your best.",
+  "Schedule conflict": "Timing is everything. The AI can reschedule tasks around your existing commitments.",
+  "Didn't feel like it": "Motivation ebbs and flows. The AI can redesign tasks to feel more engaging and achievable.",
+  "Other": "The AI can take a fresh look at your plan and adapt it to work better for you.",
+};
+
+function MissedSessionsBanner({
+  habitId,
+  dailyPlans,
+  todayStr,
+  isPlanDone,
+  setupComplete,
+  isFreeUser,
+  adjustPlanMutation,
+}: {
+  habitId: number;
+  dailyPlans: any[];
+  todayStr: string;
+  isPlanDone: boolean;
+  setupComplete: boolean;
+  isFreeUser: boolean;
+  adjustPlanMutation: any;
+}) {
+  const [selectedReason, setSelectedReason] = useState<MissReasonOption | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const queryClient = useQueryClient();
+
+  if (!setupComplete || isPlanDone || dismissed) return null;
+
+  const lastAdjusted = localStorage.getItem(`habitAdjusted_${habitId}`);
+  if (lastAdjusted && Date.now() - Number(lastAdjusted) < 7 * 24 * 60 * 60 * 1000) return null;
+
+  const hasFutureDays = dailyPlans.some((p: any) => p.date > todayStr);
+  if (!hasFutureDays) return null;
+
+  const pastDaysSorted = [...dailyPlans.filter((p: any) => p.date <= todayStr)]
+    .sort((a: any, b: any) => b.date.localeCompare(a.date));
+
+  let consecutiveMissed = 0;
+  for (const plan of pastDaysSorted) {
+    const tasks = plan.tasks || [];
+    const hasActiveTasks = tasks.some((t: any) => !t.skipped);
+    if (hasActiveTasks && tasks.some((t: any) => !t.completed && !t.skipped)) {
+      consecutiveMissed++;
+    } else {
+      break;
+    }
+  }
+  if (consecutiveMissed < 2) return null;
+
+  const handleSaveReason = async (reason: MissReasonOption) => {
+    setSelectedReason(reason);
+    try {
+      await apiRequest("POST", `/api/habits/${habitId}/streak-miss-reason`, { reason });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+    } catch {}
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+      <Card className="border-amber-500/30 bg-gradient-to-r from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10" data-testid="card-adjust-plan">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mt-0.5">
+              <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              {!selectedReason ? (
+                <>
+                  <p className="font-bold text-sm" data-testid="text-missed-sessions-title">
+                    You've missed a few sessions — what's been getting in the way?
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+                    Tap a reason so the AI can suggest a better-fitting plan.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MISS_REASONS_OPTIONS.map(({ label, emoji }) => (
+                      <button
+                        key={label}
+                        onClick={() => handleSaveReason(label)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-white/60 dark:bg-amber-950/30 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors text-left"
+                        data-testid={`button-miss-reason-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                      >
+                        <span className="text-base leading-none">{emoji}</span>
+                        <span className="truncate">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold text-sm" data-testid="text-adjust-plan-title">
+                    Got it — the AI can fix that
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5 mb-3">
+                    {REASON_MESSAGES[selectedReason]}
+                  </p>
+                  {isFreeUser ? (
+                    <p className="text-xs text-muted-foreground italic">
+                      Upgrade to Pro to let the AI redesign your plan based on your feedback.
+                    </p>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => adjustPlanMutation.mutate()}
+                      disabled={adjustPlanMutation.isPending}
+                      data-testid="button-adjust-plan"
+                    >
+                      {adjustPlanMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      {adjustPlanMutation.isPending ? "Adjusting..." : "Adjust My Plan"}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setDismissed(true)}
+              className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+              aria-label="Dismiss"
+              data-testid="button-dismiss-missed-sessions"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 export default function HabitDetail() {
   usePageTitle("Habit Details", "View your habit action plan, guided sessions, and detailed progress tracking.");
   const [, params] = useRoute("/habit/:id");
@@ -616,71 +765,16 @@ export default function HabitDetail() {
           <HabitStackInfo habitId={habitId} features={features} />
         )}
 
-        {/* Smart Plan Adjustment Banner */}
-        {(() => {
-          if (!habit.setupComplete || isPlanDone || isFreeUser) return null;
-          // Suppress for 7 days after a plan was just adjusted
-          const lastAdjusted = localStorage.getItem(`habitAdjusted_${habitId}`);
-          if (lastAdjusted && Date.now() - Number(lastAdjusted) < 7 * 24 * 60 * 60 * 1000) return null;
-          const hasFutureDays = dailyPlans.some(p => p.date > todayStr);
-          if (!hasFutureDays) return null;
-          // Count consecutive missed scheduled days (most recent first)
-          const pastDays = [...dailyPlans.filter(p => p.date <= todayStr)]
-            .sort((a, b) => b.date.localeCompare(a.date));
-          let consecutiveMissed = 0;
-          for (const plan of pastDays) {
-            const tasks = plan.tasks || [];
-            const hasActiveTasks = tasks.some((t: any) => !t.skipped);
-            if (hasActiveTasks && tasks.some((t: any) => !t.completed && !t.skipped)) {
-              consecutiveMissed++;
-            } else {
-              break;
-            }
-          }
-          if (consecutiveMissed < 2) return null;
-          const pastDaysAll = dailyPlans.filter(p => p.date <= todayStr);
-          const pastActiveTasks = pastDaysAll.reduce((sum, p) => sum + p.tasks.filter((t: any) => !t.skipped).length, 0);
-          const pastCompletedTasks = pastDaysAll.reduce((sum, p) => sum + p.tasks.filter((t: any) => t.completed).length, 0);
-          const pastRate = pastActiveTasks > 0 ? (pastCompletedTasks / pastActiveTasks) * 100 : 100;
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className="border-amber-500/30 bg-gradient-to-r from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10" data-testid="card-adjust-plan">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mt-0.5">
-                      <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm" data-testid="text-adjust-plan-title">
-                        This plan doesn't seem to be fitting your schedule
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        Your completion rate is {Math.round(pastRate)}% after {pastDays.length} days. The AI can redesign your remaining days to be easier and better adapted to your patterns.
-                      </p>
-                      <Button
-                        size="sm"
-                        className="mt-3 gap-2"
-                        onClick={() => adjustPlanMutation.mutate()}
-                        disabled={adjustPlanMutation.isPending}
-                        data-testid="button-adjust-plan"
-                      >
-                        {adjustPlanMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-4 h-4" />
-                        )}
-                        {adjustPlanMutation.isPending ? "Adjusting..." : "Adjust My Plan"}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })()}
+        {/* Smart Plan Adjustment Banner — two-step: why missed → adjust */}
+        <MissedSessionsBanner
+          habitId={habitId}
+          dailyPlans={dailyPlans}
+          todayStr={todayStr}
+          isPlanDone={isPlanDone}
+          setupComplete={!!habit.setupComplete}
+          isFreeUser={isFreeUser}
+          adjustPlanMutation={adjustPlanMutation}
+        />
 
         {/* Progress Overview */}
         {habit.setupComplete && (
