@@ -11,6 +11,13 @@ async function diagnose(step: string, data?: any, error?: string) {
   } catch {}
 }
 
+async function clearBadge() {
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    await PushNotifications.removeAllDeliveredNotifications();
+  } catch {}
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const attemptedRef = useRef(false);
@@ -24,6 +31,7 @@ export function usePushNotifications() {
     if (!user.pushNotificationsEnabled) return;
 
     if (isNative() && isIOS()) {
+      clearBadge();
       if (!attemptedRef.current) {
         attemptedRef.current = true;
         registerNativePush();
