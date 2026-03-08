@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, ListChecks, HelpCircle, Clock, Calendar, CalendarDays, CheckCircle2, ArrowRight, Sparkles, RefreshCw, ChevronDown, ChevronRight, Tag } from "lucide-react";
+import { Plus, X, ListChecks, HelpCircle, Clock, Calendar, CalendarDays, CheckCircle2, ArrowRight, Sparkles, RefreshCw, ChevronDown, ChevronRight, Tag, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -58,9 +58,11 @@ export function QuickTasks() {
   const [newRecurringPattern, setNewRecurringPattern] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("today");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [addingSubtaskFor, setAddingSubtaskFor] = useState<number | null>(null);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [expandedParents, setExpandedParents] = useState<Set<number>>(new Set());
+  const [collapsedParents, setCollapsedParents] = useState<Set<number>>(new Set());
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const { celebrate, CelebrationOverlay } = useCompletionCelebration();
   const lastToggleEvent = useRef<{ clientX?: number; clientY?: number } | undefined>(undefined);
@@ -119,6 +121,7 @@ export function QuickTasks() {
       setNewIsRecurring(false);
       setNewRecurringPattern("");
       setShowDatePicker(false);
+      setShowOptions(false);
       setAddingSubtaskFor(null);
       setSubtaskTitle("");
     },
@@ -200,8 +203,10 @@ export function QuickTasks() {
     }
   };
 
+  const isParentExpanded = (id: number) => !collapsedParents.has(id);
+
   const toggleParentExpanded = (id: number) => {
-    setExpandedParents(prev => {
+    setCollapsedParents(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -236,10 +241,6 @@ export function QuickTasks() {
     return { parents, childMap };
   }, [todayDone]);
 
-  const getSubtaskCount = (taskId: number, allTasks: QuickTask[]) => {
-    return allTasks.filter(t => t.parentId === taskId).length;
-  };
-
   const formatTime12h = (time: string) => {
     const [h, m] = time.split(":").map(Number);
     const ampm = h >= 12 ? "PM" : "AM";
@@ -263,12 +264,6 @@ export function QuickTasks() {
     groups[key].push(task);
     return groups;
   }, {} as Record<string, QuickTask[]>);
-
-  const tabs: { id: TabType; label: string; count: number; icon: any; activeClasses: string; inactiveClasses: string; countClasses: string }[] = [
-    { id: "today", label: "Today", count: todayPending.length, icon: Calendar, activeClasses: "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 shadow-sm", inactiveClasses: "text-teal-600/70 dark:text-teal-400/60 hover:bg-teal-50 dark:hover:bg-teal-900/30", countClasses: "bg-teal-200/70 text-teal-800 dark:bg-teal-800/50 dark:text-teal-200" },
-    { id: "upcoming", label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays, activeClasses: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shadow-sm", inactiveClasses: "text-blue-600/70 dark:text-blue-400/60 hover:bg-blue-50 dark:hover:bg-blue-900/30", countClasses: "bg-blue-200/70 text-blue-800 dark:bg-blue-800/50 dark:text-blue-200" },
-    { id: "completed", label: "Done", count: allCompleted.length, icon: CheckCircle2, activeClasses: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 shadow-sm", inactiveClasses: "text-emerald-600/70 dark:text-emerald-400/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/30", countClasses: "bg-emerald-200/70 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-200" },
-  ];
 
   const isDateFuture = newDate > todayStr;
 
@@ -297,9 +292,13 @@ export function QuickTasks() {
           </Popover>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-3 space-y-3">
-        <div className="flex gap-1.5 p-1.5 bg-muted/40 rounded-xl" data-testid="quick-tasks-tabs">
-          {tabs.map((tab) => {
+      <CardContent className="pt-3 px-3 space-y-2">
+        <div className="flex gap-1 p-1 bg-muted/40 rounded-lg" data-testid="quick-tasks-tabs">
+          {[
+            { id: "today" as TabType, label: "Today", count: todayPending.length, icon: Calendar, active: "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 shadow-sm", inactive: "text-teal-600/70 dark:text-teal-400/60", countCls: "bg-teal-200/70 text-teal-800 dark:bg-teal-800/50 dark:text-teal-200" },
+            { id: "upcoming" as TabType, label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays, active: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shadow-sm", inactive: "text-blue-600/70 dark:text-blue-400/60", countCls: "bg-blue-200/70 text-blue-800 dark:bg-blue-800/50 dark:text-blue-200" },
+            { id: "completed" as TabType, label: "Done", count: allCompleted.length, icon: CheckCircle2, active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 shadow-sm", inactive: "text-emerald-600/70 dark:text-emerald-400/60", countCls: "bg-emerald-200/70 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-200" },
+          ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -307,17 +306,17 @@ export function QuickTasks() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1 py-2.5 px-2 rounded-lg text-sm font-semibold transition-all duration-200",
-                  isActive ? tab.activeClasses : tab.inactiveClasses
+                  "flex-1 flex items-center justify-center gap-1 py-2 px-1.5 rounded-md text-[13px] font-semibold transition-all",
+                  isActive ? tab.active : tab.inactive
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
                 {tab.count > 0 && (
                   <span className={cn(
-                    "text-xs min-w-[20px] h-[20px] flex items-center justify-center rounded-full font-bold",
-                    isActive ? tab.countClasses : "bg-muted/60 text-muted-foreground"
+                    "text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full font-bold",
+                    isActive ? tab.countCls : "bg-muted/60 text-muted-foreground"
                   )}>
                     {tab.count}
                   </span>
@@ -328,41 +327,30 @@ export function QuickTasks() {
         </div>
 
         {activeTab !== "completed" && (
-          <div className="space-y-2 p-3 rounded-xl bg-gradient-to-br from-primary/5 via-accent/3 to-secondary/10 dark:from-primary/10 dark:via-accent/5 dark:to-secondary/15 border border-primary/10 dark:border-primary/20">
-            <div className="flex gap-2">
+          <div className="space-y-2">
+            <div className="flex gap-1.5">
               <Input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={activeTab === "upcoming" ? "Schedule a future task..." : "Add a task..."}
-                className="flex-1 min-w-[120px] bg-background/80 border-muted-foreground/10 focus:bg-background"
+                className="flex-1 bg-background/80 border-muted-foreground/10 focus:bg-background h-9 text-sm"
                 disabled={createMutation.isPending}
                 data-testid="input-quick-task"
               />
-              <Select value={newPriority} onValueChange={(v) => setNewPriority(v as Priority)}>
-                <SelectTrigger className="w-[110px] bg-background/80" data-testid="select-priority">
-                  <SelectValue>
-                    <span className="flex items-center gap-1.5">
-                      <span className={cn("w-2.5 h-2.5 rounded-full", PRIORITY_CONFIG[newPriority].dotColor)} />
-                      <span className="text-xs">{PRIORITY_CONFIG[newPriority].label}</span>
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(PRIORITY_CONFIG) as [Priority, typeof PRIORITY_CONFIG[Priority]][]).map(([key, config]) => (
-                    <SelectItem key={key} value={key} data-testid={`select-priority-${key}`}>
-                      <span className="flex items-center gap-1.5">
-                        <span className={cn("w-2.5 h-2.5 rounded-full", config.dotColor)} />
-                        {config.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn("shrink-0 h-9 w-9", showOptions && "bg-muted")}
+                onClick={() => setShowOptions(!showOptions)}
+                data-testid="button-toggle-options"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+              </Button>
               <Button
                 size="icon"
                 variant="default"
-                className="shrink-0"
+                className="shrink-0 h-9 w-9"
                 onClick={handleAdd}
                 disabled={!newTitle.trim() || createMutation.isPending}
                 data-testid="button-add-quick-task"
@@ -370,73 +358,103 @@ export function QuickTasks() {
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <div className="relative flex-1 min-w-[100px]">
-                <Input
-                  type="time"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
-                  disabled={createMutation.isPending}
-                  data-testid="input-quick-task-time"
-                />
-                <Clock className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-              <div className="relative flex-1 min-w-[120px]">
-                <Input
-                  type="date"
-                  value={newDate}
-                  min={todayStr}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
-                  disabled={createMutation.isPending}
-                  data-testid="input-quick-task-date"
-                />
-                <CalendarDays className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-              {isDateFuture && (
-                <Badge variant="outline" className="text-xs h-8 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                  <ArrowRight className="w-3 h-3 mr-1" />
-                  {getRelativeDate(newDate)}
-                </Badge>
-              )}
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <div className="relative flex-1 min-w-[100px]">
-                <Input
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="Category (optional)"
-                  className="pl-7 bg-background/80 border-muted-foreground/10 text-sm h-9"
-                  disabled={createMutation.isPending}
-                  data-testid="input-quick-task-category"
-                />
-                <Tag className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={newIsRecurring}
-                  onCheckedChange={(c) => {
-                    setNewIsRecurring(!!c);
-                    if (!c) setNewRecurringPattern("");
-                  }}
-                  data-testid="checkbox-recurring"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">Recurring</span>
-              </div>
-              {newIsRecurring && (
-                <Select value={newRecurringPattern} onValueChange={setNewRecurringPattern}>
-                  <SelectTrigger className="w-[110px] bg-background/80 h-8 text-xs" data-testid="select-recurring-pattern">
-                    <SelectValue placeholder="Pattern" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily" data-testid="select-recurring-daily">Daily</SelectItem>
-                    <SelectItem value="weekdays" data-testid="select-recurring-weekdays">Weekdays</SelectItem>
-                    <SelectItem value="weekly" data-testid="select-recurring-weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+
+            {showOptions && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 p-2.5 rounded-lg bg-muted/30 border border-border/50"
+              >
+                <div className="flex gap-2 flex-wrap">
+                  <Select value={newPriority} onValueChange={(v) => setNewPriority(v as Priority)}>
+                    <SelectTrigger className="w-[100px] bg-background/80 h-8 text-xs" data-testid="select-priority">
+                      <SelectValue>
+                        <span className="flex items-center gap-1.5">
+                          <span className={cn("w-2 h-2 rounded-full", PRIORITY_CONFIG[newPriority].dotColor)} />
+                          <span>{PRIORITY_CONFIG[newPriority].label}</span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(PRIORITY_CONFIG) as [Priority, typeof PRIORITY_CONFIG[Priority]][]).map(([key, config]) => (
+                        <SelectItem key={key} value={key} data-testid={`select-priority-${key}`}>
+                          <span className="flex items-center gap-1.5">
+                            <span className={cn("w-2 h-2 rounded-full", config.dotColor)} />
+                            {config.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="relative flex-1 min-w-[80px]">
+                    <Input
+                      type="time"
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                      disabled={createMutation.isPending}
+                      data-testid="input-quick-task-time"
+                    />
+                    <Clock className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                  <div className="relative flex-1 min-w-[110px]">
+                    <Input
+                      type="date"
+                      value={newDate}
+                      min={todayStr}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                      disabled={createMutation.isPending}
+                      data-testid="input-quick-task-date"
+                    />
+                    <CalendarDays className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <div className="relative flex-1 min-w-[100px]">
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Category (optional)"
+                      className="pl-7 bg-background/80 border-muted-foreground/10 text-xs h-8"
+                      disabled={createMutation.isPending}
+                      data-testid="input-quick-task-category"
+                    />
+                    <Tag className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      checked={newIsRecurring}
+                      onCheckedChange={(c) => {
+                        setNewIsRecurring(!!c);
+                        if (!c) setNewRecurringPattern("");
+                      }}
+                      data-testid="checkbox-recurring"
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Recurring</span>
+                  </div>
+                  {newIsRecurring && (
+                    <Select value={newRecurringPattern} onValueChange={setNewRecurringPattern}>
+                      <SelectTrigger className="w-[100px] bg-background/80 h-8 text-xs" data-testid="select-recurring-pattern">
+                        <SelectValue placeholder="Pattern" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily" data-testid="select-recurring-daily">Daily</SelectItem>
+                        <SelectItem value="weekdays" data-testid="select-recurring-weekdays">Weekdays</SelectItem>
+                        <SelectItem value="weekly" data-testid="select-recurring-weekly">Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {isDateFuture && (
+                  <Badge variant="outline" className="text-xs h-6 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                    <ArrowRight className="w-3 h-3 mr-1" />
+                    {getRelativeDate(newDate)}
+                  </Badge>
+                )}
+              </motion.div>
+            )}
           </div>
         )}
 
@@ -472,7 +490,7 @@ export function QuickTasks() {
                     onDelete={(id) => deleteMutation.mutate(id)}
                     lastToggleEvent={lastToggleEvent}
                     formatTime12h={formatTime12h}
-                    expanded={expandedParents.has(task.id)}
+                    expanded={isParentExpanded(task.id)}
                     onToggleExpand={() => toggleParentExpanded(task.id)}
                     addingSubtask={addingSubtaskFor === task.id}
                     onStartAddSubtask={() => setAddingSubtaskFor(task.id)}
@@ -511,7 +529,7 @@ export function QuickTasks() {
                     onDelete={(id) => deleteMutation.mutate(id)}
                     lastToggleEvent={lastToggleEvent}
                     formatTime12h={formatTime12h}
-                    expanded={expandedParents.has(task.id)}
+                    expanded={isParentExpanded(task.id)}
                     onToggleExpand={() => toggleParentExpanded(task.id)}
                     addingSubtask={false}
                     onStartAddSubtask={() => {}}
@@ -566,12 +584,10 @@ export function QuickTasks() {
                     >
                       <div className="flex items-center gap-2 pt-2 pb-1">
                         <Badge variant="outline" className="text-xs bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50">
-                          <Calendar className="w-2.5 h-2.5 mr-1" />
                           {getRelativeDate(dateStr)}
                         </Badge>
-                        <div className="h-px flex-1 bg-border/30" />
                       </div>
-                      {tasks.filter(t => !t.parentId).map((task) => (
+                      {tasks.map((task) => (
                         <TaskItem
                           key={task.id}
                           task={task}
@@ -579,7 +595,6 @@ export function QuickTasks() {
                           onDelete={(id) => deleteMutation.mutate(id)}
                           lastToggleEvent={lastToggleEvent}
                           formatTime12h={formatTime12h}
-                          allTasks={tasks}
                         />
                       ))}
                     </motion.div>
@@ -695,7 +710,7 @@ function TaskItemWithSubtasks({
         onToggleExpand={onToggleExpand}
         onStartAddSubtask={onStartAddSubtask}
       />
-      {(expanded || !hasSubtasks) && subtasks.map((st) => (
+      {expanded && subtasks.map((st) => (
         <TaskItem
           key={st.id}
           task={st}
@@ -710,22 +725,22 @@ function TaskItemWithSubtasks({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="ml-6 pl-3 border-l-2 border-muted-foreground/10"
+          className="ml-8 pl-3 border-l-2 border-muted-foreground/10"
         >
-          <div className="flex gap-2 py-1.5">
+          <div className="flex gap-1.5 py-1.5">
             <Input
               value={subtaskTitle}
               onChange={(e) => onSubtaskTitleChange(e.target.value)}
               onKeyDown={onSubtaskKeyDown}
               placeholder="Add subtask..."
-              className="flex-1 text-sm h-9 bg-muted/30"
+              className="flex-1 text-sm h-8 bg-muted/30"
               autoFocus
               data-testid={`input-subtask-${task.id}`}
             />
-            <Button size="icon" variant="ghost" onClick={onAddSubtask} disabled={!subtaskTitle.trim()} data-testid={`button-add-subtask-${task.id}`}>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onAddSubtask} disabled={!subtaskTitle.trim()} data-testid={`button-add-subtask-${task.id}`}>
               <Plus className="w-3 h-3" />
             </Button>
-            <Button size="icon" variant="ghost" onClick={onCancelSubtask} data-testid={`button-cancel-subtask-${task.id}`}>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancelSubtask} data-testid={`button-cancel-subtask-${task.id}`}>
               <X className="w-3 h-3" />
             </Button>
           </div>
@@ -775,20 +790,18 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-start gap-2.5 group p-3 rounded-xl transition-all border",
-        isSubtask && "ml-6 pl-3 border-l-2 border-muted-foreground/10",
+        "flex items-start gap-2 group py-2 px-2.5 rounded-lg transition-all",
+        isSubtask && "ml-8 pl-2.5 border-l-2 border-muted-foreground/10",
+        !isSubtask && "border-l-[3px]",
+        !isSubtask && (task.completed ? "border-l-muted-foreground/20" : config.borderColor),
         task.completed
-          ? "bg-muted/30 border-muted/50"
-          : cn("bg-gradient-to-r", config.bgAccent, "border-border/40 hover:shadow-sm")
+          ? "bg-muted/20"
+          : "bg-card hover:bg-muted/30"
       )}
       data-testid={`quick-task-${task.id}`}
     >
-      {!isSubtask && (
-        <div className={cn("w-1.5 self-stretch rounded-full shrink-0", config.dotColor)} />
-      )}
-
       {hasSubtasks && onToggleExpand && (
-        <button onClick={onToggleExpand} className="shrink-0 text-muted-foreground" data-testid={`button-expand-${task.id}`}>
+        <button onClick={onToggleExpand} className="shrink-0 text-muted-foreground mt-0.5 p-0.5 -ml-0.5 rounded hover:bg-muted/50" data-testid={`button-expand-${task.id}`}>
           {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
       )}
@@ -802,7 +815,7 @@ function TaskItem({
           lastToggleEvent.current = { clientX: e.clientX, clientY: e.clientY };
         }}
         className={cn(
-          "transition-all",
+          "mt-0.5 shrink-0 transition-all",
           task.completed
             ? "data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
             : priority === "urgent"
@@ -817,22 +830,19 @@ function TaskItem({
       />
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-1.5">
-          <span className={cn("w-2 h-2 rounded-full shrink-0 mt-1.5", config.dotColor)} data-testid={`priority-dot-${task.id}`} />
-          <span
-            className={cn(
-              "text-[0.9rem] transition-all block break-words",
-              task.completed && "line-through text-muted-foreground/50"
-            )}
-            data-testid={`text-quick-task-${task.id}`}
-          >
-            {task.title}
-          </span>
-        </div>
+        <span
+          className={cn(
+            "text-sm leading-snug transition-all",
+            task.completed && "line-through text-muted-foreground/50"
+          )}
+          data-testid={`text-quick-task-${task.id}`}
+        >
+          {task.title}
+        </span>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {task.scheduledTime && (
             <span className={cn(
-              "text-xs flex items-center gap-0.5 px-1.5 py-0.5 rounded-md",
+              "text-[11px] flex items-center gap-0.5 px-1 py-0.5 rounded",
               task.completed
                 ? "text-muted-foreground/40"
                 : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
@@ -842,53 +852,48 @@ function TaskItem({
             </span>
           )}
           {showDate && (
-            <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
+            <span className="text-[11px] text-muted-foreground/60 flex items-center gap-0.5">
               <Calendar className="w-2.5 h-2.5" />
               {format(new Date(task.date + "T12:00:00"), "MMM d")}
             </span>
           )}
           {task.category && (
-            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", getCategoryColor(task.category))} data-testid={`category-${task.id}`}>
+            <span className={cn("text-[11px] px-1.5 py-0.5 rounded-full font-medium", getCategoryColor(task.category))} data-testid={`category-${task.id}`}>
               {task.category}
             </span>
           )}
           {task.isRecurring && task.recurringPattern && (
-            <span className="text-xs flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400" data-testid={`recurring-badge-${task.id}`}>
+            <span className="text-[11px] flex items-center gap-0.5 px-1 py-0.5 rounded bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400" data-testid={`recurring-badge-${task.id}`}>
               <RefreshCw className="w-2.5 h-2.5" />
               {RECURRING_LABELS[task.recurringPattern] || task.recurringPattern}
             </span>
           )}
           {typeof subtaskCount === "number" && subtaskCount > 0 && (
-            <span className="text-xs text-muted-foreground/60" data-testid={`subtask-count-${task.id}`}>
+            <span className="text-[11px] text-primary/60 font-medium" data-testid={`subtask-count-${task.id}`}>
               {subtaskCount} subtask{subtaskCount !== 1 ? "s" : ""}
             </span>
           )}
         </div>
       </div>
 
-      {!task.completed && !isSubtask && onStartAddSubtask && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ visibility: "visible" }}
-          onClick={onStartAddSubtask}
-          data-testid={`button-start-subtask-${task.id}`}
+      <div className="flex items-center gap-0.5 shrink-0">
+        {!task.completed && !isSubtask && onStartAddSubtask && (
+          <button
+            onClick={onStartAddSubtask}
+            className="p-1 rounded text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/50 transition-colors"
+            data-testid={`button-start-subtask-${task.id}`}
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          onClick={() => onDelete(task.id)}
+          className="p-1 rounded text-muted-foreground/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+          data-testid={`button-delete-quick-task-${task.id}`}
         >
-          <Plus className="w-3 h-3" />
-        </Button>
-      )}
-
-      <Button
-        size="icon"
-        variant="ghost"
-        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ visibility: "visible" }}
-        onClick={() => onDelete(task.id)}
-        data-testid={`button-delete-quick-task-${task.id}`}
-      >
-        <X className="w-3 h-3" />
-      </Button>
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </motion.div>
   );
 }
