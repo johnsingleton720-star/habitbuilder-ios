@@ -250,27 +250,28 @@ export function useAppTheme() {
 
   // Sync with server theme when user data loads
   useEffect(() => {
-    if (user?.colorTheme) {
+    if (!user) return;
+    if (user.colorTheme) {
       const serverTheme = APP_THEMES.find(t => t.id === user.colorTheme);
       if (serverTheme) {
         if (!serverTheme.isPremium || isPremium) {
           setCurrentTheme(user.colorTheme);
           localStorage.setItem("appColorTheme", user.colorTheme);
           applyThemeToDocument(serverTheme);
-        } else {
+        } else if (user.subscriptionTier) {
           setCurrentTheme("nature");
           localStorage.setItem("appColorTheme", "nature");
           applyThemeToDocument(APP_THEMES.find(t => t.id === "nature")!);
         }
       }
     }
-  }, [user?.colorTheme, isPremium]);
+  }, [user?.colorTheme, user?.subscriptionTier, isPremium]);
 
   // Apply theme when currentTheme changes
   useEffect(() => {
     const theme = APP_THEMES.find(t => t.id === currentTheme);
     if (theme) {
-      if (theme.isPremium && !isPremium) {
+      if (theme.isPremium && !isPremium && user?.subscriptionTier) {
         const defaultTheme = APP_THEMES.find(t => t.id === "nature")!;
         applyThemeToDocument(defaultTheme);
         setCurrentTheme("nature");
@@ -280,7 +281,7 @@ export function useAppTheme() {
         localStorage.setItem("appColorTheme", theme.id);
       }
     }
-  }, [currentTheme, isPremium]);
+  }, [currentTheme, isPremium, user?.subscriptionTier]);
 
   const setTheme = (themeId: string) => {
     const theme = APP_THEMES.find(t => t.id === themeId);
