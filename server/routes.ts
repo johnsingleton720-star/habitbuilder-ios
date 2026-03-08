@@ -535,6 +535,17 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/push/enable", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await db.update(users).set({ pushNotificationsEnabled: true, updatedAt: new Date() }).where(eq(users.id, userId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error enabling push notifications:", error);
+      res.status(500).json({ error: "Failed to enable push notifications" });
+    }
+  });
+
   app.post("/api/push/unsubscribe", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

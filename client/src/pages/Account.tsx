@@ -1401,17 +1401,22 @@ export default function Account() {
                     if (checked) {
                       try {
                         if (isNative() && isIOS()) {
-                          await registerNativePush();
+                          await apiRequest("POST", "/api/push/enable", {});
+                          registerNativePush();
                           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                           toast({ title: "Push notifications enabled" });
                         } else {
-                          if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-                            toast({ title: "Push notifications are not supported on this browser", variant: "destructive" });
+                          if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+                            await apiRequest("POST", "/api/push/enable", {});
+                            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                            toast({ title: "Push notifications enabled", description: "Browser push may not be supported — you'll still get in-app notifications" });
                             return;
                           }
                           const permission = await Notification.requestPermission();
                           if (permission !== "granted") {
-                            toast({ title: "Notification permission denied", description: "Please allow notifications in your browser settings", variant: "destructive" });
+                            await apiRequest("POST", "/api/push/enable", {});
+                            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                            toast({ title: "Push notifications enabled", description: "Browser notification permission was denied — you'll still get in-app notifications" });
                             return;
                           }
                           const registration = await navigator.serviceWorker.ready;
