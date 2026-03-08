@@ -159,12 +159,13 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   if (!isVisible || !step) return null;
 
   const padding = 8;
+  const maxSpotlightHeight = Math.floor(window.innerHeight * 0.35);
   const spotlightStyle = targetRect
     ? {
         top: targetRect.top - padding,
         left: targetRect.left - padding,
         width: targetRect.width + padding * 2,
-        height: targetRect.height + padding * 2,
+        height: Math.min(targetRect.height + padding * 2, maxSpotlightHeight),
       }
     : null;
 
@@ -174,25 +175,42 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     }
 
     const tooltipWidth = Math.min(320, window.innerWidth - 32);
+    const tooltipEstimatedHeight = 140;
     const centerX = targetRect.left + targetRect.width / 2;
+    const effectiveBottom = spotlightStyle
+      ? spotlightStyle.top + spotlightStyle.height
+      : targetRect.bottom;
+
+    let leftPos = centerX - tooltipWidth / 2;
+    leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
+
+    const spaceBelow = window.innerHeight - effectiveBottom - padding - 12;
+    const spaceAbove = (targetRect.top - padding - 12);
 
     switch (step.position) {
       case "bottom": {
-        const bottomSpace = targetRect.bottom + padding + 12;
-        let leftPos = centerX - tooltipWidth / 2;
-        leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
-        return { top: bottomSpace, left: leftPos, width: tooltipWidth };
+        if (spaceBelow >= tooltipEstimatedHeight) {
+          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
+        }
+        if (spaceAbove >= tooltipEstimatedHeight) {
+          return { bottom: window.innerHeight - (targetRect.top - padding - 12), left: leftPos, width: tooltipWidth };
+        }
+        return { bottom: 80, left: leftPos, width: tooltipWidth };
       }
       case "top": {
-        const topSpace = targetRect.top - padding - 12;
-        let leftPos = centerX - tooltipWidth / 2;
-        leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
-        return { bottom: window.innerHeight - topSpace, left: leftPos, width: tooltipWidth };
+        if (spaceAbove >= tooltipEstimatedHeight) {
+          return { bottom: window.innerHeight - (targetRect.top - padding - 12), left: leftPos, width: tooltipWidth };
+        }
+        if (spaceBelow >= tooltipEstimatedHeight) {
+          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
+        }
+        return { bottom: 80, left: leftPos, width: tooltipWidth };
       }
       default: {
-        let leftPos = centerX - tooltipWidth / 2;
-        leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
-        return { top: targetRect.bottom + padding + 12, left: leftPos, width: tooltipWidth };
+        if (spaceBelow >= tooltipEstimatedHeight) {
+          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
+        }
+        return { bottom: 80, left: leftPos, width: tooltipWidth };
       }
     }
   };
