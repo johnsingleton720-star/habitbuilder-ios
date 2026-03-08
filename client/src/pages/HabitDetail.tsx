@@ -115,7 +115,7 @@ function MissedSessionsBanner({
                   <p className="text-xs text-muted-foreground mt-0.5 mb-3">
                     Tap a reason so the AI can suggest a better-fitting plan.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1.5">
                     {MISS_REASONS_OPTIONS.map(({ label, emoji }) => (
                       <button
                         key={label}
@@ -124,7 +124,7 @@ function MissedSessionsBanner({
                         data-testid={`button-miss-reason-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
                       >
                         <span className="text-base leading-none">{emoji}</span>
-                        <span className="truncate">{label}</span>
+                        <span>{label}</span>
                       </button>
                     ))}
                   </div>

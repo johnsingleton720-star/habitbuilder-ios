@@ -420,7 +420,7 @@ export default function Dashboard() {
                             ? `"${filteredHabitsNeedingAdjustment[0].title}" — tap a reason and the AI can adapt your plan.`
                             : "Tap a reason so the AI can adapt your plans."}
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1.5">
                           {[
                             { label: "Too busy", emoji: "⏰" },
                             { label: "Forgot", emoji: "🧠" },
@@ -448,7 +448,7 @@ export default function Dashboard() {
                               data-testid={`button-dashboard-miss-reason-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
                             >
                               <span className="text-base leading-none">{emoji}</span>
-                              <span className="truncate">{label}</span>
+                              <span>{label}</span>
                             </button>
                           ))}
                         </div>
