@@ -961,7 +961,7 @@ export default function Landing() {
         )}
       </AnimatePresence>
 
-      <section className={`relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-28 md:pt-44 lg:pt-60' : 'pt-20 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
+      <section className={`relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-36 md:pt-44 lg:pt-60' : 'pt-20 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.06]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.12),transparent)]" />
         {!isMobile && (

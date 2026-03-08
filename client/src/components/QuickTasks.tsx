@@ -307,7 +307,7 @@ export function QuickTasks() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-3 px-3 rounded-lg text-sm font-semibold transition-all duration-200",
+                  "flex-1 flex items-center justify-center gap-1 py-2.5 px-2 rounded-lg text-sm font-semibold transition-all duration-200",
                   isActive ? tab.activeClasses : tab.inactiveClasses
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
