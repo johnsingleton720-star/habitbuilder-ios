@@ -92,7 +92,7 @@ cd habitbuilder
 # (MacinCloud usually has it, but check with: node --version)
 # If needed: brew install node
 
-# 4. Install project dependencies
+# 4. Install project dependencies (includes local capacitor-auth-session plugin for ephemeral login sessions)
 npm install
 
 # 5. Build the web app
@@ -101,7 +101,9 @@ npm run build
 # 6. Add the iOS platform
 npx cap add ios
 
-# 7. Sync web assets to the iOS project
+# 7. Sync web assets and native plugins to the iOS project
+# This will install the capacitor-auth-session plugin which uses ASWebAuthenticationSession
+# with ephemeral sessions so users can switch accounts without cached credentials
 npx cap sync ios
 
 # 8. Open in Xcode

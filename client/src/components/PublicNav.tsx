@@ -16,6 +16,30 @@ const AUTH_BASE_URL = 'https://habitbuilder.pro';
 
 async function openAuthFlow() {
   if (isNative()) {
+    const { isIOS } = await import("@/lib/platform");
+    if (isIOS()) {
+      try {
+        const { AuthSession } = await import('capacitor-auth-session');
+        const result = await AuthSession.start({
+          url: `${AUTH_BASE_URL}/api/login?returnTo=/api/auth/native-complete`,
+          callbackUrlScheme: 'habitbuilder',
+          preferEphemeralSession: true,
+        });
+        if (result.url && result.url.startsWith('habitbuilder://auth')) {
+          const params = new URL(result.url.replace('habitbuilder://', 'https://placeholder/'));
+          const token = params.searchParams.get('token');
+          if (token) {
+            const { apiRequest } = await import('@/lib/queryClient');
+            await apiRequest('POST', '/api/auth/exchange-token', { token });
+            window.location.href = '/';
+            return;
+          }
+        }
+      } catch (e: any) {
+        if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) return;
+        console.warn('AuthSession not available, falling back to Browser:', e);
+      }
+    }
     try {
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: `${AUTH_BASE_URL}/api/login?returnTo=/api/auth/native-complete` });
