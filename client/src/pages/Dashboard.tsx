@@ -50,6 +50,7 @@ export default function Dashboard() {
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
+  const [planAdjustDismissed, setPlanAdjustDismissed] = useState(false);
   const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(() => {
     return localStorage.getItem('welcomeBannerDismissed') === 'true';
   });
@@ -383,7 +384,7 @@ export default function Dashboard() {
         {/* Hero Card - Level, XP, Streak at a glance */}
         <DashboardHeroCard />
 
-        {habitsNeedingAdjustment && habitsNeedingAdjustment.length > 0 && (
+        {habitsNeedingAdjustment && habitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
           <motion.section
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -413,7 +414,7 @@ export default function Dashboard() {
                           size="sm"
                           variant="outline"
                           className="gap-1.5 border-amber-300 dark:border-amber-700"
-                          onClick={() => navigate("/habits/" + h.id)}
+                          onClick={() => navigate("/habit/" + h.id)}
                           data-testid={"button-adjust-habit-" + h.id}
                         >
                           <Sparkles className="w-3.5 h-3.5" />
@@ -422,6 +423,14 @@ export default function Dashboard() {
                       ))}
                     </div>
                   </div>
+                  <button
+                    onClick={() => setPlanAdjustDismissed(true)}
+                    className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                    data-testid="button-dismiss-plan-adjustment"
+                    aria-label="Dismiss"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </CardContent>
             </Card>

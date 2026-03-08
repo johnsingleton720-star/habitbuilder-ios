@@ -1529,8 +1529,25 @@ export async function registerRoutes(
         }
       }
 
+      // Only surface streak breaks after 2+ consecutive missed scheduled days
+      // so a single slip doesn't immediately prompt the user
       const breaks = userHabits
         .filter(h => h.streakBrokenAt && !h.streakBrokenDismissed && !h.archived && h.setupComplete)
+        .filter(h => {
+          const dailyPlans: any[] = h.dailyPlans || [];
+          const pastDue = dailyPlans
+            .filter((p: any) => p.date <= today)
+            .sort((a: any, b: any) => b.date.localeCompare(a.date));
+          let consecutiveMissed = 0;
+          for (const plan of pastDue) {
+            if (!plan.completed) {
+              consecutiveMissed++;
+            } else {
+              break;
+            }
+          }
+          return consecutiveMissed >= 2;
+        })
         .map(h => ({
           habitId: h.id,
           habitTitle: h.title,
