@@ -775,7 +775,7 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-center gap-2.5 group p-3 rounded-xl transition-all border",
+        "flex items-start gap-2.5 group p-3 rounded-xl transition-all border",
         isSubtask && "ml-6 pl-3 border-l-2 border-muted-foreground/10",
         task.completed
           ? "bg-muted/30 border-muted/50"
@@ -817,11 +817,11 @@ function TaskItem({
       />
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", config.dotColor)} data-testid={`priority-dot-${task.id}`} />
+        <div className="flex items-start gap-1.5">
+          <span className={cn("w-2 h-2 rounded-full shrink-0 mt-1.5", config.dotColor)} data-testid={`priority-dot-${task.id}`} />
           <span
             className={cn(
-              "text-[0.9rem] transition-all block truncate",
+              "text-[0.9rem] transition-all block break-words",
               task.completed && "line-through text-muted-foreground/50"
             )}
             data-testid={`text-quick-task-${task.id}`}
