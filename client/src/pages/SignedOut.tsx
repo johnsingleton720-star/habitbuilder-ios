@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isNative } from "@/lib/platform";
+import { isNative, isIOS } from "@/lib/platform";
 
 export default function SignedOut() {
   const [phase, setPhase] = useState<"clearing" | "done">("clearing");
 
   useEffect(() => {
-    localStorage.removeItem("appColorTheme");
-
     const root = document.documentElement;
     root.style.setProperty("--primary", "142 45% 42%");
     root.style.setProperty("--primary-foreground", "0 0% 100%");
@@ -19,17 +17,7 @@ export default function SignedOut() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleClearAndContinue = () => {
-    if (isNative()) {
-      import("@capacitor/browser").then(({ Browser }) => {
-        Browser.open({ url: "https://replit.com/logout" });
-      }).catch(() => {
-        window.open("https://replit.com/logout", "_blank");
-      });
-    } else {
-      window.open("https://replit.com/logout", "_blank");
-    }
-  };
+  const showIOSInstructions = isNative() && isIOS();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[hsl(142,45%,97%)]">
@@ -43,20 +31,26 @@ export default function SignedOut() {
         ) : (
           <>
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-            <h1 className="text-xl font-semibold text-gray-900" data-testid="text-signed-out">Signed out of Habit Builder</h1>
+            <h1 className="text-xl font-semibold text-gray-900" data-testid="text-signed-out">You've been signed out</h1>
             <p className="text-gray-500 text-sm">
-              To sign in as a different person on this device, clear your login session first, then come back here.
+              Your Habit Builder session has been cleared.
             </p>
-            <div className="space-y-3 pt-2">
-              <Button
-                onClick={handleClearAndContinue}
-                variant="outline"
-                className="w-full gap-2"
-                data-testid="button-clear-login"
-              >
-                Clear Login Session
-                <ExternalLink className="w-4 h-4" />
-              </Button>
+
+            {showIOSInstructions && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 text-left space-y-2 mt-3">
+                <p className="text-sm font-medium text-gray-900">Switching to a different account?</p>
+                <p className="text-xs text-gray-500">
+                  To fully switch accounts on this device, clear your sign-in data:
+                </p>
+                <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+                  <li>Open <span className="font-medium">Settings</span> on your device</li>
+                  <li>Go to <span className="font-medium">Safari → Clear History and Website Data</span></li>
+                  <li>Come back here and sign in with your account</li>
+                </ol>
+              </div>
+            )}
+
+            <div className="pt-2">
               <Button
                 onClick={() => { window.location.href = "/?logged_out=true"; }}
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
