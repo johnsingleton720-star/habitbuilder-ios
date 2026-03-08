@@ -256,20 +256,28 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
         exit={{ opacity: 0, scale: 0.95 }}
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         className={cn(
-          "group relative overflow-hidden rounded-3xl p-5 border-2 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer",
+          "group relative overflow-visible rounded-[1.25rem] p-6 md:p-7 border-2 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer",
           !useCustomBg && pastelClass,
           isPlanCompleted && "opacity-70"
         )}
         style={useCustomBg ? customCardBg : undefined}
         data-testid={`card-habit-${habit.id}`}
       >
+        {/* Gradient left-border accent */}
+        <div 
+          className="absolute left-0 top-3 bottom-3 w-1 rounded-full"
+          style={colorStyle 
+            ? { background: `linear-gradient(to bottom, ${colorStyle}, ${colorStyle}88)` }
+            : { background: 'linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--accent)))' }
+          }
+        />
         {/* Decorative blob */}
         <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary/5 blur-2xl" />
         
         <div className="relative flex items-start justify-between">
           <div className="flex-1">
             {/* Icon & Title Row */}
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3.5 mb-4">
               <div className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm border",
                 isPlanCompleted 
@@ -283,7 +291,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
               </div>
               <div className="flex-1">
                 <h3 className={cn(
-                  "font-display text-xl font-bold leading-tight",
+                  "font-display text-[1.35rem] font-extrabold leading-tight tracking-tight",
                   isPlanCompleted ? "text-muted-foreground line-through" : "text-foreground"
                 )}>{habit.title}</h3>
                 {isPlanCompleted && (
@@ -306,11 +314,11 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 {habit.description && (
                   <p className="text-sm text-muted-foreground/60 line-clamp-1 line-through">{habit.description}</p>
                 )}
-                <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.preventDefault()}>
+                <div className="flex items-center gap-3 flex-wrap" onClick={(e) => e.preventDefault()}>
                   <Button
                     size="sm"
                     variant="default"
-                    className="gap-1.5 rounded-xl"
+                    className="gap-2 rounded-xl px-4"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); extendPlanMutation.mutate(); }}
                     disabled={extendPlanMutation.isPending}
                     data-testid={`button-extend-card-${habit.id}`}
@@ -325,7 +333,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1.5 rounded-xl"
+                    className="gap-2 rounded-xl px-4"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveMutation.mutate(); }}
                     disabled={archiveMutation.isPending}
                     data-testid={`button-archive-card-${habit.id}`}
@@ -342,7 +350,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
             ) : (
               <>
                 {habit.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{habit.description}</p>
+                  <p className="text-[0.82rem] text-muted-foreground/75 line-clamp-2 mb-2 leading-relaxed">{habit.description}</p>
                 )}
 
                 {habit.schedule?.time && habit.schedule?.days?.length > 0 && (
@@ -365,11 +373,11 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                         )}
                       </span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-white/50 dark:bg-black/20 overflow-hidden shadow-inner">
+                    <div className="h-3 rounded-full bg-white/50 dark:bg-black/20 overflow-hidden shadow-inner">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${progressPercent}%` }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                         className={cn(
                           "h-full rounded-full",
                           isCompletedToday 
@@ -381,7 +389,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-5">
                   {isFreeUser ? (
                     <Link href="/paywall">
                       <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 px-3 py-2 rounded-lg border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-streaks">
@@ -392,8 +400,8 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                     </Link>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-orange-600 dark:text-orange-400 bg-orange-100/80 dark:bg-orange-950/50 px-3 py-1.5 rounded-full border border-orange-200/50 dark:border-orange-800/50">
-                        <Flame className="w-3.5 h-3.5 fill-current" />
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                        <Flame className="w-4 h-4 fill-current" />
                         <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
                       
@@ -407,10 +415,10 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   )}
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <Button
                     size="sm"
-                    className="gap-1.5 shadow-md shadow-primary/20 rounded-xl font-semibold"
+                    className="gap-2 shadow-md shadow-primary/20 rounded-xl font-semibold px-5"
                     onClick={handleStartClick}
                     data-testid={`button-start-${habit.id}`}
                   >

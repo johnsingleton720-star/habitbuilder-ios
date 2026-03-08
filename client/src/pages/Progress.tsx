@@ -197,9 +197,17 @@ export default function ProgressPage() {
     );
   }
 
+  const viewTabs: { key: ViewType; label: string; icon: typeof Target }[] = [
+    { key: "today", label: "Today", icon: Target },
+    { key: "yesterday", label: "Yesterday", icon: TrendingUp },
+    { key: "weekly", label: "Weekly", icon: CalendarCheck },
+    { key: "streak", label: "Streaks", icon: Flame },
+    { key: "total", label: "All-Time", icon: Trophy },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-3xl space-y-8">
         <div className="flex items-center gap-3 flex-wrap">
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
@@ -223,6 +231,29 @@ export default function ProgressPage() {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="progress-view-tabs">
+          {viewTabs.map((tab) => {
+            const isActive = view === tab.key;
+            const TabIcon = tab.icon;
+            return (
+              <Link key={tab.key} href={`/progress/${tab.key}`}>
+                <button
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                    isActive
+                      ? `${viewConfig[tab.key].bgColor} ${viewConfig[tab.key].borderColor} border shadow-sm ${viewConfig[tab.key].color}`
+                      : "text-muted-foreground hover-elevate"
+                  )}
+                  data-testid={`tab-${tab.key}`}
+                >
+                  <TabIcon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              </Link>
+            );
+          })}
         </div>
 
         {view === "today" && (
@@ -256,12 +287,12 @@ function TodayView({ stats }: { stats: { completed: number; total: number; habit
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
-      <Card className="border-blue-200/50 dark:border-blue-800/50 overflow-hidden">
+      <Card className="border-blue-200/50 dark:border-blue-800/50 overflow-hidden bg-gradient-to-br from-blue-50/50 to-cyan-50/30 dark:from-blue-950/20 dark:to-cyan-950/10">
         <div className="h-1.5 bg-gradient-to-r from-blue-500 to-cyan-500" style={{ width: `${progress}%` }} />
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <span className="text-xl font-semibold">Daily Progress</span>
             <Badge variant={progress === 100 ? "default" : "secondary"} className={progress === 100 ? "bg-gradient-to-r from-blue-500 to-cyan-500" : ""}>
               {stats.completed}/{stats.total} habits
@@ -331,9 +362,9 @@ function YesterdayView({ stats }: { stats: { completed: number; total: number; h
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
-      <Card className="border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden">
+      <Card className="border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden bg-gradient-to-br from-emerald-50/50 to-green-50/30 dark:from-emerald-950/20 dark:to-green-950/10">
         <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-green-500" style={{ width: `${progress}%` }} />
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -419,7 +450,7 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
       <div className="grid grid-cols-3 gap-3">
         {[
@@ -427,9 +458,9 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
           { icon: Clock, value: formatTime(stats.totalTime), label: "Time Spent", gradient: "from-blue-500 to-cyan-500", bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30" },
           { icon: CheckCircle2, value: stats.totalTasks, label: "Tasks Done", gradient: "from-emerald-500 to-green-500", bg: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30" },
         ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+          <motion.div key={i} initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: i * 0.1, type: "spring", stiffness: 300 }}>
             <Card className={`${stat.bg} border-0 shadow-sm overflow-hidden`}>
-              <div className={`h-0.5 bg-gradient-to-r ${stat.gradient}`} />
+              <div className={`h-1 bg-gradient-to-r ${stat.gradient}`} />
               <CardContent className="p-4 text-center">
                 <div className={`w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
                   <stat.icon className="w-5 h-5 text-white" />
@@ -538,7 +569,7 @@ function StreakView({ stats }: { stats: { bestStreak: number; currentStreak: num
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
       <div className="grid grid-cols-2 gap-4">
         <Card className="overflow-hidden border-0 shadow-md">
@@ -753,19 +784,19 @@ function WeeklyView({ habits }: { habits: any[] }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
-      <Card className="border-violet-200/50 dark:border-violet-800/50 overflow-hidden">
+      <Card className="border-violet-200/50 dark:border-violet-800/50 overflow-hidden bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10">
         <div className="h-1.5 bg-gradient-to-r from-violet-500 to-purple-500" style={{ width: `${weeklyPercent}%` }} />
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <span className="text-xl font-semibold">Weekly Progress</span>
             <Badge variant={weeklyPercent === 100 ? "default" : "secondary"} className={weeklyPercent === 100 ? "bg-gradient-to-r from-violet-500 to-purple-500" : ""}>
               {totalCompleted}/{totalScheduled} completed
             </Badge>
           </div>
           <Progress value={weeklyPercent} className="h-3 mb-2" />
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
             <span>{weeklyPercent}% complete</span>
             <span>{daysWithPerfect} perfect day{daysWithPerfect !== 1 ? 's' : ''}</span>
           </div>
@@ -773,36 +804,42 @@ function WeeklyView({ habits }: { habits: any[] }) {
       </Card>
       
       <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+        <CardContent className="p-5">
+          <h3 className="font-semibold text-sm mb-5 flex items-center gap-2">
             <CalendarCheck className="w-4 h-4 text-violet-500" />
             Day by Day
           </h3>
           <div className="grid grid-cols-7 gap-2">
             {weekDays.map((day) => (
-              <div key={day.dateStr} className="text-center">
+              <motion.div
+                key={day.dateStr}
+                className="text-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 * weekDays.indexOf(day), type: "spring", stiffness: 300 }}
+              >
                 <span className="text-xs text-muted-foreground font-medium">{day.dayLetter}</span>
                 <div className={cn(
-                  "w-10 h-10 mx-auto mt-1 rounded-xl flex items-center justify-center text-sm font-bold transition-all",
+                  "w-11 h-11 mx-auto mt-1.5 rounded-full flex items-center justify-center text-sm font-bold transition-all",
                   day.isToday && "ring-2 ring-violet-500 ring-offset-2 ring-offset-background",
                   day.allComplete
                     ? "bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/20"
                     : day.isFuture
                       ? "bg-muted/30 text-muted-foreground/50"
                       : day.completed > 0
-                        ? "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300"
+                        ? "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50"
                         : day.total > 0
-                          ? "bg-red-50 dark:bg-red-950/20 text-red-400"
+                          ? "bg-red-50 dark:bg-red-950/20 text-red-400 border border-red-200/30 dark:border-red-800/30"
                           : "bg-muted/30 text-muted-foreground/50"
                 )}>
                   {day.dayNum}
                 </div>
                 {!day.isFuture && day.total > 0 && (
-                  <span className="text-xs text-muted-foreground mt-1 block">
+                  <span className="text-xs text-muted-foreground mt-1.5 block">
                     {day.completed}/{day.total}
                   </span>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
         </CardContent>
@@ -819,7 +856,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
             .map((habit: any, i: number) => {
               const pct = Math.round((habit.weekCompleted / habit.weekScheduled) * 100);
               return (
-                <motion.div key={habit.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                <motion.div key={habit.id} initial={{ opacity: 0, x: -10, y: 5 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ delay: i * 0.08, type: "spring", stiffness: 200 }}>
                   <Link href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                     <Card className="hover:border-violet-300/50 hover:shadow-md transition-all cursor-pointer">
                       <CardContent className="p-4">

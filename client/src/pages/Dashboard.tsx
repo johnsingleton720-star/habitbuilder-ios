@@ -139,7 +139,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-8">
         
         {/* Header */}
         <header className="flex items-center justify-between">
@@ -483,25 +483,26 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Today's Focus - What to do NOW */}
-        <div data-tour="daily-action-center">
-        {habits && habits.length > 0 && (
+        <div data-tour="daily-action-center" className="section-group space-y-6">
+          <h2 className="section-title" data-testid="text-section-daily-focus">Daily Focus</h2>
+          {habits && habits.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <TodaysFocus habits={activeHabits || []} stacks={habitStacks} />
+            </motion.section>
+          )}
+
+          {/* Quick Tasks */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
           >
-            <TodaysFocus habits={activeHabits || []} stacks={habitStacks} />
+            <QuickTasks />
           </motion.section>
-        )}
-
-        {/* Quick Tasks */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-        >
-          <QuickTasks />
-        </motion.section>
         </div>
 
         {/* Daily Journal Card */}
@@ -559,11 +560,12 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="feature-links">
+          <h2 className="section-title mb-5" data-testid="text-section-explore">Explore</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-sm h-full" data-testid="card-focus-timer-link">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
                     <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
@@ -576,8 +578,8 @@ export default function Dashboard() {
 
             <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-sm h-full" data-testid="card-mood-tracker-link">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
@@ -590,8 +592,8 @@ export default function Dashboard() {
 
             <Link href={features.hasGoals ? "/goals" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-sm h-full" data-testid="card-goals-link">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
                     <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                   </div>
                   <div>
@@ -604,8 +606,8 @@ export default function Dashboard() {
 
             <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-sm h-full" data-testid="card-planner-link">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
+                <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                   </div>
                   <div>
@@ -629,26 +631,27 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {/* Achievements (compact) - Show progress before challenges */}
-        <div data-tour="achievements-section">
-        {habits && habits.length > 0 && (
+        {/* Achievements & Gamification Group */}
+        <div data-tour="achievements-section" className="section-group section-group-accent space-y-6">
+          <h2 className="section-title" data-testid="text-section-achievements">Achievements & Rewards</h2>
+          {habits && habits.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+            >
+              <AchievementsDisplay compact />
+            </motion.section>
+          )}
+
+          {/* Gamification - XP, Levels, Daily Challenges */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <AchievementsDisplay compact />
+            <GamificationDisplay />
           </motion.section>
-        )}
-
-        {/* Gamification - XP, Levels, Daily Challenges */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <GamificationDisplay />
-        </motion.section>
         </div>
 
         {/* Mood Check-in */}
@@ -661,14 +664,14 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}
-        <section id="habits-section" className="space-y-4">
+        <section id="habits-section" className="space-y-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <button
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
               data-testid="button-toggle-habits-view"
             >
-              <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
+              <h2 className="section-title flex items-center gap-2">
                 Your Habits
                 <span className="bg-secondary text-secondary-foreground text-sm px-2 py-0.5 rounded-full">
                   {activeHabits?.length || 0}

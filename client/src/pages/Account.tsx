@@ -634,7 +634,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1328,9 +1328,9 @@ export default function Account() {
                 Choose which emails you'd like to receive
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-0.5">
+            <CardContent className="space-y-0">
+              <div className="flex items-center justify-between gap-4 py-4">
+                <div className="space-y-1">
                   <Label className="text-base font-medium" data-testid="label-daily-reminder">Daily Morning Reminders</Label>
                   <p className="text-sm text-muted-foreground">Get a daily nudge with your tasks and streak info</p>
                 </div>
@@ -1349,8 +1349,9 @@ export default function Account() {
                   data-testid="switch-daily-reminder"
                 />
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-0.5">
+              <div className="border-t border-border/50" />
+              <div className="flex items-center justify-between gap-4 py-4">
+                <div className="space-y-1">
                   <Label className="text-base font-medium" data-testid="label-weekly-digest">Weekly Progress Digest</Label>
                   <p className="text-sm text-muted-foreground">Receive a Sunday summary of your progress</p>
                 </div>
@@ -1389,8 +1390,8 @@ export default function Account() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-0.5">
+              <div className="flex items-center justify-between gap-4 py-1">
+                <div className="space-y-1">
                   <Label className="text-base font-medium" data-testid="label-push-notifications">Enable Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">Receive habit reminders even when the app is closed</p>
                 </div>
@@ -1466,9 +1467,9 @@ export default function Account() {
                       { key: "pushGoalMilestones", label: "Goal Milestones", description: "Celebrate when you hit goal milestones", timeKey: null, timeDefault: null, timeLabel: null },
                       { key: "pushDailyPlanner", label: "Daily Planner", description: "Reminders about your planned tasks", timeKey: "dailyPlannerTime", timeDefault: "07:00", timeLabel: "Planner summary time" },
                     ].map(({ key, label, description, timeKey, timeDefault, timeLabel }) => (
-                      <div key={key} className="space-y-2">
+                      <div key={key} className="space-y-2 py-1">
                         <div className="flex items-center justify-between gap-4">
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             <Label className="text-base font-medium" data-testid={`label-${key}`}>{label}</Label>
                             <p className="text-sm text-muted-foreground">{description}</p>
                           </div>
@@ -1641,7 +1642,7 @@ export default function Account() {
             <CardHeader>
               <CardTitle>Account Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               <Button
                 variant="outline"
                 className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
