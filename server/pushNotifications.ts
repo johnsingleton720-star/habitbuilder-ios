@@ -31,15 +31,34 @@ function isApnsConfigured(): boolean {
 let apnsJwtToken: string | null = null;
 let apnsJwtIssuedAt = 0;
 
+function normalizeP8Key(raw: string): string {
+  let key = raw.replace(/\\n/g, "\n").trim();
+
+  const lines = key.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  const headerIdx = lines.findIndex(l => l === "-----BEGIN PRIVATE KEY-----");
+  const footerIdx = lines.findIndex(l => l === "-----END PRIVATE KEY-----");
+
+  if (headerIdx >= 0 && footerIdx > headerIdx) {
+    const base64Lines = lines.slice(headerIdx + 1, footerIdx);
+    key = "-----BEGIN PRIVATE KEY-----\n" + base64Lines.join("\n") + "\n-----END PRIVATE KEY-----";
+  } else {
+    const base64 = lines.join("").replace(/[^A-Za-z0-9+/=]/g, "");
+    key = "-----BEGIN PRIVATE KEY-----\n" + base64 + "\n-----END PRIVATE KEY-----";
+  }
+
+  return key;
+}
+
 function getApnsJwt(): string {
   const now = Math.floor(Date.now() / 1000);
   if (apnsJwtToken && now - apnsJwtIssuedAt < 3000) {
     return apnsJwtToken;
   }
 
+  const signingKey = normalizeP8Key(APNS_KEY_P8!);
   apnsJwtToken = jwt.sign(
     { iss: APNS_TEAM_ID, iat: now },
-    APNS_KEY_P8!.replace(/\\n/g, "\n"),
+    signingKey,
     { algorithm: "ES256", header: { alg: "ES256", kid: APNS_KEY_ID! } }
   );
   apnsJwtIssuedAt = now;
