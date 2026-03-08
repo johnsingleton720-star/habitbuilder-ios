@@ -767,6 +767,14 @@ export default function Landing() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [topBannerDismissed, setTopBannerDismissed] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showLoggedOutBanner, setShowLoggedOutBanner] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logged_out") === "true") {
+      window.history.replaceState({}, "", window.location.pathname);
+      return true;
+    }
+    return false;
+  });
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimate = !isMobile && !prefersReducedMotion;
@@ -859,6 +867,43 @@ export default function Landing() {
         { name: "Home", url: "https://habitbuilder.pro/" }
       ]} />
       <PublicNav />
+
+      <AnimatePresence>
+        {showLoggedOutBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-[56px] md:top-[72px] left-0 right-0 z-50 bg-emerald-600 text-white shadow-md"
+            data-testid="banner-logged-out"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 relative pr-10">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-medium text-center">
+                You've been signed out. To switch accounts on a shared device,{" "}
+                <a
+                  href="https://replit.com/logout"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-semibold hover:text-white/90"
+                  data-testid="link-replit-logout"
+                >
+                  sign out of Replit
+                </a>{" "}
+                first, then sign back in below.
+              </span>
+              <button
+                onClick={() => setShowLoggedOutBanner(false)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/20 transition-colors"
+                data-testid="button-dismiss-logged-out"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <LoginTransitionDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
       <StickyMobileCTA onClick={scrollToLogin} />
