@@ -19,7 +19,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
+import { useToast } from "@/hooks/use-toast";
 import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,6 +56,8 @@ export default function Dashboard() {
     localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
   );
   const [adjustBannerReason, setAdjustBannerReason] = useState<string | null>(null);
+  const [adjustingHabitId, setAdjustingHabitId] = useState<number | null>(null);
+  const [adjustSuccessMap, setAdjustSuccessMap] = useState<Record<number, string>>({});
   const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(() => {
     return localStorage.getItem('welcomeBannerDismissed') === 'true';
   });
@@ -63,6 +66,7 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const { features, isFreeUser } = useSubscription();
   const queryClient = useQueryClient();
 
@@ -466,20 +470,72 @@ export default function Dashboard() {
                           {adjustBannerReason === "Didn't feel like it" && "The AI can redesign tasks to feel more engaging and easier to start."}
                           {adjustBannerReason === "Other" && "The AI can take a fresh look and adapt your plan to work better for you."}
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          {filteredHabitsNeedingAdjustment.map(h => (
-                            <Button
-                              key={h.id}
-                              size="sm"
-                              variant="outline"
-                              className="gap-1.5 border-amber-300 dark:border-amber-700"
-                              onClick={() => navigate("/habit/" + h.id)}
-                              data-testid={"button-adjust-habit-" + h.id}
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              {h.title}
-                            </Button>
-                          ))}
+                        <div className="flex flex-col gap-2">
+                          {filteredHabitsNeedingAdjustment.map(h => {
+                            const successMsg = adjustSuccessMap[h.id];
+                            if (successMsg) {
+                              return (
+                                <div key={h.id} className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400" data-testid={`text-adjust-success-${h.id}`}>
+                                    <Check className="w-4 h-4 flex-shrink-0" />
+                                    Plan adjusted for "{h.title}"
+                                  </div>
+                                  {successMsg && (
+                                    <p className="text-xs text-muted-foreground pl-6">{successMsg}</p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1.5 ml-6"
+                                    onClick={() => navigate("/habit/" + h.id)}
+                                    data-testid={`button-view-adjusted-plan-${h.id}`}
+                                  >
+                                    View Updated Plan
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              );
+                            }
+                            return (
+                              <Button
+                                key={h.id}
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 border-amber-300 dark:border-amber-700 self-start"
+                                disabled={adjustingHabitId === h.id}
+                                onClick={async () => {
+                                  setAdjustingHabitId(h.id);
+                                  try {
+                                    const res = await fetch(`/api/habits/${h.id}/adjust-plan`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      credentials: "include",
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) throw new Error(data.message || "Failed");
+                                    const summary = data.adjustmentSummary || "";
+                                    localStorage.setItem(`habitAdjusted_${h.id}`, Date.now().toString());
+                                    localStorage.setItem(`habitAdjustedSummary_${h.id}`, summary);
+                                    setAdjustSuccessMap(prev => ({ ...prev, [h.id]: summary }));
+                                    queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+                                    queryClient.invalidateQueries({ queryKey: ["/api/habits/needs-adjustment"] });
+                                  } catch {
+                                    toast({ title: "Adjustment failed", description: "Please try from the habit page.", variant: "destructive" });
+                                  } finally {
+                                    setAdjustingHabitId(null);
+                                  }
+                                }}
+                                data-testid={"button-adjust-habit-" + h.id}
+                              >
+                                {adjustingHabitId === h.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                )}
+                                {adjustingHabitId === h.id ? "Adjusting…" : `Adjust "${h.title}"`}
+                              </Button>
+                            );
+                          })}
                         </div>
                       </>
                     )}

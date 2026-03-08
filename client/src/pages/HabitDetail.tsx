@@ -26,6 +26,44 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
+function RecentlyAdjustedBanner({ habitId, summary }: { habitId: number; summary: string | null }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+      <Card className="border-emerald-500/40 bg-gradient-to-r from-emerald-50/60 to-teal-50/40 dark:from-emerald-950/20 dark:to-teal-950/10" data-testid="card-recently-adjusted">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mt-0.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-emerald-800 dark:text-emerald-300" data-testid="text-recently-adjusted">
+                Your plan was recently adjusted
+              </p>
+              {summary && (
+                <p className="text-xs text-muted-foreground mt-0.5">{summary}</p>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setDismissed(true);
+                localStorage.removeItem(`habitAdjusted_${habitId}`);
+                localStorage.removeItem(`habitAdjustedSummary_${habitId}`);
+              }}
+              className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Dismiss"
+              data-testid="button-dismiss-recently-adjusted"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 const MISS_REASONS_OPTIONS = [
   { label: "Too busy", emoji: "⏰" },
   { label: "Forgot", emoji: "🧠" },
@@ -54,6 +92,7 @@ function MissedSessionsBanner({
   setupComplete,
   isFreeUser,
   adjustPlanMutation,
+  missReasons,
 }: {
   habitId: number;
   dailyPlans: any[];
@@ -62,8 +101,12 @@ function MissedSessionsBanner({
   setupComplete: boolean;
   isFreeUser: boolean;
   adjustPlanMutation: any;
+  missReasons?: { reason: string; date: string }[];
 }) {
-  const [selectedReason, setSelectedReason] = useState<MissReasonOption | null>(null);
+  const todayReasonEntry = missReasons?.find(r => r.date === todayStr);
+  const [selectedReason, setSelectedReason] = useState<MissReasonOption | null>(
+    () => (todayReasonEntry ? todayReasonEntry.reason as MissReasonOption : null)
+  );
   const [dismissed, setDismissed] = useState(false);
   const queryClient = useQueryClient();
 
@@ -291,6 +334,7 @@ export default function HabitDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/needs-adjustment"] });
       localStorage.setItem(`habitAdjusted_${habitId}`, Date.now().toString());
+      localStorage.setItem(`habitAdjustedSummary_${habitId}`, data.adjustmentSummary || "");
       setSelectedDay(null);
       toast({
         title: "Plan adjusted",
@@ -765,6 +809,17 @@ export default function HabitDetail() {
           <HabitStackInfo habitId={habitId} features={features} />
         )}
 
+        {/* Recently Adjusted confirmation banner */}
+        {(() => {
+          const lastAdjustedTs = localStorage.getItem(`habitAdjusted_${habitId}`);
+          if (!lastAdjustedTs) return null;
+          if (Date.now() - Number(lastAdjustedTs) > 24 * 60 * 60 * 1000) return null;
+          const summary = localStorage.getItem(`habitAdjustedSummary_${habitId}`);
+          return (
+            <RecentlyAdjustedBanner habitId={habitId} summary={summary} />
+          );
+        })()}
+
         {/* Smart Plan Adjustment Banner — two-step: why missed → adjust */}
         <MissedSessionsBanner
           habitId={habitId}
@@ -774,6 +829,7 @@ export default function HabitDetail() {
           setupComplete={!!habit.setupComplete}
           isFreeUser={isFreeUser}
           adjustPlanMutation={adjustPlanMutation}
+          missReasons={(habit.missReasons as { reason: string; date: string }[] | null) ?? []}
         />
 
         {/* Progress Overview */}
