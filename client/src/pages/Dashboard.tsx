@@ -98,6 +98,13 @@ export default function Dashboard() {
   });
 
   const activeHabits = habits?.filter(h => !h.archived);
+
+  // Filter out habits that were recently adjusted (suppressed for 7 days after adjustment)
+  const filteredHabitsNeedingAdjustment = habitsNeedingAdjustment?.filter(h => {
+    const lastAdjusted = localStorage.getItem(`habitAdjusted_${h.id}`);
+    if (!lastAdjusted) return true;
+    return Date.now() - Number(lastAdjusted) >= 7 * 24 * 60 * 60 * 1000;
+  });
   
   const handleSelectTemplate = (template: HabitTemplate) => {
     setSelectedTemplate(template);
@@ -384,7 +391,7 @@ export default function Dashboard() {
         {/* Hero Card - Level, XP, Streak at a glance */}
         <DashboardHeroCard />
 
-        {habitsNeedingAdjustment && habitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
+        {filteredHabitsNeedingAdjustment && filteredHabitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
           <motion.section
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -398,17 +405,17 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm" data-testid="text-plan-adjust-title">
-                      {habitsNeedingAdjustment.length === 1
+                      {filteredHabitsNeedingAdjustment.length === 1
                         ? "Your plan might need adjusting"
-                        : habitsNeedingAdjustment.length + " plans might need adjusting"}
+                        : filteredHabitsNeedingAdjustment.length + " plans might need adjusting"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      {habitsNeedingAdjustment.length === 1
-                        ? "Your completion rate for \u201c" + habitsNeedingAdjustment[0].title + "\u201d is low. The AI can redesign your plan to better fit your schedule."
+                      {filteredHabitsNeedingAdjustment.length === 1
+                        ? "Your completion rate for \u201c" + filteredHabitsNeedingAdjustment[0].title + "\u201d is low. The AI can redesign your plan to better fit your schedule."
                         : "Some habits have low completion rates. The AI can redesign your plans to better fit your schedule."}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {habitsNeedingAdjustment.map(h => (
+                      {filteredHabitsNeedingAdjustment.map(h => (
                         <Button
                           key={h.id}
                           size="sm"

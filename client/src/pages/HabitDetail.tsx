@@ -140,6 +140,8 @@ export default function HabitDetail() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/needs-adjustment"] });
+      localStorage.setItem(`habitAdjusted_${habitId}`, Date.now().toString());
       setSelectedDay(null);
       toast({
         title: "Plan adjusted",
@@ -617,14 +619,29 @@ export default function HabitDetail() {
         {/* Smart Plan Adjustment Banner */}
         {(() => {
           if (!habit.setupComplete || isPlanDone || isFreeUser) return null;
-          const pastDays = dailyPlans.filter(p => p.date <= todayStr);
-          if (pastDays.length < 5) return null;
-          const pastActiveTasks = pastDays.reduce((sum, p) => sum + p.tasks.filter(t => !t.skipped).length, 0);
-          const pastCompletedTasks = pastDays.reduce((sum, p) => sum + p.tasks.filter(t => t.completed).length, 0);
-          const pastRate = pastActiveTasks > 0 ? (pastCompletedTasks / pastActiveTasks) * 100 : 100;
-          if (pastRate >= 40) return null;
+          // Suppress for 7 days after a plan was just adjusted
+          const lastAdjusted = localStorage.getItem(`habitAdjusted_${habitId}`);
+          if (lastAdjusted && Date.now() - Number(lastAdjusted) < 7 * 24 * 60 * 60 * 1000) return null;
           const hasFutureDays = dailyPlans.some(p => p.date > todayStr);
           if (!hasFutureDays) return null;
+          // Count consecutive missed scheduled days (most recent first)
+          const pastDays = [...dailyPlans.filter(p => p.date <= todayStr)]
+            .sort((a, b) => b.date.localeCompare(a.date));
+          let consecutiveMissed = 0;
+          for (const plan of pastDays) {
+            const tasks = plan.tasks || [];
+            const hasActiveTasks = tasks.some((t: any) => !t.skipped);
+            if (hasActiveTasks && tasks.some((t: any) => !t.completed && !t.skipped)) {
+              consecutiveMissed++;
+            } else {
+              break;
+            }
+          }
+          if (consecutiveMissed < 2) return null;
+          const pastDaysAll = dailyPlans.filter(p => p.date <= todayStr);
+          const pastActiveTasks = pastDaysAll.reduce((sum, p) => sum + p.tasks.filter((t: any) => !t.skipped).length, 0);
+          const pastCompletedTasks = pastDaysAll.reduce((sum, p) => sum + p.tasks.filter((t: any) => t.completed).length, 0);
+          const pastRate = pastActiveTasks > 0 ? (pastCompletedTasks / pastActiveTasks) * 100 : 100;
           return (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
