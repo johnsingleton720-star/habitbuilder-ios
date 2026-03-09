@@ -107,12 +107,7 @@ export default function Dashboard() {
 
   const activeHabits = habits?.filter(h => !h.archived);
 
-  // Filter out habits that were recently adjusted (suppressed for 7 days after adjustment)
-  const filteredHabitsNeedingAdjustment = habitsNeedingAdjustment?.filter(h => {
-    const lastAdjusted = localStorage.getItem(`habitAdjusted_${h.id}`);
-    if (!lastAdjusted) return true;
-    return Date.now() - Number(lastAdjusted) >= 7 * 24 * 60 * 60 * 1000;
-  });
+  const filteredHabitsNeedingAdjustment = habitsNeedingAdjustment;
   
   const handleSelectTemplate = (template: HabitTemplate) => {
     setSelectedTemplate(template);
@@ -514,8 +509,6 @@ export default function Dashboard() {
                                     const data = await res.json();
                                     if (!res.ok) throw new Error(data.message || "Failed");
                                     const summary = data.adjustmentSummary || "";
-                                    localStorage.setItem(`habitAdjusted_${h.id}`, Date.now().toString());
-                                    localStorage.setItem(`habitAdjustedSummary_${h.id}`, summary);
                                     setAdjustSuccessMap(prev => ({ ...prev, [h.id]: summary }));
                                     queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
                                     queryClient.invalidateQueries({ queryKey: ["/api/habits/needs-adjustment"] });

@@ -1286,9 +1286,13 @@ export async function registerRoutes(
       const userNow = userTz ? new Date(now.toLocaleString("en-US", { timeZone: userTz })) : now;
       const todayStr = userNow.getFullYear() + "-" + String(userNow.getMonth() + 1).padStart(2, "0") + "-" + String(userNow.getDate()).padStart(2, "0");
 
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
       const needsAdjustment = userHabits
         .filter(h => h.setupComplete && !h.archived && !h.downgradeArchived)
         .filter(h => {
+          // Server-side suppression: skip if plan was adjusted within the last 7 days
+          if (h.lastAdjustedAt && new Date(h.lastAdjustedAt) > sevenDaysAgo) return false;
           const dailyPlans = (h.dailyPlans || []) as any[];
           const pastDays = dailyPlans.filter((p: any) => p.date <= todayStr);
           if (pastDays.length < 5) return false;
@@ -1310,6 +1314,77 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error checking plan adjustment:", error);
       res.status(500).json({ message: "Failed to check plan adjustment" });
+    }
+  });
+
+  // IMPORTANT: This must be registered BEFORE app.get(api.habits.get.path) which matches /api/habits/:id
+  // Otherwise Express would treat "streak-breaks" as an :id parameter
+  app.get("/api/habits/streak-breaks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const dbUser = await storage.getUser(userId);
+      const userTz = dbUser?.timezone || "UTC";
+      const today = getUserToday(userTz);
+      const userHabits = await storage.getHabits(userId);
+
+      for (const habit of userHabits) {
+        if (habit.archived || !habit.setupComplete) continue;
+        const storedStreak = habit.currentStreak || 0;
+        if (storedStreak > 0) {
+          const dailyPlans = habit.dailyPlans || [];
+          let actualStreak = 0;
+          const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+          for (const plan of sorted) {
+            if (plan.completed) {
+              actualStreak++;
+            } else if (plan.date <= today) {
+              break;
+            }
+          }
+          if (actualStreak === 0 && storedStreak > 0) {
+            await storage.updateHabit(habit.id, userId, {
+              currentStreak: 0,
+              previousStreak: storedStreak,
+              streakBrokenAt: today,
+              streakBrokenDismissed: false,
+            });
+            habit.currentStreak = 0;
+            habit.previousStreak = storedStreak;
+            habit.streakBrokenAt = today;
+            habit.streakBrokenDismissed = false;
+          }
+        }
+      }
+
+      // Only surface streak breaks after 2+ consecutive missed scheduled days
+      // so a single slip doesn't immediately prompt the user
+      const breaks = userHabits
+        .filter(h => h.streakBrokenAt && !h.streakBrokenDismissed && !h.archived && h.setupComplete)
+        .filter(h => {
+          const dailyPlans: any[] = h.dailyPlans || [];
+          const pastDue = dailyPlans
+            .filter((p: any) => p.date <= today)
+            .sort((a: any, b: any) => b.date.localeCompare(a.date));
+          let consecutiveMissed = 0;
+          for (const plan of pastDue) {
+            if (!plan.completed) {
+              consecutiveMissed++;
+            } else {
+              break;
+            }
+          }
+          return consecutiveMissed >= 2;
+        })
+        .map(h => ({
+          habitId: h.id,
+          habitTitle: h.title,
+          previousStreak: h.previousStreak || 0,
+          brokenAt: h.streakBrokenAt,
+        }));
+      res.json(breaks);
+    } catch (error) {
+      console.error("Error fetching streak breaks:", error);
+      res.status(500).json({ error: "Failed to fetch streak breaks" });
     }
   });
 
@@ -1488,76 +1563,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching miss reasons:", error);
       res.status(500).json({ error: "Failed to fetch miss reasons" });
-    }
-  });
-
-  // Server-side streak break detection endpoints
-  app.get("/api/habits/streak-breaks", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user!.claims.sub;
-      const dbUser = await storage.getUser(userId);
-      const userTz = dbUser?.timezone || "UTC";
-      const today = getUserToday(userTz);
-      const userHabits = await storage.getHabits(userId);
-
-      for (const habit of userHabits) {
-        if (habit.archived || !habit.setupComplete) continue;
-        const storedStreak = habit.currentStreak || 0;
-        if (storedStreak > 0) {
-          const dailyPlans = habit.dailyPlans || [];
-          let actualStreak = 0;
-          const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
-          for (const plan of sorted) {
-            if (plan.completed) {
-              actualStreak++;
-            } else if (plan.date <= today) {
-              break;
-            }
-          }
-          if (actualStreak === 0 && storedStreak > 0) {
-            await storage.updateHabit(habit.id, userId, {
-              currentStreak: 0,
-              previousStreak: storedStreak,
-              streakBrokenAt: today,
-              streakBrokenDismissed: false,
-            });
-            habit.currentStreak = 0;
-            habit.previousStreak = storedStreak;
-            habit.streakBrokenAt = today;
-            habit.streakBrokenDismissed = false;
-          }
-        }
-      }
-
-      // Only surface streak breaks after 2+ consecutive missed scheduled days
-      // so a single slip doesn't immediately prompt the user
-      const breaks = userHabits
-        .filter(h => h.streakBrokenAt && !h.streakBrokenDismissed && !h.archived && h.setupComplete)
-        .filter(h => {
-          const dailyPlans: any[] = h.dailyPlans || [];
-          const pastDue = dailyPlans
-            .filter((p: any) => p.date <= today)
-            .sort((a: any, b: any) => b.date.localeCompare(a.date));
-          let consecutiveMissed = 0;
-          for (const plan of pastDue) {
-            if (!plan.completed) {
-              consecutiveMissed++;
-            } else {
-              break;
-            }
-          }
-          return consecutiveMissed >= 2;
-        })
-        .map(h => ({
-          habitId: h.id,
-          habitTitle: h.title,
-          previousStreak: h.previousStreak || 0,
-          brokenAt: h.streakBrokenAt,
-        }));
-      res.json(breaks);
-    } catch (error) {
-      console.error("Error fetching streak breaks:", error);
-      res.status(500).json({ error: "Failed to fetch streak breaks" });
     }
   });
 
@@ -4073,6 +4078,7 @@ REQUIREMENTS:
           planEndDate: endDate.toISOString().split('T')[0],
           dailyPlans: fixedDailyPlans,
           aiContext: weekData.aiContext || habit.aiContext,
+          lastAdjustedAt: new Date(),
         });
 
         res.json({ success: true, dailyPlans: fixedDailyPlans });
@@ -4170,6 +4176,7 @@ REQUIREMENTS:
         planEndDate: endDate.toISOString().split('T')[0],
         dailyPlans: fixedDailyPlans,
         aiContext: planData.aiContext || habit.aiContext,
+        lastAdjustedAt: new Date(),
       });
 
       res.json({ success: true, dailyPlans: fixedDailyPlans });
@@ -4380,6 +4387,7 @@ REQUIREMENTS:
       await storage.updateHabit(habitId, userId, {
         dailyPlans: newDailyPlans,
         aiContext: adjustedData.aiContext || habit.aiContext,
+        lastAdjustedAt: new Date(),
       });
 
       res.json({

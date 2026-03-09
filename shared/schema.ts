@@ -134,7 +134,10 @@ export const habits = pgTable("habits", {
   
   // Missed-day reflection reasons
   missReasons: jsonb("miss_reasons").$type<{ reason: string; date: string }[]>().default([]),
-  
+
+  // Plan adjustment tracking (server-side suppression)
+  lastAdjustedAt: timestamp("last_adjusted_at"),
+
   // Archiving
   archived: boolean("archived").default(false),
   downgradeArchived: boolean("downgrade_archived").default(false),
