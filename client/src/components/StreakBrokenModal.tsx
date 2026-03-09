@@ -117,7 +117,7 @@ export function StreakBrokenModal({
               data-testid="button-start-fresh"
             >
               <RefreshCw className="w-4 h-4" />
-              Start Fresh Today
+              Restart My Plan
             </Button>
             <Button 
               variant="ghost" 

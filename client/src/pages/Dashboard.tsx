@@ -150,7 +150,7 @@ export default function Dashboard() {
       } catch (err) {
         console.error("Failed to save miss reason:", err);
       }
-      navigate(`/habit/${brokenStreak.habitId}`);
+      navigate(`/habit/${brokenStreak.habitId}?fromStreakBreak=true`);
     }
   };
 
