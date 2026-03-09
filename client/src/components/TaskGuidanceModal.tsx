@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { isIOS } from "@/lib/platform";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -532,22 +533,26 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     const url = URL.createObjectURL(blob);
     const filename = `${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`;
     
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.setAttribute('target', '_blank');
-    link.setAttribute('type', 'application/pdf');
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-    
-    toast({
-      title: "PDF Downloaded",
-      description: "Check your Downloads folder. You can type directly into form fields in any PDF reader!",
-    });
+    if (isIOS()) {
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast({
+        title: "PDF Opened",
+        description: "Tap the Share icon to save to Files or open in a PDF reader.",
+      });
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      toast({
+        title: "PDF Downloaded",
+        description: "You can type directly into form fields in any PDF reader!",
+      });
+    }
   };
 
   const copyTemplate = (template: Template) => {

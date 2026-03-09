@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { isIOS } from "@/lib/platform";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useToast } from "@/hooks/use-toast";
@@ -209,14 +210,18 @@ export default function Resources() {
     const blob = new Blob([template.content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const filename = `${template.title.replace(/\s+/g, "-").toLowerCase()}.txt`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.setAttribute("target", "_blank");
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    if (isIOS()) {
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
   };
 
   const startEditing = (template: UserTemplate) => {
