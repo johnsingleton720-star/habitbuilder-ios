@@ -3927,7 +3927,7 @@ REQUIREMENTS:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { duration } = req.body;
+      const { duration, clientDate } = req.body;
 
       if (!["daily", "weekly", "monthly"].includes(duration)) {
         return res.status(400).json({ error: "Invalid duration. Must be daily, weekly, or monthly." });
