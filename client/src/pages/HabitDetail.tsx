@@ -908,7 +908,7 @@ export default function HabitDetail() {
                     {habit.schedule?.days && habit.schedule.days.length > 0 && (
                       <span className="block mt-0.5">
                         <Clock className="w-3 h-3 inline mr-1" />
-                        {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(0, 3)).join(", ")}
+                        {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(", ")}
                         {habit.schedule.time && (
                           <> at {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</>
                         )}
@@ -1501,6 +1501,8 @@ export default function HabitDetail() {
           onOpenChange={setSetupWizardOpen}
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+            queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           }}
         />
       )}

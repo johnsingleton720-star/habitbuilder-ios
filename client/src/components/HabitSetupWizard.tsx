@@ -141,9 +141,11 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
 
   const generatePlanMutation = useMutation({
     mutationFn: async () => {
+      const clientDate = new Date().toLocaleDateString("sv-SE");
       const response = await apiRequest("POST", `/api/habits/${habit.id}/generate-plan`, {
         duration: selectedDuration,
         questions: questions,
+        clientDate,
       });
       return response.json();
     },

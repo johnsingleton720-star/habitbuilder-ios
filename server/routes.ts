@@ -3578,7 +3578,7 @@ Return JSON:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { duration, questions } = req.body;
+      const { duration, questions, clientDate } = req.body;
       
       const habit = await storage.getHabit(habitId);
       if (!habit || habit.userId !== userId) {
@@ -3590,8 +3590,10 @@ Return JSON:
         return res.status(400).json({ error: safetyCheck.message, safetyFlag: safetyCheck.reason });
       }
 
-      // Calculate date range
-      const startDate = new Date();
+      // Calculate date range — prefer client's local date to avoid UTC offset issues
+      const startDate = clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)
+        ? new Date(clientDate + "T00:00:00")
+        : new Date();
       const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + daysCount - 1);
@@ -3684,7 +3686,8 @@ REQUIREMENTS:
 6. Reference their specific situation, schedule, and obstacles mentioned in the interview
 7. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
 8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")
-9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
+9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead
+10. CRITICAL: Never reference specific day names (Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday) in any task title or description. The same task text is reused across multiple scheduled days of the week. Use only generic time references such as "after breakfast", "in the morning", "this evening", "before bed", "after your workout", "at your scheduled time", etc.`;
 
         const weekResponse = await openaiClient.chat.completions.create({
           model: "gpt-4o",
@@ -3717,25 +3720,34 @@ REQUIREMENTS:
         const enhancedContextWeekly = weekData.aiContext || "";
         const aiSchedule = weekData.schedule;
 
+        const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        const scheduledDaysMonthly = (aiSchedule && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0)
+          ? aiSchedule.days.filter((d: string) => validDays.includes(d.toLowerCase())).map((d: string) => d.toLowerCase())
+          : [];
+
         fixedDailyPlans = [];
         for (let dayIndex = 0; dayIndex < daysCount; dayIndex++) {
           const planDate = new Date(startDate);
           planDate.setDate(planDate.getDate() + dayIndex);
           const weekIndex = Math.min(Math.floor(dayIndex / 7), weekData.weeks.length - 1);
           const week = weekData.weeks[weekIndex];
+          const planDayName = planDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+          const isScheduledDay = scheduledDaysMonthly.length === 0 || scheduledDaysMonthly.includes(planDayName);
 
           fixedDailyPlans.push({
             date: planDate.toISOString().split('T')[0],
             dayNumber: dayIndex + 1,
-            focus: week.theme || `Week ${weekIndex + 1}`,
-            tasks: (week.dailyTasks || []).map((task: any, tIdx: number) => ({
-              id: `day${dayIndex + 1}-task${tIdx + 1}`,
-              title: task.title,
-              description: task.description,
-              duration: task.duration || 10,
-              completed: false,
-              notes: "",
-            })),
+            focus: isScheduledDay ? (week.theme || `Week ${weekIndex + 1}`) : "Rest Day",
+            tasks: isScheduledDay
+              ? (week.dailyTasks || []).map((task: any, tIdx: number) => ({
+                  id: `day${dayIndex + 1}-task${tIdx + 1}`,
+                  title: task.title,
+                  description: task.description,
+                  duration: task.duration || 10,
+                  completed: false,
+                  notes: "",
+                }))
+              : [],
             completed: false,
             timeSpent: 0,
           });
@@ -3753,16 +3765,12 @@ REQUIREMENTS:
           setupComplete: true,
         };
 
-        if (aiSchedule && aiSchedule.days && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0) {
-          const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-          const filteredDays = aiSchedule.days.filter((d: string) => validDays.includes(d.toLowerCase())).map((d: string) => d.toLowerCase());
-          if (filteredDays.length > 0) {
-            updateData.schedule = {
-              days: filteredDays,
-              time: aiSchedule.time || "08:00",
-              reminder: true,
-            };
-          }
+        if (scheduledDaysMonthly.length > 0) {
+          updateData.schedule = {
+            days: scheduledDaysMonthly,
+            time: aiSchedule.time || "08:00",
+            reminder: true,
+          };
         }
 
         await storage.updateHabit(habitId, userId, updateData);
@@ -3830,7 +3838,8 @@ REQUIREMENTS:
 6. Format: "1) CUE: ...\\n2) ROUTINE: ...\\n3) REWARD: ...\\nCoaching Insight: ..."
 7. Schedule days must use lowercase full day names: monday, tuesday, wednesday, thursday, friday, saturday, sunday
 8. Schedule time must be in HH:mm 24-hour format (e.g., "07:00", "18:30")
-9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
+9. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead
+10. CRITICAL: Never reference specific day names (Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday) in any task title or description. Use only generic time references such as "after breakfast", "in the morning", "this evening", "before bed", "after your workout", "at your scheduled time", etc.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -3861,18 +3870,26 @@ REQUIREMENTS:
       }
 
       // Fix dates: AI often generates wrong dates, so we override with correct sequential dates
+      const enhancedContext = planData.aiContext || "";
+      const aiSchedule = planData.schedule;
+      const validDaysWeekly = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      const scheduledDaysWeekly = (aiSchedule && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0)
+        ? aiSchedule.days.filter((d: string) => validDaysWeekly.includes(d.toLowerCase())).map((d: string) => d.toLowerCase())
+        : [];
+
       fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
         const planDate = new Date(startDate);
         planDate.setDate(planDate.getDate() + index);
+        const planDayName = planDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+        const isScheduledDay = duration === "daily" || scheduledDaysWeekly.length === 0 || scheduledDaysWeekly.includes(planDayName);
         return {
           ...plan,
           date: planDate.toISOString().split('T')[0],
           dayNumber: index + 1,
+          focus: isScheduledDay ? (plan.focus || `Day ${index + 1}`) : "Rest Day",
+          tasks: isScheduledDay ? (plan.tasks || []) : [],
         };
       });
-
-      const enhancedContext = planData.aiContext || "";
-      const aiSchedule = planData.schedule;
 
       const updateData: any = {
         questions: questions,
@@ -3884,16 +3901,12 @@ REQUIREMENTS:
         setupComplete: true,
       };
 
-      if (aiSchedule && aiSchedule.days && Array.isArray(aiSchedule.days) && aiSchedule.days.length > 0) {
-        const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-        const filteredDays = aiSchedule.days.filter((d: string) => validDays.includes(d.toLowerCase())).map((d: string) => d.toLowerCase());
-        if (filteredDays.length > 0) {
-          updateData.schedule = {
-            days: filteredDays,
-            time: aiSchedule.time || "08:00",
-            reminder: true,
-          };
-        }
+      if (scheduledDaysWeekly.length > 0) {
+        updateData.schedule = {
+          days: scheduledDaysWeekly,
+          time: aiSchedule.time || "08:00",
+          reminder: true,
+        };
       }
 
       await storage.updateHabit(habitId, userId, updateData);
@@ -4025,7 +4038,8 @@ REQUIREMENTS:
 4. Each week's tasks should feel noticeably different from the previous week, reflecting the phase shift
 5. Include concrete numbers (reps, minutes, amounts) that progress across weeks
 6. Reference their specific situation, schedule, and obstacles mentioned in the interview
-7. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
+7. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead
+8. CRITICAL: Never reference specific day names (Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday) in any task title or description. The same task text is reused across multiple scheduled days of the week. Use only generic time references such as "after breakfast", "in the morning", "this evening", "before bed", "after your workout", "at your scheduled time", etc.`;
 
         const weekResponse = await openaiClient.chat.completions.create({
           model: "gpt-4o",
@@ -4043,43 +4057,62 @@ REQUIREMENTS:
         const weekContent = weekResponse.choices[0].message.content;
         if (!weekContent) throw new Error("No content from AI");
 
-        const weekData = JSON.parse(weekContent);
-        if (!weekData.weeks || !Array.isArray(weekData.weeks) || weekData.weeks.length === 0) {
+        const weekDataRegen = JSON.parse(weekContent);
+        if (!weekDataRegen.weeks || !Array.isArray(weekDataRegen.weeks) || weekDataRegen.weeks.length === 0) {
           throw new Error("Invalid weekly plan structure from AI");
         }
+
+        const aiScheduleRegen = weekDataRegen.schedule;
+        const validDaysRegen = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        const scheduledDaysRegen = (aiScheduleRegen && Array.isArray(aiScheduleRegen.days) && aiScheduleRegen.days.length > 0)
+          ? aiScheduleRegen.days.filter((d: string) => validDaysRegen.includes(d.toLowerCase())).map((d: string) => d.toLowerCase())
+          : (habit.schedule?.days as string[] || []);
 
         fixedDailyPlans = [];
         for (let dayIndex = 0; dayIndex < daysCount; dayIndex++) {
           const planDate = new Date(startDate);
           planDate.setDate(planDate.getDate() + dayIndex);
-          const weekIndex = Math.min(Math.floor(dayIndex / 7), weekData.weeks.length - 1);
-          const week = weekData.weeks[weekIndex];
+          const weekIndex = Math.min(Math.floor(dayIndex / 7), weekDataRegen.weeks.length - 1);
+          const week = weekDataRegen.weeks[weekIndex];
+          const planDayName = planDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+          const isScheduledDay = scheduledDaysRegen.length === 0 || scheduledDaysRegen.includes(planDayName);
 
           fixedDailyPlans.push({
             date: planDate.toISOString().split('T')[0],
             dayNumber: dayIndex + 1,
-            focus: week.theme || `Week ${weekIndex + 1}`,
-            tasks: (week.dailyTasks || []).map((task: any, tIdx: number) => ({
-              id: `day${dayIndex + 1}-task${tIdx + 1}`,
-              title: task.title,
-              description: task.description,
-              duration: task.duration || 10,
-              completed: false,
-              notes: "",
-            })),
+            focus: isScheduledDay ? (week.theme || `Week ${weekIndex + 1}`) : "Rest Day",
+            tasks: isScheduledDay
+              ? (week.dailyTasks || []).map((task: any, tIdx: number) => ({
+                  id: `day${dayIndex + 1}-task${tIdx + 1}`,
+                  title: task.title,
+                  description: task.description,
+                  duration: task.duration || 10,
+                  completed: false,
+                  notes: "",
+                }))
+              : [],
             completed: false,
             timeSpent: 0,
           });
         }
 
-        await storage.updateHabit(habitId, userId, {
+        const regenUpdateData: any = {
           planDuration: duration,
           planStartDate: startDate.toISOString().split('T')[0],
           planEndDate: endDate.toISOString().split('T')[0],
           dailyPlans: fixedDailyPlans,
-          aiContext: weekData.aiContext || habit.aiContext,
+          aiContext: weekDataRegen.aiContext || habit.aiContext,
           lastAdjustedAt: new Date(),
-        });
+        };
+        if (scheduledDaysRegen.length > 0) {
+          regenUpdateData.schedule = {
+            days: scheduledDaysRegen,
+            time: aiScheduleRegen?.time || habit.schedule?.time || "08:00",
+            reminder: true,
+          };
+        }
+
+        await storage.updateHabit(habitId, userId, regenUpdateData);
 
         res.json({ success: true, dailyPlans: fixedDailyPlans });
         return;
@@ -4137,7 +4170,8 @@ REQUIREMENTS:
 3. Day 1 tasks must be so easy the user thinks "I can definitely do this" — this builds the neural pathway
 4. Include concrete numbers (reps, minutes, amounts) that progress across days
 5. Reference their specific situation, daily routine, and obstacles in descriptions
-6. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead`;
+6. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead
+7. CRITICAL: Never reference specific day names (Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday) in any task title or description. Use only generic time references such as "after breakfast", "in the morning", "this evening", "before bed", "after your workout", "at your scheduled time", etc.`;
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
@@ -4155,18 +4189,23 @@ REQUIREMENTS:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const planData = JSON.parse(content);
-      if (!planData.dailyPlans || !Array.isArray(planData.dailyPlans)) {
+      const planDataRegen = JSON.parse(content);
+      if (!planDataRegen.dailyPlans || !Array.isArray(planDataRegen.dailyPlans)) {
         throw new Error("Invalid plan structure from AI");
       }
 
-      fixedDailyPlans = planData.dailyPlans.map((plan: any, index: number) => {
+      const existingScheduleDays = (habit.schedule?.days as string[] || []);
+      fixedDailyPlans = planDataRegen.dailyPlans.map((plan: any, index: number) => {
         const planDate = new Date(startDate);
         planDate.setDate(planDate.getDate() + index);
+        const planDayName = planDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+        const isScheduledDay = duration === "daily" || existingScheduleDays.length === 0 || existingScheduleDays.includes(planDayName);
         return {
           ...plan,
           date: planDate.toISOString().split('T')[0],
           dayNumber: index + 1,
+          focus: isScheduledDay ? (plan.focus || `Day ${index + 1}`) : "Rest Day",
+          tasks: isScheduledDay ? (plan.tasks || []) : [],
         };
       });
 
@@ -4175,7 +4214,7 @@ REQUIREMENTS:
         planStartDate: startDate.toISOString().split('T')[0],
         planEndDate: endDate.toISOString().split('T')[0],
         dailyPlans: fixedDailyPlans,
-        aiContext: planData.aiContext || habit.aiContext,
+        aiContext: planDataRegen.aiContext || habit.aiContext,
         lastAdjustedAt: new Date(),
       });
 

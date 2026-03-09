@@ -356,7 +356,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 {habit.schedule?.time && habit.schedule?.days?.length > 0 && (
                   <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5" data-testid={`schedule-${habit.id}`}>
                     <Clock className="w-3 h-3" />
-                    {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(0, 3)).join(", ")}
+                    {habit.schedule.days.map((d: string) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(", ")}
                     {" at "}
                     {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                   </p>
