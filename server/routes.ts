@@ -3591,9 +3591,13 @@ Return JSON:
       }
 
       // Calculate date range — prefer client's local date to avoid UTC offset issues
-      const startDate = clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)
-        ? new Date(clientDate + "T00:00:00")
-        : new Date();
+      let startDate: Date;
+      if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
+        const parts = clientDate.split("-");
+        startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        startDate = new Date();
+      }
       const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + daysCount - 1);
@@ -3735,7 +3739,7 @@ REQUIREMENTS:
           const isScheduledDay = scheduledDaysMonthly.length === 0 || scheduledDaysMonthly.includes(planDayName);
 
           fixedDailyPlans.push({
-            date: planDate.toISOString().split('T')[0],
+            date: `${planDate.getFullYear()}-${String(planDate.getMonth() + 1).padStart(2, '0')}-${String(planDate.getDate()).padStart(2, '0')}`,
             dayNumber: dayIndex + 1,
             focus: isScheduledDay ? (week.theme || `Week ${weekIndex + 1}`) : "Rest Day",
             tasks: isScheduledDay
@@ -3758,8 +3762,8 @@ REQUIREMENTS:
         const updateData: any = {
           questions: questions,
           planDuration: duration,
-          planStartDate: startDate.toISOString().split('T')[0],
-          planEndDate: endDate.toISOString().split('T')[0],
+          planStartDate: `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`,
+          planEndDate: `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`,
           dailyPlans: fixedDailyPlans,
           aiContext: enhancedContext,
           setupComplete: true,
@@ -3805,7 +3809,7 @@ Return JSON:
 {
   "dailyPlans": [
     {
-      "date": "${startDate.toISOString().split('T')[0]}",
+      "date": "${`${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`}",
       "dayNumber": 1,
       "focus": "Day theme reflecting the behavior change phase (e.g., 'Setting Up Your Trigger')",
       "tasks": [
@@ -3884,7 +3888,7 @@ REQUIREMENTS:
         const isScheduledDay = duration === "daily" || scheduledDaysWeekly.length === 0 || scheduledDaysWeekly.includes(planDayName);
         return {
           ...plan,
-          date: planDate.toISOString().split('T')[0],
+          date: `${planDate.getFullYear()}-${String(planDate.getMonth() + 1).padStart(2, '0')}-${String(planDate.getDate()).padStart(2, '0')}`,
           dayNumber: index + 1,
           focus: isScheduledDay ? (plan.focus || `Day ${index + 1}`) : "Rest Day",
           tasks: isScheduledDay ? (plan.tasks || []) : [],
@@ -3894,8 +3898,8 @@ REQUIREMENTS:
       const updateData: any = {
         questions: questions,
         planDuration: duration,
-        planStartDate: startDate.toISOString().split('T')[0],
-        planEndDate: endDate.toISOString().split('T')[0],
+        planStartDate: `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`,
+        planEndDate: `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`,
         dailyPlans: fixedDailyPlans,
         aiContext: enhancedContext,
         setupComplete: true,
@@ -3953,7 +3957,13 @@ REQUIREMENTS:
       }
 
       const questions = (habit.questions || []) as any[];
-      const startDate = new Date();
+      let startDate: Date;
+      if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
+        const parts = clientDate.split("-");
+        startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        startDate = new Date();
+      }
       const daysCount = duration === "daily" ? 1 : duration === "weekly" ? 7 : 30;
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + daysCount - 1);
@@ -4078,7 +4088,7 @@ REQUIREMENTS:
           const isScheduledDay = scheduledDaysRegen.length === 0 || scheduledDaysRegen.includes(planDayName);
 
           fixedDailyPlans.push({
-            date: planDate.toISOString().split('T')[0],
+            date: `${planDate.getFullYear()}-${String(planDate.getMonth() + 1).padStart(2, '0')}-${String(planDate.getDate()).padStart(2, '0')}`,
             dayNumber: dayIndex + 1,
             focus: isScheduledDay ? (week.theme || `Week ${weekIndex + 1}`) : "Rest Day",
             tasks: isScheduledDay
@@ -4098,8 +4108,8 @@ REQUIREMENTS:
 
         const regenUpdateData: any = {
           planDuration: duration,
-          planStartDate: startDate.toISOString().split('T')[0],
-          planEndDate: endDate.toISOString().split('T')[0],
+          planStartDate: `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`,
+          planEndDate: `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`,
           dailyPlans: fixedDailyPlans,
           aiContext: weekDataRegen.aiContext || habit.aiContext,
           lastAdjustedAt: new Date(),
@@ -4144,7 +4154,7 @@ Return JSON:
 {
   "dailyPlans": [
     {
-      "date": "${startDate.toISOString().split('T')[0]}",
+      "date": "${`${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`}",
       "dayNumber": 1,
       "focus": "Day theme reflecting the behavior change phase (e.g., 'Setting Up Your Trigger')",
       "tasks": [
@@ -4202,7 +4212,7 @@ REQUIREMENTS:
         const isScheduledDay = duration === "daily" || existingScheduleDays.length === 0 || existingScheduleDays.includes(planDayName);
         return {
           ...plan,
-          date: planDate.toISOString().split('T')[0],
+          date: `${planDate.getFullYear()}-${String(planDate.getMonth() + 1).padStart(2, '0')}-${String(planDate.getDate()).padStart(2, '0')}`,
           dayNumber: index + 1,
           focus: isScheduledDay ? (plan.focus || `Day ${index + 1}`) : "Rest Day",
           tasks: isScheduledDay ? (plan.tasks || []) : [],
@@ -4211,8 +4221,8 @@ REQUIREMENTS:
 
       await storage.updateHabit(habitId, userId, {
         planDuration: duration,
-        planStartDate: startDate.toISOString().split('T')[0],
-        planEndDate: endDate.toISOString().split('T')[0],
+        planStartDate: `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`,
+        planEndDate: `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`,
         dailyPlans: fixedDailyPlans,
         aiContext: planDataRegen.aiContext || habit.aiContext,
         lastAdjustedAt: new Date(),
@@ -4572,7 +4582,7 @@ REQUIREMENTS:
         planDate.setDate(planDate.getDate() + index);
         return {
           ...plan,
-          date: planDate.toISOString().split('T')[0],
+          date: `${planDate.getFullYear()}-${String(planDate.getMonth() + 1).padStart(2, '0')}-${String(planDate.getDate()).padStart(2, '0')}`,
           dayNumber: totalDays + index + 1,
         };
       });
