@@ -208,13 +208,15 @@ export default function Resources() {
   const handleDownload = (template: UserTemplate) => {
     const blob = new Blob([template.content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
+    const filename = `${template.title.replace(/\s+/g, "-").toLowerCase()}.txt`;
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${template.title.replace(/\s+/g, "-").toLowerCase()}.txt`;
+    a.download = filename;
+    a.setAttribute("target", "_blank");
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   const startEditing = (template: UserTemplate) => {

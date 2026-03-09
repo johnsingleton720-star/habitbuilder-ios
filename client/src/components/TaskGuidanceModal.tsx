@@ -530,15 +530,23 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
+    const filename = `${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`;
+    
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`;
+    link.download = filename;
+    link.setAttribute('target', '_blank');
+    link.setAttribute('type', 'application/pdf');
+    
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+    
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     
     toast({
-      title: "Fillable PDF Downloaded",
-      description: "You can type directly into the form fields in any PDF reader!",
+      title: "PDF Downloaded",
+      description: "Check your Downloads folder. You can type directly into form fields in any PDF reader!",
     });
   };
 
@@ -548,7 +556,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -865,7 +873,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
+                    <CardContent className="pt-4 space-y-4 overflow-y-auto max-h-[calc(90vh-280px)]">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Template Title</label>
                         <Input 
@@ -881,8 +889,8 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           value={editedContent}
                           onChange={(e) => setEditedContent(e.target.value)}
                           placeholder="Enter template content..."
-                          rows={12}
-                          className="font-mono text-sm"
+                          rows={8}
+                          className="font-mono text-sm resize-none"
                           data-testid="textarea-template-content"
                         />
                       </div>
