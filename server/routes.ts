@@ -155,6 +155,37 @@ export async function registerRoutes(
     res.json({ version: APP_VERSION });
   });
 
+  const tempPdfStore = new Map<string, { data: Buffer; filename: string; createdAt: number }>();
+  setInterval(() => {
+    const now = Date.now();
+    for (const [id, entry] of tempPdfStore) {
+      if (now - entry.createdAt > 5 * 60 * 1000) tempPdfStore.delete(id);
+    }
+  }, 60 * 1000);
+
+  app.post("/api/temp-pdf", (req, res) => {
+    try {
+      const { data, filename } = req.body;
+      if (!data || typeof data !== "string") return res.status(400).json({ error: "Missing base64 data" });
+      const buffer = Buffer.from(data, "base64");
+      if (buffer.length > 10 * 1024 * 1024) return res.status(413).json({ error: "File too large" });
+      const id = crypto.randomUUID();
+      tempPdfStore.set(id, { data: buffer, filename: filename || "worksheet.pdf", createdAt: Date.now() });
+      res.json({ url: `/api/temp-pdf/${id}` });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to store PDF" });
+    }
+  });
+
+  app.get("/api/temp-pdf/:id", (req, res) => {
+    const entry = tempPdfStore.get(req.params.id);
+    if (!entry) return res.status(404).json({ error: "PDF not found or expired" });
+    tempPdfStore.delete(req.params.id);
+    res.set("Content-Type", "application/pdf");
+    res.set("Content-Disposition", `inline; filename="${entry.filename}"`);
+    res.send(entry.data);
+  });
+
   await setupAuth(app);
   registerAuthRoutes(app);
 

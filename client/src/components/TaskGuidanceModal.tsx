@@ -527,20 +527,28 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
     lastPage.drawText("Created with HabitBuilder.pro - Your Personal Habit Coach", { x: margin, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
     lastPage.drawText(new Date().toLocaleDateString(), { x: pageWidth - margin - 60, y: 20, size: 7, font, color: rgb(0.6, 0.6, 0.6) });
     
-    // Save and download
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
     const filename = `${template.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_worksheet.pdf`;
     
     if (isIOS()) {
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+      const resp = await fetch("/api/temp-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: base64, filename }),
+      });
+      if (!resp.ok) throw new Error("Failed to prepare PDF");
+      const { url: pdfPath } = await resp.json();
+      const fullUrl = `${window.location.origin}${pdfPath}`;
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: fullUrl });
       toast({
-        title: "PDF Opened",
+        title: "PDF Opened in Safari",
         description: "Tap the Share icon to save to Files or open in a PDF reader.",
       });
     } else {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
