@@ -28,6 +28,26 @@ const categoryColors: Record<string, { accent: string; bg: string; border: strin
 };
 const defaultColor = { accent: "text-primary", bg: "from-primary/15 to-accent/10 dark:from-primary/25 dark:to-accent/20", border: "border-primary/30 dark:border-primary/20", progress: "bg-primary" };
 
+function getCustomColorStyle(hexColor: string | null | undefined): { style: React.CSSProperties; progressStyle: React.CSSProperties; hasCustom: true } | { hasCustom: false } {
+  if (!hexColor || !hexColor.startsWith('#')) return { hasCustom: false };
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  const isDark = document.documentElement.classList.contains('dark');
+  const bgOp1 = isDark ? 0.30 : 0.22;
+  const bgOp2 = isDark ? 0.18 : 0.10;
+  return {
+    hasCustom: true,
+    style: {
+      background: `linear-gradient(to right, rgba(${r},${g},${b},${bgOp1}), rgba(${r},${g},${b},${bgOp2}))`,
+      borderColor: `rgba(${r},${g},${b},${isDark ? 0.5 : 0.45})`,
+    },
+    progressStyle: {
+      backgroundColor: `rgba(${r},${g},${b},0.8)`,
+    },
+  };
+}
+
 function getHabitColor(habit: HabitResponse) {
   const cat = (habit.category || "").toLowerCase();
   return categoryColors[cat] || defaultColor;
@@ -263,14 +283,19 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               )}
             </p>
             <Link href={`/habit/${nextHabit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
+              {(() => {
+                const customStyle = getCustomColorStyle(nextHabit.customColor);
+                return (
               <motion.div
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className={cn(
-                  "group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r shadow-md hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
-                  getHabitColor(nextHabit).bg,
-                  getHabitColor(nextHabit).border
+                  "group flex items-center justify-between p-4 rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
+                  !customStyle.hasCustom && "bg-gradient-to-r",
+                  !customStyle.hasCustom && getHabitColor(nextHabit).bg,
+                  !customStyle.hasCustom && getHabitColor(nextHabit).border
                 )}
+                style={customStyle.hasCustom ? customStyle.style : undefined}
                 data-testid={`focus-habit-${nextHabit.id}`}
               >
                 <div className="flex-1 min-w-0">
@@ -300,11 +325,11 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden max-w-[120px]">
                             <div 
-                              className={cn("h-full rounded-full", getHabitColor(nextHabit).progress)}
-                              style={{ width: `${(taskProgress.completed / taskProgress.total) * 100}%` }}
+                              className={cn("h-full rounded-full", !customStyle.hasCustom && getHabitColor(nextHabit).progress)}
+                              style={{ width: `${(taskProgress.completed / taskProgress.total) * 100}%`, ...(customStyle.hasCustom ? customStyle.progressStyle : {}) }}
                             />
                           </div>
-                          <span className={cn("text-sm font-semibold", getHabitColor(nextHabit).accent)}>
+                          <span className={cn("text-sm font-semibold", !customStyle.hasCustom && getHabitColor(nextHabit).accent)}>
                             {taskProgress.completed}/{taskProgress.total} tasks
                           </span>
                         </div>
@@ -326,6 +351,8 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                   <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
               </motion.div>
+                );
+              })()}
             </Link>
           </motion.div>
         ) : null}
@@ -443,14 +470,17 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                       const taskProgress = getHabitTodayProgress(habit);
                       const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
                       const isInStack = habits.some(h => h.linkedHabitId === habit.id) || !!habit.linkedHabitId;
+                      const customStyle = getCustomColorStyle(habit.customColor);
                       return (
                         <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                           <div
                             className={cn(
-                              "group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r border hover:border-primary/30 transition-all cursor-pointer",
-                              getHabitColor(habit).bg,
-                              getHabitColor(habit).border
+                              "group flex items-center gap-3 p-3 rounded-xl border hover:border-primary/30 transition-all cursor-pointer",
+                              !customStyle.hasCustom && "bg-gradient-to-r",
+                              !customStyle.hasCustom && getHabitColor(habit).bg,
+                              !customStyle.hasCustom && getHabitColor(habit).border
                             )}
+                            style={customStyle.hasCustom ? customStyle.style : undefined}
                             data-testid={`remaining-habit-${habit.id}`}
                           >
                             <div className="flex-1 min-w-0">
@@ -465,8 +495,8 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                                 <div className="flex items-center gap-2 mt-1.5">
                                   <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
                                     <div
-                                      className={cn("h-full rounded-full", pct > 0 ? getHabitColor(habit).progress : "bg-muted")}
-                                      style={{ width: `${pct}%` }}
+                                      className={cn("h-full rounded-full", pct > 0 ? (!customStyle.hasCustom ? getHabitColor(habit).progress : "") : "bg-muted")}
+                                      style={{ width: `${pct}%`, ...(pct > 0 && customStyle.hasCustom ? customStyle.progressStyle : {}) }}
                                     />
                                   </div>
                                   <span className="text-xs text-muted-foreground font-semibold">
@@ -506,10 +536,23 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
               {completedToday.length} completed today
             </p>
             <div className="space-y-1">
-              {completedToday.map((habit) => (
+              {completedToday.map((habit) => {
+                const customStyle = getCustomColorStyle(habit.customColor);
+                const completedBgStyle = customStyle.hasCustom ? {
+                  background: customStyle.style.background,
+                  borderColor: customStyle.style.borderColor,
+                  opacity: 0.7,
+                } : undefined;
+                return (
                 <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                   <div
-                    className="group flex items-center gap-3 p-2.5 rounded-xl bg-primary/5 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                    className={cn(
+                      "group flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer hover:border-primary/30 transition-all opacity-70",
+                      !customStyle.hasCustom && "bg-gradient-to-r",
+                      !customStyle.hasCustom && getHabitColor(habit).bg,
+                      !customStyle.hasCustom && getHabitColor(habit).border
+                    )}
+                    style={completedBgStyle}
                     data-testid={`completed-habit-${habit.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
@@ -517,7 +560,8 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
