@@ -546,7 +546,7 @@ export default function Journal() {
             )}
 
             {fullAnalysisMutation.data && (
-              <Card className="border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10" data-testid="card-full-analysis">
+              <Card className="border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-indigo-50/50 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/10" data-testid="card-full-analysis">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2 text-violet-700 dark:text-violet-300">
                     <Crown className="w-4 h-4" />
@@ -554,10 +554,10 @@ export default function Journal() {
                     <Badge variant="secondary" className="text-xs">Premium</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-full-analysis">
+                <CardContent className="pb-6">
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-full-analysis">
                     {fullAnalysisMutation.data.analysis}
-                  </p>
+                  </div>
                 </CardContent>
               </Card>
             )}

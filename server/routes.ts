@@ -1018,14 +1018,14 @@ export async function registerRoutes(
         messages: [
           {
             role: "system",
-            content: "You are a compassionate habit coach analyzing a user's journal entries. Provide brief, actionable insights (2-3 sentences) about patterns you notice in their mood, habits, and reflections. Be encouraging and specific. Do not generate harmful or inappropriate content."
+            content: "You are a compassionate habit coach analyzing a user's journal entry. Provide 2-3 sentences of insight that directly reference what the user wrote — quote or paraphrase specific phrases from their entry. Connect their reflection to their active habits when relevant. If you notice a shift from recent entries (mood change, new theme, breakthrough), call it out specifically. Do NOT give generic wellness advice. Every sentence must be grounded in something the user actually said. Be warm and encouraging. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content."
           },
           {
             role: "user",
-            content: `Today's entry: "${entry.content}" (mood: ${entry.mood || "not specified"})\n\nRecent entries: ${recentEntries.map(e => `${e.date}: ${e.content.substring(0, 100)}... (mood: ${e.mood || "?"})`).join("\n")}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ")}`
+            content: `Today's entry: "${entry.content}" (mood: ${entry.mood || "not specified"})\n\nRecent entries: ${recentEntries.map(e => `${e.date}: ${e.content.substring(0, 250)}... (mood: ${e.mood || "?"})`).join("\n")}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ")}`
           }
         ],
-        max_tokens: 200,
+        max_tokens: 300,
       });
 
       const insights = response.choices[0]?.message?.content || "Keep journaling - patterns will emerge over time!";
@@ -1063,7 +1063,7 @@ export async function registerRoutes(
         .where(eq(habits.userId, userId));
 
       const entrySummaries = allEntries.map(e =>
-        `${e.date} (mood: ${e.mood || "not specified"}): ${e.content.substring(0, 200)}`
+        `${e.date} (mood: ${e.mood || "not specified"}): ${e.content.substring(0, 500)}`
       ).join("\n");
 
       const openai = new OpenAI({
@@ -1076,14 +1076,23 @@ export async function registerRoutes(
         messages: [
           {
             role: "system",
-            content: "You are a compassionate habit coach providing a comprehensive analysis of a user's journal history. Analyze mood trends over time, recurring themes and patterns, correlations between habits and mood, areas of growth, and actionable recommendations. Structure your response with clear sections: Mood Trends, Key Themes, Habit Correlations, Growth Areas, and Recommendations. Be encouraging, specific, and insightful. Do not generate harmful or inappropriate content."
+            content: `You are a compassionate habit coach providing a deeply personalized analysis of a user's journal history. Structure your response with these sections: Mood Trends, Key Themes, Habit Correlations, Growth Areas, and Recommendations.
+
+CRITICAL RULES:
+- Every claim must cite specific evidence from the entries. Reference dates and quote or paraphrase what the user actually wrote (e.g., "On March 5th you mentioned feeling overwhelmed by...").
+- In Mood Trends, identify specific shifts with dates, not vague statements like "your mood fluctuates."
+- In Key Themes, name the recurring topics YOU found in THEIR entries with examples.
+- In Recommendations, each suggestion must directly address a pattern you identified. Do NOT give generic advice like "exercise more" or "practice gratitude" unless the user's entries specifically indicate these are relevant. Every recommendation must connect back to something the user wrote.
+- Be warm and encouraging, but substantive. The user is paying for insights they couldn't see themselves.
+
+SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.`
           },
           {
             role: "user",
             content: `Analyze these ${allEntries.length} journal entries:\n\n${entrySummaries}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ") || "None"}`
           }
         ],
-        max_tokens: 800,
+        max_tokens: 1500,
       });
 
       const analysis = response.choices[0]?.message?.content || "Keep journaling - patterns will emerge over time!";
@@ -7017,14 +7026,14 @@ Be specific, practical, and grounded in behavior science. Every task should make
         messages: [
           {
             role: "system",
-            content: "You are a habit coach providing personalized insights. Analyze the user's habit data and provide 3-5 actionable insights. Be encouraging but honest. Keep each insight to 1-2 sentences. Never mention specific third-party apps, brands, or services by name.",
+            content: "You are a habit coach providing personalized insights based on real data. Analyze the user's habit data and provide 3-5 actionable insights. Each insight MUST reference specific numbers, streaks, or trends from their data (e.g., 'Your meditation streak hit 12 days — your longest yet' or 'You completed 80% of reading tasks but only 40% of exercise tasks'). Do NOT give generic advice. Every insight should be grounded in the actual data provided. Be encouraging but honest. Keep each insight to 1-2 sentences. Never mention specific third-party apps, brands, or services by name. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.",
           },
           {
             role: "user",
             content: `Here's my habit data: ${JSON.stringify(habitSummary)}. What insights can you share about my progress?`,
           },
         ],
-        max_tokens: 400,
+        max_tokens: 500,
       });
       
       const insights = response.choices[0]?.message?.content || "Keep up the great work on your habits!";
@@ -7745,12 +7754,12 @@ Be specific, practical, and grounded in behavior science. Every task should make
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: "Analyze mood tracking data and provide brief, actionable insights about patterns. Focus on connections between mood, energy, sleep, stress, and habits. Be encouraging. 2-3 sentences max."
+          content: "Analyze mood tracking data and provide brief, personalized insights about patterns. Reference specific dates, scores, and trends from the data (e.g., 'Your energy dipped to 2/5 on days when stress was above 4' or 'Sleep quality improved from 2 to 4 over the past week'). Focus on connections between mood, energy, sleep, stress, and habits. Do NOT give generic advice — every observation must cite the actual data. Be encouraging and warm. 2-3 sentences max. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content."
         }, {
           role: "user",
           content: `Mood entries (newest first): ${entries.map(e => `${e.date}: mood=${e.mood}, energy=${e.energy}/5, stress=${e.stress}/5, sleep=${e.sleep}/5, notes="${e.notes || 'none'}"`).join("\n")}\n\nHabits: ${userHabits.map((h: any) => h.title).join(", ")}`
         }],
-        max_tokens: 200,
+        max_tokens: 300,
       });
 
       res.json({ insight: response.choices[0]?.message?.content || "Keep tracking!" });
