@@ -11,6 +11,7 @@ import { db } from "./db";
 import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens } from "@shared/schema";
 import { saveSubscription, syncSubscription, syncDeviceToken, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
+import fs from "fs";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
@@ -142,7 +143,15 @@ setInterval(async () => {
   }
 }, 60000);
 
-const APP_VERSION = Date.now().toString();
+const APP_VERSION = (() => {
+  if (process.env.NODE_ENV === "production") {
+    const versionFile = path.join(__dirname, ".build-version");
+    if (fs.existsSync(versionFile)) {
+      return fs.readFileSync(versionFile, "utf-8").trim();
+    }
+  }
+  return Date.now().toString();
+})();
 
 export async function registerRoutes(
   httpServer: Server,
