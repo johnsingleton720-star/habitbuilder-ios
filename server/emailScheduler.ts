@@ -642,24 +642,35 @@ async function processDailyPlanner() {
           where: eq(habits.userId, u.id),
         });
 
-        let habitTaskCount = 0;
+        let habitCount = 0;
         for (const habit of userHabits) {
           if (habit.archived) continue;
           const plans = habit.dailyPlans as any[];
           if (Array.isArray(plans)) {
             const todayPlan = plans.find((p: any) => p.date === localTime.dateStr);
             if (todayPlan && todayPlan.tasks) {
-              habitTaskCount += (todayPlan.tasks as any[]).filter((t: any) => !t.completed).length;
+              const hasUncompletedTasks = (todayPlan.tasks as any[]).some((t: any) => !t.completed);
+              if (hasUncompletedTasks) habitCount++;
             }
           }
         }
 
-        const totalTasks = userTasks.length + habitTaskCount;
+        const quickTaskCount = userTasks.length;
+        const totalItems = habitCount + quickTaskCount;
 
-        if (totalTasks > 0) {
+        if (totalItems > 0) {
+          let body: string;
+          if (habitCount > 0 && quickTaskCount > 0) {
+            body = `${habitCount} habit${habitCount !== 1 ? "s" : ""} and ${quickTaskCount} quick task${quickTaskCount !== 1 ? "s" : ""} on your plate today`;
+          } else if (habitCount > 0) {
+            body = `${habitCount} habit${habitCount !== 1 ? "s" : ""} planned for today`;
+          } else {
+            body = `${quickTaskCount} quick task${quickTaskCount !== 1 ? "s" : ""} planned for today`;
+          }
+
           await sendPushToUser(u.id, {
             title: "Daily Planner",
-            body: `You have ${totalTasks} task${totalTasks !== 1 ? "s" : ""} planned for today`,
+            body,
             url: "/planner",
             tag: "daily-planner",
           });
