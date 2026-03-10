@@ -186,7 +186,7 @@ export async function registerRoutes(
     res.send(entry.data);
   });
 
-  app.post("/api/temp-file", isAuthenticated, (req: any, res) => {
+  app.post("/api/temp-file", (req: any, res) => {
     try {
       const { data, filename, contentType } = req.body;
       if (!data || typeof data !== "string") return res.status(400).json({ error: "Missing base64 data" });
