@@ -6830,7 +6830,285 @@ Be specific, practical, and grounded in behavior science. Every task should make
   });
 
   // ===== ADVANCED ANALYTICS API (Premium Only) =====
-  
+
+  app.get("/api/analytics/comprehensive", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user || (user.subscriptionTier !== "premium" && !user.isAdmin)) {
+        return res.status(403).json({ error: "Comprehensive analytics require Premium subscription" });
+      }
+
+      const [userHabits, allMoodEntries, allJournalEntries, allCoachChats, allQuickTasks, allAchievements, allFocusSessions, allGoals, allMilestones] = await Promise.all([
+        storage.getHabits(userId),
+        db.select().from(moodEntries).where(eq(moodEntries.userId, userId)).orderBy(sql`${moodEntries.date} DESC`).limit(90),
+        db.select().from(journalEntries).where(eq(journalEntries.userId, userId)).orderBy(sql`${journalEntries.date} DESC`).limit(90),
+        db.select().from(coachChats).where(eq(coachChats.userId, userId)).orderBy(sql`${coachChats.createdAt} DESC`),
+        db.select().from(quickTasks).where(eq(quickTasks.userId, userId)),
+        db.select().from(userAchievements).where(eq(userAchievements.userId, userId)),
+        db.select().from(focusSessions).where(eq(focusSessions.userId, userId)),
+        db.select().from(goals).where(eq(goals.userId, userId)),
+        db.select().from(goalMilestones).where(eq(goalMilestones.userId, userId)),
+      ]);
+
+      const activeHabits = userHabits.filter(h => !h.archived);
+      let totalSessions = 0;
+      let totalTimeSpent = 0;
+      let totalTasksCompleted = 0;
+      let totalTasks = 0;
+      let bestStreak = 0;
+      let currentStreakMax = 0;
+      const allMissReasons: Record<string, number> = {};
+      const habitDetails: any[] = [];
+
+      for (const habit of activeHabits) {
+        const progress = habit.progress || [];
+        let sessions = 0, time = 0, completed = 0, total = 0;
+        for (const entry of progress) {
+          sessions++;
+          time += entry.timeSpent || 0;
+          completed += entry.tasksCompleted || 0;
+          total += entry.totalTasks || 0;
+        }
+        totalSessions += sessions;
+        totalTimeSpent += time;
+        totalTasksCompleted += completed;
+        totalTasks += total;
+        bestStreak = Math.max(bestStreak, habit.longestStreak || 0);
+        currentStreakMax = Math.max(currentStreakMax, habit.currentStreak || 0);
+        const missReasons = (habit.missReasons as any[]) || [];
+        for (const mr of missReasons) {
+          allMissReasons[mr.reason] = (allMissReasons[mr.reason] || 0) + 1;
+        }
+        habitDetails.push({
+          id: habit.id,
+          title: habit.title,
+          sessions,
+          timeSpent: time,
+          completion: total > 0 ? Math.round((completed / total) * 100) : 0,
+          currentStreak: habit.currentStreak || 0,
+          longestStreak: habit.longestStreak || 0,
+          icon: habit.customIcon || "Target",
+          color: habit.customColor || "primary",
+        });
+      }
+
+      const moodDistribution: Record<string, number> = {};
+      let totalEnergy = 0, totalStress = 0, totalSleep = 0;
+      let moodCount = 0, energyCount = 0, stressCount = 0, sleepCount = 0;
+      for (const entry of allMoodEntries) {
+        moodDistribution[entry.mood] = (moodDistribution[entry.mood] || 0) + 1;
+        moodCount++;
+        if (entry.energy) { totalEnergy += entry.energy; energyCount++; }
+        if (entry.stress) { totalStress += entry.stress; stressCount++; }
+        if (entry.sleep) { totalSleep += entry.sleep; sleepCount++; }
+      }
+
+      const journalMoodDist: Record<string, number> = {};
+      let journalWithMood = 0;
+      for (const entry of allJournalEntries) {
+        if (entry.mood) {
+          journalMoodDist[entry.mood] = (journalMoodDist[entry.mood] || 0) + 1;
+          journalWithMood++;
+        }
+      }
+
+      let totalCoachMessages = 0;
+      for (const chat of allCoachChats) {
+        totalCoachMessages += chat.messageCount || 0;
+      }
+
+      const completedQuickTasks = allQuickTasks.filter(t => t.completed);
+      const completedFocus = allFocusSessions.filter(f => f.status === "completed");
+      let totalFocusMinutes = 0;
+      for (const f of completedFocus) {
+        totalFocusMinutes += f.completedDuration || f.duration || 0;
+      }
+
+      const activeGoals = allGoals.filter(g => g.status === "active");
+      const completedMilestones = allMilestones.filter(m => m.isCompleted);
+
+      const missReasonsArray = Object.entries(allMissReasons)
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count);
+
+      res.json({
+        habits: {
+          active: activeHabits.length,
+          totalSessions,
+          totalTimeSpent,
+          totalTasksCompleted,
+          overallCompletion: totalTasks > 0 ? Math.round((totalTasksCompleted / totalTasks) * 100) : 0,
+          currentStreak: currentStreakMax,
+          longestStreak: bestStreak,
+          details: habitDetails,
+          missReasons: missReasonsArray,
+        },
+        mood: {
+          totalEntries: moodCount,
+          distribution: moodDistribution,
+          averageEnergy: energyCount > 0 ? Math.round((totalEnergy / energyCount) * 10) / 10 : null,
+          averageStress: stressCount > 0 ? Math.round((totalStress / stressCount) * 10) / 10 : null,
+          averageSleep: sleepCount > 0 ? Math.round((totalSleep / sleepCount) * 10) / 10 : null,
+        },
+        journal: {
+          totalEntries: allJournalEntries.length,
+          moodDistribution: journalMoodDist,
+          entriesWithMood: journalWithMood,
+          recentTags: [...new Set(allJournalEntries.flatMap(e => (e.tags as string[]) || []))].slice(0, 10),
+        },
+        coaching: {
+          totalSessions: allCoachChats.length,
+          totalMessages: totalCoachMessages,
+        },
+        quickTasks: {
+          totalCreated: allQuickTasks.length,
+          totalCompleted: completedQuickTasks.length,
+          completionRate: allQuickTasks.length > 0 ? Math.round((completedQuickTasks.length / allQuickTasks.length) * 100) : 0,
+        },
+        achievements: {
+          totalEarned: allAchievements.length,
+          badges: allAchievements.map(a => ({ id: a.achievementId, unlockedAt: a.unlockedAt })),
+        },
+        focus: {
+          totalSessions: completedFocus.length,
+          totalMinutes: totalFocusMinutes,
+        },
+        goals: {
+          active: activeGoals.length,
+          total: allGoals.length,
+          milestonesCompleted: completedMilestones.length,
+          milestonesTotal: allMilestones.length,
+        },
+        memberSince: user.createdAt,
+      });
+    } catch (error) {
+      console.error("Error fetching comprehensive analytics:", error);
+      res.status(500).json({ error: "Failed to fetch comprehensive analytics" });
+    }
+  });
+
+  app.post("/api/analytics/comprehensive-report", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user || (user.subscriptionTier !== "premium" && !user.isAdmin)) {
+        return res.status(403).json({ error: "Comprehensive report requires Premium subscription" });
+      }
+
+      const [userHabits, recentMood, recentJournal, chatHistory, allQuickTasks, allAchievements, completedFocus, activeGoals, allMilestones] = await Promise.all([
+        storage.getHabits(userId),
+        db.select().from(moodEntries).where(eq(moodEntries.userId, userId)).orderBy(sql`${moodEntries.date} DESC`).limit(30),
+        db.select().from(journalEntries).where(eq(journalEntries.userId, userId)).orderBy(sql`${journalEntries.date} DESC`).limit(20),
+        db.select().from(coachChats).where(eq(coachChats.userId, userId)).orderBy(sql`${coachChats.createdAt} DESC`).limit(10),
+        db.select().from(quickTasks).where(eq(quickTasks.userId, userId)),
+        db.select().from(userAchievements).where(eq(userAchievements.userId, userId)),
+        db.select().from(focusSessions).where(and(eq(focusSessions.userId, userId), eq(focusSessions.status, "completed"))),
+        db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, "active"))),
+        db.select().from(goalMilestones).where(eq(goalMilestones.userId, userId)),
+      ]);
+
+      const activeHabits = userHabits.filter(h => !h.archived);
+      const habitSummary = activeHabits.map(h => {
+        const progress = h.progress || [];
+        const completed = progress.reduce((sum: number, p: any) => sum + (p.tasksCompleted || 0), 0);
+        const total = progress.reduce((sum: number, p: any) => sum + (p.totalTasks || 0), 0);
+        return `${h.title}: ${h.currentStreak || 0}-day streak (longest: ${h.longestStreak || 0}), ${progress.length} sessions, ${total > 0 ? Math.round((completed / total) * 100) : 0}% completion, ${h.totalTimeSpent || 0}min total time`;
+      }).join("\n");
+
+      const missReasonsSummary = activeHabits
+        .filter(h => ((h.missReasons as any[]) || []).length > 0)
+        .map(h => `${h.title} miss reasons: ${((h.missReasons as any[]) || []).map((m: any) => m.reason).join(", ")}`)
+        .join("\n");
+
+      const moodSummary = recentMood.length > 0
+        ? `Recent mood entries (${recentMood.length}): ` + recentMood.slice(0, 15).map(m => `${m.date}: mood=${m.mood}, energy=${m.energy}/5, stress=${m.stress}/5, sleep=${m.sleep}/5${m.notes ? `, notes="${m.notes.substring(0, 100)}"` : ""}`).join("\n")
+        : "No mood data recorded yet.";
+
+      const journalSummary = recentJournal.length > 0
+        ? `Recent journal entries (${recentJournal.length}): ` + recentJournal.slice(0, 10).map(j => `${j.date} (mood: ${j.mood || "?"}): ${j.content.substring(0, 200)}`).join("\n")
+        : "No journal entries yet.";
+
+      const coachSummary = chatHistory.length > 0
+        ? `${chatHistory.length} coaching sessions, total ${chatHistory.reduce((s, c) => s + (c.messageCount || 0), 0)} messages exchanged. Topics: ${chatHistory.map(c => c.title).join(", ")}`
+        : "No coaching sessions yet.";
+
+      const quickTaskCount = allQuickTasks.length;
+      const quickTaskCompleted = allQuickTasks.filter(t => t.completed).length;
+      const focusTotal = completedFocus.reduce((s, f) => s + (f.completedDuration || f.duration || 0), 0);
+      const completedMilestoneCount = allMilestones.filter(m => m.isCompleted).length;
+
+      const dataPrompt = `FULL USER OVERVIEW:
+
+HABITS (${activeHabits.length} active):
+${habitSummary || "No habits yet."}
+
+${missReasonsSummary ? `MISSED DAY REASONS:\n${missReasonsSummary}` : ""}
+
+MOOD & WELLNESS:
+${moodSummary}
+
+JOURNAL:
+${journalSummary}
+
+COACHING:
+${coachSummary}
+
+QUICK TASKS: ${quickTaskCount} created, ${quickTaskCompleted} completed (${quickTaskCount > 0 ? Math.round((quickTaskCompleted / quickTaskCount) * 100) : 0}% rate)
+
+FOCUS SESSIONS: ${completedFocus.length} completed, ${focusTotal} total minutes
+
+ACHIEVEMENTS: ${allAchievements.length} badges earned
+
+GOALS: ${activeGoals.length} active goals, ${completedMilestoneCount}/${allMilestones.length} milestones completed
+${activeGoals.map(g => `  - ${g.title} (${g.progress || 0}% progress)`).join("\n")}
+
+Member since: ${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "unknown"}`;
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert habit coach providing a comprehensive overview of a user's entire app usage. Write a rich, personalized analysis covering ALL areas of their data.
+
+Structure your response with these sections:
+1. **Overall Progress Summary** — A warm, encouraging narrative of their journey so far. Reference specific numbers.
+2. **Habit Performance** — Analyze each habit's streaks, completion rates, and time invested. Highlight the strongest and the one needing attention.
+3. **Wellness & Mood Patterns** — If mood data exists, identify trends in energy, stress, sleep. Connect to habit activity.
+4. **Journal & Reflection Insights** — If journal entries exist, identify themes and emotional patterns. Quote specific content.
+5. **Coaching & Growth** — Summarize coaching engagement and any recurring themes.
+6. **Productivity Snapshot** — Quick tasks, focus sessions, goals progress.
+7. **Strengths & Celebrations** — What they're doing exceptionally well. Celebrate specific wins.
+8. **Areas for Growth** — Honest but kind observations about opportunities to improve.
+9. **Personalized Next Steps** — 3-5 specific, actionable recommendations tied directly to their data. NO generic advice.
+
+CRITICAL RULES:
+- Every observation MUST cite specific data (numbers, dates, habit names, quotes from journals).
+- Do NOT give generic wellness advice. Every recommendation must connect to something in their data.
+- Be warm, encouraging, and substantive. This is a premium feature — make it worth their investment.
+- If a data area is empty (no mood entries, no journal, etc.), briefly acknowledge it and suggest they try it.
+
+SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.`
+          },
+          { role: "user", content: dataPrompt }
+        ],
+        max_tokens: 2000,
+      });
+
+      const report = response.choices[0]?.message?.content || "Unable to generate report. Please try again.";
+      res.json({ report, generatedAt: new Date().toISOString() });
+    } catch (error) {
+      console.error("Error generating comprehensive report:", error);
+      res.status(500).json({ error: "Failed to generate comprehensive report" });
+    }
+  });
+
   app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

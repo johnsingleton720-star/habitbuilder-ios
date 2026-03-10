@@ -61,6 +61,7 @@ Preferred communication style: Simple, everyday language.
 ### Analytics
 -   **Admin Analytics**: Tracks page views, unique visitors, and registrations.
 -   **Advanced Analytics (Premium)**: Includes trend charts, habit performance breakdowns, and AI-generated insights.
+-   **Comprehensive Analytics (Premium)**: Full overview dashboard at `/analytics` with 6 tabs (Overview, Habits, Wellness, Activity, Trends, AI Report). Aggregates data from all app sources — habits, mood, journal, coaching, quick tasks, achievements, focus sessions, goals. `GET /api/analytics/comprehensive` returns structured data; `POST /api/analytics/comprehensive-report` generates a full AI analysis (2000 tokens, 9-section structured prompt). AI report cached in sessionStorage scoped by user ID. Summary hero shows 6 stat cards; per-habit cards color-coded by performance; mood distribution with circular progress indicators; miss-reasons breakdown; journal tags; coaching stats; goals milestones.
 
 ### Achievements & Gamification
 -   Rewards users for streaks, completions, and milestones with XP and badges.
