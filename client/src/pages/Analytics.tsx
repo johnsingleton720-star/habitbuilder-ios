@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { isIOS } from "@/lib/platform";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -263,14 +264,37 @@ export default function Analytics() {
     mutationFn: async () => {
       const res = await apiRequest("GET", "/api/analytics/export");
       const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `habit-builder-analytics-${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const filename = `habit-builder-analytics-${new Date().toISOString().split("T")[0]}.csv`;
+
+      if (isIOS()) {
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        const tempRes = await apiRequest("POST", "/api/temp-file", {
+          data: base64,
+          filename,
+          contentType: "text/csv",
+        });
+        const { url } = await tempRes.json();
+        const fullUrl = `${window.location.origin}${url}`;
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: fullUrl });
+      } else {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
     },
     onSuccess: () => { toast({ title: "Export Complete", description: "Your data has been downloaded as CSV." }); },
     onError: () => { toast({ title: "Export Failed", description: "Could not export data. Please try again.", variant: "destructive" }); },

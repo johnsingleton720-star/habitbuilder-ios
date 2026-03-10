@@ -180,7 +180,10 @@ export default function Journal() {
       const res = await apiRequest("POST", `/api/journal/${entryId}/insights`, {});
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedEntry) => {
+      if (updatedEntry) {
+        setViewingEntry(prev => prev && prev.id === updatedEntry.id ? { ...prev, aiInsights: updatedEntry.aiInsights } : prev);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       toast({ title: "Insights generated", description: "AI has analyzed your journal entry." });
