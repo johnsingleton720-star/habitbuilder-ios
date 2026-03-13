@@ -1603,7 +1603,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         if (stack.habitIds && stack.habitIds.includes(habitId)) {
           const updatedIds = stack.habitIds.filter((id: number) => id !== habitId);
           const updatedOrder = stack.habitOrder
-            ? (stack.habitOrder as Array<{ habitId: number }>).filter((t) => t.habitId !== habitId)
+            ? stack.habitOrder.filter((t) => t.habitId !== habitId)
             : [];
           await db.update(habitStacks).set({ habitIds: updatedIds, habitOrder: updatedOrder }).where(eq(habitStacks.id, stack.id));
         }
