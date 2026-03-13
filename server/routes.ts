@@ -1659,8 +1659,9 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.status(404).json({ error: "Habit not found" });
       }
 
+      const user = await storage.getUser(userId);
       const existingReasons = (habit.missReasons as { reason: string; date: string }[] | null) || [];
-      const today = getUserToday(null);
+      const today = getUserToday(user?.timezone);
       const updatedReasons = [...existingReasons, { reason: parsed.data.reason, date: today }];
 
       const updated = await storage.updateHabit(habitId, userId, { missReasons: updatedReasons } as any);
