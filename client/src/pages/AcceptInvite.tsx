@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ interface InviteInfo {
 
 export default function AcceptInvite() {
   usePageTitle("Accept Invitation", "Accept an accountability partner invitation on HabitBuilder.pro.");
+  const { toast } = useToast();
   const [, params] = useRoute("/accept-invite/:token");
   const token = params?.token || "";
   const [responded, setResponded] = useState<"accepted" | "declined" | null>(null);
@@ -42,6 +44,10 @@ export default function AcceptInvite() {
     },
     onSuccess: (_, action) => {
       setResponded(action === "accept" ? "accepted" : "declined");
+      queryClient.invalidateQueries({ queryKey: ["/api/accountability-partners"] });
+    },
+    onError: () => {
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
     },
   });
 

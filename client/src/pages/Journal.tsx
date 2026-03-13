@@ -215,8 +215,12 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
       clearEditor();
       toast({ title: "Entry deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete entry", variant: "destructive" });
     },
   });
 

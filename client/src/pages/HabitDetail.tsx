@@ -278,6 +278,8 @@ export default function HabitDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
       toast({ title: "Habits linked", description: "Your habit stack has been updated." });
     },
     onError: (err: any) => {
@@ -293,6 +295,8 @@ export default function HabitDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
       toast({ title: "Link removed", description: "Habit has been unlinked." });
     },
     onError: () => {
@@ -308,6 +312,7 @@ export default function HabitDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       setShowPlanTypeChanger(false);
       setSelectedDay(null);
       toast({

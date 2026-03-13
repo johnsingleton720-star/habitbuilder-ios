@@ -105,6 +105,14 @@ export function useDeleteHabit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.habits.list.path] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/streak-breaks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
+    },
+    onError: (err: Error) => {
+      console.error("Failed to delete habit:", err.message);
     },
   });
 }

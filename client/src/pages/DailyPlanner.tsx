@@ -492,6 +492,7 @@ function WeeklyView({ startDate, onSelectDay }: { startDate: string; onSelectDay
       for (const r of data.results) {
         queryClient.invalidateQueries({ queryKey: ["/api/planner", r.date] });
       }
+      queryClient.invalidateQueries({ queryKey: ["/api/user-commitments"] });
       const { generated, skipped } = data.summary;
       toast({
         title: "Weekly plan generated",

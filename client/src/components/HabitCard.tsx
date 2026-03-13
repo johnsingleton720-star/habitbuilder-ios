@@ -211,10 +211,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       toast({ title: "Plan extended!", description: "Your plan has been extended with new tasks." });
     },
     onError: () => {
-      toast({ title: "Failed to extend plan", variant: "destructive" });
+      toast({ title: "Failed to extend plan", description: "Please try again.", variant: "destructive" });
     },
   });
 

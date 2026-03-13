@@ -126,6 +126,10 @@ export default function FocusTimer() {
     onSuccess: (session: FocusSession) => {
       setActiveSessionId(session.id);
       queryClient.invalidateQueries({ queryKey: ["/api/focus-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/focus-sessions/stats"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to start session", description: "Please try again.", variant: "destructive" });
     },
   });
 
