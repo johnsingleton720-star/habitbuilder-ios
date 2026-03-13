@@ -110,6 +110,8 @@ export function useDeleteHabit() {
       queryClient.invalidateQueries({ queryKey: ["/api/habit-stacks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accountability-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
     },
   });
 }
