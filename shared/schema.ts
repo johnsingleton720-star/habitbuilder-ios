@@ -547,12 +547,7 @@ export type ProfileLike = typeof profileLikes.$inferSelect;
 // Conversations (for messaging)
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
-  participant1Id: varchar("participant1_id").notNull().references(() => users.id),
-  participant2Id: varchar("participant2_id").notNull().references(() => users.id),
-  lastMessageAt: timestamp("last_message_at").defaultNow(),
-  lastMessagePreview: text("last_message_preview"),
-  unreadCount1: integer("unread_count_1").default(0), // Unread for participant1
-  unreadCount2: integer("unread_count_2").default(0), // Unread for participant2
+  title: text("title"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -562,16 +557,13 @@ export type Conversation = typeof conversations.$inferSelect;
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   conversationId: integer("conversation_id").notNull().references(() => conversations.id),
-  senderId: varchar("sender_id").notNull().references(() => users.id),
+  role: text("role").notNull(),
   content: text("content").notNull(),
-  isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
-  senderId: true,
-  isRead: true,
   createdAt: true,
 });
 

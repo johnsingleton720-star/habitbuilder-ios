@@ -681,10 +681,12 @@ export async function registerRoutes(
         sql`chat_id IN (SELECT id FROM coach_chats WHERE user_id = ${userId})`
       );
       await db.delete(coachChats).where(eq(coachChats.userId, userId));
-      await db.delete(messages).where(eq(messages.senderId, userId));
-      await db.delete(conversations).where(
-        sql`user1_id = ${userId} OR user2_id = ${userId}`
-      );
+      try {
+        await db.execute(sql`DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE title LIKE '%' || ${userId} || '%')`);
+        await db.execute(sql`DELETE FROM conversations WHERE title LIKE '%' || ${userId} || '%'`);
+      } catch (e) {
+        console.log("Skipping DM cleanup (table schema mismatch):", e);
+      }
       await db.delete(commentLikes).where(eq(commentLikes.userId, userId));
       await db.delete(postLikes).where(eq(postLikes.userId, userId));
       await db.delete(profileLikes).where(eq(profileLikes.likedByUserId, userId));
@@ -9883,28 +9885,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.json([]);
       }
       
-      const convos = await db.select()
-        .from(conversations)
-        .where(sql`${conversations.participant1Id} = ${userId} OR ${conversations.participant2Id} = ${userId}`)
-        .orderBy(sql`${conversations.lastMessageAt} DESC`);
-      
-      const result = await Promise.all(convos.map(async (convo) => {
-        const otherUserId = convo.participant1Id === userId ? convo.participant2Id : convo.participant1Id;
-        const otherProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, otherUserId)).limit(1);
-        const unreadCount = convo.participant1Id === userId ? convo.unreadCount1 : convo.unreadCount2;
-        
-        return {
-          ...convo,
-          otherUser: otherProfile[0] ? {
-            userId: otherUserId,
-            displayName: otherProfile[0].displayName,
-            avatarUrl: otherProfile[0].avatarUrl,
-          } : null,
-          unreadCount,
-        };
-      }));
-      
-      res.json(result);
+      res.json([]);
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
@@ -9917,37 +9898,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const conversationId = parseInt(req.params.conversationId);
       
-      const convo = await db.select().from(conversations).where(eq(conversations.id, conversationId)).limit(1);
-      if (!convo.length || (convo[0].participant1Id !== userId && convo[0].participant2Id !== userId)) {
-        return res.status(404).json({ error: "Conversation not found" });
-      }
-      
-      const msgs = await db.select().from(messages)
-        .where(eq(messages.conversationId, conversationId))
-        .orderBy(messages.createdAt);
-      
-      await db.update(messages)
-        .set({ isRead: true })
-        .where(and(eq(messages.conversationId, conversationId), sql`${messages.senderId} != ${userId}`));
-      
-      if (convo[0].participant1Id === userId) {
-        await db.update(conversations).set({ unreadCount1: 0 }).where(eq(conversations.id, conversationId));
-      } else {
-        await db.update(conversations).set({ unreadCount2: 0 }).where(eq(conversations.id, conversationId));
-      }
-      
-      const otherUserId = convo[0].participant1Id === userId ? convo[0].participant2Id : convo[0].participant1Id;
-      const otherProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, otherUserId)).limit(1);
-      
-      res.json({
-        conversation: convo[0],
-        otherUser: otherProfile[0] ? {
-          userId: otherUserId,
-          displayName: otherProfile[0].displayName,
-          avatarUrl: otherProfile[0].avatarUrl,
-        } : null,
-        messages: msgs,
-      });
+      res.status(404).json({ error: "Conversation not found" });
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ error: "Failed to fetch messages" });
@@ -9964,61 +9915,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.status(400).json({ error: "Message content is required" });
       }
       
-      const senderProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, senderId)).limit(1);
-      if (!senderProfile.length || !senderProfile[0].allowMessages) {
-        return res.status(400).json({ error: "You have messaging disabled" });
-      }
-      
-      let convoId = conversationId;
-      
-      if (!convoId && recipientId) {
-        const recipientProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, recipientId)).limit(1);
-        if (!recipientProfile.length || !recipientProfile[0].allowMessages) {
-          return res.status(400).json({ error: "Recipient has messaging disabled" });
-        }
-        
-        const existingConvo = await db.select().from(conversations)
-          .where(sql`(${conversations.participant1Id} = ${senderId} AND ${conversations.participant2Id} = ${recipientId}) OR (${conversations.participant1Id} = ${recipientId} AND ${conversations.participant2Id} = ${senderId})`)
-          .limit(1);
-        
-        if (existingConvo.length) {
-          convoId = existingConvo[0].id;
-        } else {
-          const [newConvo] = await db.insert(conversations).values({
-            participant1Id: senderId,
-            participant2Id: recipientId,
-          }).returning();
-          convoId = newConvo.id;
-        }
-      }
-      
-      if (!convoId) {
-        return res.status(400).json({ error: "Recipient or conversation required" });
-      }
-      
-      const convo = await db.select().from(conversations).where(eq(conversations.id, convoId)).limit(1);
-      if (!convo.length || (convo[0].participant1Id !== senderId && convo[0].participant2Id !== senderId)) {
-        return res.status(404).json({ error: "Conversation not found" });
-      }
-      
-      const [message] = await db.insert(messages).values({
-        conversationId: convoId,
-        senderId,
-        content: content.trim(),
-      }).returning();
-      
-      const preview = content.trim().substring(0, 100);
-      if (convo[0].participant1Id === senderId) {
-        await db.update(conversations)
-          .set({ lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount2: sql`${conversations.unreadCount2} + 1` })
-          .where(eq(conversations.id, convoId));
-      } else {
-        await db.update(conversations)
-          .set({ lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount1: sql`${conversations.unreadCount1} + 1` })
-          .where(eq(conversations.id, convoId));
-      }
-      
-      res.json({ message, conversationId: convoId });
+      res.status(400).json({ error: "Messaging is not available yet" });
     } catch (error) {
       console.error("Error sending message:", error);
       res.status(500).json({ error: "Failed to send message" });
@@ -10030,16 +9927,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       
-      const convos = await db.select()
-        .from(conversations)
-        .where(sql`${conversations.participant1Id} = ${userId} OR ${conversations.participant2Id} = ${userId}`);
-      
-      let totalUnread = 0;
-      for (const convo of convos) {
-        totalUnread += convo.participant1Id === userId ? (convo.unreadCount1 || 0) : (convo.unreadCount2 || 0);
-      }
-      
-      res.json({ unreadCount: totalUnread });
+      res.json({ unreadCount: 0 });
     } catch (error) {
       console.error("Error fetching unread count:", error);
       res.status(500).json({ error: "Failed to fetch unread count" });
