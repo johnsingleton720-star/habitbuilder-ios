@@ -147,6 +147,7 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
       clearEditor();
       toast({ title: "Entry saved", description: "Your journal entry has been saved." });
     },
@@ -167,6 +168,7 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
       clearEditor();
       toast({ title: "Entry updated", description: "Your journal entry has been updated." });
     },

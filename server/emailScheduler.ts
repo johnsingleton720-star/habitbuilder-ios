@@ -725,7 +725,9 @@ async function processGoalMilestones() {
 
         const newlyCompleted = allMilestones.filter(m => {
           if (!m.isCompleted || !m.completedAt) return false;
-          const completedDate = new Date(m.completedAt).toISOString().split("T")[0];
+          const tz = u.timezone || "UTC";
+          const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+          const completedDate = fmt.format(new Date(m.completedAt));
           return completedDate === localTime.dateStr;
         });
 

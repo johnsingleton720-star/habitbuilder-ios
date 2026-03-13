@@ -153,6 +153,29 @@ const APP_VERSION = (() => {
   return Date.now().toString();
 })();
 
+export const paymentStatusCache = new Map<string, { result: any; timestamp: number }>();
+
+function safeJsonParse(text: string, fallback?: any): any {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) {
+      try { return JSON.parse(fenced[1].trim()); } catch {}
+    }
+    const objMatch = text.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try { return JSON.parse(objMatch[0]); } catch {}
+    }
+    const arrMatch = text.match(/\[[\s\S]*\]/);
+    if (arrMatch) {
+      try { return JSON.parse(arrMatch[0]); } catch {}
+    }
+    if (fallback !== undefined) return fallback;
+    throw new Error(`Failed to parse AI response as JSON: ${text.substring(0, 200)}`);
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -1899,7 +1922,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.status(500).json({ error: "Failed to generate plan" });
       }
 
-      const plan = JSON.parse(planContent);
+      const plan = safeJsonParse(planContent);
       const updated = await storage.updateHabitStack(stackId, userId, { stackPlan: plan });
       res.json(updated);
     } catch (error) {
@@ -2042,7 +2065,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.status(500).json({ error: "Failed to generate plan" });
       }
 
-      const plan = JSON.parse(planContent);
+      const plan = safeJsonParse(planContent);
       plan.generatedAt = new Date().toISOString();
 
       if (!plan.transitions) plan.transitions = [];
@@ -2716,10 +2739,24 @@ SAFETY: Never generate harmful, violent, or explicit content.`
       }
 
       if (appleResult.status === 0) {
+        const latestReceiptInfo = appleResult.latest_receipt_info;
+        if (latestReceiptInfo && Array.isArray(latestReceiptInfo) && latestReceiptInfo.length > 0) {
+          const maxExpiry = Math.max(
+            ...latestReceiptInfo
+              .map((item: any) => parseInt(item.expires_date_ms, 10) || 0)
+              .filter((ms: number) => ms > 0)
+          );
+          if (maxExpiry > 0 && maxExpiry < Date.now()) {
+            console.log("[Apple IAP] Subscription expired for user", userId, "expires:", new Date(maxExpiry).toISOString());
+            return res.status(400).json({ error: "Subscription expired", expired: true });
+          }
+        }
+
         const tier = productId.startsWith('pro') ? 'pro' : 'premium';
         await db.update(users).set({
           subscriptionTier: tier,
           hasPaid: true,
+          subscriptionStatus: 'active',
         }).where(eq(users.id, userId));
         paymentStatusCache.delete(userId);
 
@@ -3448,7 +3485,7 @@ Be specific and practical. Never mention specific third-party apps, brands, or s
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const planData = JSON.parse(content);
+      const planData = safeJsonParse(content);
       res.json(planData);
     } catch (error) {
       console.error("Error generating habit plan:", error);
@@ -3503,7 +3540,7 @@ Be creative and diverse. Cover different angles and approaches to completing "${
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const optionsData = JSON.parse(content);
+      const optionsData = safeJsonParse(content);
       res.json({ stepId, ...optionsData });
     } catch (error) {
       console.error("Error generating step options:", error);
@@ -3574,7 +3611,7 @@ Return JSON:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const data = JSON.parse(content);
+      const data = safeJsonParse(content);
       res.json(data);
     } catch (error) {
       console.error("Error generating questions:", error);
@@ -3783,7 +3820,7 @@ REQUIREMENTS:
 
         let weekData;
         try {
-          weekData = JSON.parse(weekContent);
+          weekData = safeJsonParse(weekContent);
         } catch (parseError) {
           console.error("JSON parse error, raw content:", weekContent);
           throw new Error("Failed to parse AI response");
@@ -3935,7 +3972,7 @@ REQUIREMENTS:
 
       let planData;
       try {
-        planData = JSON.parse(content);
+        planData = safeJsonParse(content);
       } catch (parseError) {
         console.error("JSON parse error, raw content:", content);
         throw new Error("Failed to parse AI response");
@@ -4139,7 +4176,7 @@ REQUIREMENTS:
         const weekContent = weekResponse.choices[0].message.content;
         if (!weekContent) throw new Error("No content from AI");
 
-        const weekDataRegen = JSON.parse(weekContent);
+        const weekDataRegen = safeJsonParse(weekContent);
         if (!weekDataRegen.weeks || !Array.isArray(weekDataRegen.weeks) || weekDataRegen.weeks.length === 0) {
           throw new Error("Invalid weekly plan structure from AI");
         }
@@ -4271,7 +4308,7 @@ REQUIREMENTS:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const planDataRegen = JSON.parse(content);
+      const planDataRegen = safeJsonParse(content);
       if (!planDataRegen.dailyPlans || !Array.isArray(planDataRegen.dailyPlans)) {
         throw new Error("Invalid plan structure from AI");
       }
@@ -4491,7 +4528,7 @@ REQUIREMENTS:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const adjustedData = JSON.parse(content);
+      const adjustedData = safeJsonParse(content);
       if (!adjustedData.adjustedPlans || !Array.isArray(adjustedData.adjustedPlans)) {
         throw new Error("Invalid adjusted plan structure from AI");
       }
@@ -4644,7 +4681,7 @@ REQUIREMENTS:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const planData = JSON.parse(content);
+      const planData = safeJsonParse(content);
       if (!planData.dailyPlans || !Array.isArray(planData.dailyPlans)) {
         throw new Error("Invalid plan structure from AI");
       }
@@ -5185,14 +5222,14 @@ Respond ONLY with valid JSON:
 }`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 500,
         response_format: { type: "json_object" },
       });
 
       const content = response.choices[0]?.message?.content || '{}';
-      const result = JSON.parse(content);
+      const result = safeJsonParse(content);
 
       res.json(result);
     } catch (error) {
@@ -5329,7 +5366,7 @@ CRITICAL RULES:
 
       let guidance;
       try {
-        guidance = JSON.parse(content);
+        guidance = safeJsonParse(content);
       } catch (parseError) {
         console.error("Guidance JSON parse error:", content);
         throw new Error("Failed to parse AI guidance response");
@@ -5455,7 +5492,7 @@ Return JSON:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const checkin = JSON.parse(content);
+      const checkin = safeJsonParse(content);
       res.json(checkin);
     } catch (error) {
       console.error("Error generating coaching check-in:", error);
@@ -5588,7 +5625,7 @@ Return JSON with:
       const content = response.choices[0].message.content;
       if (!content) throw new Error("No content from AI");
 
-      const motivation = JSON.parse(content);
+      const motivation = safeJsonParse(content);
       res.json(motivation);
     } catch (error) {
       console.error("Error generating daily motivation:", error);
@@ -5599,7 +5636,6 @@ Return JSON with:
   // Track last sync time per user to avoid excessive Stripe API calls
   const lastSyncTimes = new Map<string, number>();
   const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes between syncs per user
-  const paymentStatusCache = new Map<string, { result: any; timestamp: number }>();
 
   // Check user payment status and trial - AUTO-SYNC from Stripe if needed
   app.get("/api/payment-status", isAuthenticated, async (req: any, res) => {
@@ -6614,7 +6650,7 @@ Be specific, practical, and grounded in behavior science. Every task should make
       }
 
       const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const plan = JSON.parse(cleaned);
+      const plan = safeJsonParse(cleaned);
       
       if (plan.resources && Array.isArray(plan.resources)) {
         plan.resources = plan.resources.map((r: any) => {
@@ -10357,7 +10393,7 @@ ${!hasUserData ? "\nNote: This is a new user with limited history. Use sensible 
     let blocks: any[] = [];
     let insights: any = null;
     try {
-      const parsed = JSON.parse(rawContent);
+      const parsed = safeJsonParse(rawContent);
       insights = parsed.insights || null;
       if (Array.isArray(parsed)) {
         blocks = parsed;

@@ -2,6 +2,7 @@ import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { db } from './db';
 import { users, foundingMemberSlots, habits } from '@shared/schema';
 import { eq, sql, and } from 'drizzle-orm';
+import { paymentStatusCache } from './routes';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
@@ -69,6 +70,7 @@ export class WebhookHandlers {
           console.log(`Founding member slot claimed for ${tier} by user ${session.metadata.userId}`);
         }
         
+        paymentStatusCache.delete(session.metadata.userId);
         console.log(`User ${session.metadata.userId} subscription started (${tier}, ${billingInterval}) - access granted`);
 
         const restoredHabits = await db
@@ -126,6 +128,7 @@ export class WebhookHandlers {
           }
         }
         
+        paymentStatusCache.delete(user.id);
         console.log(`User ${user.id} subscription updated: ${subscription.status}`);
       }
     }
@@ -161,6 +164,7 @@ export class WebhookHandlers {
           })
           .where(eq(users.id, user.id));
         
+        paymentStatusCache.delete(user.id);
         console.log(`User ${user.id} subscription cancelled - access revoked`);
       }
     }
@@ -182,6 +186,7 @@ export class WebhookHandlers {
           .set({ subscriptionStatus: 'past_due' })
           .where(eq(users.id, user.id));
         
+        paymentStatusCache.delete(user.id);
         console.log(`User ${user.id} payment failed - subscription past due`);
       }
     }
