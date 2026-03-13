@@ -199,7 +199,7 @@ export function OnboardingWizard() {
                   {isSkipping ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    "I'll explore on my own"
+                    "Show me around first"
                   )}
                 </Button>
               </div>

@@ -824,14 +824,25 @@ export default function Goals() {
             ))}
           </div>
         ) : allGoals.length === 0 ? (
-          <Card className="p-8 text-center" data-testid="card-no-goals">
-            <Target className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <h3 className="font-semibold text-lg mb-1">No goals yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Set your first goal to start tracking your progress.</p>
-            <Button onClick={() => setCreateOpen(true)} className="gap-1.5" data-testid="button-create-first-goal">
-              <Plus className="w-4 h-4" />
-              Create Your First Goal
-            </Button>
+          <Card className="p-8" data-testid="card-no-goals">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mb-4">
+                <Target className="w-8 h-8 text-rose-500" />
+              </div>
+              <h3 className="font-semibold text-lg mb-1">Set your first goal</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mb-2">
+                Goals give your habits direction. Define what you want to achieve, break it into milestones, and let your daily habits drive you there.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mb-5 text-xs text-muted-foreground">
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">Milestones</span>
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">Link habits</span>
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">AI suggestions</span>
+              </div>
+              <Button onClick={() => setCreateOpen(true)} className="gap-1.5" data-testid="button-create-first-goal">
+                <Plus className="w-4 h-4" />
+                Create Your First Goal
+              </Button>
+            </div>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

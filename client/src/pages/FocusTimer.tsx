@@ -322,11 +322,13 @@ export default function FocusTimer() {
               </div>
               {statsQuery.isLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
-              ) : (
+              ) : stats?.todaySessions ? (
                 <>
-                  <p className="text-lg font-bold" data-testid="text-today-minutes">{stats?.todayMinutes || 0} min</p>
-                  <p className="text-xs text-muted-foreground" data-testid="text-today-sessions">{stats?.todaySessions || 0} sessions</p>
+                  <p className="text-lg font-bold" data-testid="text-today-minutes">{stats.todayMinutes} min</p>
+                  <p className="text-xs text-muted-foreground" data-testid="text-today-sessions">{stats.todaySessions} sessions</p>
                 </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1" data-testid="text-today-empty">Ready to focus!</p>
               )}
             </CardContent>
           </Card>
@@ -338,11 +340,13 @@ export default function FocusTimer() {
               </div>
               {statsQuery.isLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
-              ) : (
+              ) : stats?.totalSessions ? (
                 <>
-                  <p className="text-lg font-bold" data-testid="text-total-minutes">{stats?.totalMinutes || 0} min</p>
-                  <p className="text-xs text-muted-foreground" data-testid="text-total-sessions">{stats?.totalSessions || 0} sessions</p>
+                  <p className="text-lg font-bold" data-testid="text-total-minutes">{stats.totalMinutes} min</p>
+                  <p className="text-xs text-muted-foreground" data-testid="text-total-sessions">{stats.totalSessions} sessions</p>
                 </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1" data-testid="text-total-empty">Start your first session</p>
               )}
             </CardContent>
           </Card>

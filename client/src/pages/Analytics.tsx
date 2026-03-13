@@ -313,14 +313,21 @@ export default function Analytics() {
         </div>
         <Card className="text-center py-12">
           <CardContent className="space-y-4">
-            <Lock className="w-16 h-16 mx-auto text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <BarChart3 className="w-8 h-8 text-primary" />
+            </div>
             <h2 className="text-2xl font-bold">Advanced Analytics</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Get detailed insights into your habits with trend charts, correlation analysis, 
-              AI-powered reports, and CSV data export.
+              See your habit journey visualized with trend charts, performance breakdowns, AI-powered reports, and exportable data.
             </p>
+            <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">Trend charts</span>
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">AI reports</span>
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">CSV export</span>
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">Mood insights</span>
+            </div>
             <Badge variant="secondary" className="text-sm">Premium Feature</Badge>
-            <div className="pt-4">
+            <div className="pt-2">
               <Button asChild><a href="/paywall">Upgrade to Premium</a></Button>
             </div>
           </CardContent>
@@ -433,7 +440,10 @@ export default function Analytics() {
                         <Progress value={habit.completion} className="h-2" />
                       </div>
                     )) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">No active habits yet</p>
+                      <div className="flex flex-col items-center text-center py-6">
+                        <Target className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                        <p className="text-sm text-muted-foreground">Create a habit to see performance data here</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

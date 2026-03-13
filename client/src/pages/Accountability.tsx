@@ -441,16 +441,22 @@ export default function Accountability() {
         </div>
         <Card className="text-center py-12">
           <CardContent className="space-y-4">
-            <Lock className="w-16 h-16 mx-auto text-muted-foreground" />
-            <h2 className="text-2xl font-bold">Social Accountability</h2>
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Users className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold">Accountability Partners</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Invite accountability partners to track your progress, send weekly updates, 
-              and stay motivated together.
+              Stay motivated by sharing your progress with a friend, partner, or coach. They'll see your streaks and cheer you on.
             </p>
+            <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">Share streaks</span>
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">Weekly updates</span>
+              <span className="px-2.5 py-1 rounded-full bg-muted/50">Stay motivated</span>
+            </div>
             <Badge variant="secondary" className="text-sm">
               Premium Feature
             </Badge>
-            <div className="pt-4">
+            <div className="pt-2">
               <Button asChild>
                 <a href="/paywall">Upgrade to Premium</a>
               </Button>
@@ -733,11 +739,18 @@ export default function Accountability() {
           ) : (
             <Card className="text-center py-12">
               <CardContent>
-                <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No Partners Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Invite someone to hold you accountable on your habit journey
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-medium">Invite your first partner</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-2">
+                  People who share their progress are 65% more likely to reach their goals. Invite a friend, family member, or coach to keep each other on track.
                 </p>
+                <div className="flex flex-wrap justify-center gap-2 mb-4 text-xs text-muted-foreground">
+                  <span className="px-2.5 py-1 rounded-full bg-muted/50">Share progress</span>
+                  <span className="px-2.5 py-1 rounded-full bg-muted/50">Weekly check-ins</span>
+                  <span className="px-2.5 py-1 rounded-full bg-muted/50">Mutual motivation</span>
+                </div>
                 <Button onClick={() => setIsInviteOpen(true)}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   Invite Your First Partner

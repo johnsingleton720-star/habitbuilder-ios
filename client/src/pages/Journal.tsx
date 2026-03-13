@@ -92,12 +92,19 @@ export default function Journal() {
           </div>
           <Card data-testid="card-journal-locked">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-muted-foreground" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <PenLine className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-xl font-bold text-foreground mb-2">Daily Journal</h2>
-              <p className="text-muted-foreground max-w-md mb-6">
-                Write daily reflections and get AI-generated insights about your habits and mood patterns. Available on Pro and Premium plans.
+              <p className="text-muted-foreground max-w-md mb-2">
+                Capture your thoughts, track patterns, and get AI-powered insights about your habits and mood.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mb-6 text-xs text-muted-foreground">
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">Daily reflections</span>
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">AI insights</span>
+                <span className="px-2.5 py-1 rounded-full bg-muted/50">Mood patterns</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Available on Pro and Premium plans.
               </p>
               <UpgradePrompt feature="Daily Journal" description="Unlock journaling with AI insights" variant="card" />
             </CardContent>
@@ -585,9 +592,15 @@ export default function Journal() {
                 ) : sortedAllEntries.length > 0 ? (
                   sortedAllEntries.slice(0, 30).map((entry) => renderEntryItem(entry, false))
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No entries yet. Start writing today!
-                  </p>
+                  <div className="flex flex-col items-center text-center py-8">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                      <PenLine className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold text-sm mb-1">Your journal is waiting</h4>
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      Writing just a few sentences each day helps you reflect on your progress and spot patterns in your habits.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

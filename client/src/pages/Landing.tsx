@@ -292,21 +292,6 @@ function LoginTransitionDialog({ open, onOpenChange }: { open: boolean; onOpenCh
 
 function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   const [isAnnual, setIsAnnual] = useState(false);
-  const { data: slotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
-    queryKey: ['/api/founding-member-slots'],
-    staleTime: 30000,
-  });
-
-  useEffect(() => {
-    const handler = () => setIsAnnual(true);
-    window.addEventListener('select-annual-pricing', handler);
-    return () => window.removeEventListener('select-annual-pricing', handler);
-  }, []);
-
-  const hasAnyAnnualSlots = slotsData && (
-    (slotsData.pro?.remaining > 0 && slotsData.pro?.active) ||
-    (slotsData.premium?.remaining > 0 && slotsData.premium?.active)
-  );
 
   return (
     <section className="py-16 md:py-24 px-4 sm:px-6 relative" id="pricing" aria-label="Pricing plans">
@@ -323,43 +308,27 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
           </p>
         </div>
 
-        {hasAnyAnnualSlots && (
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 p-1.5 rounded-lg border bg-muted/50" data-testid="toggle-landing-billing">
-              <button
-                onClick={() => setIsAnnual(false)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${!isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
-                data-testid="button-landing-monthly"
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setIsAnnual(true)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
-                data-testid="button-landing-annual"
-              >
-                Annual
-                <Badge variant="secondary" className="text-xs">
-                  Founding Member
-                </Badge>
-              </button>
-            </div>
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex items-center gap-3 p-1.5 rounded-lg border bg-muted/50" data-testid="toggle-landing-billing">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${!isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              data-testid="button-landing-monthly"
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              data-testid="button-landing-annual"
+            >
+              Annual
+              <Badge variant="secondary" className="text-xs">
+                Save up to 30%
+              </Badge>
+            </button>
           </div>
-        )}
-
-        {isAnnual ? (
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/15 dark:via-primary/10 dark:to-primary/15 border border-primary/30 rounded-lg px-4 sm:px-6 py-4 text-center" data-testid="banner-landing-founding">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Star className="w-5 h-5 text-primary" />
-                <span className="font-display font-bold text-base md:text-lg">Founding Member Annual Plans</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Limited spots for early supporters. Lock in exclusive annual pricing before it's gone forever.
-              </p>
-            </div>
-          </div>
-        ) : null}
+        </div>
 
         <div className="grid md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
           <Card className="h-full flex flex-col bg-card/80" data-testid="card-pricing-trial">
@@ -409,7 +378,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
           <Card className={`h-full flex flex-col relative border-primary shadow-xl shadow-primary/15 ring-1 ring-primary/30 ${isAnnual ? 'md:scale-[1.03]' : 'md:scale-[1.03]'}`} data-testid="card-pricing-pro">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] to-transparent rounded-[inherit] pointer-events-none" />
             <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 shadow-md">
-              {isAnnual ? 'Founding Member' : 'Most Popular'}
+              Most Popular
             </Badge>
             <CardContent className="pt-6 flex-1 flex flex-col relative">
               <div className="text-center mb-6">
@@ -429,15 +398,6 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                       <span className="text-muted-foreground">/mo</span>
                       <span className="block text-sm text-muted-foreground mt-1">$48/year, billed annually</span>
                       <Badge variant="secondary" className="mt-1 text-xs">Save $24/year</Badge>
-                      {slotsData?.pro && (
-                        <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-pro-slots">
-                          {slotsData.pro.remaining > 0 ? (
-                            <>{slotsData.pro.remaining} of {slotsData.pro.total} spots left</>
-                          ) : (
-                            <span className="text-destructive font-medium">Sold Out</span>
-                          )}
-                        </p>
-                      )}
                     </>
                   ) : (
                     <>
@@ -468,18 +428,13 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                 ))}
               </ul>
               <Button onClick={scrollToLogin} className="w-full mt-6 shadow-lg shadow-primary/20" data-testid="button-pricing-pro">
-                {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+                Get Started
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </CardContent>
           </Card>
 
-          <Card className={`h-full flex flex-col relative ${isAnnual ? 'border-amber-500/50 shadow-lg shadow-amber-500/10' : ''}`} data-testid="card-pricing-premium">
-            {isAnnual && (
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500">
-                Founding Member
-              </Badge>
-            )}
+          <Card className="h-full flex flex-col relative" data-testid="card-pricing-premium">
             <CardContent className="pt-6 flex-1 flex flex-col">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
@@ -498,15 +453,6 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                       <span className="text-muted-foreground">/mo</span>
                       <span className="block text-sm text-muted-foreground mt-1">$140/year, billed annually</span>
                       <Badge variant="secondary" className="mt-1 text-xs">Save $40/year</Badge>
-                      {slotsData?.premium && (
-                        <p className="text-xs mt-2 text-muted-foreground" data-testid="text-landing-premium-slots">
-                          {slotsData.premium.remaining > 0 ? (
-                            <>{slotsData.premium.remaining} of {slotsData.premium.total} spots left</>
-                          ) : (
-                            <span className="text-destructive font-medium">Sold Out</span>
-                          )}
-                        </p>
-                      )}
                     </>
                   ) : (
                     <>
@@ -539,8 +485,8 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
               </ul>
-              <Button onClick={scrollToLogin} variant={isAnnual ? "default" : "outline"} className="w-full mt-6" data-testid="button-pricing-premium">
-                {isAnnual ? 'Claim Founding Member Spot' : 'Get Started'}
+              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-premium">
+                Get Started
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </CardContent>
@@ -734,7 +680,6 @@ export default function Landing() {
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [topBannerDismissed, setTopBannerDismissed] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showLoggedOutBanner, setShowLoggedOutBanner] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -748,27 +693,7 @@ export default function Landing() {
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimate = !isMobile && !prefersReducedMotion;
 
-  const { data: topSlotsData } = useQuery<Record<string, { total: number; used: number; remaining: number; priceYearly: number; active: boolean }>>({
-    queryKey: ['/api/founding-member-slots'],
-    staleTime: 30000,
-  });
-
-  const hasTopBannerSlots = topSlotsData && (
-    (topSlotsData.pro?.remaining > 0 && topSlotsData.pro?.active) ||
-    (topSlotsData.premium?.remaining > 0 && topSlotsData.premium?.active)
-  );
-
-  const totalSlotsRemaining = (topSlotsData?.pro?.remaining || 0) + (topSlotsData?.premium?.remaining || 0);
-
-  const scrollToAnnualPricing = useCallback(() => {
-    const pricingEl = document.getElementById('pricing');
-    if (pricingEl) {
-      pricingEl.scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => {
-        window.dispatchEvent(new Event('select-annual-pricing'));
-      }, 500);
-    }
-  }, []);
+  
 
   const scrollToLogin = () => {
     setShowLoginDialog(true);
