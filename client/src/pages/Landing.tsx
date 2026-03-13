@@ -867,47 +867,9 @@ export default function Landing() {
       <LoginTransitionDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
       <StickyMobileCTA onClick={scrollToLogin} />
 
-      <AnimatePresence>
-        {hasTopBannerSlots && !topBannerDismissed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="fixed top-[56px] md:top-[72px] left-0 right-0 z-40 bg-gradient-to-r from-primary/95 to-primary text-primary-foreground shadow-md" data-testid="banner-top-founding">
-              <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-3 flex-wrap relative">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Star className="w-4 h-4 shrink-0" />
-                  <span>Founding Member Annual Plans</span>
-                  <span className="hidden sm:inline">-</span>
-                  <span className="hidden sm:inline">Save up to $40/year. Only {totalSlotsRemaining} spots left.</span>
-                  <span className="sm:hidden">- {totalSlotsRemaining} spots left</span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={scrollToAnnualPricing}
-                  data-testid="button-top-founding-cta"
-                >
-                  View Plans
-                  <ArrowRight className="ml-1 w-3 h-3" />
-                </Button>
-                <button
-                  onClick={() => setTopBannerDismissed(true)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover-elevate text-primary-foreground/80"
-                  aria-label="Dismiss banner"
-                  data-testid="button-dismiss-top-banner"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      
 
-      <section className={`relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden ${hasTopBannerSlots && !topBannerDismissed ? 'pt-36 md:pt-44 lg:pt-60' : 'pt-20 md:pt-32 lg:pt-48'}`} aria-label="Hero - AI-powered habit coaching">
+      <section className="relative pb-12 md:pb-20 lg:pb-32 px-4 sm:px-6 overflow-hidden pt-20 md:pt-32 lg:pt-48" aria-label="Hero - AI-powered habit coaching">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.06]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.12),transparent)]" />
         {!isMobile && (
