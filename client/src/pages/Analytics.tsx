@@ -1053,9 +1053,14 @@ export default function Analytics() {
       ) : (
         <Card className="text-center py-12">
           <CardContent>
-            <BarChart3 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No Data Yet</h3>
-            <p className="text-muted-foreground">Complete some habit sessions to see your analytics</p>
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-medium">Your analytics will appear here</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-4">Complete a few habit sessions and your trends, insights, and progress will start showing up automatically.</p>
+            <Button asChild variant="outline">
+              <a href="/">Go to Dashboard</a>
+            </Button>
           </CardContent>
         </Card>
       )}
