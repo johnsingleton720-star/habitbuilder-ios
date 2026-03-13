@@ -86,9 +86,9 @@ export function TermsOfServiceBanner() {
             className="text-xs cursor-pointer leading-relaxed"
           >
             I agree to the{" "}
-            <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Terms of Service</a>
             {" "}and{" "}
-            <a href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</a>.
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a>.
             I am 18+.
           </label>
         </div>
