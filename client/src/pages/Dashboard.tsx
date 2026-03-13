@@ -18,8 +18,9 @@ import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
+import { TermsOfServiceBanner } from "@/components/TermsOfServiceModal";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2 } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -547,6 +548,17 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </motion.section>
+        )}
+
+        {/* TOS inline acceptance banner */}
+        {user && !user.tosAcceptedAt && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <TermsOfServiceBanner />
           </motion.section>
         )}
 
