@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens, habitReminders, habitStacks } from "@shared/schema";
 import { saveSubscription, syncSubscription, syncDeviceToken, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import fs from "fs";
@@ -1591,9 +1591,26 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
   app.delete(api.habits.delete.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
     const habitId = Number(req.params.id);
-    await storage.deleteHabit(habitId, userId);
 
-    // Clean up deleted habit from accountability partner shared lists
+    try {
+      await db.delete(habitReminders).where(and(eq(habitReminders.habitId, habitId), eq(habitReminders.userId, userId)));
+    } catch (e) { console.error("Error cleaning up habit reminders:", e); }
+
+    try {
+      await db.update(focusSessions).set({ habitId: null }).where(and(eq(focusSessions.habitId, habitId), eq(focusSessions.userId, userId)));
+    } catch (e) { console.error("Error cleaning up focus sessions:", e); }
+
+    try {
+      const stacks = await db.select().from(habitStacks).where(eq(habitStacks.userId, userId));
+      for (const stack of stacks) {
+        if (stack.habitIds && stack.habitIds.includes(habitId)) {
+          const updatedIds = stack.habitIds.filter(id => id !== habitId);
+          const updatedOrder = stack.habitOrder ? (stack.habitOrder as any[]).filter((t: any) => t.habitId !== habitId) : [];
+          await db.update(habitStacks).set({ habitIds: updatedIds, habitOrder: updatedOrder }).where(eq(habitStacks.id, stack.id));
+        }
+      }
+    } catch (e) { console.error("Error cleaning up habit stacks:", e); }
+
     try {
       const partnerRows = await db.select().from(accountabilityPartners)
         .where(eq(accountabilityPartners.userId, userId));
@@ -1605,9 +1622,19 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
             .where(eq(accountabilityPartners.id, p.id));
         }
       }
-    } catch (cleanupErr) {
-      console.error("Error cleaning up accountability habit references:", cleanupErr);
-    }
+    } catch (e) { console.error("Error cleaning up accountability habit references:", e); }
+
+    try {
+      const goalRows = await db.select().from(goals).where(eq(goals.userId, userId));
+      for (const g of goalRows) {
+        if (g.habitIds && (g.habitIds as number[]).includes(habitId)) {
+          const updated = (g.habitIds as number[]).filter(id => id !== habitId);
+          await db.update(goals).set({ habitIds: updated }).where(eq(goals.id, g.id));
+        }
+      }
+    } catch (e) { console.error("Error cleaning up goal habit references:", e); }
+
+    await storage.deleteHabit(habitId, userId);
 
     res.status(204).send();
   });

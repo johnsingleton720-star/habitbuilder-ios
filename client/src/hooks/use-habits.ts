@@ -111,9 +111,7 @@ export function useDeleteHabit() {
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
     },
-    onError: (err: Error) => {
-      console.error("Failed to delete habit:", err.message);
-    },
+    onError: () => {},
   });
 }
 

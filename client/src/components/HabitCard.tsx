@@ -519,7 +519,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => deleteHabit.mutate(habit.id)}
+              onClick={() => deleteHabit.mutate(habit.id, { onError: () => toast({ title: "Failed to delete habit", variant: "destructive" }) })}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteHabit.isPending ? "Deleting..." : "Delete"}

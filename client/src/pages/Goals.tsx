@@ -267,6 +267,9 @@ function GoalDetailDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
     },
+    onError: () => {
+      toast({ title: "Failed to update milestone", variant: "destructive" });
+    },
   });
 
   const deleteMilestoneMutation = useMutation({
@@ -275,6 +278,9 @@ function GoalDetailDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete milestone", variant: "destructive" });
     },
   });
 
