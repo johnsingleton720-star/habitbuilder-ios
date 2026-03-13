@@ -1594,49 +1594,42 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
     try {
       await db.delete(habitReminders).where(and(eq(habitReminders.habitId, habitId), eq(habitReminders.userId, userId)));
-    } catch (e) { console.error("Error cleaning up habit reminders:", e); }
 
-    try {
       await db.update(focusSessions).set({ habitId: null }).where(and(eq(focusSessions.habitId, habitId), eq(focusSessions.userId, userId)));
-    } catch (e) { console.error("Error cleaning up focus sessions:", e); }
 
-    try {
       const stacks = await db.select().from(habitStacks).where(eq(habitStacks.userId, userId));
       for (const stack of stacks) {
         if (stack.habitIds && stack.habitIds.includes(habitId)) {
-          const updatedIds = stack.habitIds.filter(id => id !== habitId);
-          const updatedOrder = stack.habitOrder ? (stack.habitOrder as any[]).filter((t: any) => t.habitId !== habitId) : [];
+          const updatedIds = stack.habitIds.filter((id: number) => id !== habitId);
+          const updatedOrder = stack.habitOrder
+            ? (stack.habitOrder as Array<{ habitId: number }>).filter((t) => t.habitId !== habitId)
+            : [];
           await db.update(habitStacks).set({ habitIds: updatedIds, habitOrder: updatedOrder }).where(eq(habitStacks.id, stack.id));
         }
       }
-    } catch (e) { console.error("Error cleaning up habit stacks:", e); }
 
-    try {
-      const partnerRows = await db.select().from(accountabilityPartners)
-        .where(eq(accountabilityPartners.userId, userId));
+      const partnerRows = await db.select().from(accountabilityPartners).where(eq(accountabilityPartners.userId, userId));
       for (const p of partnerRows) {
         if (p.habitIds && p.habitIds.includes(habitId)) {
-          const updated = p.habitIds.filter(id => id !== habitId);
-          await db.update(accountabilityPartners)
-            .set({ habitIds: updated })
-            .where(eq(accountabilityPartners.id, p.id));
+          const updated = p.habitIds.filter((id: number) => id !== habitId);
+          await db.update(accountabilityPartners).set({ habitIds: updated }).where(eq(accountabilityPartners.id, p.id));
         }
       }
-    } catch (e) { console.error("Error cleaning up accountability habit references:", e); }
 
-    try {
       const goalRows = await db.select().from(goals).where(eq(goals.userId, userId));
       for (const g of goalRows) {
         if (g.habitIds && (g.habitIds as number[]).includes(habitId)) {
-          const updated = (g.habitIds as number[]).filter(id => id !== habitId);
+          const updated = (g.habitIds as number[]).filter((id: number) => id !== habitId);
           await db.update(goals).set({ habitIds: updated }).where(eq(goals.id, g.id));
         }
       }
-    } catch (e) { console.error("Error cleaning up goal habit references:", e); }
 
-    await storage.deleteHabit(habitId, userId);
-
-    res.status(204).send();
+      await storage.deleteHabit(habitId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting habit and cleaning up references:", error);
+      res.status(500).json({ error: "Failed to delete habit" });
+    }
   });
 
   // Streak miss reason (all tiers)

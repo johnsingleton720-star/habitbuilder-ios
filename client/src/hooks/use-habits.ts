@@ -111,7 +111,6 @@ export function useDeleteHabit() {
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
     },
-    onError: () => {},
   });
 }
 
