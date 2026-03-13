@@ -1685,32 +1685,20 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       await db.update(focusSessions).set({ habitId: null }).where(and(eq(focusSessions.habitId, habitId), eq(focusSessions.userId, userId)));
 
-      const stacks = await db.select().from(habitStacks).where(eq(habitStacks.userId, userId));
-      for (const stack of stacks) {
-        if (stack.habitIds && stack.habitIds.includes(habitId)) {
-          const updatedIds = stack.habitIds.filter((id: number) => id !== habitId);
-          const updatedOrder = stack.habitOrder
-            ? stack.habitOrder.filter((t) => t.habitId !== habitId)
-            : [];
-          await db.update(habitStacks).set({ habitIds: updatedIds, habitOrder: updatedOrder }).where(eq(habitStacks.id, stack.id));
-        }
-      }
+      await db.update(habitStacks)
+        .set({
+          habitIds: sql`array_remove(habit_ids, ${habitId})`,
+          habitOrder: sql`array_remove(habit_order, jsonb_build_object('habitId', ${habitId}))`
+        })
+        .where(and(eq(habitStacks.userId, userId), sql`${habitId} = ANY(habit_ids)`));
 
-      const partnerRows = await db.select().from(accountabilityPartners).where(eq(accountabilityPartners.userId, userId));
-      for (const p of partnerRows) {
-        if (p.habitIds && p.habitIds.includes(habitId)) {
-          const updated = p.habitIds.filter((id: number) => id !== habitId);
-          await db.update(accountabilityPartners).set({ habitIds: updated }).where(eq(accountabilityPartners.id, p.id));
-        }
-      }
+      await db.update(accountabilityPartners)
+        .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
+        .where(sql`${habitId} = ANY(habit_ids)`);
 
-      const goalRows = await db.select().from(goals).where(eq(goals.userId, userId));
-      for (const g of goalRows) {
-        if (g.habitIds && (g.habitIds as number[]).includes(habitId)) {
-          const updated = (g.habitIds as number[]).filter((id: number) => id !== habitId);
-          await db.update(goals).set({ habitIds: updated }).where(eq(goals.id, g.id));
-        }
-      }
+      await db.update(goals)
+        .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
+        .where(and(eq(goals.userId, userId), sql`${habitId} = ANY(habit_ids)`));
 
       await storage.deleteHabit(habitId, userId);
       res.status(204).send();
