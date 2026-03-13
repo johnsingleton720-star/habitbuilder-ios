@@ -1523,10 +1523,11 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const user = await storage.getUser(userId);
       
       const existingHabits = await storage.getHabits(userId);
+      const activeHabits = existingHabits.filter(h => !h.archived);
       const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
       const isAdmin = user?.isAdmin === true;
       
-      if (!hasPaidSubscription && !isAdmin && existingHabits.length >= 1) {
+      if (!hasPaidSubscription && !isAdmin && activeHabits.length >= 1) {
         return res.status(403).json({ 
           error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits." 
         });

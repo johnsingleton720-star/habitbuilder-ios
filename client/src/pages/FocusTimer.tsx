@@ -142,6 +142,9 @@ export default function FocusTimer() {
       queryClient.invalidateQueries({ queryKey: ["/api/focus-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/focus-sessions/stats"] });
     },
+    onError: () => {
+      toast({ title: "Failed to update session", variant: "destructive" });
+    },
   });
 
   const handleStart = useCallback(() => {

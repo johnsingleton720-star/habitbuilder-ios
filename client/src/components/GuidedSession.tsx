@@ -17,6 +17,7 @@ import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
 import { VoiceNote } from "./VoiceNote";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useToast } from "@/hooks/use-toast";
 import { UpgradePrompt, SessionLimitReached } from "./UpgradePrompt";
 
 interface NextInStackInfo {
@@ -83,6 +84,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
   const [sessionLimitReached, setSessionLimitReached] = useState(false);
   
   const { features, isFreeUser } = useSubscription();
+  const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -104,6 +106,9 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update task", variant: "destructive" });
     },
   });
 
@@ -163,6 +168,9 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
     },
     onSuccess: (data) => {
       setSessionSummary(data);
+    },
+    onError: () => {
+      toast({ title: "Failed to generate summary", variant: "destructive" });
     },
   });
 
