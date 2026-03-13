@@ -948,7 +948,7 @@ export default function Dashboard() {
         <DowngradeHabitPicker habits={habits || []} open={true} />
       )}
 
-      {user && !user.onboardingComplete && <OnboardingWizard />}
+      {user && !user.onboardingComplete && !localStorage.getItem("presignup_data") && <OnboardingWizard />}
 
       {showTour && (
         <FeatureTour onComplete={() => setShowTour(false)} />

@@ -215,9 +215,13 @@ function Router() {
   }
 
   if (!user) {
-    return <PreSignupOnboarding onLogin={() => {
-      import("@/lib/auth-flow").then(m => m.openAuthFlow());
-    }} />;
+    const showPresignup = isNative() || localStorage.getItem("presignup_data");
+    if (showPresignup) {
+      return <PreSignupOnboarding onLogin={() => {
+        import("@/lib/auth-flow").then(m => m.openAuthFlow());
+      }} />;
+    }
+    return <Landing />;
   }
 
   if (!user.tosAcceptedAt) {
