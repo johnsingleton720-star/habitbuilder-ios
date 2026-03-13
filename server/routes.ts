@@ -5804,6 +5804,7 @@ Return JSON with:
       
       const result = await db.select().from(feedback).orderBy(sql`${feedback.createdAt} DESC`);
       
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
       res.json(result);
     } catch (error) {
       console.error("Error fetching feedback:", error);

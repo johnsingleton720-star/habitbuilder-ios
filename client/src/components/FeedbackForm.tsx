@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ export function FeedbackForm({ open, onOpenChange }: FeedbackFormProps) {
     },
     onSuccess: () => {
       setSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/feedback"] });
       setTimeout(() => {
         onOpenChange(false);
         setSubmitted(false);

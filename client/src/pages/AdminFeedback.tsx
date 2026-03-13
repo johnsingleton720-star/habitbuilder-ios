@@ -196,6 +196,8 @@ export default function AdminFeedback() {
   usePageTitle("Admin Feedback");
   const { data: feedbackItems, isLoading } = useQuery<FeedbackItem[]>({
     queryKey: ["/api/admin/feedback"],
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const stats = {
