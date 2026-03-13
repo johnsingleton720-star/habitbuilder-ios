@@ -337,6 +337,7 @@ export default function HabitDetail() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/needs-adjustment"] });
       localStorage.setItem(`habitAdjusted_${habitId}`, Date.now().toString());
       localStorage.setItem(`habitAdjustedSummary_${habitId}`, data.adjustmentSummary || "");
@@ -363,6 +364,7 @@ export default function HabitDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       setSelectedDay(null);
       toast({
         title: "Plan extended",
@@ -389,6 +391,9 @@ export default function HabitDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update task", variant: "destructive" });
     },
   });
 
