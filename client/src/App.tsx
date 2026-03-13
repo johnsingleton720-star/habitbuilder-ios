@@ -7,7 +7,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
@@ -15,6 +16,39 @@ import { useVersionCheck } from "@/hooks/use-version-check";
 import { PageTransition } from "@/components/PageTransition";
 import { isNative } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("App ErrorBoundary caught:", error, info.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
+            <p className="text-muted-foreground mb-4">An unexpected error occurred. Please refresh the page to continue.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-md bg-primary text-primary-foreground px-6 py-2 text-sm font-semibold"
+              data-testid="button-error-reload"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -244,17 +278,19 @@ function NativeAuthHandler() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <NativeAuthHandler />
-          <Router />
-          <MobileBottomNav />
-          <CookieConsent />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <NativeAuthHandler />
+            <Router />
+            <MobileBottomNav />
+            <CookieConsent />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
