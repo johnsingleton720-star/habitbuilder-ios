@@ -1556,6 +1556,70 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     }
   });
 
+  app.post("/api/habits/from-presignup", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      const { habitTitle, intent, frequency, timeOfDay, experience, plan } = req.body;
+
+      if (!habitTitle || typeof habitTitle !== "string") {
+        return res.status(400).json({ error: "Missing habit title" });
+      }
+
+      const safetyCheck = checkContentSafety(habitTitle);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message });
+      }
+
+      const scheduleMap: Record<string, string[]> = {
+        "3x/week": ["monday", "wednesday", "friday"],
+        "5x/week": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+        "Daily": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+      };
+
+      const habit = await storage.createHabit(userId, {
+        title: habitTitle,
+        goal: `Build a consistent ${habitTitle} routine`,
+        description: intent || "Created during onboarding",
+        schedule: frequency && scheduleMap[frequency] ? {
+          type: "specific" as const,
+          days: scheduleMap[frequency],
+          time: timeOfDay === "Morning" ? "08:00" : timeOfDay === "Afternoon" ? "14:00" : timeOfDay === "Evening" ? "19:00" : "08:00",
+        } : undefined,
+      });
+
+      if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
+        const clientDate = new Date().toLocaleDateString("sv-SE");
+        const dailyPlans = [{
+          date: clientDate,
+          completed: false,
+          tasks: plan.day1Tasks.map((t: any, i: number) => ({
+            id: `presignup-task-${i + 1}`,
+            title: t.task || `Task ${i + 1}`,
+            description: t.task || "",
+            duration: parseInt(t.duration) || 10,
+            completed: false,
+            xp: 25,
+          })),
+        }];
+
+        await storage.updateHabit(habit.id, userId, {
+          dailyPlans: dailyPlans as any,
+          setupComplete: true,
+        });
+      }
+
+      await db.update(users)
+        .set({ onboardingComplete: true, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      res.status(201).json(habit);
+    } catch (err) {
+      console.error("Error creating habit from presignup:", err);
+      res.status(500).json({ error: "Failed to create habit" });
+    }
+  });
+
   app.put(api.habits.update.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -6692,6 +6756,93 @@ Be specific, practical, and grounded in behavior science. Every task should make
       res.json(plan);
     } catch (error) {
       console.error("Error generating demo plan:", error);
+      res.status(500).json({ error: "Failed to generate plan. Please try again." });
+    }
+  });
+
+  const presignupPlanLimiter = new Map<string, { count: number; resetAt: number }>();
+  app.post("/api/presignup/generate-plan", async (req, res) => {
+    try {
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      const now = Date.now();
+      const limit = presignupPlanLimiter.get(clientIp);
+      if (limit && limit.resetAt > now) {
+        if (limit.count >= 3) {
+          return res.status(429).json({ error: "Rate limit reached. Sign up to continue!" });
+        }
+        limit.count++;
+      } else {
+        presignupPlanLimiter.set(clientIp, { count: 1, resetAt: now + 3600000 });
+      }
+
+      const { habitTitle, intent, frequency, timeOfDay, experience } = req.body;
+      if (!habitTitle || typeof habitTitle !== "string" || habitTitle.trim().length < 2 || habitTitle.length > 200) {
+        return res.status(400).json({ error: "Please provide a valid habit title." });
+      }
+
+      const safetyCheck = checkContentSafety(habitTitle);
+      if (!safetyCheck.allowed) {
+        return res.status(400).json({ error: safetyCheck.message || "That goal isn't supported." });
+      }
+
+      const contextLines = [
+        `Habit: ${habitTitle.trim()}`,
+        intent ? `Intent: ${intent}` : "",
+        frequency ? `Preferred frequency: ${frequency}` : "",
+        timeOfDay ? `Preferred time: ${timeOfDay}` : "",
+        experience ? `Experience level: ${experience}` : "",
+      ].filter(Boolean).join("\n");
+
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert habit coach. Generate a personalized 7-day habit plan based on the user's preferences. Return ONLY valid JSON:
+{
+  "title": "Compelling plan title (e.g., 'Your 7-Day Meditation Plan')",
+  "summary": "1-2 sentence personalized summary mentioning their schedule and approach",
+  "schedule": "e.g., Mon-Fri, mornings",
+  "startingWith": "e.g., 5 min/day",
+  "buildingTo": "e.g., 20 min/day by week 4",
+  "approach": "e.g., Gradual build (you fell off before)",
+  "day1Tasks": [
+    {"task": "Specific actionable task for day 1", "duration": "5 min"},
+    {"task": "Second task for day 1", "duration": "5 min"},
+    {"task": "Third task for day 1", "duration": "5 min"}
+  ],
+  "weekOverview": [
+    {"day": 1, "focus": "Foundation - start small"},
+    {"day": 2, "focus": "Build consistency"},
+    {"day": 3, "focus": "Add slight progression"},
+    {"day": 4, "focus": "Rest or lighter session"},
+    {"day": 5, "focus": "Push comfort zone"},
+    {"day": 6, "focus": "Reflect and adjust"},
+    {"day": 7, "focus": "Celebrate and plan ahead"}
+  ],
+  "coachTip": "One personalized insight based on their experience level"
+}
+Tailor the plan to their frequency, time of day, and experience. If they've tried before and fell off, acknowledge that and adjust the approach. Be warm and encouraging. Never mention third-party apps or brands.`
+          },
+          {
+            role: "user",
+            content: contextLines,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 800,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to generate plan." });
+      }
+
+      const plan = safeJsonParse(content);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error generating presignup plan:", error);
       res.status(500).json({ error: "Failed to generate plan. Please try again." });
     }
   });
