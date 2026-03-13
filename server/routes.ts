@@ -5766,6 +5766,31 @@ Return JSON with:
     }
   });
 
+  // Request admin access (for app owner)
+  app.post("/api/become-admin", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userEmail = req.user!.claims.email;
+      const adminEmail = process.env.ADMIN_EMAIL;
+
+      if (!adminEmail) {
+        return res.status(500).json({ error: "Admin email not configured" });
+      }
+
+      if (userEmail !== adminEmail) {
+        return res.status(403).json({ error: "Not authorized to become admin" });
+      }
+
+      // Update user to be admin
+      await db.update(users).set({ isAdmin: true }).where(eq(users.id, userId));
+
+      res.json({ success: true, message: "You are now an admin" });
+    } catch (error) {
+      console.error("Error setting admin status:", error);
+      res.status(500).json({ error: "Failed to set admin status" });
+    }
+  });
+
   // Get all feedback (admin only)
   app.get("/api/admin/feedback", isAuthenticated, async (req: any, res) => {
     try {
