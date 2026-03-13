@@ -54,6 +54,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import Paywall from "@/pages/Paywall";
+import PreSignupOnboarding from "@/pages/PreSignupOnboarding";
 import HabitDetail from "@/pages/HabitDetail";
 import Account from "@/pages/Account";
 import Progress from "@/pages/Progress";
@@ -101,7 +102,7 @@ function VersionUpdateBanner() {
   );
 }
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account", "/signed-out"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account", "/signed-out", "/welcome"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -147,6 +148,44 @@ function Router() {
     }
   }, [toast]);
 
+  useEffect(() => {
+    if (!user) return;
+    const stored = localStorage.getItem("presignup_data");
+    if (!stored) return;
+
+    (async () => {
+      try {
+        const presignupData = JSON.parse(stored);
+
+        const res = await apiRequest("POST", "/api/habits/from-presignup", presignupData);
+        if (res.ok) {
+          localStorage.removeItem("presignup_data");
+          queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          toast({
+            title: "Your plan is saved!",
+            description: `"${presignupData.habitTitle}" is ready. Start your first session!`,
+          });
+        } else {
+          localStorage.removeItem("presignup_data");
+          toast({
+            title: "Couldn't save your plan",
+            description: "But don't worry — you can create a new habit from the dashboard.",
+            variant: "destructive",
+          });
+        }
+      } catch (e) {
+        console.error("Failed to create habit from presignup data:", e);
+        toast({
+          title: "Couldn't save your plan",
+          description: "But don't worry — you can create a new habit from the dashboard.",
+          variant: "destructive",
+        });
+      }
+    })();
+  }, [user, toast]);
+
   const isPublicRoute = PUBLIC_ROUTES.some(route => location.startsWith(route));
 
   if (isPublicRoute) {
@@ -161,6 +200,7 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/delete-account" component={DeleteAccount} />
         <Route path="/signed-out" component={SignedOut} />
+        <Route path="/welcome" component={Landing} />
         <Route component={Landing} />
       </Switch>
     );
@@ -175,7 +215,9 @@ function Router() {
   }
 
   if (!user) {
-    return <Landing />;
+    return <PreSignupOnboarding onLogin={() => {
+      import("@/lib/auth-flow").then(m => m.openAuthFlow());
+    }} />;
   }
 
   if (!user.tosAcceptedAt) {

@@ -1562,8 +1562,29 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const user = await storage.getUser(userId);
       const { habitTitle, intent, frequency, timeOfDay, experience, plan } = req.body;
 
-      if (!habitTitle || typeof habitTitle !== "string") {
-        return res.status(400).json({ error: "Missing habit title" });
+      if (!habitTitle || typeof habitTitle !== "string" || habitTitle.trim().length < 2 || habitTitle.length > 200) {
+        return res.status(400).json({ error: "Missing or invalid habit title" });
+      }
+
+      if (intent && typeof intent !== "string") {
+        return res.status(400).json({ error: "Invalid intent" });
+      }
+      if (frequency && !["3x/week", "5x/week", "Daily"].includes(frequency)) {
+        return res.status(400).json({ error: "Invalid frequency" });
+      }
+      if (timeOfDay && !["Morning", "Afternoon", "Evening"].includes(timeOfDay)) {
+        return res.status(400).json({ error: "Invalid time of day" });
+      }
+
+      const existingHabits = await storage.getHabits(userId);
+      const activeHabits = existingHabits.filter(h => !h.archived);
+      const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+      const isAdmin = user?.isAdmin === true;
+
+      if (!hasPaidSubscription && !isAdmin && activeHabits.length >= 1) {
+        return res.status(403).json({
+          error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits."
+        });
       }
 
       const safetyCheck = checkContentSafety(habitTitle);
