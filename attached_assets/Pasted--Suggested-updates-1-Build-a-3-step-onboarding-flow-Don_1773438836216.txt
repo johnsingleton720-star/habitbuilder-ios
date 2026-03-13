@@ -1,0 +1,68 @@
+## Suggested updates
+
+1. **Build a 3-step onboarding flow** — Don't let users hit the empty dashboard. Walk them into their first habit immediately.
+2. **Redesign App Store screenshots** — Marketing screenshots with headlines, not raw app screenshots.
+3. **Rewrite the first 3 lines of the description** — Lead with the pain point and the "30 seconds to your plan" hook.
+4. **Simplify pricing to 2 tiers** — Free and one paid plan. Remove decision friction.
+5. **Fix the empty states** — Every screen that shows zeros or dashes for new users needs a meaningful empty state that guides them forward instead of making them feel like they're staring at a broken app.
+
+### Problem 1: The Replit Auth Experience
+
+This is the biggest issue. When someone taps "Start Free," they get:
+
+- An in-app modal → then bounced to **replit.com**
+- A page that says **"Sign up for Habit Builder"** with "Log in secured by Replit"
+- Then email + password on a **Replit-branded page**
+- Then **email verification** (leave the app, go to email, click link)
+- Then back to a Replit page saying **"Verifying email... Success!"**
+- Then **another** Replit page: "Habit Builder would like to access your Replit account" with Deny/Allow
+- THEN back to the app for Terms of Service
+
+That's **six screens of friction** before the user even gets to the "Hey there! Ready to build a better you?" welcome screen. And three of those screens prominently feature **Replit branding** — which means nothing to the user and actively undermines trust. They downloaded "HabitBuilder.pro" and are now being asked to create a "Replit account" and grant it permissions. That feels sketchy to a normal person.
+
+**For someone coming from an Ad:** They tapped install, opened the app, and are now 6 screens deep in a third-party authentication flow with email verification before they've experienced anything. Most people are gone by screen 3.
+
+### Problem 2: Email Verification is a Conversion Killer
+
+Requiring email verification before the user can even start is tough on mobile. They have to:
+
+1. Leave the app
+2. Open their email app
+3. Find the email (might be in spam)
+4. Click the link
+5. See the confirmation
+6. Go back to the app
+
+Every one of those steps is a chance to get distracted and never come back. For a free habit tracking app, this is way too much friction.
+
+### Problem 3: The OAuth Permission Screen
+
+"Habit Builder would like to access your Replit account — Verify your identity, Access your email address, Access your basic profile information." This is standard OAuth, but to a regular user this reads as "this random app wants my data." It's one more "are you sure?" moment that creates doubt.
+
+---
+
+## What We Should Do
+
+### Priority 1: Fix the Auth Flow
+
+The ideal fix is to change **Replit auth entirely** and use Apple's native Sign In with Apple + Google Sign In directly. This is what most App Store apps do. One tap, Face ID confirms, you're in. No email verification, no third-party branding, no OAuth permission screens.
+
+If we can't do that (because the app is built on Replit and depends on their auth), then at minimum:
+
+- **Remove email verification for new signups** — verify later, let them in now
+- **Default to "Continue with Apple" as the primary option** on iOS — it's one tap with Face ID, no password needed, and Apple users trust it
+- **Hide "Continue with Email" as a secondary option** — it's the highest-friction path
+
+### Priority 2: Let People Experience Before Signing Up
+
+Right now: Land → Sign up → Then onboard.
+
+It should be: Land → Onboard (pick habit, answer questions) → THEN sign up to save your plan.
+
+Move the "Hey there! Ready to build a better you?" screen and the habit selection to BEFORE account creation. Let them go through the 5 AI interview questions, see their plan get generated, and THEN say "Create an account to save your plan and start your first session." Now they're signing up to protect something they've already invested in, not signing up to access something unknown.
+
+### Priority 3: Small Wins
+
+- **Remove the "Founding Member Annual Plans - 150 spots left" banner** from the landing screen in the App Store screenshots. It looks like fake urgency and it's the first thing they see.
+- **The Terms of Service screen** could be a checkbox on signup instead of a full-screen blocker.
+- **The welcome modal** ("Hey there! Ready to build a better you?") is nice but the "I'll explore on my own" escape hatch is risky — that dumps people into the empty dashboard. Either remove it or make "explore on my own" lead to a guided to
