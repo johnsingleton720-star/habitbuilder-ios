@@ -68,6 +68,7 @@ import StackDetail from "@/pages/StackDetail";
 import PublicTemplates from "@/pages/PublicTemplates";
 import BlogList from "@/pages/BlogList";
 import BlogArticle from "@/pages/BlogArticle";
+import { TermsOfServiceGate } from "@/components/TermsOfServiceModal";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -223,7 +224,9 @@ function Router() {
     return <Landing />;
   }
 
-  
+  if (!user.tosAcceptedAt) {
+    return <TermsOfServiceGate />;
+  }
 
   if (isPaymentLoading) {
     return (

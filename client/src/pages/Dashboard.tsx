@@ -18,12 +18,12 @@ import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
-import { TermsOfServiceBanner } from "@/components/TermsOfServiceModal";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -64,6 +65,7 @@ export default function Dashboard() {
   });
   const [showTour, setShowTour] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showInterviewOffer, setShowInterviewOffer] = useState(false);
   const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
@@ -94,6 +96,17 @@ export default function Dashboard() {
       setTimeout(() => setShowTour(true), 1000);
     }
   }, [user?.onboardingComplete]);
+
+  useEffect(() => {
+    if (!habits || habits.length === 0 || isLoading) return;
+    const offered = localStorage.getItem("interview_offer_shown");
+    if (offered) return;
+    const fromPresignup = habits.some((h: any) => h.description === "Created during onboarding" && h.setupComplete);
+    if (fromPresignup) {
+      localStorage.setItem("interview_offer_shown", "true");
+      setTimeout(() => setShowInterviewOffer(true), 800);
+    }
+  }, [habits, isLoading]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -551,17 +564,6 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {/* TOS inline acceptance banner */}
-        {user && !user.tosAcceptedAt && (
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <TermsOfServiceBanner />
-          </motion.section>
-        )}
-
         {/* Welcome Banner for new users with no habits */}
         {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && (
           <motion.section
@@ -972,6 +974,53 @@ export default function Dashboard() {
       )}
 
       {user && !user.onboardingComplete && !localStorage.getItem("presignup_data") && <OnboardingWizard />}
+
+      {showInterviewOffer && (
+        <Dialog open onOpenChange={(open) => { if (!open) setShowInterviewOffer(false); }}>
+          <DialogContent className="sm:max-w-md [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()}>
+            <div className="text-center space-y-4 py-2">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Sparkles className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold" data-testid="text-interview-offer-title">Your plan is saved!</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Want to personalize it further? A quick AI interview will tailor your plan to your schedule, experience level, and goals.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Button
+                  className="w-full gap-2"
+                  onClick={async () => {
+                    setShowInterviewOffer(false);
+                    const presignupHabit = habits?.find((h: any) => h.description === "Created during onboarding" && h.setupComplete);
+                    if (presignupHabit) {
+                      try {
+                        await apiRequest("PUT", `/api/habits/${presignupHabit.id}`, { setupComplete: false });
+                        queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+                      } catch (e) {}
+                      navigate(`/habit/${presignupHabit.id}`);
+                    }
+                  }}
+                  data-testid="button-start-interview"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Personalize with AI Interview
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setShowInterviewOffer(false)}
+                  data-testid="button-keep-plan"
+                >
+                  Keep my current plan
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {showTour && (
         <FeatureTour onComplete={() => setShowTour(false)} />
