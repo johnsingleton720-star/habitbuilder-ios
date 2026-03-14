@@ -809,7 +809,7 @@ async function processPlanAdjustmentAlerts() {
           await sendPushToUser(u.id, {
             title: "Plan Adjustment Available",
             body,
-            url: `/habits/${topHabit.id}`,
+            url: `/habit/${topHabit.id}`,
             tag: "plan-adjust",
           });
           pushSent++;
