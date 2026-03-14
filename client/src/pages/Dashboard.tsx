@@ -91,9 +91,11 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return;
+    const interviewKey = `interview_offer_shown_${user.id}`;
     const presignupHabitId = localStorage.getItem("presignup_habit_id");
-    if (presignupHabitId && !localStorage.getItem("interview_offer_shown")) {
-      localStorage.setItem("interview_offer_shown", "true");
+    if (presignupHabitId && !localStorage.getItem(interviewKey)) {
+      localStorage.setItem(interviewKey, "true");
       setTimeout(() => setShowInterviewOffer(true), 600);
       return;
     }
@@ -101,7 +103,7 @@ export default function Dashboard() {
       localStorage.setItem(TOUR_STORAGE_KEY, "pending");
       setTimeout(() => setShowTour(true), 1000);
     }
-  }, [user?.onboardingComplete, habits]);
+  }, [user?.id, user?.onboardingComplete, habits]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
