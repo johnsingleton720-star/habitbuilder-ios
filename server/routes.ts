@@ -1692,18 +1692,18 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       await db.update(habitStacks)
         .set({
-          habitIds: sql`array_remove(habit_ids, ${habitId})`,
-          habitOrder: sql`array_remove(habit_order, jsonb_build_object('habitId', ${habitId}))`
+          habitIds: sql`(SELECT jsonb_agg(elem) FROM jsonb_array_elements(habit_ids) elem WHERE elem::text::int != ${habitId})`,
+          habitOrder: sql`(SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) FROM jsonb_array_elements(habit_order) elem WHERE (elem->>'habitId')::int != ${habitId})`
         })
-        .where(and(eq(habitStacks.userId, userId), sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`));
+        .where(and(eq(habitStacks.userId, userId), sql`habit_ids IS NOT NULL AND habit_ids @> ${JSON.stringify([habitId])}::jsonb`));
 
       await db.update(accountabilityPartners)
-        .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
-        .where(sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`);
+        .set({ habitIds: sql`(SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) FROM jsonb_array_elements(habit_ids) elem WHERE elem::text::int != ${habitId})` })
+        .where(sql`habit_ids IS NOT NULL AND habit_ids @> ${JSON.stringify([habitId])}::jsonb`);
 
       await db.update(goals)
-        .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
-        .where(and(eq(goals.userId, userId), sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`));
+        .set({ habitIds: sql`(SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) FROM jsonb_array_elements(habit_ids) elem WHERE elem::text::int != ${habitId})` })
+        .where(and(eq(goals.userId, userId), sql`habit_ids IS NOT NULL AND habit_ids @> ${JSON.stringify([habitId])}::jsonb`));
 
       await storage.deleteHabit(habitId, userId);
       res.status(204).send();
