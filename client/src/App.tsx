@@ -157,7 +157,8 @@ function Router() {
       try {
         const presignupData = JSON.parse(stored);
 
-        const res = await apiRequest("POST", "/api/habits/from-presignup", presignupData);
+        const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const res = await apiRequest("POST", "/api/habits/from-presignup", { ...presignupData, clientTimezone: browserTimezone });
         if (res.ok) {
           const createdHabit = await res.json();
           localStorage.removeItem("presignup_data");

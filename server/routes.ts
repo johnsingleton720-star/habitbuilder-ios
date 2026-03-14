@@ -1562,7 +1562,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
-      const { habitTitle, intent, frequency, timeOfDay, experience, plan } = req.body;
+      const { habitTitle, intent, frequency, timeOfDay, experience, plan, clientTimezone } = req.body;
 
       if (!habitTitle || typeof habitTitle !== "string" || habitTitle.trim().length < 2 || habitTitle.length > 200) {
         return res.status(400).json({ error: "Missing or invalid habit title" });
@@ -1612,7 +1612,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       });
 
       if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
-        const todayDate = getUserToday(user?.timezone);
+        const todayDate = getUserToday(user?.timezone || clientTimezone);
         const dailyPlans = [{
           date: todayDate,
           completed: false,
@@ -1633,8 +1633,12 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         });
       }
 
+      const userUpdates: any = { onboardingComplete: true, updatedAt: new Date() };
+      if (!user?.timezone && clientTimezone && typeof clientTimezone === "string") {
+        userUpdates.timezone = clientTimezone;
+      }
       await db.update(users)
-        .set({ onboardingComplete: true, updatedAt: new Date() })
+        .set(userUpdates)
         .where(eq(users.id, userId));
 
       res.status(201).json(habit);
