@@ -394,6 +394,15 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                   </p>
                 </div>
 
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/15" data-testid="text-interview-hint">
+                  <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    This is just a quick start. After signing up, you'll have the option to do a
+                    <span className="font-semibold text-foreground"> deeper AI interview </span>
+                    for a fully personalized plan.
+                  </p>
+                </div>
+
                 {error && (
                   <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm" data-testid="text-presignup-error">
                     {error}
