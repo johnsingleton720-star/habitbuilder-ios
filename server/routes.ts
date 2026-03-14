@@ -1695,15 +1695,15 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           habitIds: sql`array_remove(habit_ids, ${habitId})`,
           habitOrder: sql`array_remove(habit_order, jsonb_build_object('habitId', ${habitId}))`
         })
-        .where(and(eq(habitStacks.userId, userId), sql`${habitId} = ANY(habit_ids)`));
+        .where(and(eq(habitStacks.userId, userId), sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`));
 
       await db.update(accountabilityPartners)
         .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
-        .where(sql`${habitId} = ANY(habit_ids)`);
+        .where(sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`);
 
       await db.update(goals)
         .set({ habitIds: sql`array_remove(habit_ids, ${habitId})` })
-        .where(and(eq(goals.userId, userId), sql`${habitId} = ANY(habit_ids)`));
+        .where(and(eq(goals.userId, userId), sql`habit_ids IS NOT NULL AND ${habitId} = ANY(habit_ids)`));
 
       await storage.deleteHabit(habitId, userId);
       res.status(204).send();
