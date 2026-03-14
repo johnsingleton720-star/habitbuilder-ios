@@ -159,7 +159,11 @@ function Router() {
 
         const res = await apiRequest("POST", "/api/habits/from-presignup", presignupData);
         if (res.ok) {
+          const createdHabit = await res.json();
           localStorage.removeItem("presignup_data");
+          if (createdHabit?.id) {
+            localStorage.setItem("presignup_habit_id", String(createdHabit.id));
+          }
           queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

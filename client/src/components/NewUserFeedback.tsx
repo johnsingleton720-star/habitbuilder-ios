@@ -31,6 +31,8 @@ export function NewUserFeedback() {
   useEffect(() => {
     if (!user || !habits) return;
 
+    if (localStorage.getItem("presignup_habit_id")) return;
+
     const feedbackKey = `newUserFeedbackShown_${user.id}`;
     if (localStorage.getItem(feedbackKey)) return;
 

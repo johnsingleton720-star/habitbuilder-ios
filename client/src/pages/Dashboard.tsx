@@ -91,22 +91,17 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+    const presignupHabitId = localStorage.getItem("presignup_habit_id");
+    if (presignupHabitId && !localStorage.getItem("interview_offer_shown")) {
+      localStorage.setItem("interview_offer_shown", "true");
+      setTimeout(() => setShowInterviewOffer(true), 600);
+      return;
+    }
+    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY) && !presignupHabitId) {
       localStorage.setItem(TOUR_STORAGE_KEY, "pending");
       setTimeout(() => setShowTour(true), 1000);
     }
-  }, [user?.onboardingComplete]);
-
-  useEffect(() => {
-    if (!habits || habits.length === 0 || isLoading) return;
-    const offered = localStorage.getItem("interview_offer_shown");
-    if (offered) return;
-    const fromPresignup = habits.some((h: any) => h.description === "Created during onboarding" && h.setupComplete);
-    if (fromPresignup) {
-      localStorage.setItem("interview_offer_shown", "true");
-      setTimeout(() => setShowInterviewOffer(true), 800);
-    }
-  }, [habits, isLoading]);
+  }, [user?.onboardingComplete, habits]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -976,8 +971,13 @@ export default function Dashboard() {
       {user && !user.onboardingComplete && !localStorage.getItem("presignup_data") && <OnboardingWizard />}
 
       {showInterviewOffer && (
-        <Dialog open onOpenChange={(open) => { if (!open) setShowInterviewOffer(false); }}>
-          <DialogContent className="sm:max-w-md [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()}>
+        <Dialog open onOpenChange={(open) => {
+          if (!open) {
+            setShowInterviewOffer(false);
+            localStorage.removeItem("presignup_habit_id");
+          }
+        }}>
+          <DialogContent className="sm:max-w-md [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
             <div className="text-center space-y-4 py-2">
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <Sparkles className="w-7 h-7 text-primary" />
@@ -993,14 +993,15 @@ export default function Dashboard() {
                   className="w-full gap-2"
                   onClick={async () => {
                     setShowInterviewOffer(false);
-                    const presignupHabit = habits?.find((h: any) => h.description === "Created during onboarding" && h.setupComplete);
-                    if (presignupHabit) {
+                    const storedHabitId = localStorage.getItem("presignup_habit_id");
+                    if (storedHabitId) {
                       try {
-                        await apiRequest("PUT", `/api/habits/${presignupHabit.id}`, { setupComplete: false });
+                        await apiRequest("PUT", `/api/habits/${storedHabitId}`, { setupComplete: false });
                         queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
                         queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
                       } catch (e) {}
-                      navigate(`/habit/${presignupHabit.id}`);
+                      localStorage.removeItem("presignup_habit_id");
+                      navigate(`/habit/${storedHabitId}`);
                     }
                   }}
                   data-testid="button-start-interview"
@@ -1011,7 +1012,14 @@ export default function Dashboard() {
                 <Button
                   variant="ghost"
                   className="w-full text-muted-foreground"
-                  onClick={() => setShowInterviewOffer(false)}
+                  onClick={() => {
+                    setShowInterviewOffer(false);
+                    localStorage.removeItem("presignup_habit_id");
+                    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+                      localStorage.setItem(TOUR_STORAGE_KEY, "pending");
+                      setTimeout(() => setShowTour(true), 500);
+                    }
+                  }}
                   data-testid="button-keep-plan"
                 >
                   Keep my current plan
