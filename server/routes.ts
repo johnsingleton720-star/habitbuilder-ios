@@ -1612,9 +1612,9 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       });
 
       if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
-        const clientDate = new Date().toLocaleDateString("sv-SE");
+        const todayDate = getUserToday(user?.timezone);
         const dailyPlans = [{
-          date: clientDate,
+          date: todayDate,
           completed: false,
           tasks: plan.day1Tasks.map((t: any, i: number) => ({
             id: `presignup-task-${i + 1}`,
@@ -1629,6 +1629,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         await storage.updateHabit(habit.id, userId, {
           dailyPlans: dailyPlans as any,
           setupComplete: true,
+          planStartDate: todayDate,
         });
       }
 
