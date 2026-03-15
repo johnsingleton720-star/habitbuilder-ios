@@ -69,6 +69,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
   const [routineSessionStack, setRoutineSessionStack] = useState<HabitStack | null>(null);
 
   const isPlanExpired = (habit: HabitResponse) => {
+    if (habit.trackingMode === "simple") return false;
     if (!habit.setupComplete) return false;
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     const endDate = habit.planEndDate || (dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null);
@@ -83,6 +84,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
       if (scheduleDays && scheduleDays.length > 0) {
         return scheduleDays.includes(dayName);
       }
+      if (habit.trackingMode === "simple") return true;
       const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
       return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0) || !habit.setupComplete;
     });

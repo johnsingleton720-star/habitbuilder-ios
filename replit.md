@@ -34,6 +34,7 @@ Preferred communication style: Simple, everyday language.
 -   **Smart Plan Adjustment (Pro/Premium)**: The app detects when a plan isn't working (completion rate below 40% after 5+ days) and offers to regenerate it. The adjusted plan incorporates completion patterns, miss reasons, mood data (Pro: 3 entries, Premium: 7 entries), and journal themes (Premium only). A dashboard banner and daily push notifications highlight struggling habits.
 -   **Mood/Journal Context in Plan Generation (Tiered)**: AI prompt for plan generation and regeneration is enriched with recent wellbeing data (Pro: last 5 mood entries; Premium: last 7 mood entries + last 5 journal summaries).
 -   **Missed-Day Reflection (All Tiers)**: When a streak breaks, users are prompted to select reasons for the missed day, which are stored and used in plan adjustments.
+-   **Simple Tracking Mode**: Users can create habits in "Simple" mode (vs "AI Plan") for lightweight daily check-ins without AI-generated plans or guided sessions. Simple habits have `trackingMode: "simple"` in the database, `setupComplete` is auto-set to `true`, and they use dedicated check-in/uncheckin endpoints. They are excluded from plan adjustment checks and plan-ended banners. Streaks, progress, XP, and achievements all work identically.
 -   **Habit Customization**: Users can personalize habits with icons and colors.
 -   **Smart Resources**: AI generates relevant external resources for tasks.
 -   **AI Safety**: Server-side content safety filters and AI guardrails are implemented.

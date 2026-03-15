@@ -138,6 +138,9 @@ export const habits = pgTable("habits", {
   // Plan adjustment tracking (server-side suppression)
   lastAdjustedAt: timestamp("last_adjusted_at"),
 
+  // Tracking mode
+  trackingMode: text("tracking_mode").default("plan"), // "plan" or "simple"
+  
   // Archiving
   archived: boolean("archived").default(false),
   downgradeArchived: boolean("downgrade_archived").default(false),

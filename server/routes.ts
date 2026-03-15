@@ -1386,9 +1386,8 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const needsAdjustment = userHabits
-        .filter(h => h.setupComplete && !h.archived && !h.downgradeArchived)
+        .filter(h => h.setupComplete && !h.archived && !h.downgradeArchived && h.trackingMode !== "simple")
         .filter(h => {
-          // Server-side suppression: skip if plan was adjusted within the last 7 days
           if (h.lastAdjustedAt && new Date(h.lastAdjustedAt) > sevenDaysAgo) return false;
           const dailyPlans = (h.dailyPlans || []) as any[];
           const pastDays = dailyPlans.filter((p: any) => p.date <= todayStr);
@@ -1545,7 +1544,11 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         });
       }
       
-      const habit = await storage.createHabit(userId, input);
+      const habitData = { ...input };
+      if (habitData.trackingMode === "simple") {
+        habitData.setupComplete = true;
+      }
+      const habit = await storage.createHabit(userId, habitData);
       res.status(201).json(habit);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -5256,6 +5259,179 @@ REQUIREMENTS:
     } catch (error) {
       console.error("Error saving session:", error);
       res.status(500).json({ error: "Failed to save session" });
+    }
+  });
+
+  // Simple check-in for simple tracking mode habits
+  app.post("/api/habits/:id/simple-checkin", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { duration, rating, notes } = req.body;
+
+      const user = await storage.getUser(userId);
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const userTz = user?.timezone;
+      const todayStr = getUserToday(userTz);
+
+      const dailyPlans = [...(habit.dailyPlans || [])] as any[];
+      const existingPlan = dailyPlans.find((p: any) => p.date === todayStr);
+      if (existingPlan && existingPlan.completed) {
+        return res.status(400).json({ error: "Already checked in today" });
+      }
+
+      if (existingPlan) {
+        existingPlan.completed = true;
+        existingPlan.tasks = [{
+          title: habit.title,
+          completed: true,
+          skipped: false,
+          duration: duration || null,
+          rating: rating || null,
+          notes: notes || null,
+        }];
+        if (duration) existingPlan.timeSpent = duration;
+      } else {
+        dailyPlans.push({
+          date: todayStr,
+          completed: true,
+          timeSpent: duration || 0,
+          tasks: [{
+            title: habit.title,
+            completed: true,
+            skipped: false,
+            duration: duration || null,
+            rating: rating || null,
+            notes: notes || null,
+          }],
+        });
+      }
+
+      let currentStreak = 0;
+      const sortedPlans = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+      for (const plan of sortedPlans) {
+        if (plan.completed) {
+          currentStreak++;
+        } else if (plan.date <= todayStr) {
+          break;
+        }
+      }
+
+      const oldStreak = habit.currentStreak || 0;
+      const streakBreakFields: any = {};
+      if (currentStreak > 0 && habit.streakBrokenAt) {
+        streakBreakFields.streakBrokenAt = null;
+      }
+
+      const progress = [...(habit.progress || [])];
+      progress.push({
+        date: todayStr,
+        tasksCompleted: 1,
+        totalTasks: 1,
+        timeSpent: duration || 0,
+        goalTime: 0,
+        notes: notes || "",
+        mood: rating ? String(rating) : undefined,
+      });
+
+      const newTotalTime = (habit.totalTimeSpent || 0) + (duration || 0);
+
+      await storage.updateHabit(habitId, userId, {
+        dailyPlans,
+        progress,
+        totalTimeSpent: newTotalTime,
+        currentStreak,
+        longestStreak: Math.max(habit.longestStreak || 0, currentStreak),
+        ...streakBreakFields,
+      });
+
+      const allHabits = await storage.getHabits(userId);
+      const habitsWorkedToday = allHabits.filter(h =>
+        h.dailyPlans?.some((p: any) => p.date === todayStr && p.completed)
+      ).length;
+
+      await updateChallengeProgress(userId, {
+        tasksCompleted: 1,
+        timeSpent: duration || 0,
+        habitsWorkedOn: habitsWorkedToday,
+        totalActiveHabits: allHabits.filter(h => !h.archived).length,
+        notesAdded: notes ? 1 : 0,
+        streakMaintained: currentStreak > 0,
+        isBeforeNoon: (() => {
+          try {
+            const hourStr = new Intl.DateTimeFormat("en-US", { timeZone: userTz || "UTC", hour: "numeric", hour12: false }).format(new Date());
+            return parseInt(hourStr) < 12;
+          } catch { return new Date().getHours() < 12; }
+        })(),
+      }, userTz);
+
+      await checkAndAwardAchievements(userId);
+
+      res.json({ success: true, currentStreak });
+    } catch (error) {
+      console.error("Error in simple check-in:", error);
+      res.status(500).json({ error: "Failed to check in" });
+    }
+  });
+
+  app.post("/api/habits/:id/simple-uncheckin", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+
+      const user = await storage.getUser(userId);
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const userTz = user?.timezone;
+      const todayStr = getUserToday(userTz);
+
+      const dailyPlans = [...(habit.dailyPlans || [])] as any[];
+      const todayIndex = dailyPlans.findIndex((p: any) => p.date === todayStr);
+      if (todayIndex === -1) {
+        return res.status(400).json({ error: "No check-in to undo" });
+      }
+
+      const removedPlan = dailyPlans[todayIndex];
+      const removedDuration = removedPlan.timeSpent || 0;
+      dailyPlans.splice(todayIndex, 1);
+
+      let currentStreak = 0;
+      const sortedPlans = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+      for (const plan of sortedPlans) {
+        if (plan.completed) {
+          currentStreak++;
+        } else if (plan.date <= todayStr) {
+          break;
+        }
+      }
+
+      const progress = [...(habit.progress || [])];
+      const lastProgressIdx = progress.length - 1;
+      if (lastProgressIdx >= 0 && progress[lastProgressIdx].date === todayStr) {
+        progress.splice(lastProgressIdx, 1);
+      }
+
+      const newTotalTime = Math.max(0, (habit.totalTimeSpent || 0) - removedDuration);
+
+      await storage.updateHabit(habitId, userId, {
+        dailyPlans,
+        progress,
+        totalTimeSpent: newTotalTime,
+        currentStreak,
+        longestStreak: habit.longestStreak || 0,
+      });
+
+      res.json({ success: true, currentStreak });
+    } catch (error) {
+      console.error("Error undoing simple check-in:", error);
+      res.status(500).json({ error: "Failed to undo check-in" });
     }
   });
 
@@ -9361,7 +9537,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         .limit(10);
 
       const habitContext = userHabits.length > 0 
-        ? `\n\nUser's current habits: ${userHabits.map(h => `${h.title} (streak: ${h.currentStreak || 0} days, total time: ${h.totalTimeSpent || 0} minutes)`).join(", ")}`
+        ? `\n\nUser's current habits: ${userHabits.map(h => `${h.title} (${h.trackingMode === "simple" ? "simple tracking" : "AI plan"}, streak: ${h.currentStreak || 0} days, total time: ${h.totalTimeSpent || 0} minutes)`).join(", ")}`
         : "";
 
       const aiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
@@ -10336,6 +10512,12 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         !((h.dailyPlans || []) as any[]).some((p: any) =>
           p.date === date && p.tasks?.some((t: any) => t.completed));
 
+      let avgDuration = 0;
+      if (h.trackingMode === "simple" && progress.length > 0) {
+        const durations = progress.filter((p: any) => p.timeSpent > 0).map((p: any) => p.timeSpent);
+        avgDuration = durations.length > 0 ? Math.round(durations.reduce((s: number, v: number) => s + v, 0) / durations.length) : 15;
+      }
+
       return {
         id: h.id,
         title: h.title,
@@ -10346,6 +10528,8 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         peakHour,
         streakAtRisk,
         preferredTime: h.schedule ? (h.schedule as any).time || 'flexible' : 'flexible',
+        isSimple: h.trackingMode === "simple",
+        avgDuration,
       };
     });
 
@@ -10364,6 +10548,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     if (habitAnalytics.length > 0) {
       habitDetails = habitAnalytics.map(h => {
         let detail = `- "${h.title}" [habitId=${h.id}] (preferred: ${h.preferredTime}, streak: ${h.currentStreak} days`;
+        if (h.isSimple) detail += `, simple tracking ~${h.avgDuration || 15}min`;
         if (h.peakHour >= 0) detail += `, usually done around ${h.peakHour}:00`;
         if (h.streakAtRisk) detail += `, STREAK AT RISK`;
         detail += `)`;

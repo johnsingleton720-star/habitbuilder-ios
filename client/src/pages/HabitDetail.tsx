@@ -356,6 +356,39 @@ export default function HabitDetail() {
     },
   });
 
+  const simpleCheckinMutation = useMutation({
+    mutationFn: async (body: { duration?: number; rating?: number; notes?: string }) => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, body);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
+    },
+    onError: () => {
+      toast({ title: "Already checked in today", variant: "destructive" });
+    },
+  });
+
+  const simpleUncheckinMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/habits/${habitId}/simple-uncheckin`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      toast({ title: "Check-in undone" });
+    },
+    onError: () => {
+      toast({ title: "Failed to undo check-in", variant: "destructive" });
+    },
+  });
+
   const extendPlanMutation = useMutation({
     mutationFn: async (duration: string) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/extend-plan`, { duration });
@@ -422,9 +455,9 @@ export default function HabitDetail() {
     }
   }, [habit?.dailyPlans, selectedDay, urlDate]);
 
-  // Auto-open setup wizard for new habits
+  // Auto-open setup wizard for new habits (skip simple mode)
   useEffect(() => {
-    if (habit && !habit.setupComplete && !setupWizardOpen) {
+    if (habit && !habit.setupComplete && !setupWizardOpen && habit.trackingMode !== "simple") {
       setSetupWizardOpen(true);
     }
   }, [habit?.setupComplete]);
@@ -484,7 +517,8 @@ export default function HabitDetail() {
   const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
   const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
   const allDailyPlansExpired = habit.setupComplete && lastDailyPlanDate ? lastDailyPlanDate < todayStr : false;
-  const isPlanExpired = habit.setupComplete ? ((planEndDate ? planEndDate < todayStr : false) || allDailyPlansExpired) : false;
+  const isSimpleMode = habit.trackingMode === "simple";
+  const isPlanExpired = !isSimpleMode && habit.setupComplete ? ((planEndDate ? planEndDate < todayStr : false) || allDailyPlansExpired) : false;
   const isPlanFullyCompleted = totalDays > 0 && completedDays === totalDays;
   const isPlanDone = isPlanExpired || isPlanFullyCompleted;
   const isSelectedDayPast = selectedDay ? selectedDay < todayStr : false;
@@ -549,7 +583,7 @@ export default function HabitDetail() {
             {habit.setupComplete && (
               <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
             )}
-            {habit.setupComplete && currentPlan && !isPlanDone && !isSelectedDayPast && (
+            {habit.setupComplete && !isSimpleMode && currentPlan && !isPlanDone && !isSelectedDayPast && (
               sessionLimitReached ? (
                 <Button onClick={() => navigate("/paywall")} size="sm" className="gap-1 md:gap-2" data-testid="button-start-session-locked">
                   <Lock className="w-4 h-4" />
@@ -623,7 +657,7 @@ export default function HabitDetail() {
         )}
 
         {/* Setup Not Complete Message */}
-        {!habit.setupComplete && (
+        {!habit.setupComplete && !isSimpleMode && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-6 text-center">
               <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
@@ -640,7 +674,7 @@ export default function HabitDetail() {
         )}
 
         {/* Plan Completed/Expired Banner */}
-        {habit.setupComplete && isPlanDone && dailyPlans.length > 0 && (
+        {!isSimpleMode && habit.setupComplete && isPlanDone && dailyPlans.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -796,8 +830,79 @@ export default function HabitDetail() {
           </motion.div>
         )}
 
+        {/* Simple Tracking Check-in Card */}
+        {isSimpleMode && (
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+            <CardContent className="p-6">
+              {(() => {
+                const simpleCheckedIn = dailyPlans.find(p => p.date === todayStr)?.completed === true;
+                return (
+                  <div className="flex flex-col items-center gap-4">
+                    <motion.div
+                      initial={false}
+                      animate={{ 
+                        scale: simpleCheckedIn ? 1.1 : 1,
+                        rotate: simpleCheckedIn ? [0, -5, 5, 0] : 0
+                      }}
+                      transition={{ duration: 0.4 }}
+                      className={cn(
+                        "w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all",
+                        simpleCheckedIn
+                          ? "bg-gradient-to-br from-primary to-accent border-primary/30 text-white shadow-lg shadow-primary/30"
+                          : "bg-muted/30 border-muted-foreground/20 text-muted-foreground"
+                      )}
+                    >
+                      <Check className="w-10 h-10 stroke-[3]" />
+                    </motion.div>
+                    
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold">
+                        {simpleCheckedIn ? "Done for today!" : "Ready to check in?"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {simpleCheckedIn
+                          ? `You're on a ${habit.currentStreak || 0} day streak — keep it going!`
+                          : "Tap below to mark today as complete"}
+                      </p>
+                    </div>
+
+                    {simpleCheckedIn ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 border-muted-foreground/30"
+                        onClick={() => simpleUncheckinMutation.mutate()}
+                        disabled={simpleUncheckinMutation.isPending}
+                        data-testid="button-uncheckin-detail"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Undo check-in
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        className="gap-2 shadow-lg shadow-primary/20 rounded-xl font-semibold px-8"
+                        onClick={() => simpleCheckinMutation.mutate({})}
+                        disabled={simpleCheckinMutation.isPending}
+                        data-testid="button-checkin-detail"
+                      >
+                        {simpleCheckinMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5" />
+                        )}
+                        Check In Today
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Daily Motivation from AI Coach */}
-        {habit.setupComplete && (
+        {(habit.setupComplete || isSimpleMode) && (
           <DailyMotivation habitId={habitId} />
         )}
 

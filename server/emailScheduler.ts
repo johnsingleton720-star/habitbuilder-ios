@@ -788,7 +788,7 @@ async function processPlanAdjustmentAlerts() {
         });
 
         const struggling = userHabits.filter(h => {
-          if (!h.setupComplete || h.archived || h.downgradeArchived) return false;
+          if (!h.setupComplete || h.archived || h.downgradeArchived || h.trackingMode === "simple") return false;
           const dailyPlans = (h.dailyPlans || []) as any[];
           const pastDays = dailyPlans.filter((p: any) => p.date <= localTime.dateStr);
           if (pastDays.length < 5) return false;

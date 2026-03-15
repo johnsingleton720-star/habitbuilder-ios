@@ -13,7 +13,8 @@ import { SchedulePicker } from "@/components/SchedulePicker";
 import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, X, Check, CheckCircle2, Brain } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -57,6 +58,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const { data: existingHabits } = useHabits();
   const activeHabitsCount = existingHabits?.filter(h => !h.archived).length || 0;
   const hasReachedFreeLimit = isFreeUser && !isEditing && !canAddMoreHabits(activeHabitsCount);
+  const [trackingMode, setTrackingMode] = useState<"plan" | "simple">("plan");
   const [showSchedule, setShowSchedule] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
@@ -97,6 +99,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setCustomColor(habitToEdit?.customColor || "#0d9488");
       setShowIconPicker(false);
       setIconColorSaved(false);
+      setTrackingMode("plan");
       document.body.style.overflow = 'hidden';
     } else if (!open) {
       document.body.style.overflow = '';
@@ -174,6 +177,8 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customIcon,
           customColor,
           category: data.category || null,
+          trackingMode,
+          ...(trackingMode === "simple" ? { setupComplete: true } : {}),
         });
         closeDialog();
         if (newHabit?.id) {
@@ -215,7 +220,9 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           <p className="text-sm text-muted-foreground">
             {isEditing 
               ? "Update your habit details below."
-              : "Enter your habit details. After creating, you'll answer a few questions to build a personalized action plan."}
+              : trackingMode === "simple"
+                ? "Enter your habit details. You'll be able to check in daily right away."
+                : "Enter your habit details. After creating, you'll answer a few questions to build a personalized action plan."}
           </p>
         </div>
 
@@ -369,6 +376,44 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
               )}
             />
 
+            {!isEditing && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tracking Mode</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTrackingMode("plan")}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center",
+                      trackingMode === "plan"
+                        ? "border-primary bg-primary/5 dark:bg-primary/10"
+                        : "border-muted hover:border-muted-foreground/30"
+                    )}
+                    data-testid="button-mode-plan"
+                  >
+                    <Brain className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-semibold">AI Plan</span>
+                    <span className="text-[0.7rem] text-muted-foreground leading-tight">AI builds a daily action plan with guided sessions</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrackingMode("simple")}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center",
+                      trackingMode === "simple"
+                        ? "border-primary bg-primary/5 dark:bg-primary/10"
+                        : "border-muted hover:border-muted-foreground/30"
+                    )}
+                    data-testid="button-mode-simple"
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-semibold">Simple</span>
+                    <span className="text-[0.7rem] text-muted-foreground leading-tight">Just check in daily — no plan or sessions needed</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
               <CollapsibleTrigger asChild>
                 <Button 
@@ -414,6 +459,11 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                   </>
                 ) : isEditing ? (
                   "Save Changes"
+                ) : trackingMode === "simple" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Create Habit
+                  </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
