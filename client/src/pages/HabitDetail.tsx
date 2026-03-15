@@ -1832,8 +1832,7 @@ export default function HabitDetail() {
                       const allSortedPlans = [...dailyPlans]
                         .filter(p => p.completed)
                         .sort((a, b) => b.date.localeCompare(a.date));
-                      const displayLimit = isFreeUser ? 3 : 10;
-                      const sortedPlans = allSortedPlans.slice(0, displayLimit);
+                      const sortedPlans = isFreeUser ? allSortedPlans.slice(0, 3) : allSortedPlans;
                       const hasMoreEntries = isFreeUser && allSortedPlans.length > 3;
                       const items = sortedPlans.map((plan, index) => {
                         const task = plan.tasks?.[0] as SimpleTask | undefined;
@@ -1895,8 +1894,7 @@ export default function HabitDetail() {
                     })()
                   : (() => {
                       const allEntries = habit.progress.slice().reverse();
-                      const displayLimit = isFreeUser ? 3 : 5;
-                      const entries = allEntries.slice(0, displayLimit);
+                      const entries = isFreeUser ? allEntries.slice(0, 3) : allEntries;
                       const hasMoreEntries = isFreeUser && allEntries.length > 3;
                       const items = entries.map((entry, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">

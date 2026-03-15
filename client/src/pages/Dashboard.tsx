@@ -668,7 +668,7 @@ export default function Dashboard() {
           const daysActive = user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
           if (daysActive < 7) return null;
           const totalStreakDays = activeHabits?.reduce((sum, h) => sum + (h.currentStreak || 0), 0) || 0;
-          const totalCompletedDays = activeHabits?.reduce((sum, h) => sum + ((h.progress as any[])?.length || 0), 0) || 0;
+          const totalCompletedDays = activeHabits?.reduce((sum, h) => sum + (Array.isArray(h.progress) ? h.progress.length : 0), 0) || 0;
           return (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
