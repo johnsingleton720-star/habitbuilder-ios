@@ -162,7 +162,7 @@ export function PublicNav() {
     <>
       <NavLoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
       <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none px-4 sm:px-6 py-3 safe-top" aria-label="Main navigation">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-6">
           <Link href="/" aria-label="HabitBuilder.pro - Home" data-testid="link-logo-home">
             <Logo />
           </Link>
@@ -195,7 +195,7 @@ export function PublicNav() {
           <Button
             size="icon"
             variant="ghost"
-            className="md:hidden ml-auto"
+            className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             data-testid="button-mobile-menu-toggle"

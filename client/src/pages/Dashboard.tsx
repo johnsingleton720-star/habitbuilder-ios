@@ -378,6 +378,19 @@ export default function Dashboard() {
                   <span className="ml-auto text-sm text-muted-foreground">Soon</span>
                 </DropdownMenuItem>
               </Link>
+              <DropdownMenuSeparator />
+              <a href="/blog" target="_blank" rel="noopener noreferrer">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-blog">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Blog
+                </DropdownMenuItem>
+              </a>
+              <a href="/about" target="_blank" rel="noopener noreferrer">
+                <DropdownMenuItem className="cursor-pointer" data-testid="menu-about">
+                  <Users className="mr-2 h-4 w-4" />
+                  About
+                </DropdownMenuItem>
+              </a>
               <Link href="/account">
                 <DropdownMenuItem className="cursor-pointer" data-testid="menu-account">
                   <Settings className="mr-2 h-4 w-4" />
