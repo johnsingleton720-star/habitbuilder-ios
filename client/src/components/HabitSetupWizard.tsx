@@ -22,9 +22,9 @@ interface HabitSetupWizardProps {
 type Phase = "intro" | "questions" | "duration" | "generating" | "complete";
 
 const DURATION_OPTIONS = [
-  { value: "daily", label: "Daily", description: "One day at a time", days: 1 },
-  { value: "weekly", label: "Weekly", description: "7-day action plan", days: 7 },
-  { value: "monthly", label: "Monthly", description: "30-day transformation", days: 30 },
+  { value: "monthly", label: "Monthly", description: "Full habit-building program", days: 30, recommended: true },
+  { value: "weekly", label: "Weekly", description: "Great for trying out", days: 7 },
+  { value: "daily", label: "Daily", description: "Quick one-day preview", days: 1 },
 ];
 
 const GENERATING_MESSAGES = [
@@ -105,7 +105,7 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
   const [questions, setQuestions] = useState<HabitQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState("weekly");
+  const [selectedDuration, setSelectedDuration] = useState("monthly");
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -392,7 +392,14 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
                   >
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{option.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{option.label}</p>
+                          {option.recommended && (
+                            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
+                              Recommended
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">{option.description}</p>
                       </div>
                       {selectedDuration === option.value && (
