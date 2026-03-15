@@ -176,18 +176,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle p-4 md:p-10 font-body">
-      <div className="mx-auto max-w-6xl space-y-10">
+    <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
+      <div className="mx-auto max-w-6xl space-y-7">
         
         {/* Header */}
-        <header className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-lg border border-primary/25 shadow-sm">
+        <header className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-base border border-primary/25 shadow-sm">
               {user?.firstName?.[0] || user?.email?.[0] || "U"}
             </div>
             <div>
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{greeting},</p>
-              <h1 className="font-display text-3xl font-bold text-foreground">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{greeting},</p>
+              <h1 className="font-display text-2xl font-bold text-foreground">
                 {user?.firstName || user?.email?.split('@')[0]}
               </h1>
             </div>
@@ -818,8 +818,8 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <h2 className="section-title mb-6" data-testid="text-section-explore">Explore</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5" data-tour="feature-links">
+          <h2 className="section-title mb-4" data-testid="text-section-explore">Explore</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-focus-timer-link">
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
@@ -890,8 +890,8 @@ export default function Dashboard() {
         )}
 
         {/* Achievements & Gamification Group */}
-        <div data-tour="achievements-section" className="section-group section-group-accent space-y-7">
-          <h2 className="section-title text-2xl md:text-3xl" data-testid="text-section-achievements">Achievements & Rewards</h2>
+        <div data-tour="achievements-section" className="section-group section-group-accent space-y-5">
+          <h2 className="section-title" data-testid="text-section-achievements">Achievements & Rewards</h2>
           {habits && habits.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -922,16 +922,16 @@ export default function Dashboard() {
         </motion.section>
 
         {/* Habits Section - Bottom, Collapsible */}
-        <section id="habits-section" className="space-y-6 pt-2">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <section id="habits-section" className="space-y-4 pt-1">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <button
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer"
               onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
               data-testid="button-toggle-habits-view"
             >
-              <h2 className="section-title text-2xl md:text-3xl flex items-center gap-3">
+              <h2 className="section-title flex items-center gap-2">
                 Your Habits
-                <span className="bg-secondary text-secondary-foreground text-xs px-3 py-1 rounded-full font-semibold">
+                <span className="bg-secondary text-secondary-foreground text-xs px-2.5 py-0.5 rounded-full font-semibold">
                   {activeHabits?.length || 0}
                 </span>
               </h2>

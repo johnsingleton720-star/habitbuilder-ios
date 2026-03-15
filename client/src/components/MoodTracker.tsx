@@ -255,10 +255,10 @@ export function MoodTracker() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <SmilePlus className="w-5 h-5 text-primary" />
-              Mood Check-in
-              {!isPremium && <Badge variant="secondary" className="text-xs">Premium</Badge>}
+            <CardTitle className="flex items-center gap-2 whitespace-nowrap">
+              <SmilePlus className="w-5 h-5 text-primary flex-shrink-0" />
+              <span>Mood Check-in</span>
+              {!isPremium && <Badge variant="secondary" className="text-xs flex-shrink-0">Premium</Badge>}
             </CardTitle>
             <CardDescription>Track how you feel and find patterns</CardDescription>
           </div>
