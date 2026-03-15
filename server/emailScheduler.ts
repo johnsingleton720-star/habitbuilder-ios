@@ -858,12 +858,17 @@ async function processPlanCompletionAlerts() {
           if (!habit.planEndDate) continue;
           if (habit.planEndDate !== localTime.dateStr) continue;
 
-          const habitUpdatedAt = habit.updatedAt ? new Date(habit.updatedAt) : null;
-          if (!habitUpdatedAt || habitUpdatedAt < thirtyDaysAgo) continue;
-
-          const dedupeKey = `planEnd_${habit.id}_${localTime.dateStr}`;
-          const sentTracker = (u.lastMoodCheckinSent as Record<string, string>) || {};
-          if (sentTracker[dedupeKey]) continue;
+          const progressEntries = (habit.progress || []) as any[];
+          const dailyPlans = (habit.dailyPlans || []) as any[];
+          const lastProgressDate = progressEntries.length > 0
+            ? progressEntries[progressEntries.length - 1].date
+            : null;
+          const lastCompletedPlanDate = dailyPlans
+            .filter((p: any) => p.completed || (p.tasks && p.tasks.some((t: any) => t.completed)))
+            .map((p: any) => p.date as string)
+            .pop() || null;
+          const lastActivity = lastProgressDate || lastCompletedPlanDate;
+          if (!lastActivity || lastActivity < thirtyDaysAgoStr) continue;
 
           try {
             await sendPushToUser(u.id, {
