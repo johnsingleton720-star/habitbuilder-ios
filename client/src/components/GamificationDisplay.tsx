@@ -202,7 +202,7 @@ export function GamificationDisplay() {
           if (!previousAchievementsRef.current.has(achievementId)) {
             const achievement = getAchievementById(achievementId);
             if (achievement) {
-              if (isPremium) {
+              if (isPro) {
                 const context = ACHIEVEMENT_CONTEXT[achievementId] || "You're making incredible progress!";
                 setCelebration({
                   show: true,
