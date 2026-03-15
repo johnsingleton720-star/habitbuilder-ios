@@ -4693,7 +4693,8 @@ REQUIREMENTS:
       if (isFreeUser) {
         return res.status(403).json({ 
           error: "paid_feature",
-          message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
+          message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!",
+          redirectTo: "/paywall"
         });
       }
 

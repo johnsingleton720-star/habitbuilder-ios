@@ -195,20 +195,27 @@ export function GamificationDisplay() {
     }
     previousCompletedRef.current = completedCount;
 
-    if (isPremium && stats.achievements) {
+    if (stats.achievements) {
       const currentAchievementIds = new Set(stats.achievements.map(a => a.achievementId));
       if (previousAchievementsRef.current !== null) {
         for (const achievementId of Array.from(currentAchievementIds)) {
           if (!previousAchievementsRef.current.has(achievementId)) {
             const achievement = getAchievementById(achievementId);
             if (achievement) {
-              const context = ACHIEVEMENT_CONTEXT[achievementId] || "You're making incredible progress!";
-              setCelebration({
-                show: true,
-                type: "achievement",
-                title: achievement.name,
-                subtitle: context,
-              });
+              if (isPremium) {
+                const context = ACHIEVEMENT_CONTEXT[achievementId] || "You're making incredible progress!";
+                setCelebration({
+                  show: true,
+                  type: "achievement",
+                  title: achievement.name,
+                  subtitle: context,
+                });
+              } else {
+                toast({
+                  title: `Achievement Unlocked: ${achievement.name}`,
+                  description: "Upgrade to Pro for full celebration animations & detailed insights!",
+                });
+              }
               break;
             }
           }

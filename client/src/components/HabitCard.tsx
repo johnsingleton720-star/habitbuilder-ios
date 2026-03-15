@@ -567,38 +567,69 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 {habit.description && (
                   <p className="text-sm text-muted-foreground/60 line-clamp-1 line-through">{habit.description}</p>
                 )}
-                <div className="flex items-center gap-3 flex-wrap" onClick={(e) => e.preventDefault()}>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="gap-2 rounded-xl px-4"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); extendPlanMutation.mutate(); }}
-                    disabled={extendPlanMutation.isPending}
-                    data-testid={`button-extend-card-${habit.id}`}
-                  >
-                    {extendPlanMutation.isPending ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    )}
-                    Extend Plan
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2 rounded-xl px-4"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveMutation.mutate(); }}
-                    disabled={archiveMutation.isPending}
-                    data-testid={`button-archive-card-${habit.id}`}
-                  >
-                    {archiveMutation.isPending ? (
-                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Archive className="w-3.5 h-3.5" />
-                    )}
-                    Archive
-                  </Button>
-                </div>
+                {isFreeUser ? (
+                  <div className="flex items-center gap-3 flex-wrap" onClick={(e) => e.preventDefault()}>
+                    <Link href="/paywall">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="gap-2 rounded-xl px-4"
+                        data-testid={`button-extend-locked-${habit.id}`}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        Unlock with Pro
+                      </Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 rounded-xl px-4"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveMutation.mutate(); }}
+                      disabled={archiveMutation.isPending}
+                      data-testid={`button-archive-card-${habit.id}`}
+                    >
+                      {archiveMutation.isPending ? (
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Archive className="w-3.5 h-3.5" />
+                      )}
+                      Archive
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 flex-wrap" onClick={(e) => e.preventDefault()}>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="gap-2 rounded-xl px-4"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); extendPlanMutation.mutate(); }}
+                      disabled={extendPlanMutation.isPending}
+                      data-testid={`button-extend-card-${habit.id}`}
+                    >
+                      {extendPlanMutation.isPending ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                      Extend Plan
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 rounded-xl px-4"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveMutation.mutate(); }}
+                      disabled={archiveMutation.isPending}
+                      data-testid={`button-archive-card-${habit.id}`}
+                    >
+                      {archiveMutation.isPending ? (
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Archive className="w-3.5 h-3.5" />
+                      )}
+                      Archive
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <>
