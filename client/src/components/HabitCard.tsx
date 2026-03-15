@@ -30,7 +30,7 @@ import { HabitSetupWizard } from "./HabitSetupWizard";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { DailyPlan } from "@shared/schema";
+import type { DailyPlan, TrackedItem, TrackedValue } from "@shared/schema";
 import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -171,12 +171,15 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [simpleCheckinQuantity, setSimpleCheckinQuantity] = useState("");
   const [simpleCheckinLabel, setSimpleCheckinLabel] = useState("");
   const [simpleCheckinNotes, setSimpleCheckinNotes] = useState("");
+  const [trackedValuesMap, setTrackedValuesMap] = useState<Record<string, string>>({});
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const { toast } = useToast();
   const { features, isFreeUser } = useSubscription();
 
   const isSimpleMode = habit.trackingMode === "simple";
+  const habitTrackedItems = (habit.trackedItems || []) as TrackedItem[];
+  const hasTrackedItems = isSimpleMode && habitTrackedItems.length > 0;
   const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
   const today = format(new Date(), "yyyy-MM-dd");
   const todaysPlan = dailyPlans.find(p => p.date === today);
@@ -214,6 +217,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
       setSimpleCheckinQuantity("");
       setSimpleCheckinLabel("");
       setSimpleCheckinNotes("");
+      setTrackedValuesMap({});
       toast({ title: "Checked in!", description: `Great job keeping up with "${habit.title}"!` });
     },
     onError: () => {
@@ -405,37 +409,63 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 <div className="space-y-3" onClick={(e) => e.preventDefault()}>
                   {simpleCheckinExpanded && !simpleCheckedInToday && (
                     <div className="space-y-2 bg-muted/30 rounded-lg p-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          placeholder="Quantity (optional)"
-                          value={simpleCheckinQuantity}
-                          onChange={(e) => setSimpleCheckinQuantity(e.target.value)}
-                          className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-                          data-testid={`input-quantity-${habit.id}`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Unit (e.g. glasses)"
-                          value={simpleCheckinLabel}
-                          onChange={(e) => setSimpleCheckinLabel(e.target.value)}
-                          className="w-28 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-                          data-testid={`input-quantity-label-${habit.id}`}
-                        />
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-2" />
-                        <textarea
-                          placeholder="Notes (optional)"
-                          value={simpleCheckinNotes}
-                          onChange={(e) => setSimpleCheckinNotes(e.target.value)}
-                          rows={2}
-                          className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
-                          data-testid={`input-notes-${habit.id}`}
-                        />
-                      </div>
+                      {hasTrackedItems ? (
+                        <>
+                          {habitTrackedItems.map((item) => (
+                            <div key={item.id} className="flex items-center gap-2">
+                              <div className="flex-shrink-0 w-6 h-6 rounded bg-muted/60 flex items-center justify-center">
+                                {item.type === "count" ? <Hash className="w-3 h-3 text-muted-foreground" /> :
+                                 item.type === "time" ? <Clock className="w-3 h-3 text-muted-foreground" /> :
+                                 <MessageSquare className="w-3 h-3 text-muted-foreground" />}
+                              </div>
+                              <span className="text-xs font-medium text-muted-foreground min-w-0 truncate flex-shrink-0 max-w-[80px]">{item.name}</span>
+                              <input
+                                type={item.type === "count" ? "number" : item.type === "time" ? "number" : "text"}
+                                inputMode={item.type === "text" ? "text" : "decimal"}
+                                placeholder={item.type === "count" ? "0" : item.type === "time" ? "min" : "..."}
+                                value={trackedValuesMap[item.id] || ""}
+                                onChange={(e) => setTrackedValuesMap(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                className="flex-1 bg-background/80 border border-border rounded-md px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                                data-testid={`input-tracked-${item.id}-${habit.id}`}
+                              />
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Hash className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              placeholder="Quantity (optional)"
+                              value={simpleCheckinQuantity}
+                              onChange={(e) => setSimpleCheckinQuantity(e.target.value)}
+                              className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                              data-testid={`input-quantity-${habit.id}`}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Unit (e.g. glasses)"
+                              value={simpleCheckinLabel}
+                              onChange={(e) => setSimpleCheckinLabel(e.target.value)}
+                              className="w-28 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                              data-testid={`input-quantity-label-${habit.id}`}
+                            />
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-2" />
+                            <textarea
+                              placeholder="Notes (optional)"
+                              value={simpleCheckinNotes}
+                              onChange={(e) => setSimpleCheckinNotes(e.target.value)}
+                              rows={2}
+                              className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
+                              data-testid={`input-notes-${habit.id}`}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   <div className="flex items-center gap-4">
@@ -461,10 +491,20 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                             if (!simpleCheckinExpanded) {
                               setSimpleCheckinExpanded(true);
                             } else {
-                              const body: { quantity?: number; quantityLabel?: string; notes?: string } = {};
-                              if (simpleCheckinQuantity) body.quantity = Number(simpleCheckinQuantity);
-                              if (simpleCheckinLabel.trim()) body.quantityLabel = simpleCheckinLabel.trim();
-                              if (simpleCheckinNotes.trim()) body.notes = simpleCheckinNotes.trim();
+                              const body: Record<string, any> = {};
+                              if (hasTrackedItems) {
+                                const tvArr = habitTrackedItems
+                                  .filter(item => trackedValuesMap[item.id]?.trim())
+                                  .map(item => ({
+                                    itemId: item.id,
+                                    value: item.type === "count" || item.type === "time" ? Number(trackedValuesMap[item.id]) : trackedValuesMap[item.id],
+                                  }));
+                                if (tvArr.length > 0) body.trackedValues = tvArr;
+                              } else {
+                                if (simpleCheckinQuantity) body.quantity = Number(simpleCheckinQuantity);
+                                if (simpleCheckinLabel.trim()) body.quantityLabel = simpleCheckinLabel.trim();
+                                if (simpleCheckinNotes.trim()) body.notes = simpleCheckinNotes.trim();
+                              }
                               simpleCheckinMutation.mutate(body);
                             }
                           }}
@@ -489,6 +529,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                               setSimpleCheckinQuantity("");
                               setSimpleCheckinLabel("");
                               setSimpleCheckinNotes("");
+                              setTrackedValuesMap({});
                             }}
                             data-testid={`button-cancel-checkin-${habit.id}`}
                           >

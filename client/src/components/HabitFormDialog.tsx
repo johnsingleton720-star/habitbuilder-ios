@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { type HabitSchedule } from "@shared/schema";
+import { type HabitSchedule, type TrackedItem } from "@shared/schema";
 import { type HabitResponse } from "@shared/routes";
 import { useCreateHabit, useUpdateHabit, useHabits } from "@/hooks/use-habits";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -14,7 +14,7 @@ import { IconColorPicker, ICON_OPTIONS } from "@/components/IconColorPicker";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, X, Check, CheckCircle2, Brain } from "lucide-react";
+import { Loader2, Calendar, ChevronDown, ChevronUp, Sparkles, Star, Crown, Lock, ArrowRight, X, Check, CheckCircle2, Brain, Plus, Trash2, Hash, Clock, Type } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -59,6 +59,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const activeHabitsCount = existingHabits?.filter(h => !h.archived).length || 0;
   const hasReachedFreeLimit = isFreeUser && !isEditing && !canAddMoreHabits(activeHabitsCount);
   const [trackingMode, setTrackingMode] = useState<"plan" | "simple">("plan");
+  const [trackedItems, setTrackedItems] = useState<TrackedItem[]>([]);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [schedule, setSchedule] = useState<HabitSchedule | undefined>(habitToEdit?.schedule as HabitSchedule | undefined);
@@ -100,6 +101,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       setShowIconPicker(false);
       setIconColorSaved(false);
       setTrackingMode("plan");
+      setTrackedItems((habitToEdit?.trackedItems as TrackedItem[]) || []);
       document.body.style.overflow = 'hidden';
     } else if (!open) {
       document.body.style.overflow = '';
@@ -157,7 +159,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
       const scheduleData = showSchedule && schedule?.days?.length ? schedule : undefined;
       
       if (isEditing && habitToEdit) {
-        await updateHabit.mutateAsync({ 
+        const updatePayload: Record<string, any> = { 
           id: habitToEdit.id, 
           title: data.title,
           description: data.description || null,
@@ -166,7 +168,11 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customIcon,
           customColor,
           category: data.category || null,
-        });
+        };
+        if (habitToEdit.trackingMode === "simple") {
+          updatePayload.trackedItems = trackedItems.filter(i => i.name.trim().length > 0);
+        }
+        await updateHabit.mutateAsync(updatePayload);
         closeDialog();
       } else {
         const newHabit = await createHabit.mutateAsync({
@@ -178,7 +184,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
           customColor,
           category: data.category || null,
           trackingMode,
-          ...(trackingMode === "simple" ? { setupComplete: true } : {}),
+          ...(trackingMode === "simple" ? { setupComplete: true, trackedItems: trackedItems.filter(i => i.name.trim().length > 0) } : {}),
         });
         closeDialog();
         if (newHabit?.id) {
@@ -411,6 +417,76 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                     <span className="text-[0.7rem] text-muted-foreground leading-tight">Just check in daily — no plan or sessions needed</span>
                   </button>
                 </div>
+              </div>
+            )}
+
+            {((isEditing && habitToEdit?.trackingMode === "simple") || (!isEditing && trackingMode === "simple")) && (
+              <div className="space-y-2" data-testid="tracked-items-section">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Tracked Items</label>
+                  <span className="text-xs text-muted-foreground">{trackedItems.length}/20</span>
+                </div>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  Add things to measure each check-in (e.g. glasses of water, minutes, notes).
+                </p>
+                {trackedItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-2" data-testid={`tracked-item-${idx}`}>
+                    <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
+                      {item.type === "count" ? <Hash className="w-3.5 h-3.5 text-muted-foreground" /> : 
+                       item.type === "time" ? <Clock className="w-3.5 h-3.5 text-muted-foreground" /> : 
+                       <Type className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
+                    <Input
+                      value={item.name}
+                      onChange={(e) => {
+                        const updated = [...trackedItems];
+                        updated[idx] = { ...item, name: e.target.value.slice(0, 50) };
+                        setTrackedItems(updated);
+                      }}
+                      placeholder="Item name"
+                      className="flex-1 h-9 text-sm"
+                      data-testid={`input-tracked-item-name-${idx}`}
+                    />
+                    <Select
+                      value={item.type}
+                      onValueChange={(val) => {
+                        const updated = [...trackedItems];
+                        updated[idx] = { ...item, type: val as "count" | "time" | "text" };
+                        setTrackedItems(updated);
+                      }}
+                    >
+                      <SelectTrigger className="w-24 h-9 text-xs" data-testid={`select-tracked-item-type-${idx}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="count">Count</SelectItem>
+                        <SelectItem value="time">Time</SelectItem>
+                        <SelectItem value="text">Text</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <button
+                      type="button"
+                      onClick={() => setTrackedItems(trackedItems.filter((_, i) => i !== idx))}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      data-testid={`button-remove-tracked-item-${idx}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {trackedItems.length < 20 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-1.5 text-xs"
+                    onClick={() => setTrackedItems([...trackedItems, { id: crypto.randomUUID(), name: "", type: "count" }])}
+                    data-testid="button-add-tracked-item"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add tracked item
+                  </Button>
+                )}
               </div>
             )}
 

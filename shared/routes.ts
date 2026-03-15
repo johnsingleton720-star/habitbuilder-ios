@@ -43,6 +43,12 @@ export const habitTipSchema = z.object({
   category: z.enum(["motivation", "technique", "science", "reminder"]),
 });
 
+export const trackedItemSchema = z.object({
+  id: z.string(),
+  name: z.string().max(50),
+  type: z.enum(["count", "time", "text"]),
+});
+
 export const habitScheduleSchema = z.object({
   days: z.array(z.string()),
   time: z.string(),
@@ -109,6 +115,7 @@ export const api = {
         planStartDate: z.string().optional(),
         planEndDate: z.string().optional(),
         aiContext: z.string().optional(),
+        trackedItems: z.array(trackedItemSchema).max(20).optional(),
         totalTimeSpent: z.number().optional(),
         currentStreak: z.number().optional(),
         longestStreak: z.number().optional(),

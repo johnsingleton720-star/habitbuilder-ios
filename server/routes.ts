@@ -5283,7 +5283,7 @@ REQUIREMENTS:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { duration, rating, quantity, quantityLabel: rawLabel } = req.body;
+      const { duration, rating, quantity, quantityLabel: rawLabel, trackedValues: rawTrackedValues } = req.body;
       const notes = typeof req.body.notes === "string" ? req.body.notes.slice(0, 500) : undefined;
       const quantityLabel = typeof rawLabel === "string" ? rawLabel.slice(0, 50) : undefined;
 
@@ -5318,6 +5318,30 @@ REQUIREMENTS:
       }
       if (quantityLabel) {
         taskEntry.quantityLabel = quantityLabel;
+      }
+      if (Array.isArray(rawTrackedValues)) {
+        const habitItems = Array.isArray(habit.trackedItems) ? (habit.trackedItems as { id: string; name: string; type: string }[]) : [];
+        const validValues = rawTrackedValues
+          .filter((v: any) => {
+            if (!v || typeof v.itemId !== "string" || v.value === undefined || v.value === "") return false;
+            return habitItems.some(i => i.id === v.itemId);
+          })
+          .slice(0, 20)
+          .map((v: any) => {
+            const itemDef = habitItems.find(i => i.id === v.itemId);
+            if (itemDef && (itemDef.type === "count" || itemDef.type === "time")) {
+              const num = Number(v.value);
+              if (!isNaN(num) && isFinite(num)) {
+                return { itemId: v.itemId, value: num };
+              }
+              return null;
+            }
+            return { itemId: v.itemId, value: String(v.value).slice(0, 200) };
+          })
+          .filter(Boolean);
+        if (validValues.length > 0) {
+          taskEntry.trackedValues = validValues;
+        }
       }
 
       if (existingPlan) {
@@ -7502,6 +7526,30 @@ Tailor the plan to their frequency, time of day, and experience. If they've trie
         .map(h => `${h.title} miss reasons: ${((h.missReasons as any[]) || []).map((m: any) => m.reason).join(", ")}`)
         .join("\n");
 
+      const trackedItemsSummary = activeHabits
+        .filter(h => h.trackingMode === "simple" && Array.isArray(h.trackedItems) && (h.trackedItems as any[]).length > 0)
+        .map(h => {
+          const items = h.trackedItems as { id: string; name: string; type: string }[];
+          const plans = (h.dailyPlans || []) as any[];
+          const recentPlans = plans.filter((p: any) => p.completed).slice(-14);
+          const valuesByItem: Record<string, string[]> = {};
+          for (const plan of recentPlans) {
+            const tv = plan.tasks?.[0]?.trackedValues;
+            if (Array.isArray(tv)) {
+              for (const v of tv) {
+                const item = items.find(i => i.id === v.itemId);
+                if (item) {
+                  if (!valuesByItem[item.name]) valuesByItem[item.name] = [];
+                  valuesByItem[item.name].push(`${plan.date}: ${v.value}`);
+                }
+              }
+            }
+          }
+          const itemSummaries = Object.entries(valuesByItem).map(([name, vals]) => `  ${name}: ${vals.join(", ")}`).join("\n");
+          return `${h.title} tracked items:\n${itemSummaries || "  (no data yet)"}`;
+        })
+        .join("\n");
+
       const moodSummary = recentMood.length > 0
         ? `Recent mood entries (${recentMood.length}): ` + recentMood.slice(0, 15).map(m => `${m.date}: mood=${m.mood}, energy=${m.energy}/5, stress=${m.stress}/5, sleep=${m.sleep}/5${m.notes ? `, notes="${m.notes.substring(0, 100)}"` : ""}`).join("\n")
         : "No mood data recorded yet.";
@@ -7525,6 +7573,8 @@ HABITS (${activeHabits.length} active):
 ${habitSummary || "No habits yet."}
 
 ${missReasonsSummary ? `MISSED DAY REASONS:\n${missReasonsSummary}` : ""}
+
+${trackedItemsSummary ? `TRACKED ITEMS (Simple Habits):\n${trackedItemsSummary}` : ""}
 
 MOOD & WELLNESS:
 ${moodSummary}

@@ -86,6 +86,19 @@ export interface HabitSchedule {
   reminder: boolean; // Whether to show reminders
 }
 
+// Tracked item definition for simple habits
+export interface TrackedItem {
+  id: string;
+  name: string;
+  type: "count" | "time" | "text";
+}
+
+// Tracked value recorded at check-in
+export interface TrackedValue {
+  itemId: string;
+  value: string | number;
+}
+
 export const habits = pgTable("habits", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -140,6 +153,9 @@ export const habits = pgTable("habits", {
 
   // Tracking mode
   trackingMode: text("tracking_mode").default("plan"), // "plan" or "simple"
+  
+  // Tracked items for simple habits (reusable custom fields)
+  trackedItems: jsonb("tracked_items").$type<TrackedItem[]>().default([]),
   
   // Archiving
   archived: boolean("archived").default(false),

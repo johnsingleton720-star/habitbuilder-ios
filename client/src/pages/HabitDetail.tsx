@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward, Lock, TrendingDown } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Sparkles, Target, Calendar, Clock, Play, Check, CheckCircle2, Pencil, Save, X, ChevronRight, Timer, MessageSquare, Lightbulb, RefreshCw, Link2, Unlink, Crown, ArrowRight, Trophy, RotateCcw, CalendarPlus, AlertCircle, SkipForward, Lock, TrendingDown, Hash, Type } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
+import type { Habit, DailyPlan, RoutineTask, TrackedItem, TrackedValue } from "@shared/schema";
 import { HabitSetupWizard } from "@/components/HabitSetupWizard";
 import { GuidedSession } from "@/components/GuidedSession";
 import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
@@ -253,6 +253,7 @@ export default function HabitDetail() {
   const [simpleQuantity, setSimpleQuantity] = useState("");
   const [simpleLabel, setSimpleLabel] = useState("");
   const [simpleNotes, setSimpleNotes] = useState("");
+  const [trackedValuesMap, setTrackedValuesMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
   
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
@@ -373,6 +374,7 @@ export default function HabitDetail() {
       setSimpleQuantity("");
       setSimpleLabel("");
       setSimpleNotes("");
+      setTrackedValuesMap({});
       toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
     },
     onError: () => {
@@ -920,43 +922,84 @@ export default function HabitDetail() {
                     ) : (
                       <div className="w-full max-w-sm space-y-3">
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              placeholder="Quantity (optional)"
-                              value={simpleQuantity}
-                              onChange={(e) => setSimpleQuantity(e.target.value)}
-                              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                              data-testid="input-quantity-detail"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Unit (e.g. glasses)"
-                              value={simpleLabel}
-                              onChange={(e) => setSimpleLabel(e.target.value)}
-                              className="w-32 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                              data-testid="input-quantity-label-detail"
-                            />
-                          </div>
-                          <Textarea
-                            placeholder="Notes (optional)"
-                            value={simpleNotes}
-                            onChange={(e) => setSimpleNotes(e.target.value)}
-                            rows={2}
-                            className="resize-none"
-                            data-testid="input-notes-detail"
-                          />
+                          {(() => {
+                            const detailTrackedItems = (habit.trackedItems || []) as TrackedItem[];
+                            const hasItems = detailTrackedItems.length > 0;
+                            if (hasItems) {
+                              return detailTrackedItems.map((item) => (
+                                <div key={item.id} className="flex items-center gap-2">
+                                  <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
+                                    {item.type === "count" ? <Hash className="w-3.5 h-3.5 text-muted-foreground" /> :
+                                     item.type === "time" ? <Clock className="w-3.5 h-3.5 text-muted-foreground" /> :
+                                     <Type className="w-3.5 h-3.5 text-muted-foreground" />}
+                                  </div>
+                                  <span className="text-sm font-medium text-muted-foreground flex-shrink-0">{item.name}</span>
+                                  <input
+                                    type={item.type === "count" ? "number" : item.type === "time" ? "number" : "text"}
+                                    inputMode={item.type === "text" ? "text" : "decimal"}
+                                    placeholder={item.type === "count" ? "0" : item.type === "time" ? "min" : "..."}
+                                    value={trackedValuesMap[item.id] || ""}
+                                    onChange={(e) => setTrackedValuesMap(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                    data-testid={`input-tracked-detail-${item.id}`}
+                                  />
+                                </div>
+                              ));
+                            }
+                            return (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                  <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="Quantity (optional)"
+                                    value={simpleQuantity}
+                                    onChange={(e) => setSimpleQuantity(e.target.value)}
+                                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                    data-testid="input-quantity-detail"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Unit (e.g. glasses)"
+                                    value={simpleLabel}
+                                    onChange={(e) => setSimpleLabel(e.target.value)}
+                                    className="w-32 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                    data-testid="input-quantity-label-detail"
+                                  />
+                                </div>
+                                <Textarea
+                                  placeholder="Notes (optional)"
+                                  value={simpleNotes}
+                                  onChange={(e) => setSimpleNotes(e.target.value)}
+                                  rows={2}
+                                  className="resize-none"
+                                  data-testid="input-notes-detail"
+                                />
+                              </>
+                            );
+                          })()}
                         </div>
                         <Button
                           size="lg"
                           className="w-full gap-2 shadow-lg shadow-primary/20 rounded-xl font-semibold"
                           onClick={() => {
-                            const body: { quantity?: number; quantityLabel?: string; notes?: string } = {};
-                            if (simpleQuantity) body.quantity = Number(simpleQuantity);
-                            if (simpleLabel.trim()) body.quantityLabel = simpleLabel.trim();
-                            if (simpleNotes.trim()) body.notes = simpleNotes.trim();
+                            const detailTrackedItems = (habit.trackedItems || []) as TrackedItem[];
+                            const hasItems = detailTrackedItems.length > 0;
+                            const body: Record<string, any> = {};
+                            if (hasItems) {
+                              const tvArr = detailTrackedItems
+                                .filter(item => trackedValuesMap[item.id]?.trim())
+                                .map(item => ({
+                                  itemId: item.id,
+                                  value: item.type === "count" || item.type === "time" ? Number(trackedValuesMap[item.id]) : trackedValuesMap[item.id],
+                                }));
+                              if (tvArr.length > 0) body.trackedValues = tvArr;
+                            } else {
+                              if (simpleQuantity) body.quantity = Number(simpleQuantity);
+                              if (simpleLabel.trim()) body.quantityLabel = simpleLabel.trim();
+                              if (simpleNotes.trim()) body.notes = simpleNotes.trim();
+                            }
                             simpleCheckinMutation.mutate(body);
                           }}
                           disabled={simpleCheckinMutation.isPending}
@@ -1667,28 +1710,43 @@ export default function HabitDetail() {
               <div className="space-y-3">
                 {(isSimpleMode
                   ? (() => {
-                      type SimpleTask = RoutineTask & { quantity?: number; quantityLabel?: string };
+                      type SimpleTask = RoutineTask & { quantity?: number; quantityLabel?: string; trackedValues?: TrackedValue[] };
+                      const historyTrackedItems = (habit.trackedItems || []) as TrackedItem[];
                       const sortedPlans = [...dailyPlans]
                         .filter(p => p.completed)
                         .sort((a, b) => b.date.localeCompare(a.date))
                         .slice(0, 10);
                       return sortedPlans.map((plan, index) => {
                         const task = plan.tasks?.[0] as SimpleTask | undefined;
+                        const tv = task?.trackedValues || [];
                         return (
-                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg" data-testid={`checkin-history-${index}`}>
-                            <div className="flex-1 min-w-0">
+                          <div key={index} className="p-3 bg-muted/30 rounded-lg" data-testid={`checkin-history-${index}`}>
+                            <div className="flex items-center justify-between">
                               <p className="font-semibold text-sm">{format(parseISO(plan.date), "MMMM d, yyyy")}</p>
-                              {task?.notes && (
-                                <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{task.notes}</p>
-                              )}
+                              <div className="flex-shrink-0 ml-3">
+                                {task?.quantity !== undefined && task?.quantity !== null ? (
+                                  <p className="font-semibold text-sm">{task.quantity}{task.quantityLabel ? ` ${task.quantityLabel}` : ""}</p>
+                                ) : tv.length === 0 ? (
+                                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="text-right flex-shrink-0 ml-3">
-                              {task?.quantity !== undefined && task?.quantity !== null ? (
-                                <p className="font-semibold text-sm">{task.quantity}{task.quantityLabel ? ` ${task.quantityLabel}` : ""}</p>
-                              ) : (
-                                <CheckCircle2 className="w-5 h-5 text-primary" />
-                              )}
-                            </div>
+                            {task?.notes && (
+                              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{task.notes}</p>
+                            )}
+                            {tv.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-1.5">
+                                {tv.map((v) => {
+                                  const itemDef = historyTrackedItems.find(i => i.id === v.itemId);
+                                  return (
+                                    <span key={v.itemId} className="inline-flex items-center gap-1 text-xs bg-background/60 border border-border/50 rounded-md px-2 py-0.5" data-testid={`tracked-value-${v.itemId}-${index}`}>
+                                      <span className="text-muted-foreground">{itemDef?.name || "Item"}:</span>
+                                      <span className="font-medium">{v.value}{itemDef?.type === "time" ? " min" : ""}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         );
                       });
