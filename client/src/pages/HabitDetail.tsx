@@ -1748,11 +1748,12 @@ export default function HabitDetail() {
         {isSimpleMode && (() => {
           const trendItems = (habit.trackedItems || []) as TrackedItem[];
           const completedPlans = [...dailyPlans]
-            .filter(p => p.completed && p.tasks?.[0]?.trackedValues?.length > 0)
+            .filter(p => p.completed)
             .sort((a, b) => b.date.localeCompare(a.date))
             .slice(0, 7)
             .reverse();
-          if (trendItems.length === 0 || completedPlans.length < 2) return null;
+          const plansWithTracked = completedPlans.filter(p => p.tasks?.[0]?.trackedValues?.length > 0);
+          if (trendItems.length === 0 || plansWithTracked.length < 2) return null;
           return (
             <Card data-testid="card-recent-trends">
               <CardHeader className="pb-2">

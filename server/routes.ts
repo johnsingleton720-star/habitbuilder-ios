@@ -5411,7 +5411,7 @@ REQUIREMENTS:
 
       await updateChallengeProgress(userId, {
         tasksCompleted: 1,
-        timeSpent: duration || 0,
+        timeSpent: effectiveDuration,
         habitsWorkedOn: habitsWorkedToday,
         totalActiveHabits: allHabits.filter(h => !h.archived).length,
         notesAdded: notes ? 1 : 0,
