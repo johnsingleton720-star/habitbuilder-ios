@@ -88,13 +88,28 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
     font-family: var(--font-body);
-    line-height: 1.7;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply font-bold tracking-tight text-foreground;
-    line-height: 1.3;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+  }
+
+  /* Better text hierarchy */
+  p {
+    line-height: 1.6;
+  }
+
+  .text-sm {
+    line-height: 1.5;
+  }
+
+  .text-xs {
+    line-height: 1.4;
   }
 }
 
@@ -145,9 +160,26 @@
   }
 
   .section-group {
-    @apply rounded-2xl p-5 md:p-6;
+    @apply rounded-2xl p-6 md:p-7;
     background: hsl(var(--secondary) / 0.15);
   }
+
+  /* Card spacing improvements */
+  .shadcn-card {
+    @apply gap-4;
+  }
+  
+  /* Improve card content padding */
+  [role="region"] > div > .rounded-2xl {
+    @apply p-5 md:p-6;
+  }
+
+  /* Better spacing in grid cards */
+  .grid > div > .rounded-lg,
+  .grid > div > .rounded-xl {
+    @apply p-5 md:p-6;
+  }
+
   .dark .section-group {
     background: hsl(var(--secondary) / 0.25);
   }
