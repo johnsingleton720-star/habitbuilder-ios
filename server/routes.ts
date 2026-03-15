@@ -5350,7 +5350,7 @@ REQUIREMENTS:
         }
       }
 
-      const effectiveDuration = (duration || 0) + trackedTimeDuration;
+      const effectiveDuration = trackedTimeDuration > 0 ? trackedTimeDuration : (duration || 0);
       taskEntry.duration = effectiveDuration || null;
 
       if (existingPlan) {
