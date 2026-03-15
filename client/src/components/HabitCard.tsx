@@ -383,13 +383,18 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
                 <div className="flex items-center gap-3 mb-5">
                   {isFreeUser ? (
-                    <Link href="/paywall">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 px-3 py-2 rounded-lg border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-streaks">
-                        <Lock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                        <span>Track your streaks to stay motivated</span>
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">Pro</Badge>
+                    <>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                        <Flame className="w-4 h-4 fill-current" />
+                        <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
-                    </Link>
+                      <Link href="/paywall">
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors gap-1" data-testid="badge-unlock-streaks">
+                          <Lock className="w-3 h-3" />
+                          Unlock with Pro
+                        </Badge>
+                      </Link>
+                    </>
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
@@ -639,13 +644,18 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
                 <div className="flex items-center gap-3 mb-5">
                   {isFreeUser ? (
-                    <Link href="/paywall">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 px-3 py-2 rounded-lg border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-streaks">
-                        <Lock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                        <span>Track your streaks to stay motivated</span>
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">Pro</Badge>
+                    <>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                        <Flame className="w-4 h-4 fill-current" />
+                        <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
-                    </Link>
+                      <Link href="/paywall">
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors gap-1" data-testid="badge-unlock-streaks">
+                          <Lock className="w-3 h-3" />
+                          Unlock with Pro
+                        </Badge>
+                      </Link>
+                    </>
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>

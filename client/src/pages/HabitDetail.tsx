@@ -627,7 +627,7 @@ export default function HabitDetail() {
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
-                    {[0, 1, 2].map((i) => (
+                    {[0, 1].map((i) => (
                       <div
                         key={i}
                         className={cn(
@@ -648,14 +648,14 @@ export default function HabitDetail() {
                   </div>
                   <div>
                     <p className="text-base font-semibold text-foreground">
-                      {sessionUsage.used >= 3
+                      {sessionUsage.used >= 2
                         ? "All sessions used this week"
-                        : `${3 - sessionUsage.used} session${3 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
+                        : `${2 - sessionUsage.used} session${2 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
                     </p>
                     <p className="text-base text-muted-foreground">
-                      {sessionUsage.used >= 3
+                      {sessionUsage.used >= 2
                         ? "New sessions available Monday"
-                        : "Free plan: 3 sessions per week"}
+                        : "Free plan: 2 sessions per week"}
                     </p>
                   </div>
                 </div>
@@ -752,22 +752,32 @@ export default function HabitDetail() {
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     {isFreeUser ? (
                       <>
-                        <Button
-                          onClick={() => {
-                            setSetupWizardRestartMode(true);
-                            setSetupWizardOpen(true);
-                          }}
-                          className="flex-1 gap-2"
-                          data-testid="button-restart-plan"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                          Restart Plan
-                        </Button>
-                        <UpgradePrompt
-                          variant="card"
-                          feature="Plan Management"
-                          description="Upgrade to Pro for mid-plan adjustments, extensions, and more."
-                        />
+                        <div className="flex-1 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10 p-4" data-testid="card-restart-locked">
+                          <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                Restart Plan
+                                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">Pro</Badge>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Upgrade to Pro to restart, extend, or start a fresh plan.
+                              </p>
+                              <Button
+                                size="sm"
+                                onClick={() => navigate("/paywall")}
+                                className="gap-1.5 mt-3"
+                                data-testid="button-upgrade-restart"
+                              >
+                                <Crown className="w-3.5 h-3.5" />
+                                See Plans
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </>
                     ) : (
                       <>
@@ -1819,11 +1829,13 @@ export default function HabitDetail() {
                   ? (() => {
                       type SimpleTask = RoutineTask & { quantity?: number; quantityLabel?: string; trackedValues?: TrackedValue[] };
                       const historyTrackedItems = (habit.trackedItems || []) as TrackedItem[];
-                      const sortedPlans = [...dailyPlans]
+                      const allSortedPlans = [...dailyPlans]
                         .filter(p => p.completed)
-                        .sort((a, b) => b.date.localeCompare(a.date))
-                        .slice(0, 10);
-                      return sortedPlans.map((plan, index) => {
+                        .sort((a, b) => b.date.localeCompare(a.date));
+                      const displayLimit = isFreeUser ? 3 : 10;
+                      const sortedPlans = allSortedPlans.slice(0, displayLimit);
+                      const hasMoreEntries = isFreeUser && allSortedPlans.length > 3;
+                      const items = sortedPlans.map((plan, index) => {
                         const task = plan.tasks?.[0] as SimpleTask | undefined;
                         const tv = task?.trackedValues || [];
                         return (
@@ -1859,21 +1871,69 @@ export default function HabitDetail() {
                           </div>
                         );
                       });
+                      if (hasMoreEntries) {
+                        items.push(
+                          <div key="locked-history" className="relative" data-testid="locked-history-teaser">
+                            <div className="p-3 bg-muted/30 rounded-lg blur-[2px] select-none pointer-events-none">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold text-sm">Earlier entries</p>
+                                <CheckCircle2 className="w-5 h-5 text-primary" />
+                              </div>
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Link href="/paywall">
+                                <Button variant="outline" size="sm" className="gap-1.5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-background/80 backdrop-blur-sm" data-testid="button-unlock-history">
+                                  <Lock className="w-3 h-3" />
+                                  See full history with Pro
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return items;
                     })()
-                  : habit.progress.slice(-5).reverse().map((entry, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div>
-                          <p className="font-semibold">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
-                          {entry.notes && (
-                            <p className="text-sm text-muted-foreground">{entry.notes}</p>
-                          )}
+                  : (() => {
+                      const allEntries = habit.progress.slice().reverse();
+                      const displayLimit = isFreeUser ? 3 : 5;
+                      const entries = allEntries.slice(0, displayLimit);
+                      const hasMoreEntries = isFreeUser && allEntries.length > 3;
+                      const items = entries.map((entry, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div>
+                            <p className="font-semibold">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
+                            {entry.notes && (
+                              <p className="text-sm text-muted-foreground">{entry.notes}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
+                            <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
-                          <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
-                        </div>
-                      </div>
-                    ))
+                      ));
+                      if (hasMoreEntries) {
+                        items.push(
+                          <div key="locked-history" className="relative" data-testid="locked-history-teaser">
+                            <div className="p-3 bg-muted/30 rounded-lg blur-[2px] select-none pointer-events-none">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold">Earlier sessions</p>
+                                <p className="font-semibold text-muted-foreground">--/-- tasks</p>
+                              </div>
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Link href="/paywall">
+                                <Button variant="outline" size="sm" className="gap-1.5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-background/80 backdrop-blur-sm" data-testid="button-unlock-history">
+                                  <Lock className="w-3 h-3" />
+                                  See full history with Pro
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return items;
+                    })()
                 )}
               </div>
             </CardContent>

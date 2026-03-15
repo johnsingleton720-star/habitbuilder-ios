@@ -72,6 +72,13 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { features, isFreeUser } = useSubscription();
   const queryClient = useQueryClient();
+  const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
+    const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
+    if (!dismissedAt) return false;
+    const dismissedDate = new Date(dismissedAt);
+    const daysSinceDismissed = Math.floor((Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceDismissed < 7;
+  });
 
   useEffect(() => {
     if (window.location.hash === "#tour") {
@@ -656,6 +663,70 @@ export default function Dashboard() {
             </Card>
           </motion.section>
         )}
+
+        {isFreeUser && !levelUpDismissed && (() => {
+          const daysActive = user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          if (daysActive < 7) return null;
+          const totalStreakDays = activeHabits?.reduce((sum, h) => sum + (h.currentStreak || 0), 0) || 0;
+          const totalCompletedDays = activeHabits?.reduce((sum, h) => sum + ((h.progress as any[])?.length || 0), 0) || 0;
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.03 }}
+            >
+              <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-emerald-500/5 dark:from-primary/10 dark:to-emerald-500/10 relative overflow-hidden" data-testid="card-level-up-banner">
+                <button
+                  onClick={() => {
+                    setLevelUpDismissed(true);
+                    localStorage.setItem('levelUpBannerDismissed', new Date().toISOString());
+                  }}
+                  className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors z-10"
+                  data-testid="button-dismiss-level-up"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                      <Flame className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-foreground" data-testid="text-level-up-title">
+                        You've been at this for {daysActive} days — ready to level up?
+                      </h3>
+                      <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
+                        {totalStreakDays > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Flame className="w-3.5 h-3.5 text-orange-500" />
+                            {totalStreakDays} day streak
+                          </span>
+                        )}
+                        {totalCompletedDays > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5 text-primary" />
+                            {totalCompletedDays} sessions completed
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        With Pro, you'd unlock unlimited sessions, streak protection, full history, plan restarts, and AI coaching insights.
+                      </p>
+                      <Link href="/paywall">
+                        <Button size="sm" className="gap-1.5 mt-3" data-testid="button-level-up-upgrade">
+                          <Crown className="w-3.5 h-3.5" />
+                          See What You'd Unlock
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          );
+        })()}
 
         {/* Daily Quote - Positive start */}
         <motion.section 

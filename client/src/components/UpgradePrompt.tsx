@@ -153,7 +153,7 @@ export function SessionLimitReached({ className }: SessionLimitReachedProps) {
       </div>
       <h3 className="font-semibold text-foreground mb-1">You're on a roll!</h3>
       <p className="text-sm text-muted-foreground mb-4">
-        You've used all 3 free sessions this week. Upgrade to Pro for unlimited guided sessions and keep your momentum going.
+        You've used all 2 free sessions this week. Upgrade to Pro for unlimited guided sessions and keep your momentum going.
       </p>
       <Button
         onClick={() => navigate("/paywall")}

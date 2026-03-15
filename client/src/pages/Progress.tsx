@@ -1,10 +1,11 @@
 import { useHabits } from "@/hooks/use-habits";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, CalendarCheck, Clock, Flame, Target, TrendingUp, Trophy, CheckCircle2, Award, Zap, Star } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarCheck, Clock, Crown, Flame, Lock, Target, TrendingUp, Trophy, CheckCircle2, Award, Zap, Star, ArrowRight } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { format, subDays, startOfWeek, addDays, differenceInDays, parseISO } from "date-fns";
 import { motion } from "framer-motion";
@@ -20,6 +21,7 @@ export default function ProgressPage() {
   const view = (params?.view as ViewType) || "today";
   const { data: habits, isLoading } = useHabits();
   const { user } = useAuth();
+  const { isFreeUser } = useSubscription();
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -265,15 +267,93 @@ export default function ProgressPage() {
         )}
         
         {view === "total" && (
-          <TotalView stats={getTotalStats()} />
+          isFreeUser ? (
+            <div className="relative" data-testid="progress-total-locked">
+              <div className="pointer-events-none select-none">
+                <TotalView stats={getTotalStats()} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background/90 flex flex-col items-center justify-end pb-12 z-10">
+                <div className="bg-background/95 backdrop-blur-sm border border-amber-200 dark:border-amber-800/50 rounded-xl p-6 text-center max-w-sm shadow-lg">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Detailed Analytics</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Unlock all-time stats, trend charts, and detailed breakdowns with Pro.
+                  </p>
+                  <Link href="/paywall">
+                    <Button className="gap-2" data-testid="button-upgrade-progress">
+                      <Crown className="w-4 h-4" />
+                      Unlock with Pro
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <TotalView stats={getTotalStats()} />
+          )
         )}
         
         {view === "streak" && (
-          <StreakView stats={getStreakStats()} />
+          isFreeUser ? (
+            <div className="relative" data-testid="progress-streak-locked">
+              <div className="pointer-events-none select-none">
+                <StreakView stats={getStreakStats()} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background/90 flex flex-col items-center justify-end pb-12 z-10">
+                <div className="bg-background/95 backdrop-blur-sm border border-amber-200 dark:border-amber-800/50 rounded-xl p-6 text-center max-w-sm shadow-lg">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Streak Analytics</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    See detailed streak tracking, personal records, and progress to your best with Pro.
+                  </p>
+                  <Link href="/paywall">
+                    <Button className="gap-2" data-testid="button-upgrade-streaks">
+                      <Crown className="w-4 h-4" />
+                      Unlock with Pro
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <StreakView stats={getStreakStats()} />
+          )
         )}
         
         {view === "weekly" && (
-          <WeeklyView habits={(habits || []).filter(h => !h.archived)} />
+          isFreeUser ? (
+            <div className="relative" data-testid="progress-weekly-locked">
+              <div className="pointer-events-none select-none">
+                <WeeklyView habits={(habits || []).filter(h => !h.archived)} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background/90 flex flex-col items-center justify-end pb-12 z-10">
+                <div className="bg-background/95 backdrop-blur-sm border border-amber-200 dark:border-amber-800/50 rounded-xl p-6 text-center max-w-sm shadow-lg">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Weekly Overview</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Track your weekly patterns and completion heatmap with Pro.
+                  </p>
+                  <Link href="/paywall">
+                    <Button className="gap-2" data-testid="button-upgrade-weekly">
+                      <Crown className="w-4 h-4" />
+                      Unlock with Pro
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <WeeklyView habits={(habits || []).filter(h => !h.archived)} />
+          )
         )}
       </div>
     </div>

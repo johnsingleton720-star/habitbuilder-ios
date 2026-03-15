@@ -2527,12 +2527,12 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           features: [
             '1 habit',
             'First AI action plan',
-            '3 guided sessions per week',
+            '2 guided sessions per week',
             'Habit templates library',
           ],
           limitations: [
             'No AI coaching insights',
-            'No streaks & achievements',
+            'Limited streak tracking',
             'No plan updates or refresh',
             'No productivity tools',
           ],
@@ -4158,17 +4158,10 @@ REQUIREMENTS:
       const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
 
       if (isFreeUser) {
-        const questions = (habit.questions || []) as any[];
-        const hasAnswers = questions.some((q: any) => q.answer);
-        const today = new Date().toISOString().split("T")[0];
-        const planEnded = habit.planEndDate && habit.planEndDate < today;
-
-        if (!planEnded || !hasAnswers) {
-          return res.status(403).json({ 
-            error: "paid_feature",
-            message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
-          });
-        }
+        return res.status(403).json({ 
+          error: "paid_feature",
+          message: "Plan restart and refresh is available with Pro. Upgrade to restart, extend, or start fresh plans!"
+        });
       }
 
       if (habit.trackingMode === "simple") {
@@ -5148,7 +5141,7 @@ REQUIREMENTS:
       return res.json({ 
         unlimited: false,
         used: weeklySessionCount,
-        limit: 3,
+        limit: 2,
         resetsAt: nextMonday.toISOString()
       });
     } catch (error: any) {
@@ -5185,10 +5178,10 @@ REQUIREMENTS:
           weeklySessionCount += progress.filter((p: any) => p.date >= weekStart).length;
         }
 
-        if (weeklySessionCount >= 3) {
+        if (weeklySessionCount >= 2) {
           return res.status(403).json({ 
             error: "free_session_limit",
-            message: "You've reached your 3 free sessions this week. Upgrade to Pro for unlimited sessions!"
+            message: "You've reached your 2 free sessions this week. Upgrade to Pro for unlimited sessions!"
           });
         }
       }
