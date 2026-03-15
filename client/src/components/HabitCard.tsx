@@ -169,6 +169,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [simpleCheckinExpanded, setSimpleCheckinExpanded] = useState(false);
   const [simpleCheckinQuantity, setSimpleCheckinQuantity] = useState("");
+  const [simpleCheckinLabel, setSimpleCheckinLabel] = useState("");
   const [simpleCheckinNotes, setSimpleCheckinNotes] = useState("");
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -201,7 +202,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   );
 
   const simpleCheckinMutation = useMutation({
-    mutationFn: async (body?: { quantity?: number; notes?: string }) => {
+    mutationFn: async (body?: { quantity?: number; quantityLabel?: string; notes?: string }) => {
       return await apiRequest("POST", `/api/habits/${habit.id}/simple-checkin`, body || {});
     },
     onSuccess: () => {
@@ -211,6 +212,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
       setSimpleCheckinExpanded(false);
       setSimpleCheckinQuantity("");
+      setSimpleCheckinLabel("");
       setSimpleCheckinNotes("");
       toast({ title: "Checked in!", description: `Great job keeping up with "${habit.title}"!` });
     },
@@ -414,6 +416,14 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                           className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
                           data-testid={`input-quantity-${habit.id}`}
                         />
+                        <input
+                          type="text"
+                          placeholder="Unit (e.g. glasses)"
+                          value={simpleCheckinLabel}
+                          onChange={(e) => setSimpleCheckinLabel(e.target.value)}
+                          className="w-28 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                          data-testid={`input-quantity-label-${habit.id}`}
+                        />
                       </div>
                       <div className="flex items-start gap-2">
                         <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-2" />
@@ -451,8 +461,9 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                             if (!simpleCheckinExpanded) {
                               setSimpleCheckinExpanded(true);
                             } else {
-                              const body: any = {};
+                              const body: { quantity?: number; quantityLabel?: string; notes?: string } = {};
                               if (simpleCheckinQuantity) body.quantity = Number(simpleCheckinQuantity);
+                              if (simpleCheckinLabel.trim()) body.quantityLabel = simpleCheckinLabel.trim();
                               if (simpleCheckinNotes.trim()) body.notes = simpleCheckinNotes.trim();
                               simpleCheckinMutation.mutate(body);
                             }
@@ -476,6 +487,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                               e.preventDefault(); e.stopPropagation();
                               setSimpleCheckinExpanded(false);
                               setSimpleCheckinQuantity("");
+                              setSimpleCheckinLabel("");
                               setSimpleCheckinNotes("");
                             }}
                             data-testid={`button-cancel-checkin-${habit.id}`}

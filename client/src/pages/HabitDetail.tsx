@@ -251,6 +251,7 @@ export default function HabitDetail() {
   const [showPlanTypeChanger, setShowPlanTypeChanger] = useState(false);
   const [newPlanDuration, setNewPlanDuration] = useState<string>("monthly");
   const [simpleQuantity, setSimpleQuantity] = useState("");
+  const [simpleLabel, setSimpleLabel] = useState("");
   const [simpleNotes, setSimpleNotes] = useState("");
   const { toast } = useToast();
   
@@ -360,7 +361,7 @@ export default function HabitDetail() {
   });
 
   const simpleCheckinMutation = useMutation({
-    mutationFn: async (body: { duration?: number; rating?: number; notes?: string; quantity?: number }) => {
+    mutationFn: async (body: { duration?: number; rating?: number; notes?: string; quantity?: number; quantityLabel?: string }) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, body);
       return res.json();
     },
@@ -370,6 +371,7 @@ export default function HabitDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
       setSimpleQuantity("");
+      setSimpleLabel("");
       setSimpleNotes("");
       toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
     },
@@ -854,7 +856,7 @@ export default function HabitDetail() {
             <CardContent className="p-6">
               {(() => {
                 const simpleCheckedIn = dailyPlans.find(p => p.date === todayStr)?.completed === true;
-                const todayTask = dailyPlans.find(p => p.date === todayStr)?.tasks?.[0] as any;
+                const todayTask = dailyPlans.find(p => p.date === todayStr)?.tasks?.[0] as (RoutineTask & { quantity?: number; quantityLabel?: string }) | undefined;
                 return (
                   <div className="flex flex-col items-center gap-4">
                     <motion.div
@@ -923,11 +925,19 @@ export default function HabitDetail() {
                             <input
                               type="number"
                               inputMode="decimal"
-                              placeholder="Quantity (optional, e.g. 8 glasses)"
+                              placeholder="Quantity (optional)"
                               value={simpleQuantity}
                               onChange={(e) => setSimpleQuantity(e.target.value)}
                               className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
                               data-testid="input-quantity-detail"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Unit (e.g. glasses)"
+                              value={simpleLabel}
+                              onChange={(e) => setSimpleLabel(e.target.value)}
+                              className="w-32 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                              data-testid="input-quantity-label-detail"
                             />
                           </div>
                           <Textarea
@@ -943,8 +953,9 @@ export default function HabitDetail() {
                           size="lg"
                           className="w-full gap-2 shadow-lg shadow-primary/20 rounded-xl font-semibold"
                           onClick={() => {
-                            const body: any = {};
+                            const body: { quantity?: number; quantityLabel?: string; notes?: string } = {};
                             if (simpleQuantity) body.quantity = Number(simpleQuantity);
+                            if (simpleLabel.trim()) body.quantityLabel = simpleLabel.trim();
                             if (simpleNotes.trim()) body.notes = simpleNotes.trim();
                             simpleCheckinMutation.mutate(body);
                           }}
@@ -1656,12 +1667,13 @@ export default function HabitDetail() {
               <div className="space-y-3">
                 {(isSimpleMode
                   ? (() => {
+                      type SimpleTask = RoutineTask & { quantity?: number; quantityLabel?: string };
                       const sortedPlans = [...dailyPlans]
-                        .filter((p: any) => p.completed)
-                        .sort((a: any, b: any) => b.date.localeCompare(a.date))
+                        .filter(p => p.completed)
+                        .sort((a, b) => b.date.localeCompare(a.date))
                         .slice(0, 10);
-                      return sortedPlans.map((plan: any, index: number) => {
-                        const task = plan.tasks?.[0] as any;
+                      return sortedPlans.map((plan, index) => {
+                        const task = plan.tasks?.[0] as SimpleTask | undefined;
                         return (
                           <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg" data-testid={`checkin-history-${index}`}>
                             <div className="flex-1 min-w-0">
