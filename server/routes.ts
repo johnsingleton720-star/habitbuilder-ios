@@ -4154,11 +4154,19 @@ REQUIREMENTS:
 
       const user = await storage.getUser(userId);
       const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+
       if (isFreeUser) {
-        return res.status(403).json({ 
-          error: "paid_feature",
-          message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
-        });
+        const questions = (habit.questions || []) as any[];
+        const hasAnswers = questions.some((q: any) => q.answer);
+        const today = new Date().toISOString().split("T")[0];
+        const planEnded = habit.planEndDate && habit.planEndDate < today;
+
+        if (!planEnded || !hasAnswers) {
+          return res.status(403).json({ 
+            error: "paid_feature",
+            message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
+          });
+        }
       }
 
       if (!habit.setupComplete) {

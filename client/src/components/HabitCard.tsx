@@ -331,10 +331,19 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   isPlanCompleted ? "text-muted-foreground line-through" : "text-foreground"
                 )}>{habit.title}</h3>
                 {isPlanCompleted && (
-                  <Badge variant="outline" className="mt-1 text-xs bg-amber-100/50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Plan completed
-                  </Badge>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Badge variant="outline" className="text-xs bg-amber-100/50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Plan completed
+                    </Badge>
+                    <span
+                      className="text-xs font-semibold text-primary cursor-pointer hover:underline flex items-center gap-0.5"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLocation(`/habit/${habit.id}`); }}
+                      data-testid={`link-continue-${habit.id}`}
+                    >
+                      Continue <ChevronRight className="w-3 h-3" />
+                    </span>
+                  </div>
                 )}
                 {!habit.setupComplete && !isPlanCompleted && (
                   <Badge variant="outline" className="mt-1 text-xs bg-white/50 dark:bg-black/20">

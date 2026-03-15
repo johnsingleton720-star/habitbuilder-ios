@@ -248,7 +248,7 @@ export default function HabitDetail() {
   const [noteText, setNoteText] = useState("");
   const [guidanceTask, setGuidanceTask] = useState<RoutineTask | null>(null);
   const [showPlanTypeChanger, setShowPlanTypeChanger] = useState(false);
-  const [newPlanDuration, setNewPlanDuration] = useState<string>("");
+  const [newPlanDuration, setNewPlanDuration] = useState<string>("monthly");
   const { toast } = useToast();
   
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
@@ -707,12 +707,12 @@ export default function HabitDetail() {
                   
                   <div>
                     <h3 className="text-lg font-display font-bold">
-                      {isPlanFullyCompleted ? "Plan Completed!" : "Plan Period Ended"}
+                      {isPlanFullyCompleted ? "Plan Completed!" : "Ready for your next phase?"}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       {isPlanFullyCompleted 
                         ? `Amazing work! You completed ${completedDays} of ${totalDays} days with ${taskCompletionRate}% of all tasks done.`
-                        : `This ${habit.planDuration} plan ran from ${habit.planStartDate} to ${planEndDate}. You completed ${completedDays} of ${totalDays} days (${taskCompletionRate}% of tasks).`
+                        : `You've built a strong foundation! You completed ${completedDays} of ${totalDays} days (${taskCompletionRate}% of tasks). Keep the momentum going with a fresh plan.`
                       }
                     </p>
                   </div>
@@ -734,11 +734,24 @@ export default function HabitDetail() {
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     {isFreeUser ? (
-                      <UpgradePrompt
-                        variant="card"
-                        feature="Plan Management"
-                        description="Extend or refresh your plans with Pro. Upgrade to unlock plan management features."
-                      />
+                      <>
+                        <Button
+                          onClick={() => {
+                            setNewPlanDuration("monthly");
+                            setShowPlanTypeChanger(true);
+                          }}
+                          className="flex-1 gap-2"
+                          data-testid="button-restart-plan"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Restart Plan
+                        </Button>
+                        <UpgradePrompt
+                          variant="card"
+                          feature="Plan Management"
+                          description="Upgrade to Pro for mid-plan adjustments, extensions, and more."
+                        />
+                      </>
                     ) : (
                       <>
                         <Button
@@ -760,7 +773,7 @@ export default function HabitDetail() {
                         <Button
                           variant="outline"
                           onClick={() => {
-                            setNewPlanDuration(habit.planDuration || "weekly");
+                            setNewPlanDuration("monthly");
                             setShowPlanTypeChanger(true);
                           }}
                           className="flex-1 gap-2"

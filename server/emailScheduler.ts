@@ -831,6 +831,74 @@ async function processPlanAdjustmentAlerts() {
   }
 }
 
+async function processPlanCompletionAlerts() {
+  try {
+    const eligibleUsers = await db.query.users.findMany({
+      where: eq(users.pushNotificationsEnabled, true),
+    });
+
+    let pushSent = 0;
+    for (const u of eligibleUsers) {
+      const localTime = getUserLocalTime(u.timezone);
+
+      if (!isTimeMatch(localTime, "10:00")) continue;
+
+      try {
+        const userHabits = await db.query.habits.findMany({
+          where: eq(habits.userId, u.id),
+        });
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
+        for (const habit of userHabits) {
+          if (habit.archived || habit.downgradeArchived) continue;
+          if (habit.trackingMode === "simple") continue;
+          if (!habit.planEndDate) continue;
+          if (habit.planEndDate !== localTime.dateStr) continue;
+
+          const dailyPlans = (habit.dailyPlans || []) as any[];
+          const completedDates = dailyPlans
+            .filter((p: any) => p.completed || (p.tasks && p.tasks.some((t: any) => t.completed)))
+            .map((p: any) => p.date as string);
+          const lastActivityDate = completedDates.length > 0
+            ? completedDates[completedDates.length - 1]
+            : null;
+          if (!lastActivityDate || lastActivityDate < thirtyDaysAgoStr) continue;
+
+          const dedupeKey = `planEnd_${habit.id}_${localTime.dateStr}`;
+          const sentTracker = (u.lastMoodCheckinSent as Record<string, string>) || {};
+          if (sentTracker[dedupeKey]) continue;
+
+          try {
+            await sendPushToUser(u.id, {
+              title: `Your "${habit.title}" plan is complete!`,
+              body: "Tap to continue your journey.",
+              url: `/habit/${habit.id}`,
+              tag: `plan-complete-${habit.id}`,
+            });
+            pushSent++;
+            console.log(`[Scheduler] Plan completion push sent to user ${u.id} for habit ${habit.id}`);
+          } catch (pushErr) {
+            console.error(`[Scheduler] Failed plan completion push for user ${u.id}:`, pushErr);
+          }
+        }
+      } catch (err) {
+        console.error(`[Scheduler] Failed plan completion check for user ${u.id}:`, err);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushSent > 0) {
+      console.log(`[Scheduler] Plan completion alerts: ${pushSent} push`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing plan completion alerts:", error);
+  }
+}
+
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
 function runAllSchedulerTasks() {
@@ -843,6 +911,7 @@ function runAllSchedulerTasks() {
   processDailyPlanner();
   processGoalMilestones();
   processPlanAdjustmentAlerts();
+  processPlanCompletionAlerts();
 }
 
 export function startEmailScheduler() {
