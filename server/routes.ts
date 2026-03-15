@@ -1356,6 +1356,8 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           streakFreezeUsed: h.streakFreezeUsed,
           streakFreezeMonth: h.streakFreezeMonth,
           missReasons: [],
+          trackingMode: h.trackingMode,
+          trackedItems: h.trackedItems,
         };
       });
 
