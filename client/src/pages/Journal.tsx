@@ -303,21 +303,21 @@ export default function Journal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-gradient-subtle p-4 md:p-12 font-body">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
             <Link href="/">
               <Button variant="ghost" size="icon" data-testid="button-back-dashboard">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-indigo-500" />
+              <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground flex items-center gap-3">
+                <BookOpen className="w-7 h-7 text-indigo-500" />
                 Daily Journal
               </h1>
-              <p className="text-sm text-muted-foreground">Reflect on your day and discover patterns</p>
+              <p className="text-base text-muted-foreground mt-1">Reflect on your day and discover patterns</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -294,10 +294,10 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
   const [isAnnual, setIsAnnual] = useState(false);
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 relative" id="pricing" aria-label="Pricing plans">
+    <section className="py-12 md:py-20 px-4 sm:px-6 relative" id="pricing" aria-label="Pricing plans">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,hsl(var(--primary)/0.04),transparent)]" />
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
+        <div className="text-center mb-8 md:mb-12 space-y-2 md:space-y-3">
           <Badge variant="secondary" className="mb-2 px-3 py-1 text-xs font-semibold shadow-sm">
             <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
             Pricing
