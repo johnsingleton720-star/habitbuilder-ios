@@ -231,6 +231,7 @@ export default function HabitDetail() {
     : null;
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+  const [setupWizardRestartMode, setSetupWizardRestartMode] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
 
   useEffect(() => {
@@ -737,8 +738,8 @@ export default function HabitDetail() {
                       <>
                         <Button
                           onClick={() => {
-                            setNewPlanDuration("monthly");
-                            setShowPlanTypeChanger(true);
+                            setSetupWizardRestartMode(true);
+                            setSetupWizardOpen(true);
                           }}
                           className="flex-1 gap-2"
                           data-testid="button-restart-plan"
@@ -1626,12 +1627,17 @@ export default function HabitDetail() {
         <HabitSetupWizard
           habit={habit}
           open={setupWizardOpen}
-          onOpenChange={setSetupWizardOpen}
+          onOpenChange={(open) => {
+            setSetupWizardOpen(open);
+            if (!open) setSetupWizardRestartMode(false);
+          }}
           onComplete={() => {
+            setSetupWizardRestartMode(false);
             queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
             queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
             queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           }}
+          restartMode={setupWizardRestartMode}
         />
       )}
 

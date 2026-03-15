@@ -4169,6 +4169,10 @@ REQUIREMENTS:
         }
       }
 
+      if (habit.trackingMode === "simple") {
+        return res.status(400).json({ error: "Simple tracking habits do not use AI plans." });
+      }
+
       if (!habit.setupComplete) {
         return res.status(400).json({ error: "Habit setup must be completed first before changing plan type." });
       }
@@ -4695,6 +4699,10 @@ REQUIREMENTS:
           error: "paid_feature",
           message: "Plan refresh is available with Pro. Upgrade to get updated, AI-adjusted action plans!"
         });
+      }
+
+      if (habit.trackingMode === "simple") {
+        return res.status(400).json({ error: "Simple tracking habits do not use AI plans." });
       }
 
       if (!habit.setupComplete) {

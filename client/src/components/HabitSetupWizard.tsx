@@ -17,6 +17,7 @@ interface HabitSetupWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  restartMode?: boolean;
 }
 
 type Phase = "intro" | "questions" | "duration" | "generating" | "complete";
@@ -100,9 +101,11 @@ function GeneratingPhase({ selectedDuration }: { selectedDuration: string }) {
   );
 }
 
-export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: HabitSetupWizardProps) {
-  const [phase, setPhase] = useState<Phase>("intro");
-  const [questions, setQuestions] = useState<HabitQuestion[]>([]);
+export function HabitSetupWizard({ habit, open, onOpenChange, onComplete, restartMode }: HabitSetupWizardProps) {
+  const existingAnswers = (habit.questions || []) as HabitQuestion[];
+  const hasExistingAnswers = restartMode && existingAnswers.some(q => q.answer);
+  const [phase, setPhase] = useState<Phase>(hasExistingAnswers ? "duration" : "intro");
+  const [questions, setQuestions] = useState<HabitQuestion[]>(hasExistingAnswers ? existingAnswers : []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("monthly");
@@ -112,6 +115,15 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete }: Habi
   const [questionError, setQuestionError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (open && restartMode && hasExistingAnswers) {
+      setPhase("duration");
+      setQuestions(existingAnswers);
+    } else if (open && !restartMode) {
+      setPhase("intro");
+    }
+  }, [open, restartMode]);
 
   const generateQuestionsMutation = useMutation({
     mutationFn: async () => {
