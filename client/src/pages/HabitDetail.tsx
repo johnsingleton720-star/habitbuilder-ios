@@ -250,6 +250,8 @@ export default function HabitDetail() {
   const [guidanceTask, setGuidanceTask] = useState<RoutineTask | null>(null);
   const [showPlanTypeChanger, setShowPlanTypeChanger] = useState(false);
   const [newPlanDuration, setNewPlanDuration] = useState<string>("monthly");
+  const [simpleQuantity, setSimpleQuantity] = useState("");
+  const [simpleNotes, setSimpleNotes] = useState("");
   const { toast } = useToast();
   
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
@@ -358,7 +360,7 @@ export default function HabitDetail() {
   });
 
   const simpleCheckinMutation = useMutation({
-    mutationFn: async (body: { duration?: number; rating?: number; notes?: string }) => {
+    mutationFn: async (body: { duration?: number; rating?: number; notes?: string; quantity?: number }) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, body);
       return res.json();
     },
@@ -367,6 +369,8 @@ export default function HabitDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      setSimpleQuantity("");
+      setSimpleNotes("");
       toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
     },
     onError: () => {
@@ -850,6 +854,7 @@ export default function HabitDetail() {
             <CardContent className="p-6">
               {(() => {
                 const simpleCheckedIn = dailyPlans.find(p => p.date === todayStr)?.completed === true;
+                const todayTask = dailyPlans.find(p => p.date === todayStr)?.tasks?.[0] as any;
                 return (
                   <div className="flex flex-col items-center gap-4">
                     <motion.div
@@ -880,6 +885,24 @@ export default function HabitDetail() {
                       </p>
                     </div>
 
+                    {simpleCheckedIn && todayTask && (todayTask.quantity || todayTask.notes) && (
+                      <div className="w-full max-w-xs space-y-1 text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
+                        {todayTask.quantity && (
+                          <p className="flex items-center gap-2">
+                            <Target className="w-3.5 h-3.5" />
+                            <span className="font-medium">{todayTask.quantity}</span>
+                            {todayTask.quantityLabel && <span>{todayTask.quantityLabel}</span>}
+                          </p>
+                        )}
+                        {todayTask.notes && (
+                          <p className="flex items-start gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                            <span>{todayTask.notes}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {simpleCheckedIn ? (
                       <Button
                         variant="outline"
@@ -893,20 +916,49 @@ export default function HabitDetail() {
                         Undo check-in
                       </Button>
                     ) : (
-                      <Button
-                        size="lg"
-                        className="gap-2 shadow-lg shadow-primary/20 rounded-xl font-semibold px-8"
-                        onClick={() => simpleCheckinMutation.mutate({})}
-                        disabled={simpleCheckinMutation.isPending}
-                        data-testid="button-checkin-detail"
-                      >
-                        {simpleCheckinMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="w-5 h-5" />
-                        )}
-                        Check In Today
-                      </Button>
+                      <div className="w-full max-w-sm space-y-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              placeholder="Quantity (optional, e.g. 8 glasses)"
+                              value={simpleQuantity}
+                              onChange={(e) => setSimpleQuantity(e.target.value)}
+                              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                              data-testid="input-quantity-detail"
+                            />
+                          </div>
+                          <Textarea
+                            placeholder="Notes (optional)"
+                            value={simpleNotes}
+                            onChange={(e) => setSimpleNotes(e.target.value)}
+                            rows={2}
+                            className="resize-none"
+                            data-testid="input-notes-detail"
+                          />
+                        </div>
+                        <Button
+                          size="lg"
+                          className="w-full gap-2 shadow-lg shadow-primary/20 rounded-xl font-semibold"
+                          onClick={() => {
+                            const body: any = {};
+                            if (simpleQuantity) body.quantity = Number(simpleQuantity);
+                            if (simpleNotes.trim()) body.notes = simpleNotes.trim();
+                            simpleCheckinMutation.mutate(body);
+                          }}
+                          disabled={simpleCheckinMutation.isPending}
+                          data-testid="button-checkin-detail"
+                        >
+                          {simpleCheckinMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5" />
+                          )}
+                          Check In Today
+                        </Button>
+                      </div>
                     )}
                   </div>
                 );
@@ -1591,31 +1643,59 @@ export default function HabitDetail() {
           </Card>
         )}
 
-        {/* Progress History */}
-        {habit.progress && habit.progress.length > 0 && (
+        {/* Progress History / Check-in History */}
+        {((habit.progress && habit.progress.length > 0) || (isSimpleMode && dailyPlans.some((p: any) => p.completed))) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5" />
-                Progress History
+                {isSimpleMode ? "Check-in History" : "Progress History"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {habit.progress.slice(-5).reverse().map((entry, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="font-semibold">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
-                      {entry.notes && (
-                        <p className="text-sm text-muted-foreground">{entry.notes}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
-                      <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
-                    </div>
-                  </div>
-                ))}
+                {(isSimpleMode
+                  ? (() => {
+                      const sortedPlans = [...dailyPlans]
+                        .filter((p: any) => p.completed)
+                        .sort((a: any, b: any) => b.date.localeCompare(a.date))
+                        .slice(0, 10);
+                      return sortedPlans.map((plan: any, index: number) => {
+                        const task = plan.tasks?.[0] as any;
+                        return (
+                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg" data-testid={`checkin-history-${index}`}>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm">{format(parseISO(plan.date), "MMMM d, yyyy")}</p>
+                              {task?.notes && (
+                                <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{task.notes}</p>
+                              )}
+                            </div>
+                            <div className="text-right flex-shrink-0 ml-3">
+                              {task?.quantity ? (
+                                <p className="font-semibold text-sm">{task.quantity}{task.quantityLabel ? ` ${task.quantityLabel}` : ""}</p>
+                              ) : (
+                                <CheckCircle2 className="w-5 h-5 text-primary" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()
+                  : habit.progress.slice(-5).reverse().map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div>
+                          <p className="font-semibold">{format(parseISO(entry.date), "MMMM d, yyyy")}</p>
+                          {entry.notes && (
+                            <p className="text-sm text-muted-foreground">{entry.notes}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{entry.tasksCompleted}/{entry.totalTasks} tasks</p>
+                          <p className="text-sm text-muted-foreground">{entry.timeSpent} min</p>
+                        </div>
+                      </div>
+                    ))
+                )}
               </div>
             </CardContent>
           </Card>

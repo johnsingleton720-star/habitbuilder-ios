@@ -5283,7 +5283,7 @@ REQUIREMENTS:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { duration, rating, notes } = req.body;
+      const { duration, rating, notes, quantity, quantityLabel } = req.body;
 
       const user = await storage.getUser(userId);
       const habit = await storage.getHabit(habitId);
@@ -5300,30 +5300,34 @@ REQUIREMENTS:
         return res.status(400).json({ error: "Already checked in today" });
       }
 
+      const taskEntry: any = {
+        title: habit.title,
+        completed: true,
+        skipped: false,
+        duration: duration || null,
+        rating: rating || null,
+        notes: notes || null,
+      };
+      if (quantity !== undefined && quantity !== null && quantity !== "") {
+        const numQty = Number(quantity);
+        if (!isNaN(numQty) && isFinite(numQty)) {
+          taskEntry.quantity = numQty;
+        }
+      }
+      if (quantityLabel) {
+        taskEntry.quantityLabel = quantityLabel;
+      }
+
       if (existingPlan) {
         existingPlan.completed = true;
-        existingPlan.tasks = [{
-          title: habit.title,
-          completed: true,
-          skipped: false,
-          duration: duration || null,
-          rating: rating || null,
-          notes: notes || null,
-        }];
+        existingPlan.tasks = [taskEntry];
         if (duration) existingPlan.timeSpent = duration;
       } else {
         dailyPlans.push({
           date: todayStr,
           completed: true,
           timeSpent: duration || 0,
-          tasks: [{
-            title: habit.title,
-            completed: true,
-            skipped: false,
-            duration: duration || null,
-            rating: rating || null,
-            notes: notes || null,
-          }],
+          tasks: [taskEntry],
         });
       }
 

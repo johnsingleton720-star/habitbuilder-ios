@@ -8,7 +8,7 @@ import {
   Mountain, Bike, Waves, Wind, TreePine, Flower2, Cookie, GlassWater,
   Pill, Stethoscope, Scale, Shirt, Home, Users, MessageCircle, Phone,
   Wallet, PiggyBank, GraduationCap, Languages, Code, Laptop, Gamepad2,
-  Archive, RefreshCw, AlertTriangle, Clock
+  Archive, RefreshCw, AlertTriangle, Clock, MessageSquare, Hash
 } from "lucide-react";
 import { type HabitResponse } from "@shared/routes";
 import { useDeleteHabit } from "@/hooks/use-habits";
@@ -167,6 +167,9 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSession, setShowSession] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [simpleCheckinExpanded, setSimpleCheckinExpanded] = useState(false);
+  const [simpleCheckinQuantity, setSimpleCheckinQuantity] = useState("");
+  const [simpleCheckinNotes, setSimpleCheckinNotes] = useState("");
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const { toast } = useToast();
@@ -198,14 +201,17 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   );
 
   const simpleCheckinMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", `/api/habits/${habit.id}/simple-checkin`, {});
+    mutationFn: async (body?: { quantity?: number; notes?: string }) => {
+      return await apiRequest("POST", `/api/habits/${habit.id}/simple-checkin`, body || {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      setSimpleCheckinExpanded(false);
+      setSimpleCheckinQuantity("");
+      setSimpleCheckinNotes("");
       toast({ title: "Checked in!", description: `Great job keeping up with "${habit.title}"!` });
     },
     onError: () => {
@@ -240,7 +246,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
 
   const extendPlanMutation = useMutation({
     mutationFn: async () => {
-      const extDuration = habit.planDuration === "daily" ? "weekly" : (habit.planDuration || "weekly");
+      const extDuration = "monthly";
       return await apiRequest("POST", `/api/habits/${habit.id}/extend-plan`, { duration: extDuration });
     },
     onSuccess: () => {
@@ -394,39 +400,96 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   )}
                 </div>
 
-                <div className="flex items-center gap-4" onClick={(e) => e.preventDefault()}>
-                  {simpleCheckedInToday ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-2 rounded-xl px-5 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); simpleUncheckinMutation.mutate(); }}
-                      disabled={simpleUncheckinMutation.isPending}
-                      data-testid={`button-uncheckin-${habit.id}`}
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Done today
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="gap-2 shadow-md shadow-primary/20 rounded-xl font-semibold px-5"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); simpleCheckinMutation.mutate(); }}
-                      disabled={simpleCheckinMutation.isPending}
-                      data-testid={`button-checkin-${habit.id}`}
-                    >
-                      {simpleCheckinMutation.isPending ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Check className="w-3.5 h-3.5" />
-                      )}
-                      Check In
-                    </Button>
+                <div className="space-y-3" onClick={(e) => e.preventDefault()}>
+                  {simpleCheckinExpanded && !simpleCheckedInToday && (
+                    <div className="space-y-2 bg-muted/30 rounded-lg p-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          placeholder="Quantity (optional)"
+                          value={simpleCheckinQuantity}
+                          onChange={(e) => setSimpleCheckinQuantity(e.target.value)}
+                          className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                          data-testid={`input-quantity-${habit.id}`}
+                        />
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-2" />
+                        <textarea
+                          placeholder="Notes (optional)"
+                          value={simpleCheckinNotes}
+                          onChange={(e) => setSimpleCheckinNotes(e.target.value)}
+                          rows={2}
+                          className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
+                          data-testid={`input-notes-${habit.id}`}
+                        />
+                      </div>
+                    </div>
                   )}
-                  <span className="flex items-center gap-1 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                    View Details
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                  <div className="flex items-center gap-4">
+                    {simpleCheckedInToday ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2 rounded-xl px-5 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); simpleUncheckinMutation.mutate(); }}
+                        disabled={simpleUncheckinMutation.isPending}
+                        data-testid={`button-uncheckin-${habit.id}`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Done today
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          className="gap-2 shadow-md shadow-primary/20 rounded-xl font-semibold px-5"
+                          onClick={(e) => {
+                            e.preventDefault(); e.stopPropagation();
+                            if (!simpleCheckinExpanded) {
+                              setSimpleCheckinExpanded(true);
+                            } else {
+                              const body: any = {};
+                              if (simpleCheckinQuantity) body.quantity = Number(simpleCheckinQuantity);
+                              if (simpleCheckinNotes.trim()) body.notes = simpleCheckinNotes.trim();
+                              simpleCheckinMutation.mutate(body);
+                            }
+                          }}
+                          disabled={simpleCheckinMutation.isPending}
+                          data-testid={`button-checkin-${habit.id}`}
+                        >
+                          {simpleCheckinMutation.isPending ? (
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                          {simpleCheckinExpanded ? "Confirm" : "Check In"}
+                        </Button>
+                        {simpleCheckinExpanded && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-muted-foreground"
+                            onClick={(e) => {
+                              e.preventDefault(); e.stopPropagation();
+                              setSimpleCheckinExpanded(false);
+                              setSimpleCheckinQuantity("");
+                              setSimpleCheckinNotes("");
+                            }}
+                            data-testid={`button-cancel-checkin-${habit.id}`}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    <span className="flex items-center gap-1 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                      View Details
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
                 </div>
               </>
             ) : isPlanCompleted ? (
