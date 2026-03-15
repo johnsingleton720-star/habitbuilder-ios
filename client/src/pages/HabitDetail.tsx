@@ -858,7 +858,9 @@ export default function HabitDetail() {
             <CardContent className="p-6">
               {(() => {
                 const simpleCheckedIn = dailyPlans.find(p => p.date === todayStr)?.completed === true;
-                const todayTask = dailyPlans.find(p => p.date === todayStr)?.tasks?.[0] as (RoutineTask & { quantity?: number; quantityLabel?: string }) | undefined;
+                const todayTask = dailyPlans.find(p => p.date === todayStr)?.tasks?.[0] as (RoutineTask & { quantity?: number; quantityLabel?: string; trackedValues?: TrackedValue[] }) | undefined;
+                const detailTrackedItemsDefs = (habit.trackedItems || []) as TrackedItem[];
+                const todayTrackedValues = todayTask?.trackedValues || [];
                 return (
                   <div className="flex flex-col items-center gap-4">
                     <motion.div
@@ -889,8 +891,21 @@ export default function HabitDetail() {
                       </p>
                     </div>
 
-                    {simpleCheckedIn && todayTask && (todayTask.quantity !== undefined && todayTask.quantity !== null || todayTask.notes) && (
-                      <div className="w-full max-w-xs space-y-1 text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
+                    {simpleCheckedIn && todayTask && (todayTask.quantity !== undefined && todayTask.quantity !== null || todayTask.notes || todayTrackedValues.length > 0) && (
+                      <div className="w-full max-w-xs space-y-1.5 text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
+                        {todayTrackedValues.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {todayTrackedValues.map((v) => {
+                              const itemDef = detailTrackedItemsDefs.find(i => i.id === v.itemId);
+                              return (
+                                <span key={v.itemId} className="inline-flex items-center gap-1 text-xs bg-background/60 border border-border/50 rounded-md px-2 py-0.5" data-testid={`today-tracked-${v.itemId}`}>
+                                  <span className="text-muted-foreground">{itemDef?.name || "Item"}:</span>
+                                  <span className="font-medium">{v.value}{itemDef?.type === "time" ? " min" : ""}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                         {todayTask.quantity !== undefined && todayTask.quantity !== null && (
                           <p className="flex items-center gap-2">
                             <Target className="w-3.5 h-3.5" />
@@ -926,25 +941,37 @@ export default function HabitDetail() {
                             const detailTrackedItems = (habit.trackedItems || []) as TrackedItem[];
                             const hasItems = detailTrackedItems.length > 0;
                             if (hasItems) {
-                              return detailTrackedItems.map((item) => (
-                                <div key={item.id} className="flex items-center gap-2">
-                                  <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
-                                    {item.type === "count" ? <Hash className="w-3.5 h-3.5 text-muted-foreground" /> :
-                                     item.type === "time" ? <Clock className="w-3.5 h-3.5 text-muted-foreground" /> :
-                                     <Type className="w-3.5 h-3.5 text-muted-foreground" />}
-                                  </div>
-                                  <span className="text-sm font-medium text-muted-foreground flex-shrink-0">{item.name}</span>
-                                  <input
-                                    type={item.type === "count" ? "number" : item.type === "time" ? "number" : "text"}
-                                    inputMode={item.type === "text" ? "text" : "decimal"}
-                                    placeholder={item.type === "count" ? "0" : item.type === "time" ? "min" : "..."}
-                                    value={trackedValuesMap[item.id] || ""}
-                                    onChange={(e) => setTrackedValuesMap(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                                    data-testid={`input-tracked-detail-${item.id}`}
+                              return (
+                                <>
+                                  {detailTrackedItems.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-2">
+                                      <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
+                                        {item.type === "count" ? <Hash className="w-3.5 h-3.5 text-muted-foreground" /> :
+                                         item.type === "time" ? <Clock className="w-3.5 h-3.5 text-muted-foreground" /> :
+                                         <Type className="w-3.5 h-3.5 text-muted-foreground" />}
+                                      </div>
+                                      <span className="text-sm font-medium text-muted-foreground flex-shrink-0">{item.name}</span>
+                                      <input
+                                        type={item.type === "count" ? "number" : item.type === "time" ? "number" : "text"}
+                                        inputMode={item.type === "text" ? "text" : "decimal"}
+                                        placeholder={item.type === "count" ? "0" : item.type === "time" ? "min" : "..."}
+                                        value={trackedValuesMap[item.id] || ""}
+                                        onChange={(e) => setTrackedValuesMap(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                        className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                        data-testid={`input-tracked-detail-${item.id}`}
+                                      />
+                                    </div>
+                                  ))}
+                                  <Textarea
+                                    placeholder="Notes (optional)"
+                                    value={simpleNotes}
+                                    onChange={(e) => setSimpleNotes(e.target.value)}
+                                    rows={2}
+                                    className="resize-none"
+                                    data-testid="input-notes-detail"
                                   />
-                                </div>
-                              ));
+                                </>
+                              );
                             }
                             return (
                               <>
@@ -995,6 +1022,7 @@ export default function HabitDetail() {
                                   value: item.type === "count" || item.type === "time" ? Number(trackedValuesMap[item.id]) : trackedValuesMap[item.id],
                                 }));
                               if (tvArr.length > 0) body.trackedValues = tvArr;
+                              if (simpleNotes.trim()) body.notes = simpleNotes.trim();
                             } else {
                               if (simpleQuantity) body.quantity = Number(simpleQuantity);
                               if (simpleLabel.trim()) body.quantityLabel = simpleLabel.trim();

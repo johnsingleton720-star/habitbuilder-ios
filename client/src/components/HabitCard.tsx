@@ -430,6 +430,17 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                               />
                             </div>
                           ))}
+                          <div className="flex items-start gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-2" />
+                            <textarea
+                              placeholder="Notes (optional)"
+                              value={simpleCheckinNotes}
+                              onChange={(e) => setSimpleCheckinNotes(e.target.value)}
+                              rows={2}
+                              className="flex-1 bg-background/80 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
+                              data-testid={`input-notes-${habit.id}`}
+                            />
+                          </div>
                         </>
                       ) : (
                         <>
@@ -500,6 +511,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                                     value: item.type === "count" || item.type === "time" ? Number(trackedValuesMap[item.id]) : trackedValuesMap[item.id],
                                   }));
                                 if (tvArr.length > 0) body.trackedValues = tvArr;
+                                if (simpleCheckinNotes.trim()) body.notes = simpleCheckinNotes.trim();
                               } else {
                                 if (simpleCheckinQuantity) body.quantity = Number(simpleCheckinQuantity);
                                 if (simpleCheckinLabel.trim()) body.quantityLabel = simpleCheckinLabel.trim();
