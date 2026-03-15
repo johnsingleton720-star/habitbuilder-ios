@@ -897,10 +897,12 @@ export default function HabitDetail() {
                           <div className="flex flex-wrap gap-2">
                             {todayTrackedValues.map((v) => {
                               const itemDef = detailTrackedItemsDefs.find(i => i.id === v.itemId);
+                              const displayName = v.name || itemDef?.name || "Item";
+                              const displayType = v.type || itemDef?.type;
                               return (
                                 <span key={v.itemId} className="inline-flex items-center gap-1 text-xs bg-background/60 border border-border/50 rounded-md px-2 py-0.5" data-testid={`today-tracked-${v.itemId}`}>
-                                  <span className="text-muted-foreground">{itemDef?.name || "Item"}:</span>
-                                  <span className="font-medium">{v.value}{itemDef?.type === "time" ? " min" : ""}</span>
+                                  <span className="text-muted-foreground">{displayName}:</span>
+                                  <span className="font-medium">{v.value}{displayType === "time" ? " min" : ""}</span>
                                 </span>
                               );
                             })}
@@ -1766,10 +1768,12 @@ export default function HabitDetail() {
                               <div className="flex flex-wrap gap-2 mt-1.5">
                                 {tv.map((v) => {
                                   const itemDef = historyTrackedItems.find(i => i.id === v.itemId);
+                                  const displayName = v.name || itemDef?.name || "Item";
+                                  const displayType = v.type || itemDef?.type;
                                   return (
                                     <span key={v.itemId} className="inline-flex items-center gap-1 text-xs bg-background/60 border border-border/50 rounded-md px-2 py-0.5" data-testid={`tracked-value-${v.itemId}-${index}`}>
-                                      <span className="text-muted-foreground">{itemDef?.name || "Item"}:</span>
-                                      <span className="font-medium">{v.value}{itemDef?.type === "time" ? " min" : ""}</span>
+                                      <span className="text-muted-foreground">{displayName}:</span>
+                                      <span className="font-medium">{v.value}{displayType === "time" ? " min" : ""}</span>
                                     </span>
                                   );
                                 })}

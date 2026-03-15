@@ -96,6 +96,8 @@ export interface TrackedItem {
 // Tracked value recorded at check-in
 export interface TrackedValue {
   itemId: string;
+  name?: string;
+  type?: "count" | "time" | "text";
   value: string | number;
 }
 

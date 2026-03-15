@@ -5332,11 +5332,11 @@ REQUIREMENTS:
             if (itemDef && (itemDef.type === "count" || itemDef.type === "time")) {
               const num = Number(v.value);
               if (!isNaN(num) && isFinite(num)) {
-                return { itemId: v.itemId, value: num };
+                return { itemId: v.itemId, name: itemDef.name, type: itemDef.type, value: num };
               }
               return null;
             }
-            return { itemId: v.itemId, value: String(v.value).slice(0, 200) };
+            return { itemId: v.itemId, name: itemDef?.name || "Item", type: itemDef?.type || "text", value: String(v.value).slice(0, 200) };
           })
           .filter(Boolean);
         if (validValues.length > 0) {
