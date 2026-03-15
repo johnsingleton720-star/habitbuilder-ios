@@ -818,7 +818,7 @@ export default function Account() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">You're currently on the free demo</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        1 habit, 2 sessions/week, limited streak tracking. Upgrade to unlock the full experience.
+                        1 habit, 3 sessions/week, limited streak tracking. Upgrade to unlock the full experience.
                       </p>
                       <Link href="/paywall">
                         <Button

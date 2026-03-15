@@ -304,7 +304,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
           </Badge>
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-            Try 1 habit free with 2 sessions per week. Upgrade for unlimited habits and full AI coaching. Cancel anytime.
+            Try 1 habit free with 3 sessions per week. Upgrade for unlimited habits and full AI coaching. Cancel anytime.
           </p>
         </div>
 
@@ -349,7 +349,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                 {[
                   "1 habit",
                   "First AI action plan",
-                  "2 guided sessions/week",
+                  "3 guided sessions/week",
                   "Habit templates library",
                 ].map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -1751,7 +1751,7 @@ export default function Landing() {
             {[
               {
                 q: "Is HabitBuilder really free to start?",
-                a: "Yes! The free plan lets you try 1 habit with your first AI-generated action plan, 2 guided sessions per week, and access to the template library. No credit card required. Upgrade to Pro to unlock unlimited sessions, AI coaching insights, streaks, plan updates, and unlimited habits."
+                a: "Yes! The free plan lets you try 1 habit with your first AI-generated action plan, 3 guided sessions per week, and access to the template library. No credit card required. Upgrade to Pro to unlock unlimited sessions, AI coaching insights, streaks, plan updates, and unlimited habits."
               },
               {
                 q: "How does the AI coaching work?",

@@ -2527,7 +2527,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           features: [
             '1 habit',
             'First AI action plan',
-            '2 guided sessions per week',
+            '3 guided sessions per week',
             'Habit templates library',
           ],
           limitations: [
@@ -5143,7 +5143,7 @@ REQUIREMENTS:
       return res.json({ 
         unlimited: false,
         used: weeklySessionCount,
-        limit: 2,
+        limit: 3,
         resetsAt: nextMonday.toISOString()
       });
     } catch (error: any) {
@@ -5180,10 +5180,10 @@ REQUIREMENTS:
           weeklySessionCount += progress.filter((p: any) => p.date >= weekStart).length;
         }
 
-        if (weeklySessionCount >= 2) {
+        if (weeklySessionCount >= 3) {
           return res.status(403).json({ 
             error: "free_session_limit",
-            message: "You've reached your 2 free sessions this week. Upgrade to Pro for unlimited sessions!"
+            message: "You've reached your 3 free sessions this week. Upgrade to Pro for unlimited sessions!"
           });
         }
       }

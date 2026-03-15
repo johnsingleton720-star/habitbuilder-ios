@@ -627,7 +627,7 @@ export default function HabitDetail() {
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
-                    {[0, 1].map((i) => (
+                    {[0, 1, 2].map((i) => (
                       <div
                         key={i}
                         className={cn(
@@ -648,14 +648,14 @@ export default function HabitDetail() {
                   </div>
                   <div>
                     <p className="text-base font-semibold text-foreground">
-                      {sessionUsage.used >= 2
+                      {sessionUsage.used >= 3
                         ? "All sessions used this week"
-                        : `${2 - sessionUsage.used} session${2 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
+                        : `${3 - sessionUsage.used} session${3 - sessionUsage.used !== 1 ? 's' : ''} left this week`}
                     </p>
                     <p className="text-base text-muted-foreground">
-                      {sessionUsage.used >= 2
+                      {sessionUsage.used >= 3
                         ? "New sessions available Monday"
-                        : "Free plan: 2 sessions per week"}
+                        : "Free plan: 3 sessions per week"}
                     </p>
                   </div>
                 </div>
