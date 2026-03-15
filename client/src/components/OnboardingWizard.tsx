@@ -42,6 +42,7 @@ export function OnboardingWizard() {
   const [isComplete, setIsComplete] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -72,7 +73,7 @@ export function OnboardingWizard() {
           setCreatedHabitId(habit.id);
           setIsComplete(true);
         } else if (res.status === 403) {
-          setIsComplete(true);
+          setDismissed(true);
           try {
             await apiRequest("PATCH", "/api/user/onboarding");
             await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -133,7 +134,7 @@ export function OnboardingWizard() {
   };
 
   return (
-    <Dialog open modal>
+    <Dialog open={!dismissed} modal>
       <DialogContent
         className="sm:max-w-lg max-h-[90vh] overflow-y-auto [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
