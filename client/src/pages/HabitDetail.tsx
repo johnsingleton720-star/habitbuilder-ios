@@ -17,6 +17,7 @@ import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Habit, DailyPlan, RoutineTask, TrackedItem, TrackedValue } from "@shared/schema";
 import { HabitSetupWizard } from "@/components/HabitSetupWizard";
+import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { GuidedSession } from "@/components/GuidedSession";
 import { TaskGuidanceModal } from "@/components/TaskGuidanceModal";
 import { CoachingCheckin } from "@/components/CoachingCheckin";
@@ -254,6 +255,7 @@ export default function HabitDetail() {
   const [simpleLabel, setSimpleLabel] = useState("");
   const [simpleNotes, setSimpleNotes] = useState("");
   const [trackedValuesMap, setTrackedValuesMap] = useState<Record<string, string>>({});
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { toast } = useToast();
   
   const { data: habit, isLoading, isError, error, refetch } = useQuery<Habit>({
@@ -589,6 +591,12 @@ export default function HabitDetail() {
               <Flame className="w-3 h-3" />
               {habit.currentStreak || 0} day streak
             </Badge>
+            {isSimpleMode && (
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowEditDialog(true)} data-testid="button-edit-habit-detail">
+                <Pencil className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+            )}
             {habit.setupComplete && (
               <CoachingCheckin habitId={habitId} habitTitle={habit.title} />
             )}
@@ -1005,6 +1013,15 @@ export default function HabitDetail() {
                                   className="resize-none"
                                   data-testid="input-notes-detail"
                                 />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowEditDialog(true)}
+                                  className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mx-auto"
+                                  data-testid="button-customize-tracking"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  <span>Customize what you track</span>
+                                </button>
                               </>
                             );
                           })()}
@@ -1857,6 +1874,13 @@ export default function HabitDetail() {
           habitTitle={habit.title}
           open={!!guidanceTask}
           onOpenChange={(open) => !open && setGuidanceTask(null)}
+        />
+      )}
+      {habit && (
+        <HabitFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          habitToEdit={habit}
         />
       )}
     </div>
