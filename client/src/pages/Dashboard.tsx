@@ -87,10 +87,13 @@ export default function Dashboard() {
       return;
     }
     if (window.location.hash === "#habits") {
+      setHabitsCollapsed(false);
       setTimeout(() => {
         const habitsSection = document.getElementById("habits-section");
         if (habitsSection) {
-          habitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          const yOffset = -20;
+          const y = habitsSection.getBoundingClientRect().top + window.scrollY + yOffset;
+          window.scrollTo({ top: y, behavior: "smooth" });
         }
         window.history.replaceState(null, "", window.location.pathname);
       }, 300);
@@ -819,13 +822,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
             <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-sm h-full" data-testid="card-focus-timer-link">
-                <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                  <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
                     <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground leading-snug">Focus Timer</p>
-                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs">Pro+</Badge>}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Focus Timer</p>
+                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -833,13 +836,13 @@ export default function Dashboard() {
 
             <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-sm h-full" data-testid="card-mood-tracker-link">
-                <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                  <div className="w-11 h-11 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground leading-snug">Mood Check-in</p>
-                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs">Pro+</Badge>}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
+                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -847,13 +850,13 @@ export default function Dashboard() {
 
             <Link href={features.hasGoals ? "/goals" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-sm h-full" data-testid="card-goals-link">
-                <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                  <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
                     <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground leading-snug">Goals</p>
-                    {!features.hasGoals && <Badge variant="secondary" className="text-xs">Premium</Badge>}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Goals</p>
+                    {!features.hasGoals && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
               </Card>
@@ -861,13 +864,13 @@ export default function Dashboard() {
 
             <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
               <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-sm h-full" data-testid="card-planner-link">
-                <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                  <div className="w-11 h-11 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground leading-snug">Daily Planner</p>
-                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs">Premium</Badge>}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Daily Planner</p>
+                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
                   </div>
                 </CardContent>
               </Card>

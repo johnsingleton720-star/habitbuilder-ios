@@ -49,7 +49,9 @@ export function MobileBottomNav() {
     setTimeout(() => {
       const habitsSection = document.getElementById("habits-section");
       if (habitsSection) {
-        habitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        const yOffset = -20;
+        const y = habitsSection.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
       }
     }, 100);
   };

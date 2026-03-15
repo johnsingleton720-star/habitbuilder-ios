@@ -186,8 +186,9 @@ export function PublicNav() {
             <Button onClick={handleSignInClick} variant="ghost" className="font-medium text-muted-foreground" data-testid="button-nav-signin">
               Sign In
             </Button>
-            <Button onClick={handleSignUpClick} data-testid="button-nav-get-started">
+            <Button onClick={handleSignUpClick} className="shadow-lg shadow-primary/20" data-testid="button-nav-get-started">
               Get Started Free
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
 
@@ -224,8 +225,9 @@ export function PublicNav() {
               <Button onClick={handleSignInClick} variant="ghost" className="w-full justify-start font-medium text-muted-foreground" data-testid="button-nav-signin-mobile">
                 Sign In
               </Button>
-              <Button onClick={handleSignUpClick} className="w-full mt-2" data-testid="button-nav-get-started-mobile">
+              <Button onClick={handleSignUpClick} className="w-full mt-2 shadow-lg shadow-primary/20" data-testid="button-nav-get-started-mobile">
                 Get Started Free
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>

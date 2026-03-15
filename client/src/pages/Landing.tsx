@@ -298,8 +298,8 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,hsl(var(--primary)/0.04),transparent)]" />
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
-          <Badge variant="secondary" className="mb-2">
-            <CreditCard className="w-3 h-3 mr-1" />
+          <Badge variant="secondary" className="mb-2 px-3 py-1 text-xs font-semibold shadow-sm">
+            <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
             Pricing
           </Badge>
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
@@ -335,7 +335,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
             <CardContent className="pt-6 flex-1 flex flex-col">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-muted to-muted/60 flex items-center justify-center icon-container shadow-md">
                     <Leaf className="w-6 h-6 text-muted-foreground" />
                   </div>
                 </div>
@@ -369,7 +369,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
               </ul>
-              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-trial">
+              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6 font-semibold" data-testid="button-pricing-trial">
                 Get Started Free
               </Button>
             </CardContent>
@@ -383,7 +383,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
             <CardContent className="pt-6 flex-1 flex flex-col relative">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center icon-container shadow-md">
                     <Sparkles className="w-6 h-6 text-primary" />
                   </div>
                 </div>
@@ -427,7 +427,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
               </ul>
-              <Button onClick={scrollToLogin} className="w-full mt-6 shadow-lg shadow-primary/20" data-testid="button-pricing-pro">
+              <Button onClick={scrollToLogin} size="lg" className="w-full mt-6 shadow-lg shadow-primary/25" data-testid="button-pricing-pro">
                 Get Started
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -438,7 +438,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
             <CardContent className="pt-6 flex-1 flex flex-col">
               <div className="text-center mb-6">
                 <div className="inline-flex justify-center mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center icon-container shadow-md">
                     <Crown className="w-6 h-6 text-amber-500" />
                   </div>
                 </div>
@@ -485,7 +485,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </li>
                 ))}
               </ul>
-              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6" data-testid="button-pricing-premium">
+              <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6 font-semibold border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/5" data-testid="button-pricing-premium">
                 Get Started
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -577,12 +577,12 @@ function TestimonialsSection({ fadeUp, shouldAnimate, isMobile }: { fadeUp: any;
               {testimonials.map((testimonial, i) => (
                 <div
                   key={i}
-                  className="w-[85%] min-w-[85%] max-w-[85%] snap-center bg-white dark:bg-card p-5 rounded-xl border border-border/50 touch-card flex-shrink-0 overflow-hidden"
+                  className="w-[85%] min-w-[85%] max-w-[85%] snap-center bg-white dark:bg-card p-5 rounded-2xl border border-border/50 shadow-sm touch-card flex-shrink-0 overflow-hidden"
                   data-testid={`card-testimonial-${i}`}
                 >
                   <div className="flex gap-1 mb-3">
                     {[...Array(5)].map((_, j) => (
-                      <Sparkles key={j} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      <Star key={j} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
                   <p className="text-foreground/80 leading-relaxed mb-4 italic text-sm">"{testimonial.quote}"</p>
@@ -620,12 +620,12 @@ function TestimonialsSection({ fadeUp, shouldAnimate, isMobile }: { fadeUp: any;
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.5, delay: shouldAnimate ? i * 0.1 : 0 }}
-                className="bg-white dark:bg-card p-6 md:p-8 rounded-xl border border-border/50"
+                className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm"
                 data-testid={`card-testimonial-${i}`}
               >
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, j) => (
-                    <Sparkles key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <Star key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
                 <p className="text-foreground/80 leading-relaxed mb-6 italic text-sm md:text-base">"{testimonial.quote}"</p>
@@ -664,7 +664,7 @@ function StickyMobileCTA({ onClick }: { onClick: () => void }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden" data-testid="sticky-mobile-cta">
       <div className="bg-background/95 backdrop-blur-md border-t border-border/50 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-        <Button onClick={onClick} className="w-full shadow-lg shadow-primary/20" data-testid="button-sticky-cta">
+        <Button onClick={onClick} size="lg" className="w-full shadow-lg shadow-primary/25" data-testid="button-sticky-cta">
           Start Free — Takes 30 Seconds
           <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
@@ -812,7 +812,7 @@ export default function Landing() {
               initial={shouldAnimate ? { opacity: 0, y: 10 } : {}}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-xs md:text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full bg-primary/10 border border-primary/25 text-primary font-semibold text-xs md:text-sm shadow-sm"
             >
               <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span>AI-powered habit coaching</span>
@@ -829,14 +829,14 @@ export default function Landing() {
 
             <div className="flex flex-wrap gap-2" data-testid="hero-use-case-chips">
               {[
-                { icon: <Brain className="w-3 h-3" />, label: "AI Habit Coaching" },
-                { icon: <Calendar className="w-3 h-3" />, label: "Daily Planner" },
-                { icon: <PenLine className="w-3 h-3" />, label: "Journal" },
-                { icon: <Heart className="w-3 h-3" />, label: "Mood Tracker" },
-                { icon: <CheckSquare className="w-3 h-3" />, label: "Quick Tasks" },
+                { icon: <Brain className="w-3.5 h-3.5" />, label: "AI Habit Coaching", color: "text-violet-500" },
+                { icon: <Calendar className="w-3.5 h-3.5" />, label: "Daily Planner", color: "text-sky-500" },
+                { icon: <PenLine className="w-3.5 h-3.5" />, label: "Journal", color: "text-indigo-500" },
+                { icon: <Heart className="w-3.5 h-3.5" />, label: "Mood Tracker", color: "text-rose-500" },
+                { icon: <CheckSquare className="w-3.5 h-3.5" />, label: "Quick Tasks", color: "text-emerald-500" },
               ].map((chip) => (
-                <span key={chip.label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 border border-border/50 rounded-full px-2.5 py-1">
-                  {chip.icon}
+                <span key={chip.label} className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-white dark:bg-card/60 border border-border/60 rounded-full px-3 py-1.5 shadow-sm">
+                  <span className={chip.color}>{chip.icon}</span>
                   {chip.label}
                 </span>
               ))}
@@ -886,7 +886,7 @@ export default function Landing() {
                 target="_blank"
                 rel="noopener noreferrer"
                 data-testid="link-app-store"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-foreground text-background text-xs font-medium hover:opacity-80 transition-opacity shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-all shadow-md hover:shadow-lg"
               >
                 <SiApple className="w-4 h-4 shrink-0" />
                 <span className="leading-tight">
@@ -896,7 +896,7 @@ export default function Landing() {
               </a>
               <div
                 data-testid="div-play-store-coming-soon"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-foreground/40 text-background text-xs font-medium cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground/40 text-background text-xs font-medium cursor-not-allowed shadow-sm"
                 title="Android app coming soon"
               >
                 <Smartphone className="w-4 h-4 shrink-0 opacity-60" />
@@ -1051,8 +1051,8 @@ export default function Landing() {
       <section className="py-16 md:py-24 bg-white/50 dark:bg-card/30" id="try-it" aria-label="Try a sample habit plan">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-8 md:mb-12 space-y-3 md:space-y-4">
-            <Badge variant="secondary" className="mb-2">
-              <Zap className="w-3 h-3 mr-1" />
+            <Badge variant="secondary" className="mb-2 px-3 py-1 text-xs font-semibold shadow-sm">
+              <Zap className="w-3.5 h-3.5 mr-1.5 text-primary" />
               Live AI Demo
             </Badge>
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-tryit-heading">
@@ -1130,17 +1130,17 @@ export default function Landing() {
                     }
                   }}
                   disabled={aiLoading}
-                  className={`flex flex-col items-center gap-1.5 md:gap-2 p-3 md:p-4 rounded-xl border transition-all cursor-pointer toggle-elevate ${
+                  className={`flex flex-col items-center gap-2 md:gap-2.5 p-3 md:p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     isSelected
-                      ? "border-primary bg-primary/5 dark:bg-primary/10 toggle-elevated"
-                      : "border-border/50 bg-white dark:bg-card"
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md shadow-primary/15"
+                      : "border-border/40 bg-white dark:bg-card hover:border-primary/30 hover:shadow-md"
                   }`}
                   data-testid={`button-goal-${goal.id}`}
                 >
-                  <div className={`p-1.5 md:p-2 rounded-lg ${goal.bgColor}`}>
-                    <Icon className={`w-4 h-4 md:w-5 md:h-5 ${goal.color}`} />
+                  <div className={`p-2.5 md:p-3 rounded-xl ${goal.bgColor} icon-container shadow-sm`}>
+                    <Icon className={`w-5 h-5 md:w-6 md:h-6 ${goal.color}`} />
                   </div>
-                  <span className="text-xs md:text-sm font-medium text-center leading-tight">{goal.label}</span>
+                  <span className="text-xs md:text-sm font-semibold text-center leading-tight">{goal.label}</span>
                 </button>
               );
             })}
@@ -1419,21 +1419,24 @@ export default function Landing() {
             {[
               {
                 step: "1",
-                icon: <MessageCircle className="w-6 h-6" />,
+                icon: <MessageCircle className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Tell us your goal",
-                desc: "Our AI coach asks a few quick questions about your lifestyle, schedule, and what you want to achieve."
+                desc: "Our AI coach asks a few quick questions about your lifestyle, schedule, and what you want to achieve.",
+                gradient: "from-primary/20 to-accent/10"
               },
               {
                 step: "2",
-                icon: <Calendar className="w-6 h-6" />,
+                icon: <Calendar className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Get your custom plan",
-                desc: "You'll receive a personalized daily, weekly, and monthly action plan built around your life — not a one-size-fits-all checklist."
+                desc: "You'll receive a personalized daily, weekly, and monthly action plan built around your life — not a one-size-fits-all checklist.",
+                gradient: "from-accent/20 to-emerald-500/10"
               },
               {
                 step: "3",
-                icon: <TrendingUp className="w-6 h-6" />,
+                icon: <TrendingUp className="w-6 h-6 md:w-7 md:h-7" />,
                 title: "Build momentum",
-                desc: "Follow guided sessions, track your streaks, earn XP, and watch your consistency grow day by day."
+                desc: "Follow guided sessions, track your streaks, earn XP, and watch your consistency grow day by day.",
+                gradient: "from-emerald-500/20 to-primary/10"
               }
             ].map((item, i) => (
               <motion.div
@@ -1443,12 +1446,12 @@ export default function Landing() {
                 className="text-center space-y-3 md:space-y-4"
                 data-testid={`card-how-it-works-${i}`}
               >
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${item.gradient} text-primary flex items-center justify-center mx-auto icon-container shadow-md`}>
                   {item.icon}
                 </div>
-                <div className="text-sm font-semibold text-primary">Step {item.step}</div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/8 rounded-full px-3 py-1">Step {item.step}</div>
                 <h3 className="font-display text-lg md:text-xl font-bold">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -1459,8 +1462,8 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,hsl(var(--primary)/0.05),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
-            <Badge variant="secondary" className="mb-2">
-              <Zap className="w-3 h-3 mr-1" />
+            <Badge variant="secondary" className="mb-2 px-3 py-1 text-xs font-semibold shadow-sm">
+              <Zap className="w-3.5 h-3.5 mr-1.5 text-primary" />
               Powerful Features
             </Badge>
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-features-heading">Everything you need to grow</h2>
@@ -1526,9 +1529,9 @@ export default function Landing() {
                 transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
                 data-testid={`card-feature-${i}`}
               >
-                <Card className="h-full hover-elevate touch-card">
+                <Card className="h-full hover-elevate touch-card group">
                   <CardContent className="pt-6">
-                    <div className={`mb-4 w-14 h-14 md:w-16 md:h-16 rounded-2xl ${feature.bg} flex items-center justify-center shadow-sm`}>
+                    <div className={`mb-4 icon-container icon-container-lg ${feature.bg} shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200`}>
                       <div className={feature.color}>{feature.icon}</div>
                     </div>
                     <h3 className="font-display text-base md:text-lg font-bold mb-1.5 md:mb-2" data-testid={`text-feature-title-${i}`}>{feature.title}</h3>
@@ -1552,8 +1555,8 @@ export default function Landing() {
       <section className="py-16 md:py-24 px-4 sm:px-6 bg-white/50 dark:bg-card/30" id="tools" aria-label="Powerful tools" data-testid="section-powerful-tools">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-16 space-y-3 md:space-y-4">
-            <Badge variant="secondary" className="mb-2">
-              <Sparkles className="w-3 h-3 mr-1" />
+            <Badge variant="secondary" className="mb-2 px-3 py-1 text-xs font-semibold shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
               New Features
             </Badge>
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-tools-heading">Powerful tools for every part of your day</h2>
@@ -1625,14 +1628,14 @@ export default function Landing() {
                 transition={{ duration: 0.4, delay: shouldAnimate ? i * 0.08 : 0 }}
                 data-testid={`card-tool-${i}`}
               >
-                <Card className="h-full hover-elevate touch-card">
+                <Card className="h-full hover-elevate touch-card group">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl ${tool.bg} flex items-center justify-center shadow-sm shrink-0`}>
+                      <div className={`icon-container icon-container-lg ${tool.bg} shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200 shrink-0`}>
                         <div className={tool.color}>{tool.icon}</div>
                       </div>
                       {tool.tier && (
-                        <Badge variant="outline" className={`text-xs shrink-0 ${tool.tierColor}`} data-testid={`badge-tier-${i}`}>
+                        <Badge variant="outline" className={`text-xs font-semibold shrink-0 ${tool.tierColor}`} data-testid={`badge-tier-${i}`}>
                           {tool.tier}
                         </Badge>
                       )}
@@ -1663,7 +1666,7 @@ export default function Landing() {
               transition={{ duration: 0.5 }}
               className="space-y-5 md:space-y-6"
             >
-              <Badge variant="secondary" className="gap-1.5">
+              <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs font-semibold shadow-sm">
                 <Crown className="w-3.5 h-3.5 text-amber-500" />
                 Premium Feature
               </Badge>
@@ -1711,12 +1714,12 @@ export default function Landing() {
                     { title: "20-Minute Workout", icon: Dumbbell, color: "text-orange-500 dark:text-orange-400", bg: "bg-orange-500/10" },
                   ].map((habit, i, arr) => (
                     <div key={i}>
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50" data-testid={`demo-stack-item-${i}`}>
-                        <div className={`w-9 h-9 rounded-lg ${habit.bg} flex items-center justify-center shrink-0`}>
-                          <habit.icon className={`w-4.5 h-4.5 ${habit.color}`} />
+                      <div className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/50 border border-border/30" data-testid={`demo-stack-item-${i}`}>
+                        <div className={`w-10 h-10 rounded-xl ${habit.bg} flex items-center justify-center shrink-0 icon-container shadow-sm`}>
+                          <habit.icon className={`w-5 h-5 ${habit.color}`} />
                         </div>
-                        <span className="text-sm font-medium">{habit.title}</span>
-                        <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto shrink-0" />
+                        <span className="text-sm font-semibold">{habit.title}</span>
+                        <CheckCircle2 className="w-5 h-5 text-green-500 ml-auto shrink-0" />
                       </div>
                       {i < arr.length - 1 && (
                         <div className="flex justify-center py-1">
@@ -1782,10 +1785,10 @@ export default function Landing() {
                 key={i}
                 {...fadeUp}
                 transition={{ delay: shouldAnimate ? i * 0.05 : 0 }}
-                className="border border-border/50 rounded-lg p-4 md:p-6"
+                className="border border-border/50 rounded-2xl p-5 md:p-6 bg-card/50 hover:border-primary/20 hover:shadow-sm transition-all duration-200"
                 data-testid={`faq-item-${i}`}
               >
-                <h3 className="font-display font-semibold text-base md:text-lg mb-2">{faq.q}</h3>
+                <h3 className="font-display font-bold text-base md:text-lg mb-2">{faq.q}</h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{faq.a}</p>
               </motion.div>
             ))}
@@ -1804,7 +1807,7 @@ export default function Landing() {
         )}
         <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8 relative z-10">
           <div className="space-y-4 md:space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-sm mx-auto">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/25 text-primary font-semibold text-sm mx-auto shadow-sm">
               <Sparkles className="w-4 h-4" />
               <span>Your journey starts here</span>
             </div>

@@ -570,19 +570,18 @@ export default function HabitDetail() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b safe-top">
         <div className="container max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <Link href="/">
-              <Button variant="ghost" className="gap-2" data-testid="button-back-home">
+              <Button variant="ghost" size="icon" className="flex-shrink-0" data-testid="button-back-home">
                 <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
               </Button>
             </Link>
-            <div className="min-w-0">
-              <h1 className="font-display text-2xl font-bold truncate" data-testid="text-habit-title">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-lg sm:text-2xl font-bold truncate" data-testid="text-habit-title">
                 {habit.title}
               </h1>
               {habit.description && (
-                <p className="text-sm text-muted-foreground truncate">{habit.description}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{habit.description}</p>
               )}
             </div>
           </div>
