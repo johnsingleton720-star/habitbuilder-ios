@@ -178,7 +178,7 @@ function Router() {
         } else {
           try {
             await apiRequest("PATCH", "/api/user/onboarding");
-            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+            await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
           } catch {}
           toast({
             title: "Couldn't save your plan",
@@ -190,7 +190,7 @@ function Router() {
         console.error("Failed to create habit from presignup data:", e);
         try {
           await apiRequest("PATCH", "/api/user/onboarding");
-          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
         } catch {}
         toast({
           title: "Couldn't save your plan",

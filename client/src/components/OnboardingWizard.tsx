@@ -76,8 +76,8 @@ export function OnboardingWizard() {
           setDismissed(true);
           try {
             await apiRequest("PATCH", "/api/user/onboarding");
-            await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-            await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+            await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+            await queryClient.refetchQueries({ queryKey: ["/api/habits"] });
           } catch {}
           return;
         } else {
@@ -101,8 +101,8 @@ export function OnboardingWizard() {
     setIsFinishing(true);
     try {
       await apiRequest("PATCH", "/api/user/onboarding");
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/habits"] });
       if (createdHabitId) {
         navigate(`/habit/${createdHabitId}`);
       }
@@ -121,7 +121,7 @@ export function OnboardingWizard() {
     setIsSkipping(true);
     try {
       await apiRequest("PATCH", "/api/user/onboarding");
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
     } catch (error) {
       toast({
         title: "Something went wrong",
