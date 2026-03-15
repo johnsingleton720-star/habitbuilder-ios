@@ -136,7 +136,12 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
     },
     onError: (error: any) => {
-      setSessionLimitReached(true);
+      const msg = error?.message || '';
+      if (msg.includes('free_session_limit') || msg.includes('free sessions')) {
+        setSessionLimitReached(true);
+      } else {
+        toast({ title: "Failed to save session", variant: "destructive" });
+      }
     },
   });
 

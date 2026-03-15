@@ -4160,7 +4160,8 @@ REQUIREMENTS:
       if (isFreeUser) {
         return res.status(403).json({ 
           error: "paid_feature",
-          message: "Plan restart and refresh is available with Pro. Upgrade to restart, extend, or start fresh plans!"
+          message: "Plan restart and refresh is available with Pro. Upgrade to restart, extend, or start fresh plans!",
+          redirectTo: "/paywall"
         });
       }
 

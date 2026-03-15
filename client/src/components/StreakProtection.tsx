@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 
 interface HabitWithStreak {
   id: number;
@@ -60,14 +61,16 @@ export function StreakProtection({ habit, onFreezeUsed }: StreakProtectionProps)
 
   if (!isPremium) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
-        <Lock className="w-4 h-4 text-muted-foreground" />
-        <div className="flex-1">
-          <p className="text-sm font-medium">Streak Protection</p>
-          <p className="text-xs text-muted-foreground">Premium feature - protect your streaks when you can't complete a habit</p>
+      <Link href="/paywall">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed cursor-pointer hover:bg-muted/70 transition-colors" data-testid="streak-protection-locked">
+          <Lock className="w-4 h-4 text-muted-foreground" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">Streak Protection</p>
+            <p className="text-xs text-muted-foreground">Premium feature - protect your streaks when you can't complete a habit</p>
+          </div>
+          <Badge variant="secondary" className="text-xs">Premium</Badge>
         </div>
-        <Badge variant="secondary" className="text-xs">Premium</Badge>
-      </div>
+      </Link>
     );
   }
 
