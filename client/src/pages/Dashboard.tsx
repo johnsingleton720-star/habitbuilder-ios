@@ -38,6 +38,7 @@ import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAppTheme } from "@/components/ThemeSelector";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -72,6 +73,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { features, isFreeUser } = useSubscription();
   const queryClient = useQueryClient();
+  useAppTheme();
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
     if (!dismissedAt) return false;
@@ -109,7 +111,8 @@ export default function Dashboard() {
       setTimeout(() => setShowInterviewOffer(true), 600);
       return;
     }
-    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY) && !presignupHabitId) {
+    const hasExistingHabits = habits && habits.length > 0;
+    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY) && !presignupHabitId && !hasExistingHabits) {
       localStorage.setItem(TOUR_STORAGE_KEY, "pending");
       setTimeout(() => setShowTour(true), 1000);
     }
