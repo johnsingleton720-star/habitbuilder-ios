@@ -5321,6 +5321,7 @@ REQUIREMENTS:
       if (quantityLabel) {
         taskEntry.quantityLabel = quantityLabel;
       }
+      let trackedTimeDuration = 0;
       if (Array.isArray(rawTrackedValues)) {
         const habitItems = Array.isArray(habit.trackedItems) ? (habit.trackedItems as { id: string; name: string; type: string }[]) : [];
         const validValues = rawTrackedValues
@@ -5334,6 +5335,9 @@ REQUIREMENTS:
             if (itemDef && (itemDef.type === "count" || itemDef.type === "time")) {
               const num = Number(v.value);
               if (!isNaN(num) && isFinite(num)) {
+                if (itemDef.type === "time") {
+                  trackedTimeDuration += num;
+                }
                 return { itemId: v.itemId, name: itemDef.name, type: itemDef.type, value: num };
               }
               return null;
@@ -5346,15 +5350,18 @@ REQUIREMENTS:
         }
       }
 
+      const effectiveDuration = (duration || 0) + trackedTimeDuration;
+      taskEntry.duration = effectiveDuration || null;
+
       if (existingPlan) {
         existingPlan.completed = true;
         existingPlan.tasks = [taskEntry];
-        if (duration) existingPlan.timeSpent = duration;
+        existingPlan.timeSpent = effectiveDuration;
       } else {
         dailyPlans.push({
           date: todayStr,
           completed: true,
-          timeSpent: duration || 0,
+          timeSpent: effectiveDuration,
           tasks: [taskEntry],
         });
       }
@@ -5380,13 +5387,13 @@ REQUIREMENTS:
         date: todayStr,
         tasksCompleted: 1,
         totalTasks: 1,
-        timeSpent: duration || 0,
+        timeSpent: effectiveDuration,
         goalTime: 0,
         notes: notes || "",
         mood: rating ? String(rating) : undefined,
       });
 
-      const newTotalTime = (habit.totalTimeSpent || 0) + (duration || 0);
+      const newTotalTime = (habit.totalTimeSpent || 0) + effectiveDuration;
 
       await storage.updateHabit(habitId, userId, {
         dailyPlans,

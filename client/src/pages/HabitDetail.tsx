@@ -1744,6 +1744,65 @@ export default function HabitDetail() {
           </Card>
         )}
 
+        {/* Recent Trends Table for Simple Habits with Tracked Items */}
+        {isSimpleMode && (() => {
+          const trendItems = (habit.trackedItems || []) as TrackedItem[];
+          const completedPlans = [...dailyPlans]
+            .filter(p => p.completed && p.tasks?.[0]?.trackedValues?.length > 0)
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, 7)
+            .reverse();
+          if (trendItems.length === 0 || completedPlans.length < 2) return null;
+          return (
+            <Card data-testid="card-recent-trends">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TrendingDown className="w-4 h-4 rotate-180" />
+                  Recent Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-4">
+                <div className="overflow-x-auto -mx-1">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr>
+                        <th className="text-left font-medium text-muted-foreground px-1.5 py-1.5 sticky left-0 bg-card min-w-[70px]"></th>
+                        {completedPlans.map((plan) => (
+                          <th key={plan.date} className="text-center font-medium text-muted-foreground px-1.5 py-1.5 min-w-[48px]">
+                            {format(parseISO(plan.date), "M/d")}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trendItems.map((item) => (
+                        <tr key={item.id} className="border-t border-border/40">
+                          <td className="font-medium text-muted-foreground px-1.5 py-1.5 truncate max-w-[90px] sticky left-0 bg-card" title={item.name}>
+                            {item.name}
+                          </td>
+                          {completedPlans.map((plan) => {
+                            const tv = (plan.tasks?.[0]?.trackedValues || []) as TrackedValue[];
+                            const val = tv.find(v => v.itemId === item.id);
+                            return (
+                              <td key={plan.date} className="text-center px-1.5 py-1.5 tabular-nums" data-testid={`trend-${item.id}-${plan.date}`}>
+                                {val ? (
+                                  <span className="font-semibold">{val.value}{item.type === "time" ? "m" : ""}</span>
+                                ) : (
+                                  <span className="text-muted-foreground/40">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Progress History / Check-in History */}
         {((habit.progress && habit.progress.length > 0) || (isSimpleMode && dailyPlans.some((p: any) => p.completed))) && (
           <Card>
