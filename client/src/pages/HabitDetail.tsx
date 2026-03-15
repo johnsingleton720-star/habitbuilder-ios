@@ -887,9 +887,9 @@ export default function HabitDetail() {
                       </p>
                     </div>
 
-                    {simpleCheckedIn && todayTask && (todayTask.quantity || todayTask.notes) && (
+                    {simpleCheckedIn && todayTask && (todayTask.quantity !== undefined && todayTask.quantity !== null || todayTask.notes) && (
                       <div className="w-full max-w-xs space-y-1 text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
-                        {todayTask.quantity && (
+                        {todayTask.quantity !== undefined && todayTask.quantity !== null && (
                           <p className="flex items-center gap-2">
                             <Target className="w-3.5 h-3.5" />
                             <span className="font-medium">{todayTask.quantity}</span>
@@ -1683,7 +1683,7 @@ export default function HabitDetail() {
                               )}
                             </div>
                             <div className="text-right flex-shrink-0 ml-3">
-                              {task?.quantity ? (
+                              {task?.quantity !== undefined && task?.quantity !== null ? (
                                 <p className="font-semibold text-sm">{task.quantity}{task.quantityLabel ? ` ${task.quantityLabel}` : ""}</p>
                               ) : (
                                 <CheckCircle2 className="w-5 h-5 text-primary" />

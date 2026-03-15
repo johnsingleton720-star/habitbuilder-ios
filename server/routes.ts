@@ -5283,7 +5283,9 @@ REQUIREMENTS:
     try {
       const userId = req.user!.claims.sub;
       const habitId = Number(req.params.id);
-      const { duration, rating, notes, quantity, quantityLabel } = req.body;
+      const { duration, rating, quantity, quantityLabel: rawLabel } = req.body;
+      const notes = typeof req.body.notes === "string" ? req.body.notes.slice(0, 500) : undefined;
+      const quantityLabel = typeof rawLabel === "string" ? rawLabel.slice(0, 50) : undefined;
 
       const user = await storage.getUser(userId);
       const habit = await storage.getHabit(habitId);
