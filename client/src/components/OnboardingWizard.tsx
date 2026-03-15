@@ -67,9 +67,22 @@ export function OnboardingWizard() {
           goal: `Build a consistent ${habitTitle} routine`,
           description: "Created during onboarding",
         });
-        const habit = await res.json();
-        setCreatedHabitId(habit.id);
-        setIsComplete(true);
+        if (res.ok) {
+          const habit = await res.json();
+          setCreatedHabitId(habit.id);
+          setIsComplete(true);
+        } else if (res.status === 403) {
+          setIsComplete(true);
+          try {
+            await apiRequest("PATCH", "/api/user/onboarding");
+            await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+          } catch {}
+          return;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to create habit");
+        }
       } catch (error) {
         toast({
           title: "Something went wrong",

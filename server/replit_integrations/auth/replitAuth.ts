@@ -174,6 +174,9 @@ export async function setupAuth(app: Express) {
           console.error("Session destroy error:", err);
         }
         res.clearCookie("connect.sid");
+        res.clearCookie("__REPL_AUTH");
+        res.clearCookie("REPL_AUTH");
+        res.clearCookie("replit_auth");
         res.redirect("/");
       });
     });

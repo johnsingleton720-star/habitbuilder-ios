@@ -1589,9 +1589,15 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const isAdmin = user?.isAdmin === true;
 
       if (!hasPaidSubscription && !isAdmin && activeHabits.length >= 1) {
-        return res.status(403).json({
-          error: "Free users can have 1 habit. Upgrade to Pro ($6/mo) for unlimited habits."
-        });
+        const userUpdates: any = { onboardingComplete: true, updatedAt: new Date() };
+        if (!user?.timezone && clientTimezone && typeof clientTimezone === "string") {
+          userUpdates.timezone = clientTimezone;
+        }
+        await db.update(users)
+          .set(userUpdates)
+          .where(eq(users.id, userId));
+
+        return res.status(200).json(activeHabits[0]);
       }
 
       const safetyCheck = checkContentSafety(habitTitle);

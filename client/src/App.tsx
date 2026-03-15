@@ -153,15 +153,18 @@ function Router() {
     const stored = localStorage.getItem("presignup_data");
     if (!stored) return;
 
+    if ((window as any).__presignupHandoffInProgress) return;
+    (window as any).__presignupHandoffInProgress = true;
+
     (async () => {
       try {
         const presignupData = JSON.parse(stored);
+        localStorage.removeItem("presignup_data");
 
         const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const res = await apiRequest("POST", "/api/habits/from-presignup", { ...presignupData, clientTimezone: browserTimezone });
         if (res.ok) {
           const createdHabit = await res.json();
-          localStorage.removeItem("presignup_data");
           if (createdHabit?.id) {
             localStorage.setItem("presignup_habit_id", String(createdHabit.id));
           }
@@ -173,7 +176,10 @@ function Router() {
             description: `"${presignupData.habitTitle}" is ready. Start your first session!`,
           });
         } else {
-          localStorage.removeItem("presignup_data");
+          try {
+            await apiRequest("PATCH", "/api/user/onboarding");
+            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          } catch {}
           toast({
             title: "Couldn't save your plan",
             description: "But don't worry — you can create a new habit from the dashboard.",
@@ -182,11 +188,17 @@ function Router() {
         }
       } catch (e) {
         console.error("Failed to create habit from presignup data:", e);
+        try {
+          await apiRequest("PATCH", "/api/user/onboarding");
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        } catch {}
         toast({
           title: "Couldn't save your plan",
           description: "But don't worry — you can create a new habit from the dashboard.",
           variant: "destructive",
         });
+      } finally {
+        (window as any).__presignupHandoffInProgress = false;
       }
     })();
   }, [user, toast]);
