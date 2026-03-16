@@ -30,6 +30,10 @@ export default function ProgressPage() {
   const getHabitDayCompletion = (habit: Habit, dateStr: string) => {
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     const plan = dailyPlans.find(p => p.date === dateStr);
+    if (habit.trackingMode === "simple") {
+      const isComplete = plan?.completed === true;
+      return { completed: isComplete ? 1 : 0, total: 1, isComplete };
+    }
     if (!plan) return { completed: 0, total: 0, isComplete: false };
     const completed = plan.tasks.filter(t => t.completed).length;
     const isComplete = plan.completed || (plan.tasks.length > 0 && plan.tasks.every(t => t.completed));
@@ -46,6 +50,7 @@ export default function ProgressPage() {
       if (scheduleDays && scheduleDays.length > 0) {
         if (!scheduleDays.includes(dayName)) return false;
       }
+      if (h.trackingMode === "simple") return true;
       const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
       return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
     });
@@ -62,8 +67,18 @@ export default function ProgressPage() {
 
   const getYesterdayStats = () => {
     if (!habits) return { completed: 0, total: 0, habits: [] };
+    const yesterdayDayName = format(subDays(today, 1), "EEEE").toLowerCase();
     const habitsWithTasks = habits.filter(h => {
       if (h.archived) return false;
+      const scheduleDays = h.schedule?.days as string[] | undefined;
+      if (scheduleDays && scheduleDays.length > 0) {
+        if (!scheduleDays.includes(yesterdayDayName)) return false;
+      }
+      if (h.trackingMode === "simple") {
+        if (scheduleDays && scheduleDays.length > 0) return true;
+        const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
+        return dailyPlans.some(p => p.date === yesterdayStr && p.completed);
+      }
       const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
       return dailyPlans.some(p => p.date === yesterdayStr && p.tasks.length > 0);
     });
@@ -808,6 +823,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
     const scheduledHabits = habits.filter(h => {
       const scheduleDays = h.schedule?.days as string[] | undefined;
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
+      if (h.trackingMode === "simple") return true;
       const dailyPlans = (h.dailyPlans || []) as any[];
       return dailyPlans.some((p: any) => p.date === dateStr && p.tasks.length > 0);
     });
@@ -815,6 +831,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
     const completedHabits = scheduledHabits.filter(h => {
       const dailyPlans = (h.dailyPlans || []) as any[];
       const plan = dailyPlans.find((p: any) => p.date === dateStr);
+      if (h.trackingMode === "simple") return plan?.completed === true;
       if (!plan || plan.tasks.length === 0) return false;
       const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
       return activeTasks.length > 0 && activeTasks.every((t: any) => t.completed);
@@ -845,14 +862,18 @@ function WeeklyView({ habits }: { habits: any[] }) {
       if (d.isFuture) return;
       const dayName = format(d.date, "EEEE").toLowerCase();
       const scheduleDays = h.schedule?.days as string[] | undefined;
-      const isScheduled = scheduleDays && scheduleDays.length > 0 
-        ? scheduleDays.includes(dayName) 
-        : (h.dailyPlans || []).some((p: any) => p.date === d.dateStr && p.tasks.length > 0);
+      const isScheduled = scheduleDays && scheduleDays.length > 0
+        ? scheduleDays.includes(dayName)
+        : h.trackingMode === "simple"
+          ? true
+          : (h.dailyPlans || []).some((p: any) => p.date === d.dateStr && p.tasks.length > 0);
       if (!isScheduled) return;
       scheduled++;
       const dailyPlans = (h.dailyPlans || []) as any[];
       const plan = dailyPlans.find((p: any) => p.date === d.dateStr);
-      if (plan) {
+      if (h.trackingMode === "simple") {
+        if (plan?.completed) completed++;
+      } else if (plan) {
         const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
         if (activeTasks.length > 0 && activeTasks.every((t: any) => t.completed)) completed++;
       }
