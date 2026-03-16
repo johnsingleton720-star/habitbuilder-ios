@@ -751,32 +751,19 @@ export default function HabitDetail() {
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     {isFreeUser ? (
                       <>
-                        <div className="flex-1 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10 p-4" data-testid="card-restart-locked">
-                          <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-                              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                                Restart Plan
-                                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">Pro</Badge>
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Upgrade to Pro to restart, extend, or start a fresh plan.
-                              </p>
-                              <Button
-                                size="sm"
-                                onClick={() => navigate("/paywall")}
-                                className="gap-1.5 mt-3"
-                                data-testid="button-upgrade-restart"
-                              >
-                                <Crown className="w-3.5 h-3.5" />
-                                See Plans
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+                        <Button
+                          onClick={() => regeneratePlanMutation.mutate(habit.planDuration || "monthly")}
+                          disabled={regeneratePlanMutation.isPending}
+                          className="flex-1 gap-2"
+                          data-testid="button-restart-plan-free"
+                        >
+                          {regeneratePlanMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-4 h-4" />
+                          )}
+                          Restart Plan
+                        </Button>
                       </>
                     ) : (
                       <>

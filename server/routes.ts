@@ -4164,11 +4164,18 @@ REQUIREMENTS:
       const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
 
       if (isFreeUser) {
-        return res.status(403).json({ 
-          error: "paid_feature",
-          message: "Plan restart and refresh is available with Pro. Upgrade to restart, extend, or start fresh plans!",
-          redirectTo: "/paywall"
-        });
+        const userTz = user?.timezone;
+        const todayCheck = getUserToday(userTz);
+        const plans = (habit.dailyPlans || []) as any[];
+        const lastPlanDate = habit.planEndDate || (plans.length > 0 ? plans[plans.length - 1].date : null);
+        const isPlanEnded = lastPlanDate && lastPlanDate < todayCheck;
+        if (!isPlanEnded) {
+          return res.status(403).json({ 
+            error: "paid_feature",
+            message: "Plan restart and refresh is available with Pro. Upgrade to restart, extend, or start fresh plans!",
+            redirectTo: "/paywall"
+          });
+        }
       }
 
       if (habit.trackingMode === "simple") {
