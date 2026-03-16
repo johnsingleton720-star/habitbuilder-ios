@@ -27,7 +27,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
   const getHabitDayComplete = (habit: Habit, dateStr: string) => {
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     const plan = dailyPlans.find(p => p.date === dateStr);
-    if ((habit as any).trackingMode === "simple") {
+    if (habit.trackingMode === "simple") {
       return plan?.completed === true;
     }
     if (!plan || plan.tasks.length === 0) return false;
@@ -37,7 +37,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
   };
 
   const isPlanExpired = (habit: Habit, dateStr: string) => {
-    if ((habit as any).trackingMode === "simple") return false;
+    if (habit.trackingMode === "simple") return false;
     if (!habit.setupComplete) return false;
     const dPlans = (habit.dailyPlans || []) as DailyPlan[];
     const endDate = habit.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1].date : null);
@@ -52,7 +52,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     if (scheduleDays && scheduleDays.length > 0) {
       return scheduleDays.includes(todayDayName);
     }
-    if ((h as any).trackingMode === "simple") {
+    if (h.trackingMode === "simple") {
       return true;
     }
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
@@ -78,7 +78,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     if (hasSchedule) {
       return scheduleDays.includes(dayName);
     }
-    if ((habit as any).trackingMode === "simple") {
+    if (habit.trackingMode === "simple") {
       return true;
     }
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
@@ -124,7 +124,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
         const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
         const plan = dailyPlans.find(p => p.date === dateStr);
         const isComplete = getHabitDayComplete(habit, dateStr);
-        const isSimple = (habit as any).trackingMode === "simple";
+        const isSimple = habit.trackingMode === "simple";
         const hasTasks = isSimple ? true : (plan && plan.tasks.length > 0);
         return {
           habit,
