@@ -1077,7 +1077,7 @@ export default function DailyPlanner() {
   const totalMinutes = blocks.reduce((sum, b) => sum + b.duration, 0);
   const totalHours = (totalMinutes / 60).toFixed(1);
   const habitCount = blocks.filter((b) => b.type === "habit").length;
-  const taskCount = blocks.filter((b) => b.type === "task").length;
+  const taskCount = completedCount;
 
   const handleAddBlock = () => {
     if (!newBlock.title.trim()) {
