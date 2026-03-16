@@ -751,19 +751,25 @@ export default function HabitDetail() {
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     {isFreeUser ? (
                       <>
-                        <Button
-                          onClick={() => regeneratePlanMutation.mutate(habit.planDuration || "monthly")}
-                          disabled={regeneratePlanMutation.isPending}
-                          className="flex-1 gap-2"
-                          data-testid="button-restart-plan-free"
-                        >
-                          {regeneratePlanMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <RotateCcw className="w-4 h-4" />
-                          )}
-                          Restart Plan
-                        </Button>
+                        {isPlanExpired ? (
+                          <Button
+                            onClick={() => regeneratePlanMutation.mutate(habit.planDuration || "monthly")}
+                            disabled={regeneratePlanMutation.isPending}
+                            className="flex-1 gap-2"
+                            data-testid="button-restart-plan-free"
+                          >
+                            {regeneratePlanMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-4 h-4" />
+                            )}
+                            Restart Plan
+                          </Button>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center">
+                            You'll be able to restart this plan once the current period ends.
+                          </p>
+                        )}
                       </>
                     ) : (
                       <>
