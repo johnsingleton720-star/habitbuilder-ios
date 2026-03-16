@@ -27,6 +27,9 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
   const getHabitDayComplete = (habit: Habit, dateStr: string) => {
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     const plan = dailyPlans.find(p => p.date === dateStr);
+    if ((habit as any).trackingMode === "simple") {
+      return plan?.completed === true;
+    }
     if (!plan || plan.tasks.length === 0) return false;
     const activeTasks = plan.tasks.filter(t => !t.skipped);
     if (activeTasks.length === 0) return false;
@@ -47,6 +50,9 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     const scheduleDays = h.schedule?.days as string[] | undefined;
     if (scheduleDays && scheduleDays.length > 0) {
       return scheduleDays.includes(todayDayName);
+    }
+    if ((h as any).trackingMode === "simple") {
+      return true;
     }
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
@@ -70,6 +76,9 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
     if (hasSchedule) {
       return scheduleDays.includes(dayName);
+    }
+    if ((habit as any).trackingMode === "simple") {
+      return true;
     }
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
@@ -114,16 +123,17 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
         const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
         const plan = dailyPlans.find(p => p.date === dateStr);
         const isComplete = getHabitDayComplete(habit, dateStr);
-        const hasTasks = plan && plan.tasks.length > 0;
+        const isSimple = (habit as any).trackingMode === "simple";
+        const hasTasks = isSimple ? true : (plan && plan.tasks.length > 0);
         return {
           habit,
           plan,
           isComplete,
           isScheduled: true,
           hasTasks,
-          completedTasks: plan ? plan.tasks.filter(t => t.completed).length : 0,
+          completedTasks: isSimple ? (isComplete ? 1 : 0) : (plan ? plan.tasks.filter(t => t.completed).length : 0),
           skippedTasks: plan ? plan.tasks.filter(t => t.skipped).length : 0,
-          totalTasks: plan ? plan.tasks.filter(t => !t.skipped).length : 0,
+          totalTasks: isSimple ? 1 : (plan ? plan.tasks.filter(t => !t.skipped).length : 0),
         };
       });
   };
