@@ -37,6 +37,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
   };
 
   const isPlanExpired = (habit: Habit, dateStr: string) => {
+    if ((habit as any).trackingMode === "simple") return false;
     if (!habit.setupComplete) return false;
     const dPlans = (habit.dailyPlans || []) as DailyPlan[];
     const endDate = habit.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1].date : null);
