@@ -206,7 +206,7 @@ function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () =>
 
 function AdminUserManager() {
   const [searchEmail, setSearchEmail] = useState("");
-  const [selectedTier, setSelectedTier] = useState<string>("premium");
+  const [selectedTiers, setSelectedTiers] = useState<Record<string, string>>({});
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -271,7 +271,10 @@ function AdminUserManager() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Select defaultValue={u.subscriptionTier || 'free'} onValueChange={(val) => setSelectedTier(val)}>
+                  <Select
+                    value={selectedTiers[u.id] ?? u.subscriptionTier ?? 'free'}
+                    onValueChange={(val) => setSelectedTiers(prev => ({ ...prev, [u.id]: val }))}
+                  >
                     <SelectTrigger className="w-24" data-testid={`select-tier-${u.id}`}>
                       <SelectValue />
                     </SelectTrigger>
@@ -283,7 +286,10 @@ function AdminUserManager() {
                   </Select>
                   <Button
                     size="sm"
-                    onClick={() => updateMutation.mutate({ userId: u.id, tier: selectedTier, hasPaid: selectedTier !== 'free' })}
+                    onClick={() => {
+                      const tier = selectedTiers[u.id] ?? u.subscriptionTier ?? 'free';
+                      updateMutation.mutate({ userId: u.id, tier, hasPaid: tier !== 'free' });
+                    }}
                     disabled={updateMutation.isPending}
                     data-testid={`button-update-tier-${u.id}`}
                   >
