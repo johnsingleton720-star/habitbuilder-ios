@@ -515,6 +515,20 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/user/tour", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [updated] = await db.update(users)
+        .set({ tourCompleted: true, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating tour status:", error);
+      res.status(500).json({ error: "Failed to update tour status" });
+    }
+  });
+
   app.patch("/api/user/timezone", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

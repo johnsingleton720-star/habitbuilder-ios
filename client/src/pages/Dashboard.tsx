@@ -103,7 +103,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || isLoading) return;
     const interviewKey = `interview_offer_shown_${user.id}`;
     const presignupHabitId = localStorage.getItem("presignup_habit_id");
     if (presignupHabitId && !localStorage.getItem(interviewKey)) {
@@ -112,11 +112,19 @@ export default function Dashboard() {
       return;
     }
     const hasExistingHabits = habits && habits.length > 0;
-    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY) && !presignupHabitId && !hasExistingHabits) {
+
+    if (hasExistingHabits && !user.onboardingComplete) {
+      apiRequest("PATCH", "/api/user/onboarding").then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      }).catch(() => {});
+    }
+
+    const tourAlreadyDone = !!localStorage.getItem(TOUR_STORAGE_KEY) || !!user.tourCompleted;
+    if (user?.onboardingComplete && !tourAlreadyDone && !presignupHabitId && !hasExistingHabits) {
       localStorage.setItem(TOUR_STORAGE_KEY, "pending");
       setTimeout(() => setShowTour(true), 1000);
     }
-  }, [user?.id, user?.onboardingComplete, habits]);
+  }, [user?.id, user?.onboardingComplete, user?.tourCompleted, habits, isLoading]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],
@@ -1060,7 +1068,7 @@ export default function Dashboard() {
         <DowngradeHabitPicker habits={habits || []} open={true} />
       )}
 
-      {user && !user.onboardingComplete && !localStorage.getItem("presignup_data") && <OnboardingWizard />}
+      {user && !user.onboardingComplete && !isLoading && !(habits && habits.length > 0) && !localStorage.getItem("presignup_data") && <OnboardingWizard />}
 
       {showInterviewOffer && (
         <Dialog open onOpenChange={(open) => {
@@ -1123,7 +1131,12 @@ export default function Dashboard() {
       )}
 
       {showTour && (
-        <FeatureTour onComplete={() => setShowTour(false)} />
+        <FeatureTour onComplete={() => {
+          setShowTour(false);
+          apiRequest("PATCH", "/api/user/tour").then(() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          }).catch(() => {});
+        }} />
       )}
 
       {/* New User Feedback Prompt */}

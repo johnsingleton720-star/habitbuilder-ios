@@ -49,6 +49,7 @@ export const users = pgTable("users", {
   
   // Onboarding
   onboardingComplete: boolean("onboarding_complete").default(false),
+  tourCompleted: boolean("tour_completed").default(false),
   
   // Email preferences
   dailyReminderEnabled: boolean("daily_reminder_enabled").default(true),

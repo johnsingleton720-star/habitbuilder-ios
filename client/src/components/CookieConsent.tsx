@@ -4,19 +4,26 @@ import { Card } from "@/components/ui/card";
 import { Cookie } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
 
 const COOKIE_CONSENT_KEY = "habit-builder-cookie-consent";
 
 export function CookieConsent() {
+  const { user } = useAuth();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (user) {
+      localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+      setVisible(false);
+      return;
+    }
     const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!consent) {
       const timer = setTimeout(() => setVisible(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user]);
 
   function accept() {
     localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
