@@ -1115,7 +1115,8 @@ export default function Dashboard() {
                   onClick={() => {
                     setShowInterviewOffer(false);
                     localStorage.removeItem("presignup_habit_id");
-                    if (user?.onboardingComplete && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+                    const tourDone = !!localStorage.getItem(TOUR_STORAGE_KEY) || !!user?.tourCompleted;
+                    if (user?.onboardingComplete && !tourDone) {
                       localStorage.setItem(TOUR_STORAGE_KEY, "pending");
                       setTimeout(() => setShowTour(true), 500);
                     }
