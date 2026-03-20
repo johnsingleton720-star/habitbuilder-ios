@@ -60,9 +60,17 @@ workflows:
           path = "Podfile"
           content = File.read(path)
           unless content.include?("FBSDKCoreKit")
-            content.sub!(/target 'App' do\n/, "target 'App' do\n  pod 'FBSDKCoreKit'\n")
+            # Try inserting after target 'App' do
+            if content.include?("target 'App' do")
+              content.sub!(/target 'App' do\n/, "target 'App' do\n  pod 'FBSDKCoreKit'\n")
+              puts "Added FBSDKCoreKit after target 'App' do"
+            else
+              # Fallback: insert before final 'end'
+              content.sub!(/^end\s*\z/, "  pod 'FBSDKCoreKit'\nend\n")
+              puts "Added FBSDKCoreKit via fallback (before final end)"
+            end
+            raise "FBSDKCoreKit insertion failed - check Podfile format" unless content.include?("FBSDKCoreKit")
             File.write(path, content)
-            puts "Added FBSDKCoreKit pod to Podfile"
           else
             puts "FBSDKCoreKit already in Podfile"
           end
@@ -143,11 +151,11 @@ workflows:
           ruby << 'FBRUBY'
           path = "App/AppDelegate.swift"
           content = File.read(path)
-          if content.include?("FacebookCore")
+          if content.include?("FBSDKCoreKit")
             puts "Facebook SDK already initialized in AppDelegate.swift"
           else
-            # Add imports after existing Capacitor import
-            content.sub!(/^import Capacitor/, "import Capacitor\nimport FacebookCore\nimport AppTrackingTransparency")
+            # Add imports after existing Capacitor import (FBSDKCoreKit is the CocoaPods module name)
+            content.sub!(/^import Capacitor/, "import Capacitor\nimport FBSDKCoreKit\nimport AppTrackingTransparency")
             # Add Facebook SDK init + ATT request inside didFinishLaunchingWithOptions before return true
             fb_init = "        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)\n" \
                       "        if #available(iOS 14, *) {\n" \
