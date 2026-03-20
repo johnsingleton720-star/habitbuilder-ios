@@ -1,0 +1,145 @@
+
+Apps
+Analytics
+Trends
+Reports
+Business
+Users and Access
+John Singleton
+John Singleton|1313349897|1
+HabitBuilder.pro
+DistributionTestFlightXcode Cloud
+iOS App
+1.2.2 Prepare for Submission
+1.2.1 Ready for Distribution
+Add Platform
+General
+App Information
+App Review
+History
+App Store
+Trust & Safety
+App Privacy
+App Accessibility
+Ratings and Reviews
+Growth & Marketing
+In-App Events
+Custom Product Pages
+Product Page Optimization
+Promo Codes
+Game Center
+Monetization
+Pricing and Availability
+In-App Purchases
+Subscriptions
+Featuring
+Nominations
+App Privacy
+Published 19 days ago by John Singleton
+
+Your app contains NSUserTrackingUsageDescription, indicating that you will request permission to track users. To update this information on your app's product page, you must indicate which data types are tracking users. If this is incorrect, update your app binary and upload a new build to App Store Connect.
+
+Privacy Policy
+Edit
+English (U.S.)
+?
+Privacy Policy URL
+?
+https://habitbuilder.pro/privacy
+
+User Privacy Choices URL
+(Optional)
+
+?
+–
+
+Product Page Preview
+See Details
+Data Linked to You
+
+The following data may be collected and linked to your identity:
+
+Usage Data
+
+Identifiers
+
+Health & Fitness
+
+User Content
+
+Contact Info
+
+Data Not Linked to You
+
+The following data may be collected but is not linked to your identity:
+
+Diagnostics
+
+Health & Fitness
+
+Data Types
+Edit
+8 data types collected from this app: Crash Data, Product Interaction, User ID, Health, Other User Content, Customer Support, Performance Data, Email Address
+Contact Info
+
+Email Address
+
+?
+Edit
+Used for App Functionality
+Linked to the user's identity
+Health & Fitness
+
+Health
+
+?
+Edit
+Used for App Functionality, and Analytics
+Linked to the user's identity
+User Content
+
+Customer Support
+
+?
+Edit
+Used for App Functionality, and Analytics
+Linked to the user's identity
+Other User Content
+
+?
+Edit
+Used for App Functionality, and Analytics
+Linked to the user's identity
+Identifiers
+
+User ID
+
+?
+Edit
+Used for Analytics, and App Functionality
+Linked to the user's identity
+Usage Data
+
+Product Interaction
+
+?
+Edit
+Used for Analytics
+Linked to the user's identity
+Diagnostics
+
+Crash Data
+
+?
+Edit
+Used for App Functionality, and Analytics
+Performance Data
+
+?
+Edit
+Used for Analytics, and App Functionality
+App Store Connect
+Copyright © 2026 Apple Inc. All rights reserved.
+Terms of Service
+Privacy Policy
+Contact Us
