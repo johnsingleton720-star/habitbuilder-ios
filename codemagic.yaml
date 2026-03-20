@@ -99,6 +99,9 @@ workflows:
           echo "=== Final Podfile ==="
           cat Podfile
           echo ""
+          echo "=== Fixing podspec name (CapacitorAuthSessionPlugin -> CapacitorAuthSession) ==="
+          cp ../../plugins/capacitor-auth-session/CapacitorAuthSessionPlugin.podspec ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
+          sed -i '' "s/s.name = 'CapacitorAuthSessionPlugin'/s.name = 'CapacitorAuthSession'/" ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
           echo "=== Installing pods ==="
           pod install
       - name: Fix App deployment target
@@ -165,116 +168,4 @@ workflows:
           end
           PUSHRUBY
 
-          ruby << 'FBRUBY'
-          path = "App/AppDelegate.swift"
-          content = File.read(path)
-          if content.include?("FBSDKCoreKit")
-            puts "Facebook SDK already initialized in AppDelegate.swift"
-          else
-            content.sub!(/^import Capacitor/, "import Capacitor\nimport FBSDKCoreKit\nimport AppTrackingTransparency")
-            fb_init = "        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)\n" \
-                      "        if #available(iOS 14, *) {\n" \
-                      "            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {\n" \
-                      "                ATTrackingManager.requestTrackingAuthorization { _ in }\n" \
-                      "            }\n" \
-                      "        }\n"
-            content.sub!(/(\s*\/\/ Override point for customization after application launch\.\s*\n)(\s*return true)/) do
-              "#{$1}#{fb_init}#{$2}"
-            end
-            File.write(path, content)
-            puts "Added Facebook SDK init and ATT prompt to AppDelegate.swift"
-          end
-          FBRUBY
-
-          echo "=== AppDelegate.swift ==="
-          cat App/AppDelegate.swift
-
-          ruby << 'RUBYEOF'
-          require 'xcodeproj'
-          project = Xcodeproj::Project.open('App.xcodeproj')
-          project.targets.each do |target|
-            next unless target.name == 'App'
-            target.build_configurations.each do |config|
-              config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
-            end
-            puts "Set CODE_SIGN_ENTITLEMENTS for all configurations"
-            frameworks_group = project.frameworks_group
-            storekit_ref = project.files.find { |f| f.path == 'StoreKit.framework' }
-            unless storekit_ref
-              storekit_ref = frameworks_group.new_reference('System/Library/Frameworks/StoreKit.framework', :sdk_root)
-              target.frameworks_build_phase.add_file_reference(storekit_ref, true)
-              puts "Added StoreKit.framework to project"
-            else
-              puts "StoreKit.framework already in project"
-            end
-          end
-          project.save
-          puts "Xcode project updated successfully"
-          RUBYEOF
-
-          echo ""
-          echo "=== Verifying entitlements file ==="
-          cat App/App.entitlements
-          echo ""
-          echo "=== Verifying StoreKit in project ==="
-          grep -c "StoreKit" App.xcodeproj/project.pbxproj && echo "StoreKit references found" || echo "WARNING: No StoreKit in project"
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "pro.habitbuilder.app" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
-          xcode-project use-profiles
-      - name: Set app icon
-        script: |
-          if [ -f "client/public/playstore-icon.png" ]; then
-            mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
-            cp client/public/playstore-icon.png ios/App/App/Assets.xcassets/AppIcon.appiconset/icon-1024.png
-            cat > ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json << 'ICONEOF'
-          {
-            "images": [
-              {
-                "filename": "icon-1024.png",
-                "idiom": "universal",
-                "platform": "ios",
-                "size": "1024x1024"
-              }
-            ],
-            "info": {
-              "author": "xcode",
-              "version": 1
-            }
-          }
-          ICONEOF
-          fi
-      - name: Add privacy usage descriptions
-        script: |
-          cd ios/App/App
-          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'HabitBuilder needs camera access to take a profile photo.'" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'HabitBuilder needs photo library access to select a profile photo.'" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'HabitBuilder needs microphone access for voice notes during coaching sessions.'" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" Info.plist 2>/dev/null || true
-          echo "=== Background Modes ==="
-          /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" Info.plist 2>/dev/null || echo "No background modes"
-          /usr/libexec/PlistBuddy -c "Add :FacebookAppID string ${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :FacebookAppID ${FACEBOOK_APP_ID}" Info.plist
-          /usr/libexec/PlistBuddy -c "Add :FacebookClientToken string ${FACEBOOK_CLIENT_TOKEN}" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :FacebookClientToken ${FACEBOOK_CLIENT_TOKEN}" Info.plist
-          /usr/libexec/PlistBuddy -c "Add :FacebookDisplayName string HabitBuilder" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :FacebookDisplayName HabitBuilder" Info.plist
-          /usr/libexec/PlistBuddy -c "Add :NSUserTrackingUsageDescription string 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :NSUserTrackingUsageDescription 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist
-          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:0 string fbapi" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:0 fbapi" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:1 fb-messenger-share-api" Info.plist 2>/dev/null || true
-          echo "=== Privacy descriptions ==="
-          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
-          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
-          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" Info.plist
-          echo "=== Facebook SDK config ==="
-          /usr/libexec/PlistBuddy -c "Print :FacebookAppID" Info.plist
-          /usr/libexec/PlistBuddy -c "Print :FacebookDisplayName" Info.plist
+          ruby
