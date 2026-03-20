@@ -304,7 +304,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
           </Badge>
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-            Try 1 habit free with 3 sessions per week. Upgrade for unlimited habits and full AI coaching. Cancel anytime.
+            Start with a 3-day free trial of all Premium features. Then keep 1 habit free forever, or subscribe for unlimited habits and full AI coaching.
           </p>
         </div>
 
@@ -340,16 +340,16 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </div>
                 </div>
                 <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
-                <p className="text-sm text-muted-foreground mt-1">Free forever</p>
+                <p className="text-sm text-muted-foreground mt-1">3-day Premium trial included</p>
                 <div className="mt-3">
                   <span className="text-4xl font-display font-bold">$0</span>
                 </div>
               </div>
               <ul className="space-y-2.5 flex-1">
                 {[
-                  "1 habit",
+                  "3-day trial with all Premium features",
+                  "1 habit free forever after trial",
                   "First AI action plan",
-                  "3 guided sessions/week",
                   "Habit templates library",
                 ].map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -370,7 +370,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                 ))}
               </ul>
               <Button onClick={scrollToLogin} variant="outline" className="w-full mt-6 font-semibold" data-testid="button-pricing-trial">
-                Get Started Free
+                Start Free Trial
               </Button>
             </CardContent>
           </Card>
@@ -494,7 +494,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          1 habit free forever. No credit card required to start.
+          3-day free Premium trial, then 1 habit free forever. No credit card required.
         </p>
         <p className="text-center text-xs text-muted-foreground mt-2">
           Prices shown in USD. International payments accepted worldwide.

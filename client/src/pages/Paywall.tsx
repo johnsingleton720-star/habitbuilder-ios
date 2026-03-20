@@ -47,7 +47,7 @@ export default function Paywall() {
   usePageTitle("Choose Your Plan", "Choose the right HabitBuilder.pro plan. 1 habit free forever. Pro at $6 USD/month for unlimited habits, or Premium at $15 USD/month with advanced analytics and community features.");
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const { isFreeUser } = useSubscription();
+  const { isFreeUser, isInTrial, trialDaysRemaining } = useSubscription();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
@@ -180,7 +180,20 @@ export default function Paywall() {
             <Logo size="lg" />
           </div>
           
-          {isFreeUser ? (
+          {isInTrial ? (
+            <>
+              <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
+                <Crown className="w-5 h-5 text-primary" />
+                <span className="text-primary font-medium">Premium Trial — {trialDaysRemaining > 0 ? `${trialDaysRemaining} day${trialDaysRemaining !== 1 ? 's' : ''} remaining` : 'Ending soon'}</span>
+              </div>
+              <h1 className="font-display text-4xl font-bold text-foreground mb-3" data-testid="text-paywall-trial-heading">
+                Subscribe to Keep Premium
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                You're enjoying all Premium features during your free trial. Subscribe now so you don't lose access when it ends.
+              </p>
+            </>
+          ) : isFreeUser ? (
             <>
               <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -190,7 +203,7 @@ export default function Paywall() {
                 Unlock Unlimited Habits
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-                You can keep using 1 habit for free with 3 sessions per week. Upgrade for unlimited sessions, AI coaching insights, streaks, plan updates, and more.
+                Your trial has ended. You can keep using 1 habit for free with 3 sessions per week. Upgrade for unlimited sessions, AI coaching insights, streaks, plan updates, and more.
               </p>
             </>
           ) : (

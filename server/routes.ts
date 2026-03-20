@@ -17,6 +17,13 @@ import { checkContentSafety } from "./contentSafety";
 import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
 import { format } from "date-fns";
 
+function isTrialActive(user: { trialEndsAt?: Date | null; hasPaid?: boolean | null } | null | undefined): boolean {
+  if (!user) return false;
+  if (!user.trialEndsAt) return false;
+  if (user.hasPaid) return false;
+  return new Date(user.trialEndsAt) > new Date();
+}
+
 function getUserToday(timezone?: string | null): string {
   const tz = timezone || "UTC";
   try {
@@ -459,7 +466,7 @@ export async function registerRoutes(
       const { colorTheme } = validatedData;
       
       const user = await storage.getUser(userId);
-      const isPremium = user?.subscriptionTier === "premium" || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === "premium" || user?.isAdmin || isTrialActive(user);
       
       if (premiumThemes.includes(colorTheme) && !isPremium) {
         return res.status(403).json({ error: "This theme requires a Premium subscription" });
@@ -1388,8 +1395,8 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const user = await storage.getUser(userId);
 
       const tier = user?.subscriptionTier;
-      const isPaid = user?.hasPaid || user?.isAdmin;
-      if (!isPaid || (tier !== 'pro' && tier !== 'premium' && !user?.isAdmin)) {
+      const isPaid = user?.hasPaid || user?.isAdmin || isTrialActive(user);
+      if (!isPaid || (tier !== 'pro' && tier !== 'premium' && !user?.isAdmin && !isTrialActive(user))) {
         return res.json([]);
       }
 
@@ -1541,7 +1548,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       
       const existingHabits = await storage.getHabits(userId);
       const activeHabits = existingHabits.filter(h => !h.archived);
-      const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+      const hasPaidSubscription = (user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium')) || isTrialActive(user);
       const isAdmin = user?.isAdmin === true;
       
       if (!hasPaidSubscription && !isAdmin && activeHabits.length >= 1) {
@@ -1599,7 +1606,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       const existingHabits = await storage.getHabits(userId);
       const activeHabits = existingHabits.filter(h => !h.archived);
-      const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+      const hasPaidSubscription = (user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium')) || isTrialActive(user);
       const isAdmin = user?.isAdmin === true;
 
       if (!hasPaidSubscription && !isAdmin && activeHabits.length >= 1) {
@@ -1822,7 +1829,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
 
       // Check premium subscription
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium');
+      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium') || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Habit stacking requires a Premium subscription" });
       }
@@ -1911,7 +1918,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium');
+      const isPremium = user?.isAdmin || (user?.hasPaid && user?.subscriptionTier === 'premium') || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Habit stacking requires a Premium subscription" });
       }
@@ -3751,8 +3758,8 @@ Return JSON:
       const user = await storage.getUser(userId);
       const tier = user?.subscriptionTier;
       const isAdmin = user?.isAdmin === true;
-      const isPro = tier === 'pro' || tier === 'premium' || isAdmin;
-      const isPremium = tier === 'premium' || isAdmin;
+      const isPro = tier === 'pro' || tier === 'premium' || isAdmin || isTrialActive(user);
+      const isPremium = tier === 'premium' || isAdmin || isTrialActive(user);
 
       if (!isPro) return "";
 
@@ -4175,7 +4182,7 @@ REQUIREMENTS:
       }
 
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
 
       if (isFreeUser) {
         const userTz = user?.timezone;
@@ -4497,8 +4504,8 @@ REQUIREMENTS:
       const user = await storage.getUser(userId);
       const tier = user?.subscriptionTier;
       const isAdmin = user?.isAdmin === true;
-      const isPro = tier === 'pro' || tier === 'premium' || isAdmin;
-      const isPremium = tier === 'premium' || isAdmin;
+      const isPro = tier === 'pro' || tier === 'premium' || isAdmin || isTrialActive(user);
+      const isPremium = tier === 'premium' || isAdmin || isTrialActive(user);
 
       if (!isPro) {
         return res.status(403).json({
@@ -4716,7 +4723,7 @@ REQUIREMENTS:
       }
 
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
       if (isFreeUser) {
         return res.status(403).json({ 
           error: "paid_feature",
@@ -4943,7 +4950,7 @@ REQUIREMENTS:
 
       if (!archived) {
         const user = await storage.getUser(userId);
-        const hasPaidSubscription = user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium');
+        const hasPaidSubscription = (user?.hasPaid && (user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium')) || isTrialActive(user);
         const isAdmin = user?.isAdmin === true;
         if (!hasPaidSubscription && !isAdmin) {
           const allHabits = await storage.getHabits(userId);
@@ -5144,7 +5151,7 @@ REQUIREMENTS:
     try {
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
       
       if (!isFreeUser) {
         return res.json({ unlimited: true, used: 0, limit: 0 });
@@ -5186,7 +5193,7 @@ REQUIREMENTS:
       const { date, tasksCompleted, totalTasks, timeSpent, goalTime, notes, mood } = req.body;
 
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
       if (isFreeUser) {
         const now = new Date();
         const dayOfWeek = now.getDay();
@@ -5525,7 +5532,7 @@ REQUIREMENTS:
       }
 
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
       if (isFreeUser) {
         return res.status(403).json({ 
           error: "paid_feature",
@@ -5611,7 +5618,7 @@ Respond ONLY with valid JSON:
       }
 
       const user = await storage.getUser(userId);
-      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium';
+      const isFreeUser = !user?.hasPaid && user?.subscriptionTier !== 'pro' && user?.subscriptionTier !== 'premium' && !isTrialActive(user);
       if (isFreeUser) {
         return res.status(403).json({ 
           error: "paid_feature",
@@ -5872,7 +5879,7 @@ Return JSON:
       }
 
       const user = await storage.getUser(userId);
-      const isPro = user?.subscriptionTier === "pro" || user?.subscriptionTier === "premium" || user?.isAdmin;
+      const isPro = user?.subscriptionTier === "pro" || user?.subscriptionTier === "premium" || user?.isAdmin || isTrialActive(user);
       if (!isPro) {
         return res.status(403).json({ error: "Coaching follow-ups require a Pro or Premium subscription" });
       }
@@ -6100,8 +6107,11 @@ Return JSON with:
       
       const isAdmin = user?.isAdmin || false;
       
+      const trialActive = isTrialActive(user);
       const result = { 
         hasPaid: user?.hasPaid || isAdmin,
+        isTrialActive: trialActive,
+        trialEndsAt: user?.trialEndsAt ? user.trialEndsAt.toISOString() : null,
       };
       paymentStatusCache.set(userId, { result, timestamp: Date.now() });
       res.json(result);
@@ -6827,7 +6837,7 @@ Return JSON with:
       const user = await storage.getUser(userId);
       
       // Check if user has Premium subscription
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Voice notes require Premium subscription" });
       }
@@ -6878,7 +6888,7 @@ Return JSON with:
       const user = await storage.getUser(userId);
       
       // Check if user has Premium subscription
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Text-to-speech requires Premium subscription" });
       }
@@ -7277,7 +7287,7 @@ Tailor the plan to their frequency, time of day, and experience. If they've trie
       const user = await storage.getUser(userId);
       
       // Check for Premium subscription
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Editable templates require Premium subscription" });
       }
@@ -7311,7 +7321,7 @@ Tailor the plan to their frequency, time of day, and experience. If they've trie
       const user = await storage.getUser(userId);
       
       // Check for Premium subscription
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Editable templates require Premium subscription" });
       }
@@ -7677,7 +7687,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const user = await storage.getUser(userId);
       
       // Check for Premium subscription
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Advanced Analytics require Premium subscription" });
       }
@@ -7842,7 +7852,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "AI Reports require Premium subscription" });
       }
@@ -7891,7 +7901,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "CSV Export requires Premium subscription" });
       }
@@ -7924,7 +7934,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Accountability Partners require Premium subscription" });
       }
@@ -7961,7 +7971,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Accountability Partners require Premium subscription" });
       }
@@ -8452,7 +8462,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Mood insights require Premium subscription" });
       }
@@ -8616,7 +8626,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const habitId = parseInt(req.params.habitId);
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Mood reports require Premium subscription" });
       }
@@ -8725,7 +8735,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const habitId = parseInt(req.params.id);
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Streak protection requires Premium subscription" });
       }
@@ -9039,7 +9049,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
       
-      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || user?.subscriptionTier === 'pro';
+      const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin || user?.subscriptionTier === 'pro' || isTrialActive(user);
       if (!isPremium) {
         return res.status(403).json({ error: "Daily challenges require Pro or Premium subscription" });
       }
@@ -9455,6 +9465,10 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     }
     
     // If hasPaid is true but tier is 'free', treat as 'pro' (handles webhook sync delays)
+    if (isTrialActive(u)) {
+      return { tier: 'premium', isAdmin: u.isAdmin, hasPaid: false };
+    }
+    
     let effectiveTier = u.subscriptionTier || 'free';
     if (u.hasPaid && effectiveTier === 'free') {
       effectiveTier = 'pro';

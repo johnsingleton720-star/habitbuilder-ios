@@ -112,18 +112,41 @@ const TIER_FEATURES: Record<SubscriptionTier, SubscriptionFeatures> = {
 export function useSubscription() {
   const { user } = useAuth();
   
-  const storedTier: SubscriptionTier = (user?.subscriptionTier as SubscriptionTier) || 'free';
-  const baseTier: SubscriptionTier = user?.hasPaid && storedTier === 'free' ? 'pro' : storedTier;
+  const rawTrialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+  const trialEndsAt = rawTrialEndsAt && !isNaN(rawTrialEndsAt.getTime()) ? rawTrialEndsAt : null;
+  const now = new Date();
   const hasPaidSubscription = user?.hasPaid === true;
-  
-  const effectiveTier: SubscriptionTier = hasPaidSubscription ? baseTier : 'free';
-  
   const isAdmin = user?.isAdmin === true;
+  
+  const isInTrial = !!(
+    trialEndsAt &&
+    !hasPaidSubscription &&
+    trialEndsAt > now
+  );
+  
+  const trialExpired = !!(
+    trialEndsAt &&
+    !hasPaidSubscription &&
+    trialEndsAt <= now
+  );
+  
+  const trialDaysRemaining = isInTrial && trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  const storedTier: SubscriptionTier = (user?.subscriptionTier as SubscriptionTier) || 'free';
+  const baseTier: SubscriptionTier = hasPaidSubscription && storedTier === 'free' ? 'pro' : storedTier;
+
+  const effectiveTier: SubscriptionTier = isInTrial
+    ? 'premium'
+    : hasPaidSubscription
+      ? baseTier
+      : 'free';
+  
   const isActive = true;
   const features = TIER_FEATURES[effectiveTier];
   const isFreeUser = effectiveTier === 'free' && !isAdmin;
   
-  // Admin users get access to ALL features regardless of tier
   const canUseFeature = (feature: keyof SubscriptionFeatures): boolean => {
     if (isAdmin) return true;
     return features[feature] === true || (typeof features[feature] === 'number' && features[feature] > 0);
@@ -148,16 +171,16 @@ export function useSubscription() {
     tier: effectiveTier,
     baseTier,
     isActive,
-    isInTrial: false,
-    trialExpired: false,
-    trialDaysRemaining: 0,
-    trialEndsAt: null,
+    isInTrial,
+    trialExpired,
+    trialDaysRemaining,
+    trialEndsAt,
     features,
     canUseFeature,
     canAddMoreHabits,
     getUpgradeMessage,
-    isPro: baseTier === 'pro' || baseTier === 'premium' || isAdmin,
-    isPremium: baseTier === 'premium' || isAdmin,
+    isPro: effectiveTier === 'pro' || effectiveTier === 'premium' || isAdmin,
+    isPremium: effectiveTier === 'premium' || isAdmin,
     isAdmin,
     isFreeUser,
   };
