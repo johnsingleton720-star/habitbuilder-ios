@@ -49,4 +49,281 @@ workflows:
         script: npx cap add ios || true
       - name: Sync Capacitor
         script: |
-          npx cap sync ios 2>&1 || echo
+          npx cap sync ios 2>&1 || echo "cap sync had warnings (expected - Podfile will be fixed next)"
+          echo ""
+          echo "=== Verifying Cordova plugin files ==="
+          if [ -d "ios/App/App/plugins" ]; then
+            ls -la ios/App/App/plugins/
+            find ios/App/App/plugins/ -name "*purchase*" -o -name "*Purchase*" -o -name "*store*" -o -name "*Store*" 2>/dev/null
+          else
+            echo "WARNING: No plugins directory found"
+          fi
+          echo ""
+          echo "=== Checking capacitor.cordova.podspec ==="
+          cat ios/App/capacitor.cordova.podspec 2>/dev/null || echo "No cordova podspec found"
+          echo ""
+          echo "=== Cordova plugin list ==="
+          find ios/ -path "*/cordova-plugin-purchase*" 2>/dev/null | head -20
+        ignore_failure: true
+      - name: Fix Podfile and install pods
+        script: |
+          cd ios/App
+          sed -i '' "s/platform :ios, '.*'/platform :ios, '16.0'/" Podfile
+          ruby -i -pe '
+            if /assertDeploymentTarget\(installer\)/ =~ $_
+              $_ += "    installer.pods_project.targets.each do |target|\n"
+              $_ += "      target.build_configurations.each do |config|\n"
+              $_ += "        config.build_settings[\"CODE_SIGNING_ALLOWED\"] = \"NO\"\n"
+              $_ += "        config.build_settings[\"CODE_SIGNING_REQUIRED\"] = \"NO\"\n"
+              $_ += "      end\n"
+              $_ += "    end\n"
+            end
+          ' Podfile
+          ruby << 'PODRUBY'
+          path = "Podfile"
+          content = File.read(path)
+          unless content.include?("FBSDKCoreKit")
+            if content.include?("target 'App' do")
+              content.sub!(/target 'App' do\n/, "target 'App' do\n  pod 'FBSDKCoreKit'\n")
+              puts "Added FBSDKCoreKit after target 'App' do"
+            else
+              content.sub!(/^end\s*\z/, "  pod 'FBSDKCoreKit'\nend\n")
+              puts "Added FBSDKCoreKit via fallback (before final end)"
+            end
+            raise "FBSDKCoreKit insertion failed - check Podfile format" unless content.include?("FBSDKCoreKit")
+            File.write(path, content)
+          else
+            puts "FBSDKCoreKit already in Podfile"
+          end
+          PODRUBY
+          echo "=== Final Podfile ==="
+          cat Podfile
+          echo ""
+          echo "=== Fixing podspec name (CapacitorAuthSessionPlugin -> CapacitorAuthSession) ==="
+          cp ../../plugins/capacitor-auth-session/CapacitorAuthSessionPlugin.podspec ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
+          sed -i '' "s/s.name = 'CapacitorAuthSessionPlugin'/s.name = 'CapacitorAuthSession'/" ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
+          echo "=== Installing pods ==="
+          pod install
+      - name: Fix App deployment target
+        script: |
+          cd ios/App
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
+          echo "=== Deployment targets after fix ==="
+          grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
+      - name: Set iOS version to 1.2.2
+        script: |
+          cd ios/App
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.2" App/Info.plist
+          ruby << 'VERSIONRUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('App.xcodeproj')
+          project.targets.each do |target|
+            next unless target.name == 'App'
+            target.build_configurations.each do |config|
+              config.build_settings['MARKETING_VERSION'] = '1.2.2'
+              puts "Set MARKETING_VERSION = 1.2.2 for #{config.name}"
+            end
+          end
+          project.save
+          puts "Xcode project saved with version 1.2.2"
+          VERSIONRUBY
+          echo "=== Verify Info.plist ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          echo "=== Verify project.pbxproj ==="
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj
+      - name: Add capabilities (IAP, Push Notifications) and StoreKit framework
+        script: |
+          cd ios/App
+
+          cat > App/App.entitlements << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>aps-environment</key>
+            <string>production</string>
+          </dict>
+          </plist>
+          EOF
+
+          ruby << 'PUSHRUBY'
+          path = "App/AppDelegate.swift"
+          content = File.read(path)
+          if content.include?("capacitorDidRegisterForRemoteNotifications")
+            puts "Push notification delegate methods already present in AppDelegate.swift"
+          else
+            push_methods = <<~SWIFT
+
+              func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+                  NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+              }
+
+              func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+                  NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+              }
+            SWIFT
+            content.sub!(/\n\}\s*\z/, "\n#{push_methods}\n}\n")
+            File.write(path, content)
+            puts "Added push notification delegate methods to AppDelegate.swift"
+          end
+          PUSHRUBY
+
+          ruby << 'FBRUBY'
+          path = "App/AppDelegate.swift"
+          content = File.read(path)
+          if content.include?("FBSDKCoreKit")
+            puts "Facebook SDK already initialized in AppDelegate.swift"
+          else
+            content.sub!(/^import Capacitor/, "import Capacitor\nimport FBSDKCoreKit\nimport AppTrackingTransparency")
+            fb_init = "        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)\n" \
+                      "        if #available(iOS 14, *) {\n" \
+                      "            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {\n" \
+                      "                ATTrackingManager.requestTrackingAuthorization { _ in }\n" \
+                      "            }\n" \
+                      "        }\n"
+            content.sub!(/(\s*\/\/ Override point for customization after application launch\.\s*\n)(\s*return true)/) do
+              "#{$1}#{fb_init}#{$2}"
+            end
+            File.write(path, content)
+            puts "Added Facebook SDK init and ATT prompt to AppDelegate.swift"
+          end
+          FBRUBY
+
+          echo "=== AppDelegate.swift ==="
+          cat App/AppDelegate.swift
+
+          ruby << 'RUBYEOF'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('App.xcodeproj')
+          project.targets.each do |target|
+            next unless target.name == 'App'
+            target.build_configurations.each do |config|
+              config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
+            end
+            puts "Set CODE_SIGN_ENTITLEMENTS for all configurations"
+            frameworks_group = project.frameworks_group
+            storekit_ref = project.files.find { |f| f.path == 'StoreKit.framework' }
+            unless storekit_ref
+              storekit_ref = frameworks_group.new_reference('System/Library/Frameworks/StoreKit.framework', :sdk_root)
+              target.frameworks_build_phase.add_file_reference(storekit_ref, true)
+              puts "Added StoreKit.framework to project"
+            else
+              puts "StoreKit.framework already in project"
+            end
+          end
+          project.save
+          puts "Xcode project updated successfully"
+          RUBYEOF
+
+          echo ""
+          echo "=== Verifying entitlements file ==="
+          cat App/App.entitlements
+          echo ""
+          echo "=== Verifying StoreKit in project ==="
+          grep -c "StoreKit" App.xcodeproj/project.pbxproj && echo "StoreKit references found" || echo "WARNING: No StoreKit in project"
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "pro.habitbuilder.app" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Set app icon
+        script: |
+          if [ -f "client/public/playstore-icon.png" ]; then
+            mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
+            cp client/public/playstore-icon.png ios/App/App/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+            cat > ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json << 'ICONEOF'
+          {
+            "images": [
+              {
+                "filename": "icon-1024.png",
+                "idiom": "universal",
+                "platform": "ios",
+                "size": "1024x1024"
+              }
+            ],
+            "info": {
+              "author": "xcode",
+              "version": 1
+            }
+          }
+          ICONEOF
+          fi
+      - name: Add privacy usage descriptions
+        script: |
+          cd ios/App/App
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'HabitBuilder needs camera access to take a profile photo.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'HabitBuilder needs photo library access to select a profile photo.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'HabitBuilder needs microphone access for voice notes during coaching sessions.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" Info.plist 2>/dev/null || true
+          echo "=== Background Modes ==="
+          /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" Info.plist 2>/dev/null || echo "No background modes"
+          /usr/libexec/PlistBuddy -c "Add :FacebookAppID string ${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookAppID ${FACEBOOK_APP_ID}" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FacebookClientToken string ${FACEBOOK_CLIENT_TOKEN}" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookClientToken ${FACEBOOK_CLIENT_TOKEN}" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FacebookDisplayName string HabitBuilder" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookDisplayName HabitBuilder" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSUserTrackingUsageDescription string 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :NSUserTrackingUsageDescription 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:0 string fbapi" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:0 fbapi" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:1 fb-messenger-share-api" Info.plist 2>/dev/null || true
+          echo "=== Privacy descriptions ==="
+          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" Info.plist
+          echo "=== Facebook SDK config ==="
+          /usr/libexec/PlistBuddy -c "Print :FacebookAppID" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :FacebookDisplayName" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSUserTrackingUsageDescription" Info.plist
+      - name: Register URL scheme for deep links
+        script: |
+          cd ios/App/App
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string habitbuilder" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1 dict" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string fb${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string com.facebook.Facebook" Info.plist 2>/dev/null || true
+          echo "=== Registered URL Schemes ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
+      - name: Set version and build number
+        script: |
+          cd ios/App
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.2" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.2" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.2/g' App.xcodeproj/project.pbxproj
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
+          echo "=== Verify Info.plist ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist
+          echo "=== Verify project.pbxproj ==="
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
+      - name: Build and export IPA
+        script: |
+          cd ios/App
+          echo "=== Final version check before build ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -3
+          cd /Users/builder/clone
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
