@@ -2,10 +2,16 @@
   "name": "capacitor-auth-session",
   "version": "1.0.0",
   "description": "Capacitor plugin for ASWebAuthenticationSession with ephemeral session support",
-  "main": "dist/plugin.cjs.js",
+  "main": "dist/esm/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
-  "unpkg": "dist/plugin.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
   "files": [
     "dist/",
     "ios/",
