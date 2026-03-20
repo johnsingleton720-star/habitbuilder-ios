@@ -56,6 +56,17 @@ workflows:
               $_ += "    end\n"
             end
           ' Podfile
+          ruby << 'PODRUBY'
+          path = "Podfile"
+          content = File.read(path)
+          unless content.include?("FBSDKCoreKit")
+            content.sub!(/target 'App' do\n/, "target 'App' do\n  pod 'FBSDKCoreKit'\n")
+            File.write(path, content)
+            puts "Added FBSDKCoreKit pod to Podfile"
+          else
+            puts "FBSDKCoreKit already in Podfile"
+          end
+          PODRUBY
           echo "=== Final Podfile ==="
           cat Podfile
           echo ""
@@ -128,6 +139,29 @@ workflows:
             puts "Added push notification delegate methods to AppDelegate.swift"
           end
           PUSHRUBY
+          # Inject Facebook SDK initialization and ATT prompt into AppDelegate
+          ruby << 'FBRUBY'
+          path = "App/AppDelegate.swift"
+          content = File.read(path)
+          if content.include?("FacebookCore")
+            puts "Facebook SDK already initialized in AppDelegate.swift"
+          else
+            # Add imports after existing Capacitor import
+            content.sub!(/^import Capacitor/, "import Capacitor\nimport FacebookCore\nimport AppTrackingTransparency")
+            # Add Facebook SDK init + ATT request inside didFinishLaunchingWithOptions before return true
+            fb_init = "        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)\n" \
+                      "        if #available(iOS 14, *) {\n" \
+                      "            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {\n" \
+                      "                ATTrackingManager.requestTrackingAuthorization { _ in }\n" \
+                      "            }\n" \
+                      "        }\n"
+            content.sub!(/(\s*\/\/ Override point for customization after application launch\.\s*\n)(\s*return true)/) do
+              "#{$1}#{fb_init}#{$2}"
+            end
+            File.write(path, content)
+            puts "Added Facebook SDK init and ATT prompt to AppDelegate.swift"
+          end
+          FBRUBY
           echo "=== AppDelegate.swift ==="
           cat App/AppDelegate.swift
 
@@ -206,10 +240,27 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" Info.plist 2>/dev/null || true
           echo "=== Background Modes ==="
           /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" Info.plist 2>/dev/null || echo "No background modes"
+          # Facebook SDK configuration
+          /usr/libexec/PlistBuddy -c "Add :FacebookAppID string ${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookAppID ${FACEBOOK_APP_ID}" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FacebookClientToken string ${FACEBOOK_CLIENT_TOKEN}" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookClientToken ${FACEBOOK_CLIENT_TOKEN}" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FacebookDisplayName string HabitBuilder" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :FacebookDisplayName HabitBuilder" Info.plist
+          # App Tracking Transparency usage description (required for iOS 14.5+)
+          /usr/libexec/PlistBuddy -c "Add :NSUserTrackingUsageDescription string 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist 2>/dev/null || true
+          # Facebook query schemes (required for SDK)
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:0 string fbapi" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || true
           echo "=== Privacy descriptions ==="
           /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
           /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
           /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" Info.plist
+          echo "=== Facebook SDK config ==="
+          /usr/libexec/PlistBuddy -c "Print :FacebookAppID" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :FacebookDisplayName" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :NSUserTrackingUsageDescription" Info.plist
       - name: Register URL scheme for deep links
         script: |
           cd ios/App/App
@@ -218,6 +269,11 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string habitbuilder" Info.plist 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
+          # Facebook URL scheme (required for deep linking from Meta ads)
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1 dict" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string fb${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string com.facebook.Facebook" Info.plist 2>/dev/null || true
           echo "=== Registered URL Schemes ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
       - name: Set version and build number
