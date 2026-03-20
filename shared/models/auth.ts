@@ -35,7 +35,7 @@ export const users = pgTable("users", {
   darkModeSchedule: jsonb("dark_mode_schedule").$type<{ enabled: boolean; startHour: number; endHour: number }>(), // Auto dark mode
   emailReminders: boolean("email_reminders").default(true),
   timezone: varchar("timezone"),
-  trialEndsAt: timestamp("trial_ends_at"), // 2-day trial period end date
+  trialEndsAt: timestamp("trial_ends_at"), // 7-day trial period end date
   
   // Premium features
   streakFreezesAllowed: varchar("streak_freezes_allowed").default("2"), // Freezes allowed per month

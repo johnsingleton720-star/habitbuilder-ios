@@ -46,6 +46,9 @@ Preferred communication style: Simple, everyday language.
 -   **Auto-Restore on Re-subscription**: Archived habits are automatically restored upon re-subscription.
 -   **Unarchive Protection**: Free users cannot unarchive habits if they already have 1 active habit.
 
+### Free Trial
+-   **7-Day Premium Trial**: All new users (except the owner/admin) automatically receive a 7-day free trial of all Premium features upon signup. The `trialEndsAt` timestamp is set in `upsertUser` on INSERT only (never on conflict update). The `isTrialActive()` helper in `server/routes.ts` checks `trialEndsAt > now && !hasPaid`. All backend route guards (`isPremium`, `isPro`, `hasPaidSubscription`, `isFreeUser`) include trial awareness. Frontend `useSubscription` hook sets `effectiveTier = 'premium'` during active trial. The `TrialBanner` component on the Dashboard shows countdown during trial and upgrade prompt after expiry. The `DowngradeHabitPicker` triggers automatically when the trial ends and the user has more than 1 active habit.
+
 ### Payment System
 -   **Subscription Tiers**: Free, Pro, Premium, managed via Stripe for web/Android and Apple In-App Purchase for iOS.
 -   **Free Tier**: Permanent free plan with 1 habit limit and basic features.

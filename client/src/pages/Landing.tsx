@@ -304,7 +304,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
           </Badge>
           <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-pricing-heading">Simple, transparent pricing</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-            Start with a 3-day free trial of all Premium features. Then keep 1 habit free forever, or subscribe for unlimited habits and full AI coaching.
+            Start with a 7-day free trial of all Premium features. Then keep 1 habit free forever, or subscribe for unlimited habits and full AI coaching.
           </p>
         </div>
 
@@ -340,14 +340,14 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   </div>
                 </div>
                 <h3 className="font-display text-xl font-bold" data-testid="text-plan-trial">Free Plan</h3>
-                <p className="text-sm text-muted-foreground mt-1">3-day Premium trial included</p>
+                <p className="text-sm text-muted-foreground mt-1">7-day Premium trial included</p>
                 <div className="mt-3">
                   <span className="text-4xl font-display font-bold">$0</span>
                 </div>
               </div>
               <ul className="space-y-2.5 flex-1">
                 {[
-                  "3-day trial with all Premium features",
+                  "7-day trial with all Premium features",
                   "1 habit free forever after trial",
                   "First AI action plan",
                   "Habit templates library",
@@ -494,7 +494,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          3-day free Premium trial, then 1 habit free forever. No credit card required.
+          7-day free Premium trial, then 1 habit free forever. No credit card required.
         </p>
         <p className="text-center text-xs text-muted-foreground mt-2">
           Prices shown in USD. International payments accepted worldwide.
