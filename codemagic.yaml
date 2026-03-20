@@ -256,11 +256,15 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :FacebookDisplayName string HabitBuilder" Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Set :FacebookDisplayName HabitBuilder" Info.plist
           # App Tracking Transparency usage description (required for iOS 14.5+)
-          /usr/libexec/PlistBuddy -c "Add :NSUserTrackingUsageDescription string 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSUserTrackingUsageDescription string 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :NSUserTrackingUsageDescription 'HabitBuilder uses this to deliver relevant ads and measure their effectiveness.'" Info.plist
           # Facebook query schemes (required for SDK)
+          # iOS project is regenerated fresh each build, so fixed indexes are safe
           /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:0 string fbapi" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:0 string fbapi" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:0 fbapi" Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:1 fb-messenger-share-api" Info.plist 2>/dev/null || true
           echo "=== Privacy descriptions ==="
           /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
           /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
