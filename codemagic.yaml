@@ -14,7 +14,28 @@ workflows:
         script: npm install
       - name: Build web app
         script: |
-          sed -i '' 's|"main": "dist/plugin.cjs.js"|"main": "dist/esm/index.js"|' plugins/capacitor-auth-session/package.json
+          mkdir -p plugins/capacitor-auth-session/dist/esm
+          python3 << 'PYEOF'
+          import os
+          os.makedirs('plugins/capacitor-auth-session/dist/esm', exist_ok=True)
+          open('plugins/capacitor-auth-session/dist/esm/index.js', 'w').write(
+            "import { registerPlugin } from '@capacitor/core';\n"
+            "const AuthSession = registerPlugin('AuthSession', {\n"
+            "    web: () => import('./web').then((m) => new m.AuthSessionWeb()),\n"
+            "});\n"
+            "export { AuthSession };\n"
+          )
+          open('plugins/capacitor-auth-session/dist/esm/web.js', 'w').write(
+            "import { WebPlugin } from '@capacitor/core';\n"
+            "export class AuthSessionWeb extends WebPlugin {\n"
+            "    async start(options) {\n"
+            "        window.location.href = options.url;\n"
+            "        return { url: options.url };\n"
+            "    }\n"
+            "}\n"
+          )
+          print('Plugin dist files created successfully')
+          PYEOF
           npm run build
       - name: Set app version
         script: |
