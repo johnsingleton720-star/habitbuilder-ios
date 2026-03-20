@@ -1,0 +1,184 @@
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 13 modules transformed.
+✗ Build failed in 610ms
+[commonjs--resolver] Failed to resolve entry for package "capacitor-auth-session". The package may have incorrect main/module/exports specified in its package.json.
+    at packageEntryFailure (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32815:32)
+    at resolvePackageEntry (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32812:2)
+    at tryNodeResolve (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32715:70)
+    at Object.handler (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32554:16)
+    at Object.handler (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:33705:13)
+    at <anonymous> (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:22494:40)
+    at async PluginDriver.hookFirstAndGetPlugin (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:22376:28)
+    at async resolveId (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:20852:26)
+    at async ModuleLoader.ModuleLoader.resolveId (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:21289:15)
+    at async Object.resolveId (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:4154:21) {
+  code: 'PLUGIN_ERROR',
+  pluginCode: 'ERR_RESOLVE_PACKAGE_ENTRY_FAIL',
+  plugin: 'commonjs--resolver',
+  hook: 'resolveId',
+  watchFiles: [
+    '/Users/builder/clone/client/index.html',
+    '/Users/builder/clone/client/src/main.tsx',
+    '/Users/builder/clone/package.json',
+    '/Users/builder/clone/node_modules/react-dom/client.js',
+    '/Users/builder/clone/node_modules/react/jsx-runtime.js',
+    '/Users/builder/clone/client/src/App.tsx',
+    '/Users/builder/clone/client/src/index.css',
+    '/Users/builder/clone/node_modules/react/cjs/react-jsx-runtime.production.min.js',
+    '/Users/builder/clone/node_modules/react-dom/index.js',
+    '/Users/builder/clone/node_modules/lucide-react/dist/esm/lucide-react.js',
+    '/Users/builder/clone/node_modules/@tanstack/react-query/build/modern/index.js',
+    '/Users/builder/clone/client/src/lib/queryClient.ts',
+    '/Users/builder/clone/node_modules/@capacitor/browser/dist/esm/index.js',
+    '/Users/builder/clone/client/src/components/ThemeProvider.tsx',
+    '/Users/builder/clone/node_modules/react/index.js',
+    '/Users/builder/clone/node_modules/@capacitor/app/dist/esm/index.js',
+    '/Users/builder/clone/client/src/hooks/use-auth.ts',
+    '/Users/builder/clone/client/src/components/ui/toaster.tsx',
+    '/Users/builder/clone/client/src/hooks/use-toast.ts',
+    '/Users/builder/clone/client/src/components/ui/tooltip.tsx',
+    '/Users/builder/clone/client/src/hooks/use-payment.ts',
+    '/Users/builder/clone/client/src/hooks/use-tracking.ts',
+    '/Users/builder/clone/client/src/hooks/use-version-check.tsx',
+    '/Users/builder/clone/client/src/hooks/use-push-notifications.ts',
+    '/Users/builder/clone/client/src/components/PageTransition.tsx',
+    '/Users/builder/clone/client/src/pages/not-found.tsx',
+    '/Users/builder/clone/client/src/lib/platform.ts',
+    '/Users/builder/clone/node_modules/wouter/esm/index.js',
+    '/Users/builder/clone/client/src/pages/PreSignupOnboarding.tsx',
+    '/Users/builder/clone/client/src/pages/Landing.tsx',
+    '/Users/builder/clone/client/src/pages/Dashboard.tsx',
+    '/Users/builder/clone/client/src/pages/AdminEmail.tsx',
+    '/Users/builder/clone/client/src/pages/AdminFeedback.tsx',
+    '/Users/builder/clone/client/src/pages/Paywall.tsx',
+    '/Users/builder/clone/client/src/pages/HabitDetail.tsx',
+    '/Users/builder/clone/client/src/pages/CoachChat.tsx',
+    '/Users/builder/clone/client/src/pages/Analytics.tsx',
+    '/Users/builder/clone/client/src/pages/Community.tsx',
+    '/Users/builder/clone/client/src/pages/PublicTemplates.tsx',
+    '/Users/builder/clone/client/src/pages/BlogList.tsx',
+    '/Users/builder/clone/client/src/components/CookieConsent.tsx',
+    '/Users/builder/clone/client/src/pages/StackDetail.tsx',
+    '/Users/builder/clone/client/src/components/TermsOfServiceModal.tsx',
+    '/Users/builder/clone/client/src/components/MobileBottomNav.tsx',
+    '/Users/builder/clone/client/src/pages/BlogArticle.tsx',
+    '/Users/builder/clone/client/src/pages/Progress.tsx',
+    '/Users/builder/clone/client/src/pages/Accountability.tsx',
+    '/Users/builder/clone/client/src/pages/TermsOfService.tsx',
+    '/Users/builder/clone/client/src/pages/DeleteAccount.tsx',
+    '/Users/builder/clone/client/src/pages/About.tsx',
+    '/Users/builder/clone/client/src/pages/PrivacyPolicy.tsx',
+    '/Users/builder/clone/client/src/pages/Account.tsx',
+    '/Users/builder/clone/client/src/pages/Journal.tsx',
+    '/Users/builder/clone/client/src/pages/Resources.tsx',
+    '/Users/builder/clone/client/src/pages/MoodTracker.tsx',
+    '/Users/builder/clone/client/src/pages/SignedOut.tsx',
+    '/Users/builder/clone/client/src/pages/AcceptInvite.tsx',
+    '/Users/builder/clone/client/src/pages/DailyPlanner.tsx',
+    '/Users/builder/clone/client/src/pages/FocusTimer.tsx',
+    '/Users/builder/clone/client/src/pages/Goals.tsx',
+    '/Users/builder/clone/client/src/lib/auth-flow.ts',
+    '/Users/builder/clone/plugins/capacitor-auth-session/package.json'
+  ]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 13 modules transformed.
+✗ Build failed in 610ms
+[commonjs--resolver] Failed to resolve entry for package "capacitor-auth-session". The package may have incorrect main/module/exports specified in its package.json.
+    at packageEntryFailure (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32815:32)
+    at resolvePackageEntry (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32812:2)
+    at tryNodeResolve (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32715:70)
+    at Object.handler (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:32554:16)
+    at Object.handler (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:33705:13)
+    at <anonymous> (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:22494:40)
+    at async PluginDriver.hookFirstAndGetPlugin (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:22376:28)
+    at async resolveId (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:20852:26)
+    at async ModuleLoader.ModuleLoader.resolveId (/Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:21289:15)
+    at async Object.resolveId (/Users/builder/clone/node_modules/vite/dist/node/chunks/config.js:4154:21) {
+  code: 'PLUGIN_ERROR',
+  pluginCode: 'ERR_RESOLVE_PACKAGE_ENTRY_FAIL',
+  plugin: 'commonjs--resolver',
+  hook: 'resolveId',
+  watchFiles: [
+    '/Users/builder/clone/client/index.html',
+    '/Users/builder/clone/client/src/main.tsx',
+    '/Users/builder/clone/package.json',
+    '/Users/builder/clone/node_modules/react-dom/client.js',
+    '/Users/builder/clone/node_modules/react/jsx-runtime.js',
+    '/Users/builder/clone/client/src/App.tsx',
+    '/Users/builder/clone/client/src/index.css',
+    '/Users/builder/clone/node_modules/react/cjs/react-jsx-runtime.production.min.js',
+    '/Users/builder/clone/node_modules/react-dom/index.js',
+    '/Users/builder/clone/node_modules/lucide-react/dist/esm/lucide-react.js',
+    '/Users/builder/clone/node_modules/@tanstack/react-query/build/modern/index.js',
+    '/Users/builder/clone/client/src/lib/queryClient.ts',
+    '/Users/builder/clone/node_modules/@capacitor/browser/dist/esm/index.js',
+    '/Users/builder/clone/client/src/components/ThemeProvider.tsx',
+    '/Users/builder/clone/node_modules/react/index.js',
+    '/Users/builder/clone/node_modules/@capacitor/app/dist/esm/index.js',
+    '/Users/builder/clone/client/src/hooks/use-auth.ts',
+    '/Users/builder/clone/client/src/components/ui/toaster.tsx',
+    '/Users/builder/clone/client/src/hooks/use-toast.ts',
+    '/Users/builder/clone/client/src/components/ui/tooltip.tsx',
+    '/Users/builder/clone/client/src/hooks/use-payment.ts',
+    '/Users/builder/clone/client/src/hooks/use-tracking.ts',
+    '/Users/builder/clone/client/src/hooks/use-version-check.tsx',
+    '/Users/builder/clone/client/src/hooks/use-push-notifications.ts',
+    '/Users/builder/clone/client/src/components/PageTransition.tsx',
+    '/Users/builder/clone/client/src/pages/not-found.tsx',
+    '/Users/builder/clone/client/src/lib/platform.ts',
+    '/Users/builder/clone/node_modules/wouter/esm/index.js',
+    '/Users/builder/clone/client/src/pages/PreSignupOnboarding.tsx',
+    '/Users/builder/clone/client/src/pages/Landing.tsx',
+    '/Users/builder/clone/client/src/pages/Dashboard.tsx',
+    '/Users/builder/clone/client/src/pages/AdminEmail.tsx',
+    '/Users/builder/clone/client/src/pages/AdminFeedback.tsx',
+    '/Users/builder/clone/client/src/pages/Paywall.tsx',
+    '/Users/builder/clone/client/src/pages/HabitDetail.tsx',
+    '/Users/builder/clone/client/src/pages/CoachChat.tsx',
+    '/Users/builder/clone/client/src/pages/Analytics.tsx',
+    '/Users/builder/clone/client/src/pages/Community.tsx',
+    '/Users/builder/clone/client/src/pages/PublicTemplates.tsx',
+    '/Users/builder/clone/client/src/pages/BlogList.tsx',
+    '/Users/builder/clone/client/src/components/CookieConsent.tsx',
+    '/Users/builder/clone/client/src/pages/StackDetail.tsx',
+    '/Users/builder/clone/client/src/components/TermsOfServiceModal.tsx',
+    '/Users/builder/clone/client/src/components/MobileBottomNav.tsx',
+    '/Users/builder/clone/client/src/pages/BlogArticle.tsx',
+    '/Users/builder/clone/client/src/pages/Progress.tsx',
+    '/Users/builder/clone/client/src/pages/Accountability.tsx',
+    '/Users/builder/clone/client/src/pages/TermsOfService.tsx',
+    '/Users/builder/clone/client/src/pages/DeleteAccount.tsx',
+    '/Users/builder/clone/client/src/pages/About.tsx',
+    '/Users/builder/clone/client/src/pages/PrivacyPolicy.tsx',
+    '/Users/builder/clone/client/src/pages/Account.tsx',
+    '/Users/builder/clone/client/src/pages/Journal.tsx',
+    '/Users/builder/clone/client/src/pages/Resources.tsx',
+    '/Users/builder/clone/client/src/pages/MoodTracker.tsx',
+    '/Users/builder/clone/client/src/pages/SignedOut.tsx',
+    '/Users/builder/clone/client/src/pages/AcceptInvite.tsx',
+    '/Users/builder/clone/client/src/pages/DailyPlanner.tsx',
+    '/Users/builder/clone/client/src/pages/FocusTimer.tsx',
+    '/Users/builder/clone/client/src/pages/Goals.tsx',
+    '/Users/builder/clone/client/src/lib/auth-flow.ts',
+    '/Users/builder/clone/plugins/capacitor-auth-session/package.json'
+  ]
+}
+
+Build failed :|
+Step 3 script `Build web app` exited with status code 1

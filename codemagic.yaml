@@ -13,7 +13,18 @@ workflows:
       - name: Install dependencies
         script: npm install
       - name: Build web app
-        script: npm run build
+        script: |
+          # Fix capacitor-auth-session package.json (dist/plugin.cjs.js doesn't exist, only ESM)
+          node -e "
+            const fs = require('fs');
+            const p = 'plugins/capacitor-auth-session/package.json';
+            const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+            pkg.main = 'dist/esm/index.js';
+            pkg.exports = { '.': { import: './dist/esm/index.js', require: './dist/esm/index.js', default: './dist/esm/index.js' } };
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2));
+            console.log('Patched capacitor-auth-session package.json');
+          "
+          npm run build
       - name: Set app version
         script: |
           sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.1"/' package.json
