@@ -101,6 +101,9 @@ workflows:
           echo "=== Final Podfile ==="
           cat Podfile
           echo ""
+          echo "=== Fixing podspec name (CapacitorAuthSessionPlugin -> CapacitorAuthSession) ==="
+          cp ../../plugins/capacitor-auth-session/CapacitorAuthSessionPlugin.podspec ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
+          sed -i '' "s/s.name = 'CapacitorAuthSessionPlugin'/s.name = 'CapacitorAuthSession'/" ../../plugins/capacitor-auth-session/CapacitorAuthSession.podspec
           echo "=== Installing pods ==="
           pod install
       - name: Fix App deployment target
