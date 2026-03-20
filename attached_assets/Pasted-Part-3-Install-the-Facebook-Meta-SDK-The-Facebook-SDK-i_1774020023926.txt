@@ -1,0 +1,77 @@
+Part 3: Install the Facebook (Meta) SDK
+The Facebook SDK is the tracking code that sends event data (installs, purchases, sessions) from the app back to Meta. This must be integrated into the app code by the developer.
+iOS Setup
+☐
+Add Facebook SDK via Swift Package Manager or CocoaPods
+CocoaPods: add pod 'FacebookSDK' to your Podfile. SPM: add the Facebook SDK repository URL in Xcode.
+☐
+Configure Info.plist with the App ID and Client Token
+Add FacebookAppID, FacebookClientToken, and FacebookDisplayName entries.
+☐
+Initialize the SDK in AppDelegate
+Call ApplicationDelegate.shared.application() in didFinishLaunchingWithOptions.
+☐
+Implement App Tracking Transparency (ATT) prompt
+Required for iOS 14.5+. Users must opt in for full tracking. Without this, many events will not be logged.
+Android Setup
+☐
+Add Facebook SDK dependency to build.gradle
+Add implementation 'com.facebook.android:facebook-android-sdk:latest.release' to app-level build.gradle.
+☐
+Configure AndroidManifest.xml with App ID and Client Token
+Add meta-data entries for com.facebook.sdk.ApplicationId and com.facebook.sdk.ClientToken.
+☐
+Initialize the SDK in your Application class
+Call FacebookSdk.sdkInitialize() or let auto-initialization handle it.
+
+
+Part 4: Set Up Event Tracking (Installs & Purchases)
+Automatic Events (No Extra Code Needed)
+☐
+Verify automatic event logging is enabled
+Once the SDK is initialized, app installs, app launches, and session data are tracked automatically.
+☐
+Add the "App Events" product in the Developer Dashboard
+In your app's dashboard at developers.facebook.com, click "Add Product" and select App Events. Follow the quick setup.
+Purchase Tracking (Requires Code)
+☐
+Log purchase events with currency and value
+iOS: AppEvents.logEvent(.purchased, parameters: [.currency: "USD", .valueToSum: 19.99]). Android: Use the equivalent logPurchase method.
+☐
+Include all required parameters
+Currency (ISO 4217 code, e.g., "USD") and purchase amount are required. You can also pass content IDs, content type, and other optional parameters.
+☐
+Log other relevant standard events
+Consider tracking: AddToCart, InitiatedCheckout, Subscribe, StartTrial, CompleteRegistration, ViewContent. These improve Meta's ad optimization.
+Custom Events (Optional)
+☐
+Define any app-specific custom events
+If you have unique in-app actions not covered by standard events, create custom events. Keep names under 40 characters and avoid spaces.
+
+
+Part 5: Testing & Verification
+Testing Tools
+☐
+Use the App Ads Helper to validate your setup
+Go to developers.facebook.com/tools/app-ads-helper. Select your app and run diagnostics. This confirms SDK integration, events, and permissions.
+☐
+Use Test Events in Facebook Events Manager
+Events Manager > Test Events lets you fire events in real time from a test device and verify they appear correctly.
+☐
+Run a test app install campaign (small budget)
+Create a small App Installs campaign to confirm install events are attributed correctly in Ads Manager.
+☐
+Trigger a test purchase and verify in Events Manager
+After logging a purchase event, wait 24-48 hours for it to appear. Check Events Manager > App Events to confirm.
+☐
+Check Event Match Quality (EMQ) score
+In Events Manager, review EMQ for your app events. Higher scores mean better data matching for ad optimization.
+
+
+Important Notes
+iOS App Tracking Transparency: Users on iOS 14.5+ must opt in to tracking via the ATT prompt. Users who decline will not have their events logged by Meta. Implementing ATT properly is critical for data accuracy.
+GDPR/Privacy Compliance: If the app serves users in the EU, obtain consent before initializing the SDK. Use setAutoInitEnabled(false) to delay SDK initialization until consent is granted.
+CCPA (California): Use Meta's Limited Data Use flag to comply with CCPA requirements for California users.
+Keep the SDK Updated: Meta frequently updates the SDK. Running outdated versions can cause event tracking failures or data discrepancies.
+Data Latency: Events may take 24-48 hours to appear in Events Manager. Do not troubleshoot based on real-time expectations.
+Hash Sensitive Data: Any personal user information (email, phone) should be SHA256-hashed before being sent to Facebook.
