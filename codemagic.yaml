@@ -14,7 +14,28 @@ workflows:
         script: npm install
       - name: Build web app
         script: |
-          sed -i '' 's|"main": "dist/plugin.cjs.js"|"main": "dist/esm/index.js"|' plugins/capacitor-auth-session/package.json
+          mkdir -p plugins/capacitor-auth-session/dist/esm
+          python3 << 'PYEOF'
+          import os
+          os.makedirs('plugins/capacitor-auth-session/dist/esm', exist_ok=True)
+          open('plugins/capacitor-auth-session/dist/esm/index.js', 'w').write(
+            "import { registerPlugin } from '@capacitor/core';\n"
+            "const AuthSession = registerPlugin('AuthSession', {\n"
+            "    web: () => import('./web').then((m) => new m.AuthSessionWeb()),\n"
+            "});\n"
+            "export { AuthSession };\n"
+          )
+          open('plugins/capacitor-auth-session/dist/esm/web.js', 'w').write(
+            "import { WebPlugin } from '@capacitor/core';\n"
+            "export class AuthSessionWeb extends WebPlugin {\n"
+            "    async start(options) {\n"
+            "        window.location.href = options.url;\n"
+            "        return { url: options.url };\n"
+            "    }\n"
+            "}\n"
+          )
+          print('Plugin dist files created successfully')
+          PYEOF
           npm run build
       - name: Set app version
         script: |
@@ -111,7 +132,6 @@ workflows:
         script: |
           cd ios/App
 
-          # Create entitlements file with push notifications
           cat > App/App.entitlements << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -123,7 +143,6 @@ workflows:
           </plist>
           EOF
 
-          # Add required push notification delegate methods to AppDelegate.swift
           ruby << 'PUSHRUBY'
           path = "App/AppDelegate.swift"
           content = File.read(path)
@@ -145,7 +164,7 @@ workflows:
             puts "Added push notification delegate methods to AppDelegate.swift"
           end
           PUSHRUBY
-          # Inject Facebook SDK initialization and ATT prompt into AppDelegate
+
           ruby << 'FBRUBY'
           path = "App/AppDelegate.swift"
           content = File.read(path)
@@ -166,21 +185,19 @@ workflows:
             puts "Added Facebook SDK init and ATT prompt to AppDelegate.swift"
           end
           FBRUBY
+
           echo "=== AppDelegate.swift ==="
           cat App/AppDelegate.swift
 
-          # Add entitlements file and StoreKit framework to Xcode project
           ruby << 'RUBYEOF'
           require 'xcodeproj'
           project = Xcodeproj::Project.open('App.xcodeproj')
           project.targets.each do |target|
             next unless target.name == 'App'
-
             target.build_configurations.each do |config|
               config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
             end
             puts "Set CODE_SIGN_ENTITLEMENTS for all configurations"
-
             frameworks_group = project.frameworks_group
             storekit_ref = project.files.find { |f| f.path == 'StoreKit.framework' }
             unless storekit_ref
@@ -261,49 +278,3 @@ workflows:
           echo "=== Facebook SDK config ==="
           /usr/libexec/PlistBuddy -c "Print :FacebookAppID" Info.plist
           /usr/libexec/PlistBuddy -c "Print :FacebookDisplayName" Info.plist
-          /usr/libexec/PlistBuddy -c "Print :NSUserTrackingUsageDescription" Info.plist
-      - name: Register URL scheme for deep links
-        script: |
-          cd ios/App/App
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string habitbuilder" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string pro.habitbuilder.app" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1 dict" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string fb${FACEBOOK_APP_ID}" Info.plist 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string com.facebook.Facebook" Info.plist 2>/dev/null || true
-          echo "=== Registered URL Schemes ==="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
-      - name: Set version and build number
-        script: |
-          cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.1" App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.1/g' App.xcodeproj/project.pbxproj
-          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
-          echo "=== Verify Info.plist ==="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
-          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist
-          echo "=== Verify project.pbxproj ==="
-          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -5
-      - name: Build and export IPA
-        script: |
-          cd ios/App
-          echo "=== Final version check before build ==="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
-          grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -3
-          cd /Users/builder/clone
-          xcode-project build-ipa \
-            --workspace "ios/App/App.xcworkspace" \
-            --scheme "App"
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
