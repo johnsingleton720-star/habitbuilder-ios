@@ -51,6 +51,25 @@ const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frid
  * @param scheduleDays - Optional array of expected weekday names (e.g. ["monday","wednesday"]).
  *                       If provided, only those days are counted; other days are skipped over.
  */
+/** Subtract `days` calendar days from a YYYY-MM-DD string, returning a new YYYY-MM-DD string.
+ *  Pure string/arithmetic — no Date.toISOString() timezone dependency. */
+function subtractDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // Convert to UTC epoch (midnight UTC), subtract days, convert back
+  const epochMs = Date.UTC(y, m - 1, d) - days * 86400000;
+  const out = new Date(epochMs);
+  const yyyy = out.getUTCFullYear();
+  const mm = String(out.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(out.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Get the UTC day-of-week index (0=Sun) for a YYYY-MM-DD string. */
+function getDOW(dateStr: string): number {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
 function calcSimpleStreak(dailyPlans: any[], todayStr: string, scheduleDays?: string[] | null): number {
   const completedDates = new Set(
     dailyPlans.filter((p: any) => p.completed).map((p: any) => p.date as string)
@@ -61,16 +80,13 @@ function calcSimpleStreak(dailyPlans: any[], todayStr: string, scheduleDays?: st
     : null;
 
   let streak = 0;
-  const today = new Date(todayStr + "T00:00:00");
 
   for (let daysBack = 0; daysBack <= 1000; daysBack++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - daysBack);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = subtractDays(todayStr, daysBack);
 
     // Skip days not in the habit's schedule (they don't count for or against the streak)
     if (expectedDays) {
-      const dow = DAY_NAMES[d.getDay()];
+      const dow = DAY_NAMES[getDOW(dateStr)];
       if (!expectedDays.has(dow)) continue;
     }
 
@@ -1548,13 +1564,10 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
               dailyPlans.filter((p: any) => p.completed).map((p: any) => p.date as string)
             );
             let consecutiveMissed = 0;
-            const todayDate = new Date(today + "T00:00:00");
             for (let i = 0; i <= 60; i++) {
-              const d = new Date(todayDate);
-              d.setDate(todayDate.getDate() - i);
-              const dateStr = d.toISOString().split("T")[0];
+              const dateStr = subtractDays(today, i);
               if (expectedDays) {
-                const dow = DAY_NAMES[d.getDay()];
+                const dow = DAY_NAMES[getDOW(dateStr)];
                 if (!expectedDays.has(dow)) continue;
               }
               if (!completedDates.has(dateStr)) {
