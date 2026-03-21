@@ -19,7 +19,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
-import type { Habit, HabitTemplate, HabitStack } from "@shared/schema";
+import type { Habit, HabitTemplate, HabitStack, DailyPlan } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -761,8 +761,8 @@ export default function Dashboard() {
         })()}
 
         {/* ===== SECTION 1: TODAY ===== */}
-        <div data-tour="daily-action-center" className="section-group space-y-6">
-          <h2 className="section-title" data-testid="text-section-daily-focus">Today</h2>
+        <div data-tour="daily-action-center" className="space-y-4">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-daily-focus">Today</p>
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -799,24 +799,24 @@ export default function Dashboard() {
               onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
               data-testid="button-toggle-habits-view"
             >
-              <h2 className="section-title flex items-center gap-2">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
                 Your Habits
-                <span className="bg-secondary text-secondary-foreground text-xs px-2.5 py-0.5 rounded-full font-semibold">
-                  {activeHabits?.length || 0}
-                </span>
-              </h2>
+              </p>
+              <span className="bg-primary/10 text-primary text-[11px] px-2 py-0.5 rounded-full font-bold">
+                {activeHabits?.length || 0}
+              </span>
               {activeHabits && activeHabits.length > 0 && (
                 habitsCollapsed ? (
-                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 ) : (
-                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
                 )
               )}
             </button>
             <div className="flex gap-2">
               <TemplateGallery onSelectTemplate={handleSelectTemplate} />
-              <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} className="gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                <Plus className="w-4 h-4" />
+              <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} size="sm" className="gap-1.5 rounded-xl shadow-sm shadow-primary/20">
+                <Plus className="w-3.5 h-3.5" />
                 New Habit
               </Button>
             </div>
@@ -846,7 +846,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : activeHabits?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center bg-gradient-to-br from-primary/5 via-card/80 to-accent/5 dark:from-primary/10 dark:via-card dark:to-accent/10 rounded-3xl border border-dashed border-primary/20" data-testid="card-empty-habits">
+                  <div className="flex flex-col items-center justify-center py-16 text-center bg-card rounded-2xl border border-dashed border-primary/20 shadow-sm" data-testid="card-empty-habits">
                     <div className="relative mb-5">
                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                         <Target className="w-10 h-10 text-primary" />
@@ -878,10 +878,66 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {activeHabits?.map((habit) => (
-                        <HabitCard key={habit.id} habit={habit} />
-                      ))}
+                    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                      {activeHabits?.map((habit, i) => {
+                        const isSimple = habit.trackingMode === "simple";
+                        const streak = habit.currentStreak || 0;
+                        const plans = (habit.dailyPlans || []) as DailyPlan[];
+                        const todayStr = new Date().toISOString().slice(0, 10);
+                        const todayPlan = plans.find(p => p.date === todayStr);
+                        const todayTasks = todayPlan?.tasks || [];
+                        const completedTasks = todayTasks.filter((t: any) => t.completed).length;
+                        const totalTasks = todayTasks.length;
+                        const isCheckedIn = isSimple ? todayPlan?.completed === true : (totalTasks > 0 && completedTasks === totalTasks);
+                        const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
+                        const iconBg = iconColor ? `${iconColor}18` : undefined;
+
+                        return (
+                          <Link key={habit.id} href={`/habit/${habit.id}`}>
+                            <div
+                              className={`flex items-center gap-3.5 px-4 py-3.5 cursor-pointer hover:bg-muted/30 transition-colors ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`}
+                              data-testid={`card-habit-${habit.id}`}
+                            >
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                                style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
+                              >
+                                {(() => {
+                                  const iconMap: Record<string, any> = {
+                                    Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
+                                    Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
+                                    Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
+                                    TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
+                                    Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
+                                  };
+                                  const IconComp = habit.customIcon ? iconMap[habit.customIcon] : null;
+                                  return IconComp ? (
+                                    <IconComp className="w-5 h-5" style={iconColor ? { color: iconColor } : undefined} />
+                                  ) : (
+                                    <Star className="w-5 h-5 text-primary" />
+                                  );
+                                })()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[14px] font-semibold text-foreground truncate">{habit.title}</p>
+                                <div className="flex items-center gap-2.5 mt-0.5">
+                                  {streak > 0 && (
+                                    <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
+                                      <Flame className="w-3 h-3" />{streak}d
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {isSimple ? "Simple" : `${completedTasks}/${totalTasks}`}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isCheckedIn ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground/20'}`}>
+                                {isCheckedIn && <Check className="w-4 h-4 text-white" />}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
 
                     {activeHabits && activeHabits.length >= 2 && (
@@ -912,8 +968,8 @@ export default function Dashboard() {
         )}
 
         {/* ===== SECTION 4: ACHIEVEMENTS & REWARDS ===== */}
-        <div data-tour="achievements-section" className="section-group section-group-accent space-y-5">
-          <h2 className="section-title" data-testid="text-section-achievements">Achievements & Rewards</h2>
+        <div data-tour="achievements-section" className="space-y-4">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-achievements">Achievements & Rewards</p>
           {habits && habits.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -934,8 +990,8 @@ export default function Dashboard() {
         </div>
 
         {/* ===== SECTION 5: TOOLS ===== */}
-        <div className="space-y-5">
-          <h2 className="section-title" data-testid="text-section-tools" data-section="tools">Tools</h2>
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-tools" data-section="tools">Tools</p>
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -952,44 +1008,36 @@ export default function Dashboard() {
           >
             {features.hasJournal ? (
               <Link href="/journal">
-                <Card className="hover-elevate cursor-pointer border-2 border-indigo-200/60 dark:border-indigo-700/40 bg-gradient-to-r from-indigo-50/80 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/20 shadow-md hover:shadow-lg transition-shadow" data-testid="card-journal-link">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                        <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">Daily Journal</p>
-                        <p className="text-sm text-muted-foreground">Write reflections and get AI insights</p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/40 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow" data-testid="card-journal-link">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-semibold text-foreground">Daily Journal</p>
+                    <p className="text-[12px] text-muted-foreground">Write reflections & get AI insights</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </div>
               </Link>
             ) : (
-              <Card className="border-2 border-muted shadow-sm" data-testid="card-journal-locked">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        Daily Journal
-                        <Badge variant="secondary" className="text-xs">Pro+</Badge>
-                      </p>
-                      <p className="text-sm text-muted-foreground">Upgrade to write reflections and get AI insights</p>
-                    </div>
-                    <Link href="/paywall">
-                      <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
-                        <Crown className="w-3 h-3" />
-                        Upgrade
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-4 flex items-center gap-3" data-testid="card-journal-locked">
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-foreground flex items-center gap-2">
+                    Daily Journal
+                    <Badge variant="secondary" className="text-xs">Pro+</Badge>
+                  </p>
+                  <p className="text-[12px] text-muted-foreground">Upgrade to write reflections and get AI insights</p>
+                </div>
+                <Link href="/paywall">
+                  <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
+                    <Crown className="w-3 h-3" />
+                    Upgrade
+                  </Button>
+                </Link>
+              </div>
             )}
           </motion.section>
 
@@ -998,61 +1046,69 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.45 }}
           >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
+            <div className="grid grid-cols-2 gap-2.5" data-tour="feature-links">
               <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
-                <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-focus-timer-link">
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                    <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                      <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Focus Timer</p>
-                      {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-card rounded-2xl border border-amber-100 dark:border-amber-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-focus-timer-link">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                    <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Focus Timer</p>
+                    {!features.hasFocusTimer ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Pro+</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Deep work sessions</p>
+                    )}
+                  </div>
+                </div>
               </Link>
 
               <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
-                <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-mood-tracker-link">
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                    <div className="w-11 h-11 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
-                      {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-card rounded-2xl border border-teal-100 dark:border-teal-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-mood-tracker-link">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Mood Insights</p>
+                    {!features.hasMoodTracker ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Pro+</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Track your trends</p>
+                    )}
+                  </div>
+                </div>
               </Link>
 
               <Link href={features.hasGoals ? "/goals" : "/paywall"}>
-                <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-goals-link">
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                    <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
-                      <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Goals</p>
-                      {!features.hasGoals && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-card rounded-2xl border border-rose-100 dark:border-rose-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-goals-link">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Goals</p>
+                    {!features.hasGoals ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Set & track goals</p>
+                    )}
+                  </div>
+                </div>
               </Link>
 
               <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
-                <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-planner-link">
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                    <div className="w-11 h-11 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Daily Planner</p>
-                      {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-card rounded-2xl border border-sky-100 dark:border-sky-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-planner-link">
+                  <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Daily Planner</p>
+                    {!features.hasDailyPlanner ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Plan your day</p>
+                    )}
+                  </div>
+                </div>
               </Link>
             </div>
           </motion.section>
