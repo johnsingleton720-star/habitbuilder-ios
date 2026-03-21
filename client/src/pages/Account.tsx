@@ -267,7 +267,7 @@ function AdminUserManager() {
                     </Badge>
                     {u.hasPaid && <Badge variant="outline">Paid</Badge>}
                     <Badge variant="outline" className="text-xs" data-testid={`badge-auth-${u.id}`}>
-                      {u.authProvider === "email" ? "Email" : "Social"}
+                      {u.authProvider === "email" ? "Email" : u.authProvider === "replit" ? "Social" : "—"}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : ''}
