@@ -1470,6 +1470,14 @@ export default function HabitDetail() {
                     })()}
                   </div>
 
+                  {!isSelectedDayPast && !isPlanDone && currentPlan.tasks.length > 0 && (
+                    <p className="text-xs text-muted-foreground" data-testid="text-task-guidance-hint">
+                      {isFreeUser
+                        ? "Tap Start above to begin your guided session"
+                        : "Tap Start for a guided walkthrough, or check off tasks at your own pace"}
+                    </p>
+                  )}
+
                   <AnimatePresence mode="popLayout">
                     {currentPlan.tasks.map((task, index) => (
                       <motion.div
