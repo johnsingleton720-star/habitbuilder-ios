@@ -53,7 +53,7 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
-  const [habitsCollapsed, setHabitsCollapsed] = useState(false);
+  const [habitsCollapsed, setHabitsCollapsed] = useState(true);
   const todayKey = new Date().toISOString().slice(0, 10);
   const [planAdjustDismissed, setPlanAdjustDismissed] = useState(() =>
     localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
@@ -760,6 +760,46 @@ export default function Dashboard() {
           );
         })()}
 
+        {/* ===== QUICK ACCESS BAR ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex gap-2 overflow-x-auto no-scrollbar"
+          data-testid="quick-access-bar"
+        >
+          <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
+            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
+              <Timer className="w-4 h-4 text-amber-600" />
+              <span className="text-[12px] font-medium text-foreground">Focus</span>
+            </div>
+          </Link>
+          <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
+            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
+              <Heart className="w-4 h-4 text-teal-600" />
+              <span className="text-[12px] font-medium text-foreground">Mood</span>
+            </div>
+          </Link>
+          <Link href="/journal">
+            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
+              <BookOpen className="w-4 h-4 text-indigo-600" />
+              <span className="text-[12px] font-medium text-foreground">Journal</span>
+            </div>
+          </Link>
+          <Link href={features.hasGoals ? "/goals" : "/paywall"}>
+            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
+              <Target className="w-4 h-4 text-rose-600" />
+              <span className="text-[12px] font-medium text-foreground">Goals</span>
+            </div>
+          </Link>
+          <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
+            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
+              <Calendar className="w-4 h-4 text-sky-600" />
+              <span className="text-[12px] font-medium text-foreground">Planner</span>
+            </div>
+          </Link>
+        </motion.div>
+
         {/* ===== SECTION 1: TODAY ===== */}
         <div data-tour="daily-action-center" className="space-y-4">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-daily-focus">Today</p>
@@ -878,66 +918,10 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-                      {activeHabits?.map((habit, i) => {
-                        const isSimple = habit.trackingMode === "simple";
-                        const streak = habit.currentStreak || 0;
-                        const plans = (habit.dailyPlans || []) as DailyPlan[];
-                        const todayStr = new Date().toISOString().slice(0, 10);
-                        const todayPlan = plans.find(p => p.date === todayStr);
-                        const todayTasks = todayPlan?.tasks || [];
-                        const completedTasks = todayTasks.filter((t: any) => t.completed).length;
-                        const totalTasks = todayTasks.length;
-                        const isCheckedIn = isSimple ? todayPlan?.completed === true : (totalTasks > 0 && completedTasks === totalTasks);
-                        const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
-                        const iconBg = iconColor ? `${iconColor}18` : undefined;
-
-                        return (
-                          <Link key={habit.id} href={`/habit/${habit.id}`}>
-                            <div
-                              className={`flex items-center gap-3.5 px-4 py-3.5 cursor-pointer hover:bg-muted/30 transition-colors ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`}
-                              data-testid={`card-habit-${habit.id}`}
-                            >
-                              <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                                style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
-                              >
-                                {(() => {
-                                  const iconMap: Record<string, any> = {
-                                    Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
-                                    Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
-                                    Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
-                                    TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
-                                    Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
-                                  };
-                                  const IconComp = habit.customIcon ? iconMap[habit.customIcon] : null;
-                                  return IconComp ? (
-                                    <IconComp className="w-5 h-5" style={iconColor ? { color: iconColor } : undefined} />
-                                  ) : (
-                                    <Star className="w-5 h-5 text-primary" />
-                                  );
-                                })()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[14px] font-semibold text-foreground truncate">{habit.title}</p>
-                                <div className="flex items-center gap-2.5 mt-0.5">
-                                  {streak > 0 && (
-                                    <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
-                                      <Flame className="w-3 h-3" />{streak}d
-                                    </span>
-                                  )}
-                                  <span className="text-[11px] text-muted-foreground">
-                                    {isSimple ? "Simple" : `${completedTasks}/${totalTasks}`}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isCheckedIn ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground/20'}`}>
-                                {isCheckedIn && <Check className="w-4 h-4 text-white" />}
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
+                    <div className="space-y-3">
+                      {activeHabits?.map((habit) => (
+                        <HabitCard key={habit.id} habit={habit} />
+                      ))}
                     </div>
 
                     {activeHabits && activeHabits.length >= 2 && (

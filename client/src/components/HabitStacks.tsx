@@ -41,7 +41,7 @@ export function HabitStacks() {
   const { features } = useSubscription();
   const [createOpen, setCreateOpen] = useState(false);
   const [editStack, setEditStack] = useState<HabitStack | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [generatingStackId, setGeneratingStackId] = useState<number | null>(null);
 
   const { data: stacks, isLoading } = useQuery<HabitStack[]>({
