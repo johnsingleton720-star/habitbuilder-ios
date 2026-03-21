@@ -1,0 +1,78 @@
+Show command
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/vi.lproj/
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/vi.lproj/FacebookSDK.strings
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh.lproj/
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh.lproj/FacebookSDK.strings
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh_Hant_HK.lproj/
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh_Hant_HK.lproj/FacebookSDK.strings
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh_Hant_TW.lproj/
+FBSDKCoreKit.framework/FacebookSDKStrings.bundle/Resources/zh_Hant_TW.lproj/FacebookSDK.strings
+FBSDKCoreKit.framework/_CodeSignature/
+FBSDKCoreKit.framework/_CodeSignature/CodeResources
+
+sent 4220586 bytes  received 1364 bytes  82621330 bytes/sec
+total size is 4207896  speedup is 1.00
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/XCFrameworkIntermediates/FBSDKCoreKit_Basics/FBSDKCoreKit_Basics.framework" "/Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Frameworks"
+Transfer starting: 6 files
+FBSDKCoreKit_Basics.framework/
+FBSDKCoreKit_Basics.framework/FBSDKCoreKit_Basics
+FBSDKCoreKit_Basics.framework/Info.plist
+FBSDKCoreKit_Basics.framework/PrivacyInfo.xcprivacy
+FBSDKCoreKit_Basics.framework/_CodeSignature/
+FBSDKCoreKit_Basics.framework/_CodeSignature/CodeResources
+
+sent 169524 bytes  received 120 bytes  41376585 bytes/sec
+total size is 168733  speedup is 0.99
+
+CopySwiftLibs /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/App.debug.dylib --scan-folder /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Frameworks --scan-folder /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/PlugIns --scan-folder /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/SystemExtensions --scan-folder /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Extensions --scan-folder /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/Pods_App.framework --scan-folder /Applications/Xcode-26.2.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/StoreKit.framework --platform iphoneos --toolchain /Applications/Xcode-26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode-26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    /Applications/Xcode-26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name App --sdk-root /Applications/Xcode-26.2.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk --xcode-version 17C52 --platform-family iOS --deployment-target 16.0 --bundle-identifier pro.habitbuilder.app --output /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app --target-triple arm64-apple-ios16.0 --binary-file /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/App --dependency-file /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/Objects-normal/arm64/App_dependency_info.dat --stringsdata-file /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/Objects-normal/arm64/App.SwiftFileList --metadata-file-list /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/App.DependencyMetadataFileList --static-metadata-file-list /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/App.DependencyStaticMetadataFileList --swift-const-vals-list /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/Objects-normal/arm64/App.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-03-21 17:37:54.290 appintentsmetadataprocessor[2810:20756] Starting appintentsmetadataprocessor export
+2026-03-21 17:37:54.291 appintentsmetadataprocessor[2810:20756] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+AppIntentsSSUTraining (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    /Applications/Xcode-26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Info.plist --temp-dir-path /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/ssu --bundle-id pro.habitbuilder.app --product-path /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app --extracted-metadata-path /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app/Metadata.appintents --metadata-file-list /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/App.build/Debug-iphoneos/App.build/App.DependencyMetadataFileList --archive-ssu-assets
+2026-03-21 17:37:54.308 appintentsnltrainingprocessor[2811:20757] Parsing options for appintentsnltrainingprocessor
+2026-03-21 17:37:54.308 appintentsnltrainingprocessor[2811:20757] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    builtin-RegisterExecutionPolicyException /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app
+
+Validate /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    builtin-validationUtility /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app (in target 'App' from project 'App')
+    cd /Users/builder/clone/ios/App
+    /usr/bin/touch -c /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Products/Debug-iphoneos/App.app
+
+warning: Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit_Basics' from project 'Pods')
+warning: Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit' from project 'Pods')
+warning: Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBAEMKit' from project 'Pods')
+warning: Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+** BUILD SUCCEEDED **
+
+=== Preflight build succeeded ===
+Using Xcode 26.2 (17C52)
+Check App.xcworkspace build settings
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings"
+
+Archive App.xcworkspace
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_zfmwt0z2.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=XWGZCDT3XH 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBAEMKit' from project 'Pods')
+    Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit_Basics' from project 'Pods')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit' from project 'Pods')
+Failed to archive ios/App/App.xcworkspace
+
+
+Build failed :|
+Step 16 script `Build and export IPA` exited with status code 65
