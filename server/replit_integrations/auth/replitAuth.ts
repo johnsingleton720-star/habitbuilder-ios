@@ -195,6 +195,11 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return next();
   }
 
+  if (user.emailAuth) {
+    user.expires_at = now + (7 * 24 * 60 * 60);
+    return next();
+  }
+
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
     res.status(401).json({ message: "Unauthorized" });

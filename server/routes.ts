@@ -8,13 +8,14 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens, habitReminders, habitStacks } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens, habitReminders, habitStacks, passwordResetTokens } from "@shared/schema";
+import bcrypt from "bcryptjs";
 import { saveSubscription, syncSubscription, syncDeviceToken, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { checkContentSafety } from "./contentSafety";
-import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail, sendWelcomeCampaignEmail } from "./email";
+import { sendAccountabilityInviteEmail, sendProgressUpdateEmail, sendAdminBulkEmail, sendWelcomeCampaignEmail, sendEmail } from "./email";
 import { format } from "date-fns";
 
 function isTrialActive(user: { trialEndsAt?: Date | null; hasPaid?: boolean | null } | null | undefined): boolean {
@@ -432,6 +433,181 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Token exchange error:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  const OWNER_EMAIL = "johnsingleton720@gmail.com";
+
+  app.post("/api/auth/email-signup", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      const emailLower = String(email).toLowerCase().trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
+        return res.status(400).json({ error: "Invalid email address" });
+      }
+      if (String(password).length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      const [existing] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
+      if (existing) {
+        return res.status(409).json({ error: "An account with this email already exists. Please sign in instead." });
+      }
+      const hash = await bcrypt.hash(String(password), 12);
+      const userId = crypto.randomUUID();
+      const isOwner = emailLower === OWNER_EMAIL;
+      const trialEndsAt = isOwner ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const [newUser] = await db.insert(users).values({
+        id: userId,
+        email: emailLower,
+        firstName: firstName ? String(firstName).trim() : null,
+        lastName: lastName ? String(lastName).trim() : null,
+        passwordHash: hash,
+        authProvider: "email",
+        ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
+        ...(trialEndsAt && { trialEndsAt }),
+      }).returning();
+      const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+      const sessionUser = {
+        claims: { sub: String(newUser.id), email: newUser.email, first_name: newUser.firstName, last_name: newUser.lastName },
+        emailAuth: true,
+        expires_at: expiresAtSeconds,
+      };
+      req.login(sessionUser, (err) => {
+        if (err) {
+          console.error("Email signup session error:", err);
+          return res.status(500).json({ error: "Account created but session failed. Please sign in." });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) console.error("Session save error:", saveErr);
+          res.json({ success: true, user: { id: newUser.id, email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName } });
+        });
+      });
+    } catch (err: any) {
+      console.error("Email signup error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
+  app.post("/api/auth/email-login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      const emailLower = String(email).toLowerCase().trim();
+      const [user] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
+      if (!user) {
+        return res.status(401).json({ error: "No account found with this email. Please sign up first." });
+      }
+      if (!user.passwordHash) {
+        return res.status(401).json({ error: "This account uses Apple or Google sign-in. Please use that method instead." });
+      }
+      const valid = await bcrypt.compare(String(password), user.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ error: "Incorrect password. Please try again." });
+      }
+      const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+      const sessionUser = {
+        claims: { sub: String(user.id), email: user.email, first_name: user.firstName, last_name: user.lastName, profile_image: user.profileImageUrl },
+        emailAuth: true,
+        expires_at: expiresAtSeconds,
+      };
+      req.login(sessionUser, (err) => {
+        if (err) {
+          console.error("Email login session error:", err);
+          return res.status(500).json({ error: "Sign in failed. Please try again." });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) console.error("Session save error:", saveErr);
+          res.json({ success: true, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
+        });
+      });
+    } catch (err: any) {
+      console.error("Email login error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      const emailLower = String(email).toLowerCase().trim();
+      const [user] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
+      if (!user || !user.passwordHash) {
+        return res.json({ success: true, message: "If an account with that email exists, a reset link has been sent." });
+      }
+      await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await db.insert(passwordResetTokens).values({ token, userId: user.id, expiresAt });
+      const resetUrl = `https://habitbuilder.pro/reset-password?token=${token}`;
+      try {
+        await sendEmail({
+          to: emailLower,
+          subject: "Reset your HabitBuilder password",
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #0a1628; font-size: 24px; margin: 0;">
+                  <span style="color: #0a1628;">Habit</span><span style="color: #059669;">Builder</span><span style="color: #0a1628;">.pro</span>
+                </h1>
+              </div>
+              <h2 style="color: #0a1628; font-size: 20px; margin-bottom: 16px;">Reset your password</h2>
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                We received a request to reset your password. Click the button below to create a new one. This link expires in 1 hour.
+              </p>
+              <div style="text-align: center; margin-bottom: 24px;">
+                <a href="${resetUrl}" style="display: inline-block; background: #059669; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                  Reset Password
+                </a>
+              </div>
+              <p style="color: #9ca3af; font-size: 13px; line-height: 1.5;">
+                If you didn't request this, you can safely ignore this email. Your password won't be changed.
+              </p>
+            </div>
+          `,
+          text: `Reset your HabitBuilder password: ${resetUrl} (expires in 1 hour)`,
+        });
+      } catch (emailErr: any) {
+        console.error("Failed to send password reset email:", emailErr);
+      }
+      res.json({ success: true, message: "If an account with that email exists, a reset link has been sent." });
+    } catch (err: any) {
+      console.error("Forgot password error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+      if (String(password).length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      const [tokenRow] = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, String(token))).limit(1);
+      if (!tokenRow) {
+        return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      }
+      if (tokenRow.expiresAt < new Date()) {
+        await db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, String(token)));
+        return res.status(400).json({ error: "This reset link has expired. Please request a new one." });
+      }
+      const hash = await bcrypt.hash(String(password), 12);
+      await db.update(users).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(users.id, tokenRow.userId));
+      await db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, String(token)));
+      res.json({ success: true, message: "Your password has been reset. You can now sign in." });
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
     }
   });
 

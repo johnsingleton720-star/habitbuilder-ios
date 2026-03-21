@@ -22,7 +22,7 @@ Preferred communication style: Simple, everyday language.
 ### Backend
 -   **Framework**: Express.js with TypeScript.
 -   **Database ORM**: Drizzle ORM with PostgreSQL.
--   **Authentication**: Replit Auth (OpenID Connect) with Passport.js, PostgreSQL-backed sessions.
+-   **Authentication**: Dual auth system — Replit Auth (OIDC) for Apple/Google social sign-in, plus custom email/password auth with bcrypt hashing. Both share the same Passport.js + PostgreSQL-backed sessions. The `isAuthenticated` middleware auto-renews email auth sessions. Password reset via Resend email with time-limited tokens (`passwordResetTokens` table). iOS app shows in-app `NativeEmailAuth` screen (email form + Apple/Google buttons) instead of external Replit browser.
 -   **API Design**: RESTful endpoints with Zod validation.
 
 ### Data Storage

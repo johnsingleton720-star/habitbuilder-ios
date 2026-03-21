@@ -7,15 +7,16 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect, Component } from "react";
+import { useState, useEffect, Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTracking } from "@/hooks/use-tracking";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useVersionCheck } from "@/hooks/use-version-check";
 import { PageTransition } from "@/components/PageTransition";
-import { isNative } from "@/lib/platform";
+import { isNative, isIOS } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
+import { NativeEmailAuth } from "@/components/NativeEmailAuth";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -83,6 +84,7 @@ import MoodTracker from "@/pages/MoodTracker";
 import Goals from "@/pages/Goals";
 import DailyPlanner from "@/pages/DailyPlanner";
 import SignedOut from "@/pages/SignedOut";
+import ResetPassword from "@/pages/ResetPassword";
 
 function VersionUpdateBanner() {
   return (
@@ -102,13 +104,14 @@ function VersionUpdateBanner() {
   );
 }
 
-const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account", "/signed-out", "/welcome"];
+const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-invite", "/about", "/delete-account", "/signed-out", "/welcome", "/reset-password"];
 
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { hasAccess, isLoading: isPaymentLoading } = usePaymentStatus();
   const [location] = useLocation();
   const { toast } = useToast();
+  const [showNativeAuth, setShowNativeAuth] = useState(false);
   
   useTracking();
   usePushNotifications();
@@ -217,6 +220,7 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/delete-account" component={DeleteAccount} />
         <Route path="/signed-out" component={SignedOut} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/welcome" component={Landing} />
         <Route component={Landing} />
       </Switch>
@@ -234,9 +238,26 @@ function Router() {
   if (!user) {
     const showPresignup = isNative() || localStorage.getItem("presignup_data");
     if (showPresignup) {
-      return <PreSignupOnboarding onLogin={() => {
-        import("@/lib/auth-flow").then(m => m.openAuthFlow());
-      }} />;
+      return (
+        <>
+          <PreSignupOnboarding onLogin={() => {
+            if (isNative()) {
+              setShowNativeAuth(true);
+            } else {
+              import("@/lib/auth-flow").then(m => m.openAuthFlow());
+            }
+          }} />
+          {showNativeAuth && (
+            <NativeEmailAuth
+              onClose={() => setShowNativeAuth(false)}
+              onSocialAuth={(provider) => {
+                setShowNativeAuth(false);
+                import("@/lib/auth-flow").then(m => m.openAuthFlow());
+              }}
+            />
+          )}
+        </>
+      );
     }
     return <Landing />;
   }
