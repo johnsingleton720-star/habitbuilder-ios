@@ -359,6 +359,19 @@ workflows:
           echo "=== Final version check before build ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
           grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -3
+
+          echo "=== Pre-flight: checking project compiles ==="
+          xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS' build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO 2>&1 | tail -60
+          PREFLIGHT_STATUS=${PIPESTATUS[0]}
+          if [ $PREFLIGHT_STATUS -ne 0 ]; then
+            echo ""
+            echo "=== PREFLIGHT BUILD FAILED (exit $PREFLIGHT_STATUS) ==="
+            echo "=== Full error output above. Continuing to archive attempt for IPA... ==="
+            echo ""
+          else
+            echo "=== Preflight build succeeded ==="
+          fi
+
           cd /Users/builder/clone
           xcode-project build-ipa \
             --workspace "ios/App/App.xcworkspace" \
