@@ -531,6 +531,95 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/auth/apple-native", async (req, res) => {
+    try {
+      const { identityToken, user: appleUserId, email, givenName, familyName } = req.body;
+      if (!identityToken) {
+        return res.status(400).json({ error: "Identity token is required" });
+      }
+
+      const { createRemoteJWKSet, jwtVerify } = await import("jose");
+      const JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
+      let payload: any;
+      try {
+        const { payload: verified } = await jwtVerify(identityToken, JWKS, {
+          issuer: "https://appleid.apple.com",
+          audience: "pro.habitbuilder.app",
+        });
+        payload = verified;
+      } catch (verifyErr: any) {
+        console.error("Apple token verification failed:", verifyErr.message);
+        return res.status(401).json({ error: "Invalid Apple identity token" });
+      }
+
+      const appleSub = payload.sub as string;
+      const tokenEmail = (payload.email as string)?.toLowerCase()?.trim();
+      const userEmail = (email || tokenEmail)?.toLowerCase()?.trim();
+
+      if (!appleSub) {
+        return res.status(400).json({ error: "Invalid Apple token: missing subject" });
+      }
+
+      let [existingUser] = await db.select().from(users).where(eq(users.appleUserId, appleSub)).limit(1);
+
+      if (!existingUser && userEmail) {
+        [existingUser] = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+        if (existingUser && !existingUser.appleUserId) {
+          await db.update(users).set({ appleUserId: appleSub, authProvider: "apple" }).where(eq(users.id, existingUser.id));
+          existingUser = { ...existingUser, appleUserId: appleSub, authProvider: "apple" };
+        }
+      }
+
+      let finalUser = existingUser;
+
+      if (!finalUser) {
+        const userId = crypto.randomUUID();
+        const isOwner = userEmail === OWNER_EMAIL;
+        const trialEndsAt = isOwner ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        [finalUser] = await db.insert(users).values({
+          id: userId,
+          email: userEmail || null,
+          firstName: givenName ? String(givenName).trim() : null,
+          lastName: familyName ? String(familyName).trim() : null,
+          appleUserId: appleSub,
+          authProvider: "apple",
+          ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
+          ...(trialEndsAt && { trialEndsAt }),
+        }).returning();
+      }
+
+      const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+      const sessionUser = {
+        claims: {
+          sub: String(finalUser.id),
+          email: finalUser.email,
+          first_name: finalUser.firstName,
+          last_name: finalUser.lastName,
+          profile_image: finalUser.profileImageUrl,
+        },
+        emailAuth: true,
+        expires_at: expiresAtSeconds,
+      };
+
+      req.login(sessionUser, (err) => {
+        if (err) {
+          console.error("Apple native auth session error:", err);
+          return res.status(500).json({ error: "Authentication succeeded but session failed. Please try again." });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) console.error("Session save error:", saveErr);
+          res.json({
+            success: true,
+            user: { id: finalUser.id, email: finalUser.email, firstName: finalUser.firstName, lastName: finalUser.lastName },
+          });
+        });
+      });
+    } catch (err: any) {
+      console.error("Apple native auth error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;

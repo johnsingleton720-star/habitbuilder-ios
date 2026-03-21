@@ -7,6 +7,7 @@ import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, User } from "lucide-react"
 import { SiApple, SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { isIOS, isNative } from "@/lib/platform";
 
 type AuthMode = "signup" | "login" | "forgot";
 
@@ -22,9 +23,63 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [firstName, setFirstName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const { toast } = useToast();
+
+  const handleAppleNativeSignIn = async () => {
+    if (!isNative() || !isIOS()) {
+      onSocialAuth("apple");
+      return;
+    }
+
+    setAppleLoading(true);
+    setError("");
+
+    try {
+      const { AppleSignIn } = await import("capacitor-apple-sign-in");
+      const result = await AppleSignIn.signIn();
+
+      if (!result.identityToken) {
+        setError("Apple Sign In failed — no identity token received.");
+        setAppleLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/auth/apple-native", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          identityToken: result.identityToken,
+          user: result.user,
+          email: result.email,
+          givenName: result.givenName,
+          familyName: result.familyName,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Apple Sign In failed. Please try again.");
+        setAppleLoading(false);
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      window.location.href = "/";
+    } catch (err: any) {
+      if (err?.message?.includes("cancelled") || err?.message?.includes("cancel")) {
+        setAppleLoading(false);
+        return;
+      }
+      console.warn("Native Apple Sign In failed, falling back:", err);
+      setAppleLoading(false);
+      onSocialAuth("apple");
+    }
+  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,11 +177,16 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
           {mode !== "forgot" && (
             <div className="space-y-3 mb-6">
               <button
-                onClick={() => onSocialAuth("apple")}
-                className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm"
+                onClick={handleAppleNativeSignIn}
+                disabled={appleLoading}
+                className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
                 data-testid="button-auth-apple"
               >
-                <SiApple className="w-5 h-5" />
+                {appleLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <SiApple className="w-5 h-5" />
+                )}
                 Continue with Apple
               </button>
               <button
@@ -138,7 +198,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 Continue with Google
               </button>
               <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
-                Opens secure sign-in by Replit, our authentication partner
+                Google sign-in opens secure sign-in by Replit, our authentication partner
               </p>
             </div>
           )}
