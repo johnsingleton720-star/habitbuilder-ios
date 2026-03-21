@@ -2,13 +2,41 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, BookOpen, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code, Laptop, Gamepad2, Heart, Smile, Timer, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
 import type { DailyPlan, HabitStack } from "@shared/schema";
 import { UnifiedRoutineSession } from "./UnifiedRoutineSession";
+
+const ICON_MAP: Record<string, any> = {
+  Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
+  Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
+  Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
+  TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
+  Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
+};
+
+function HabitIcon({ habit, size = "sm" }: { habit: HabitResponse; size?: "sm" | "md" }) {
+  const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
+  const iconBg = iconColor ? `${iconColor}18` : undefined;
+  const IconComp = habit.customIcon ? ICON_MAP[habit.customIcon] : null;
+  const sizeClass = size === "md" ? "w-9 h-9 rounded-xl" : "w-7 h-7 rounded-lg";
+  const iconSizeClass = size === "md" ? "w-4.5 h-4.5" : "w-3.5 h-3.5";
+  return (
+    <div
+      className={`${sizeClass} flex items-center justify-center flex-shrink-0`}
+      style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
+    >
+      {IconComp ? (
+        <IconComp className={iconSizeClass} style={iconColor ? { color: iconColor } : undefined} />
+      ) : (
+        <Star className={`${iconSizeClass} text-primary`} />
+      )}
+    </div>
+  );
+}
 
 interface TodaysFocusProps {
   habits: HabitResponse[];
@@ -200,6 +228,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                   className="bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/15 p-3.5 flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-all"
                   data-testid={`focus-habit-${nextHabit.id}`}
                 >
+                  <HabitIcon habit={nextHabit} size="md" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-[14px] font-bold text-foreground truncate">{nextHabit.title}</p>
@@ -250,6 +279,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                   {otherRemaining.map((habit) => (
                     <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                       <div className="bg-muted/40 rounded-xl border border-border/50 p-2.5 flex items-center gap-2 cursor-pointer hover:bg-muted/60 transition-colors" data-testid={`remaining-habit-${habit.id}`}>
+                        <HabitIcon habit={habit} />
                         <div className="flex-1 min-w-0">
                           <p className="text-[11px] font-semibold text-foreground truncate">{habit.title}</p>
                           <p className="text-[10px] text-muted-foreground">
@@ -275,6 +305,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                     {(isExpanded ? otherRemaining : otherRemaining.slice(0, 4)).map((habit) => (
                       <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                         <div className="bg-muted/40 rounded-xl border border-border/50 p-2.5 flex items-center gap-2 cursor-pointer hover:bg-muted/60 transition-colors" data-testid={`remaining-habit-${habit.id}`}>
+                          <HabitIcon habit={habit} />
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-semibold text-foreground truncate">{habit.title}</p>
                             <p className="text-[10px] text-muted-foreground">
@@ -388,7 +419,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
                 {completedToday.map((habit) => (
                   <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
                     <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer" data-testid={`completed-habit-${habit.id}`}>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                      <HabitIcon habit={habit} />
                       <span className="text-[12px] text-muted-foreground line-through truncate flex-1">{habit.title}</span>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
                     </div>
