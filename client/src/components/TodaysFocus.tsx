@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
@@ -14,43 +13,6 @@ import { UnifiedRoutineSession } from "./UnifiedRoutineSession";
 interface TodaysFocusProps {
   habits: HabitResponse[];
   stacks?: HabitStack[];
-}
-
-const categoryColors: Record<string, { accent: string; bg: string; border: string; progress: string }> = {
-  health: { accent: "text-emerald-600 dark:text-emerald-400", bg: "from-emerald-100/80 to-green-50/60 dark:from-emerald-900/40 dark:to-green-900/30", border: "border-emerald-300/60 dark:border-emerald-700/50", progress: "bg-emerald-500" },
-  fitness: { accent: "text-orange-600 dark:text-orange-400", bg: "from-orange-100/80 to-amber-50/60 dark:from-orange-900/40 dark:to-amber-900/30", border: "border-orange-300/60 dark:border-orange-700/50", progress: "bg-orange-500" },
-  mindfulness: { accent: "text-violet-600 dark:text-violet-400", bg: "from-violet-100/80 to-purple-50/60 dark:from-violet-900/40 dark:to-purple-900/30", border: "border-violet-300/60 dark:border-violet-700/50", progress: "bg-violet-500" },
-  productivity: { accent: "text-blue-600 dark:text-blue-400", bg: "from-blue-100/80 to-cyan-50/60 dark:from-blue-900/40 dark:to-cyan-900/30", border: "border-blue-300/60 dark:border-blue-700/50", progress: "bg-blue-500" },
-  learning: { accent: "text-indigo-600 dark:text-indigo-400", bg: "from-indigo-100/80 to-blue-50/60 dark:from-indigo-900/40 dark:to-blue-900/30", border: "border-indigo-300/60 dark:border-indigo-700/50", progress: "bg-indigo-500" },
-  creativity: { accent: "text-pink-600 dark:text-pink-400", bg: "from-pink-100/80 to-rose-50/60 dark:from-pink-900/40 dark:to-rose-900/30", border: "border-pink-300/60 dark:border-pink-700/50", progress: "bg-pink-500" },
-  social: { accent: "text-amber-600 dark:text-amber-400", bg: "from-amber-100/80 to-yellow-50/60 dark:from-amber-900/40 dark:to-yellow-900/30", border: "border-amber-300/60 dark:border-amber-700/50", progress: "bg-amber-500" },
-  finance: { accent: "text-teal-600 dark:text-teal-400", bg: "from-teal-100/80 to-emerald-50/60 dark:from-teal-900/40 dark:to-emerald-900/30", border: "border-teal-300/60 dark:border-teal-700/50", progress: "bg-teal-500" },
-};
-const defaultColor = { accent: "text-primary", bg: "from-primary/15 to-accent/10 dark:from-primary/25 dark:to-accent/20", border: "border-primary/30 dark:border-primary/20", progress: "bg-primary" };
-
-function getCustomColorStyle(hexColor: string | null | undefined): { style: React.CSSProperties; progressStyle: React.CSSProperties; hasCustom: true } | { hasCustom: false } {
-  if (!hexColor || !hexColor.startsWith('#')) return { hasCustom: false };
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-  const isDark = document.documentElement.classList.contains('dark');
-  const bgOp1 = isDark ? 0.30 : 0.22;
-  const bgOp2 = isDark ? 0.18 : 0.10;
-  return {
-    hasCustom: true,
-    style: {
-      background: `linear-gradient(to right, rgba(${r},${g},${b},${bgOp1}), rgba(${r},${g},${b},${bgOp2}))`,
-      borderColor: `rgba(${r},${g},${b},${isDark ? 0.5 : 0.45})`,
-    },
-    progressStyle: {
-      backgroundColor: `rgba(${r},${g},${b},0.8)`,
-    },
-  };
-}
-
-function getHabitColor(habit: HabitResponse) {
-  const cat = (habit.category || "").toLowerCase();
-  return categoryColors[cat] || defaultColor;
 }
 
 function getTimeOfDayIcon() {
@@ -122,15 +84,12 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
 
   const getNextHabit = () => {
     if (remainingHabits.length === 0) return null;
-
     const stackNext = completedToday.find(h => h.linkedHabitId && remainingHabits.some(r => r.id === h.linkedHabitId));
     if (stackNext) {
       return remainingHabits.find(r => r.id === stackNext.linkedHabitId) || null;
     }
-    
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
     const sortedByTime = remainingHabits
       .filter((h) => h.schedule?.time)
       .map((h) => {
@@ -138,7 +97,6 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
         return { habit: h, minutes: hours * 60 + mins };
       })
       .sort((a, b) => Math.abs(a.minutes - currentMinutes) - Math.abs(b.minutes - currentMinutes));
-
     return sortedByTime[0]?.habit || remainingHabits[0];
   };
 
@@ -165,409 +123,282 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
 
   const otherRemaining = remainingHabits.filter(h => h.id !== nextHabit?.id);
 
+  const unifiedStacks = stacks?.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan) || [];
+
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 dark:from-primary/30 dark:via-primary/20 dark:to-accent/25 shadow-lg shadow-primary/10 dark:shadow-primary/20 dark:border dark:border-primary/20">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              initial={{ rotate: -10 }}
-              animate={{ rotate: 0 }}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white shadow-lg shadow-primary/30"
-            >
-              <Target className="w-6 h-6" />
-            </motion.div>
+    <>
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden" data-testid="card-todays-focus">
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Target className="w-4 h-4 text-primary" />
+            </div>
             <div>
-              <CardTitle className="text-2xl font-display text-foreground">Today's Focus</CardTitle>
-              <CardDescription className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
-                <TimeIcon className="w-3.5 h-3.5" />
+              <p className="text-[15px] font-bold text-foreground">Daily Focus</p>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <TimeIcon className="w-3 h-3" />
                 {format(today, "EEEE, MMMM d")}
-              </CardDescription>
+              </p>
             </div>
           </div>
-          
-          <div className="relative">
-            <svg className="w-16 h-16 progress-ring" viewBox="0 0 64 64">
-              <circle
-                cx="32"
-                cy="32"
-                r="28"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="6"
-                className="text-muted/30"
-              />
-              <circle
-                cx="32"
-                cy="32"
-                r="28"
-                fill="none"
-                stroke="url(#progressGradient)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 28}`}
-                strokeDashoffset={`${2 * Math.PI * 28 * (1 - progress / 100)}`}
-                className="progress-ring-circle"
-              />
-              <defs>
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" />
-                  <stop offset="100%" stopColor="hsl(var(--accent))" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-base font-bold text-foreground">{progress}%</span>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/90 dark:bg-black/40 backdrop-blur-sm border border-white/60 dark:border-white/10 shadow-sm">
-          <div className="flex-1">
-            <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-gray-600 dark:text-gray-300 font-semibold">Daily Progress</span>
-              <span className="font-bold text-gray-900 dark:text-white">{completedToday.length}/{scheduledHabits.length}</span>
-            </div>
-            <div className="h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-              />
-            </div>
+          <div className="text-right">
+            <p className="text-xl font-bold text-primary">{progress}%</p>
+            <p className="text-[11px] text-muted-foreground">{completedToday.length}/{scheduledHabits.length} done</p>
           </div>
         </div>
 
-        {progress === 100 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-6"
-          >
-            <motion.div 
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-3"
+        {/* Progress bar */}
+        <div className="px-4 py-2.5 border-b border-border/30">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-3.5">
+          {progress === 100 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-4"
             >
-              <Sparkles className="w-8 h-8 text-primary" />
-            </motion.div>
-            <h3 className="font-display text-xl font-bold text-gradient">
-              All done for today!
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Amazing work! You've completed all your habits.
-            </p>
-          </motion.div>
-        ) : nextHabit ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <p className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-1.5">
-              {isStackedNext ? (
-                <>
-                  <Link2 className="w-4 h-4 text-primary" />
-                  Next in stack
-                  {stackParent && (
-                    <span className="font-normal text-muted-foreground">
-                      (after {stackParent.title})
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  Up next
-                </>
-              )}
-            </p>
-            <Link href={`/habit/${nextHabit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
-              {(() => {
-                const customStyle = getCustomColorStyle(nextHabit.customColor);
-                return (
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className={cn(
-                  "group flex items-center justify-between p-4 rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30",
-                  !customStyle.hasCustom && "bg-gradient-to-r",
-                  !customStyle.hasCustom && getHabitColor(nextHabit).bg,
-                  !customStyle.hasCustom && getHabitColor(nextHabit).border
-                )}
-                style={customStyle.hasCustom ? customStyle.style : undefined}
-                data-testid={`focus-habit-${nextHabit.id}`}
+              <motion.div 
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-display font-bold text-lg truncate text-gray-900 dark:text-white">{nextHabit.title}</h4>
-                    {!nextHabit.setupComplete && (
-                      <Badge variant="outline" className="text-sm bg-primary/10 border-primary/20">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Setup
-                      </Badge>
-                    )}
-                  </div>
-                  {nextHabit.schedule?.time && (
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Scheduled for{" "}
-                      {new Date(`2000-01-01T${nextHabit.schedule.time}`).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  )}
-                  {(() => {
-                    const taskProgress = getHabitTodayProgress(nextHabit);
-                    if (taskProgress && taskProgress.total > 0) {
-                      return (
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden max-w-[120px]">
-                            <div 
-                              className={cn("h-full rounded-full", !customStyle.hasCustom && getHabitColor(nextHabit).progress)}
-                              style={{ width: `${(taskProgress.completed / taskProgress.total) * 100}%`, ...(customStyle.hasCustom ? customStyle.progressStyle : {}) }}
-                            />
-                          </div>
-                          <span className={cn("text-sm font-semibold", !customStyle.hasCustom && getHabitColor(nextHabit).accent)}>
-                            {taskProgress.completed}/{taskProgress.total} tasks
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-                <div className="flex items-center gap-2 ml-3">
-                  <Button
-                    size="sm"
-                    className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
-                    onClick={(e) => e.stopPropagation()}
-                    data-testid={`button-start-focus-${nextHabit.id}`}
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    Start
-                  </Button>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
+                <Sparkles className="w-6 h-6 text-primary" />
               </motion.div>
-                );
-              })()}
-            </Link>
-          </motion.div>
-        ) : null}
-
-        {/* Unified routine stacks */}
-        {stacks && stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).length > 0 && (
-          <div className="space-y-2">
-            {stacks.filter(s => (s as any).planMode === "unified" && (s as any).unifiedPlan).map((stack) => {
-              const uPlan = (stack as any).unifiedPlan;
-              const taskCount = uPlan?.tasks?.length || 0;
-              const isRoutineCompleted = (stack as any).lastRoutineCompletedDate === todayStr;
-              return (
-                <motion.div
-                  key={`stack-${stack.id}`}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={cn(
-                    "group flex items-center justify-between p-4 rounded-2xl shadow-sm transition-all cursor-pointer",
-                    isRoutineCompleted
-                      ? "bg-primary/5 dark:bg-primary/10 border-2 border-primary/30 dark:border-primary/40 opacity-75"
-                      : "bg-white dark:bg-gray-900/80 border-2 border-primary/20 dark:border-primary/30 hover:shadow-lg"
-                  )}
-                  data-testid={`focus-stack-${stack.id}`}
-                  onClick={() => setRoutineSessionStack(stack)}
+              <h3 className="font-display text-lg font-bold text-foreground">All done for today!</h3>
+              <p className="text-[12px] text-muted-foreground mt-1">Amazing work!</p>
+            </motion.div>
+          ) : nextHabit ? (
+            <div>
+              <p className="text-[11px] font-bold text-amber-500 flex items-center gap-1 mb-2">
+                {isStackedNext ? (
+                  <>
+                    <Link2 className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-primary">Next in stack</span>
+                    {stackParent && (
+                      <span className="font-normal text-muted-foreground ml-1">(after {stackParent.title})</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5" />Up next
+                  </>
+                )}
+              </p>
+              <Link href={`/habit/${nextHabit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
+                <div
+                  className="bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/15 p-3.5 flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-all"
+                  data-testid={`focus-habit-${nextHabit.id}`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      {isRoutineCompleted ? (
-                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                      ) : (
-                        <Layers className="w-4 h-4 text-primary shrink-0" />
+                      <p className="text-[14px] font-bold text-foreground truncate">{nextHabit.title}</p>
+                      {!nextHabit.setupComplete && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 border-primary/20">
+                          <Sparkles className="w-2.5 h-2.5 mr-0.5" />Setup
+                        </Badge>
                       )}
-                      <h4 className={cn(
-                        "font-display font-bold text-base truncate",
-                        isRoutineCompleted
-                          ? "line-through text-muted-foreground"
-                          : "text-gray-900 dark:text-white"
-                      )}>{stack.name}</h4>
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        {isRoutineCompleted ? "Done" : "Routine"}
-                      </Badge>
                     </div>
-                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                      {stack.scheduledTime && (
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {nextHabit.schedule?.time && (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
                           <Clock className="w-3 h-3" />
-                          {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                          {new Date(`2000-01-01T${nextHabit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                         </span>
                       )}
-                      <span className="text-sm text-muted-foreground">
-                        {taskCount} tasks
-                      </span>
-                      {uPlan.totalDuration && (
-                        <span className="text-sm text-muted-foreground">
-                          ~{uPlan.totalDuration}m
-                        </span>
-                      )}
+                      {(() => {
+                        const taskProgress = getHabitTodayProgress(nextHabit);
+                        if (taskProgress && taskProgress.total > 0) {
+                          return (
+                            <span className="text-[11px] text-muted-foreground">
+                              · {taskProgress.completed}/{taskProgress.total} tasks
+                            </span>
+                          );
+                        }
+                        if (nextHabit.trackingMode === "simple") {
+                          return <span className="text-[11px] text-muted-foreground">Simple</span>;
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-3">
-                    {isRoutineCompleted ? (
-                      <span className="text-sm font-semibold text-primary px-3">Completed</span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="gap-1.5 rounded-xl shadow-md shadow-primary/20"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRoutineSessionStack(stack);
-                        }}
-                        data-testid={`button-start-routine-${stack.id}`}
-                      >
-                        <Play className="w-3.5 h-3.5" />
-                        Start
-                      </Button>
-                    )}
-                    <Link href={`/stack/${stack.id}`} onClick={(e: any) => e.stopPropagation()}>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
-                    </Link>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Collapsible remaining habits */}
-        {otherRemaining.length > 0 && (
-          <div className="pt-2">
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 w-full text-left p-2 rounded-lg hover:bg-white/30 dark:hover:bg-black/20 transition-colors"
-              data-testid="button-toggle-remaining-habits"
-            >
-              <ChevronDown className={cn(
-                "w-4 h-4 text-muted-foreground transition-transform",
-                isExpanded ? "rotate-0" : "-rotate-90"
-              )} />
-              <span className="text-sm font-semibold text-muted-foreground">
-                {otherRemaining.length} more habit{otherRemaining.length > 1 ? "s" : ""} remaining
-              </span>
-            </button>
-            
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-1.5 pt-1">
-                    {otherRemaining.map((habit) => {
-                      const taskProgress = getHabitTodayProgress(habit);
-                      const pct = taskProgress && taskProgress.total > 0 ? Math.round((taskProgress.completed / taskProgress.total) * 100) : 0;
-                      const isInStack = habits.some(h => h.linkedHabitId === habit.id) || !!habit.linkedHabitId;
-                      const customStyle = getCustomColorStyle(habit.customColor);
-                      return (
-                        <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
-                          <div
-                            className={cn(
-                              "group flex items-center gap-3 p-3 rounded-xl border hover:border-primary/30 transition-all cursor-pointer",
-                              !customStyle.hasCustom && "bg-gradient-to-r",
-                              !customStyle.hasCustom && getHabitColor(habit).bg,
-                              !customStyle.hasCustom && getHabitColor(habit).border
-                            )}
-                            style={customStyle.hasCustom ? customStyle.style : undefined}
-                            data-testid={`remaining-habit-${habit.id}`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                {isInStack && <Link2 className="w-3 h-3 text-primary flex-shrink-0" />}
-                                <span className="font-semibold text-base truncate text-gray-900 dark:text-white">{habit.title}</span>
-                                {!habit.setupComplete && (
-                                  <Badge variant="outline" className="text-xs px-1.5 py-0">Setup</Badge>
-                                )}
-                              </div>
-                              {taskProgress && taskProgress.total > 0 && (
-                                <div className="flex items-center gap-2 mt-1.5">
-                                  <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden max-w-[100px]">
-                                    <div
-                                      className={cn("h-full rounded-full", pct > 0 ? (!customStyle.hasCustom ? getHabitColor(habit).progress : "") : "bg-muted")}
-                                      style={{ width: `${pct}%`, ...(pct > 0 && customStyle.hasCustom ? customStyle.progressStyle : {}) }}
-                                    />
-                                  </div>
-                                  <span className="text-xs text-muted-foreground font-semibold">
-                                    {taskProgress.completed}/{taskProgress.total}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {habit.schedule?.time && (
-                                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              )}
-                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Completed habits - also collapsible */}
-        {completedToday.length > 0 && remainingHabits.length > 0 && (
-          <div className="pt-2 space-y-2">
-            <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-primary" />
-              {completedToday.length} completed today
-            </p>
-            <div className="space-y-1">
-              {completedToday.map((habit) => {
-                const customStyle = getCustomColorStyle(habit.customColor);
-                const completedBgStyle = customStyle.hasCustom ? {
-                  background: customStyle.style.background,
-                  borderColor: customStyle.style.borderColor,
-                  opacity: 0.7,
-                } : undefined;
-                return (
-                <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
-                  <div
-                    className={cn(
-                      "group flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer hover:border-primary/30 transition-all opacity-70",
-                      !customStyle.hasCustom && "bg-gradient-to-r",
-                      !customStyle.hasCustom && getHabitColor(habit).bg,
-                      !customStyle.hasCustom && getHabitColor(habit).border
-                    )}
-                    style={completedBgStyle}
-                    data-testid={`completed-habit-${habit.id}`}
+                  <Button
+                    size="sm"
+                    className="gap-1.5 rounded-xl shadow-sm text-[12px] font-bold px-3.5 py-2 h-auto"
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid={`button-start-focus-${nextHabit.id}`}
                   >
-                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground line-through truncate flex-1">{habit.title}</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                    <Play className="w-3 h-3" fill="currentColor" />Start
+                  </Button>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </div>
+              </Link>
+
+              {/* Other remaining - compact 2-col grid */}
+              {otherRemaining.length > 0 && otherRemaining.length <= 4 && (
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  {otherRemaining.map((habit) => (
+                    <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
+                      <div className="bg-muted/40 rounded-xl border border-border/50 p-2.5 flex items-center gap-2 cursor-pointer hover:bg-muted/60 transition-colors" data-testid={`remaining-habit-${habit.id}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-foreground truncate">{habit.title}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {habit.schedule?.time
+                              ? new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                              : habit.trackingMode === "simple" ? "Simple" : (() => {
+                                  const tp = getHabitTodayProgress(habit);
+                                  return tp ? `${tp.completed}/${tp.total}` : "";
+                                })()
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* If more than 4 remaining, show collapsible list */}
+              {otherRemaining.length > 4 && (
+                <div className="mt-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(isExpanded ? otherRemaining : otherRemaining.slice(0, 4)).map((habit) => (
+                      <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
+                        <div className="bg-muted/40 rounded-xl border border-border/50 p-2.5 flex items-center gap-2 cursor-pointer hover:bg-muted/60 transition-colors" data-testid={`remaining-habit-${habit.id}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-semibold text-foreground truncate">{habit.title}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {habit.schedule?.time
+                                ? new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                                : habit.trackingMode === "simple" ? "Simple" : (() => {
+                                    const tp = getHabitTodayProgress(habit);
+                                    return tp ? `${tp.completed}/${tp.total}` : "";
+                                  })()
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
+                  {!isExpanded && (
+                    <button
+                      onClick={() => setIsExpanded(true)}
+                      className="flex items-center gap-1.5 w-full justify-center mt-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors py-1"
+                      data-testid="button-toggle-remaining-habits"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                      {otherRemaining.length - 4} more habits
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {/* Unified routine stacks */}
+          {unifiedStacks.length > 0 && (
+            <div className={cn("space-y-2", nextHabit && "mt-3 pt-3 border-t border-border/30")}>
+              {unifiedStacks.map((stack) => {
+                const uPlan = (stack as any).unifiedPlan;
+                const taskCount = uPlan?.tasks?.length || 0;
+                const isRoutineCompleted = (stack as any).lastRoutineCompletedDate === todayStr;
+                return (
+                  <div
+                    key={`stack-${stack.id}`}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all",
+                      isRoutineCompleted
+                        ? "bg-muted/30 border-border/30 opacity-70"
+                        : "bg-card border-border/50 hover:border-primary/30"
+                    )}
+                    data-testid={`focus-stack-${stack.id}`}
+                    onClick={() => setRoutineSessionStack(stack)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {isRoutineCompleted ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        ) : (
+                          <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                        <span className={cn(
+                          "text-[13px] font-bold truncate",
+                          isRoutineCompleted ? "line-through text-muted-foreground" : "text-foreground"
+                        )}>{stack.name}</span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                          {isRoutineCompleted ? "Done" : "Routine"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2.5 mt-0.5 text-[11px] text-muted-foreground">
+                        {stack.scheduledTime && (
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="w-3 h-3" />
+                            {new Date(`2000-01-01T${stack.scheduledTime}`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                          </span>
+                        )}
+                        <span>{taskCount} tasks</span>
+                        {uPlan.totalDuration && <span>~{uPlan.totalDuration}m</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {isRoutineCompleted ? (
+                        <span className="text-[11px] font-semibold text-primary">Completed</span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="gap-1.5 rounded-xl text-[12px] font-bold px-3 py-1.5 h-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRoutineSessionStack(stack);
+                          }}
+                          data-testid={`button-start-routine-${stack.id}`}
+                        >
+                          <Play className="w-3 h-3" fill="currentColor" />Start
+                        </Button>
+                      )}
+                      <Link href={`/stack/${stack.id}`} onClick={(e: any) => e.stopPropagation()}>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                      </Link>
+                    </div>
+                  </div>
                 );
               })}
             </div>
-          </div>
-        )}
-      </CardContent>
+          )}
+
+          {/* Completed habits summary */}
+          {completedToday.length > 0 && remainingHabits.length > 0 && (
+            <div className={cn("pt-2.5 mt-2.5 border-t border-border/30")}>
+              <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mb-1.5">
+                <CheckCircle2 className="w-3 h-3 text-primary" />
+                {completedToday.length} completed today
+              </p>
+              <div className="space-y-1">
+                {completedToday.map((habit) => (
+                  <Link key={habit.id} href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
+                    <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer" data-testid={`completed-habit-${habit.id}`}>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                      <span className="text-[12px] text-muted-foreground line-through truncate flex-1">{habit.title}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {routineSessionStack && (
         <UnifiedRoutineSession
@@ -578,6 +409,6 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
           }}
         />
       )}
-    </Card>
+    </>
   );
 }

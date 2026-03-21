@@ -973,10 +973,10 @@ export default function Dashboard() {
                         const IconComp = habit.customIcon ? ICON_MAP[habit.customIcon] : null;
 
                         return (
-                          <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
+                          <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group transition-opacity ${isCheckedIn ? 'opacity-60' : ''} ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
                             <Link href={`/habit/${habit.id}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
                               <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 transition-opacity ${isCheckedIn ? 'opacity-50' : ''}`}
                                 style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
                               >
                                 {IconComp ? (
@@ -986,7 +986,7 @@ export default function Dashboard() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-[14px] font-semibold text-foreground truncate">{habit.title}</p>
+                                <p className={`text-[14px] font-semibold truncate ${isCheckedIn ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{habit.title}</p>
                                 <div className="flex items-center gap-2.5 mt-0.5">
                                   {streak > 0 && (
                                     <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
@@ -994,7 +994,7 @@ export default function Dashboard() {
                                     </span>
                                   )}
                                   <span className="text-[11px] text-muted-foreground">
-                                    {isSimple ? "Simple" : `${completedTasks}/${totalTasks}`}
+                                    {isSimple ? (isCheckedIn ? "Done" : "Simple") : `${completedTasks}/${totalTasks}`}
                                   </span>
                                 </div>
                               </div>
