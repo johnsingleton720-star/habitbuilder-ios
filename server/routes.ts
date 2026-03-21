@@ -1549,7 +1549,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
             );
             let consecutiveMissed = 0;
             const todayDate = new Date(today + "T00:00:00");
-            for (let i = 1; i <= 60; i++) {
+            for (let i = 0; i <= 60; i++) {
               const d = new Date(todayDate);
               d.setDate(todayDate.getDate() - i);
               const dateStr = d.toISOString().split("T")[0];
