@@ -134,6 +134,8 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
     },
     onError: (error: any) => {
       const msg = error?.message || '';

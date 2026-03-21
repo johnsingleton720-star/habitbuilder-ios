@@ -38,6 +38,51 @@ function getUserToday(timezone?: string | null): string {
     return new Date().toISOString().split("T")[0];
   }
 }
+
+const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+/**
+ * Calculate current streak for a simple habit by walking calendar days backwards.
+ * Unlike the naive approach (iterating only existing plan entries), this detects
+ * gaps — days where no check-in entry exists are treated as misses and break the streak.
+ *
+ * @param dailyPlans - The habit's dailyPlans array (only completed entries matter)
+ * @param todayStr   - Today's date string in YYYY-MM-DD (user-timezone-aware)
+ * @param scheduleDays - Optional array of expected weekday names (e.g. ["monday","wednesday"]).
+ *                       If provided, only those days are counted; other days are skipped over.
+ */
+function calcSimpleStreak(dailyPlans: any[], todayStr: string, scheduleDays?: string[] | null): number {
+  const completedDates = new Set(
+    dailyPlans.filter((p: any) => p.completed).map((p: any) => p.date as string)
+  );
+
+  const expectedDays = scheduleDays && scheduleDays.length > 0
+    ? new Set(scheduleDays.map(d => d.toLowerCase()))
+    : null;
+
+  let streak = 0;
+  const today = new Date(todayStr + "T00:00:00");
+
+  for (let daysBack = 0; daysBack <= 1000; daysBack++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - daysBack);
+    const dateStr = d.toISOString().split("T")[0];
+
+    // Skip days not in the habit's schedule (they don't count for or against the streak)
+    if (expectedDays) {
+      const dow = DAY_NAMES[d.getDay()];
+      if (!expectedDays.has(dow)) continue;
+    }
+
+    if (completedDates.has(dateStr)) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import OpenAI from "openai";
 
@@ -1451,48 +1496,88 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         const storedStreak = habit.currentStreak || 0;
         if (storedStreak > 0) {
           const dailyPlans = habit.dailyPlans || [];
-          let actualStreak = 0;
-          const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
-          for (const plan of sorted) {
-            if (plan.completed) {
-              actualStreak++;
-            } else if (plan.date <= today) {
-              break;
+          let actualStreak: number;
+          if (habit.trackingMode === "simple") {
+            // Use gap-aware algorithm for simple habits (no uncompleted entries exist for missed days)
+            actualStreak = calcSimpleStreak(dailyPlans, today, (habit.schedule as any)?.days);
+          } else {
+            // Plan habits create uncompleted entries ahead of time; old algorithm works fine
+            const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
+            actualStreak = 0;
+            for (const plan of sorted) {
+              if (plan.completed) {
+                actualStreak++;
+              } else if (plan.date <= today) {
+                break;
+              }
             }
           }
-          if (actualStreak === 0 && storedStreak > 0) {
+          if (actualStreak < storedStreak) {
+            const newStreak = actualStreak;
             await storage.updateHabit(habit.id, userId, {
-              currentStreak: 0,
-              previousStreak: storedStreak,
-              streakBrokenAt: today,
-              streakBrokenDismissed: false,
+              currentStreak: newStreak,
+              ...(newStreak === 0 ? {
+                previousStreak: storedStreak,
+                streakBrokenAt: today,
+                streakBrokenDismissed: false,
+              } : {}),
             });
-            habit.currentStreak = 0;
-            habit.previousStreak = storedStreak;
-            habit.streakBrokenAt = today;
-            habit.streakBrokenDismissed = false;
+            habit.currentStreak = newStreak;
+            if (newStreak === 0) {
+              habit.previousStreak = storedStreak;
+              habit.streakBrokenAt = today;
+              habit.streakBrokenDismissed = false;
+            }
           }
         }
       }
 
-      // Only surface streak breaks after 2+ consecutive missed scheduled days
+      // Only surface streak breaks after 2+ consecutive missed days
       // so a single slip doesn't immediately prompt the user
       const breaks = userHabits
         .filter(h => h.streakBrokenAt && !h.streakBrokenDismissed && !h.archived && h.setupComplete)
         .filter(h => {
           const dailyPlans: any[] = h.dailyPlans || [];
-          const pastDue = dailyPlans
-            .filter((p: any) => p.date <= today)
-            .sort((a: any, b: any) => b.date.localeCompare(a.date));
-          let consecutiveMissed = 0;
-          for (const plan of pastDue) {
-            if (!plan.completed) {
-              consecutiveMissed++;
-            } else {
-              break;
+          if ((h as any).trackingMode === "simple") {
+            // For simple habits, count calendar days since last check-in
+            const scheduleDays = (h.schedule as any)?.days;
+            const expectedDays = scheduleDays && scheduleDays.length > 0
+              ? new Set(scheduleDays.map((d: string) => d.toLowerCase()))
+              : null;
+            const completedDates = new Set(
+              dailyPlans.filter((p: any) => p.completed).map((p: any) => p.date as string)
+            );
+            let consecutiveMissed = 0;
+            const todayDate = new Date(today + "T00:00:00");
+            for (let i = 1; i <= 60; i++) {
+              const d = new Date(todayDate);
+              d.setDate(todayDate.getDate() - i);
+              const dateStr = d.toISOString().split("T")[0];
+              if (expectedDays) {
+                const dow = DAY_NAMES[d.getDay()];
+                if (!expectedDays.has(dow)) continue;
+              }
+              if (!completedDates.has(dateStr)) {
+                consecutiveMissed++;
+              } else {
+                break;
+              }
             }
+            return consecutiveMissed >= 2;
+          } else {
+            const pastDue = dailyPlans
+              .filter((p: any) => p.date <= today)
+              .sort((a: any, b: any) => b.date.localeCompare(a.date));
+            let consecutiveMissed = 0;
+            for (const plan of pastDue) {
+              if (!plan.completed) {
+                consecutiveMissed++;
+              } else {
+                break;
+              }
+            }
+            return consecutiveMissed >= 2;
           }
-          return consecutiveMissed >= 2;
         })
         .map(h => ({
           habitId: h.id,
@@ -5395,15 +5480,11 @@ REQUIREMENTS:
         });
       }
 
-      let currentStreak = 0;
-      const sortedPlans = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
-      for (const plan of sortedPlans) {
-        if (plan.completed) {
-          currentStreak++;
-        } else if (plan.date <= todayStr) {
-          break;
-        }
-      }
+      const currentStreak = calcSimpleStreak(
+        dailyPlans,
+        todayStr,
+        (habit.schedule as any)?.days
+      );
 
       const oldStreak = habit.currentStreak || 0;
       const streakBreakFields: any = {};

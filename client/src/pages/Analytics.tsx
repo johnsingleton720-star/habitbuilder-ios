@@ -39,7 +39,8 @@ import {
   AlertTriangle,
   Crown,
   Award,
-  Star
+  Star,
+  RefreshCw
 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -218,9 +219,28 @@ export default function Analytics() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("month");
   const [activeTab, setActiveTab] = useState("overview");
+
+  const REPORT_TTL_MS = 60 * 60 * 1000; // 1 hour
   const reportCacheKey = user?.id ? `comprehensiveReport_${user.id}` : "";
+  const reportTsKey = user?.id ? `comprehensiveReportTs_${user.id}` : "";
+
   const [fullReport, setFullReport] = useState<string | null>(() => {
-    try { return reportCacheKey ? sessionStorage.getItem(reportCacheKey) : null; } catch { return null; }
+    try {
+      if (!reportCacheKey) return null;
+      const ts = sessionStorage.getItem(reportTsKey);
+      if (ts && Date.now() - Number(ts) < REPORT_TTL_MS) {
+        return sessionStorage.getItem(reportCacheKey);
+      }
+      sessionStorage.removeItem(reportCacheKey);
+      sessionStorage.removeItem(reportTsKey);
+      return null;
+    } catch { return null; }
+  });
+  const [reportGeneratedAt, setReportGeneratedAt] = useState<Date | null>(() => {
+    try {
+      const ts = reportTsKey ? sessionStorage.getItem(reportTsKey) : null;
+      return ts ? new Date(Number(ts)) : null;
+    } catch { return null; }
   });
 
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery<AnalyticsData>({
@@ -231,6 +251,7 @@ export default function Analytics() {
       return res.json();
     },
     enabled: isPremium,
+    staleTime: 0,
   });
 
   const { data: compData, isLoading: isLoadingComp } = useQuery<ComprehensiveData>({
@@ -241,6 +262,7 @@ export default function Analytics() {
       return res.json();
     },
     enabled: isPremium,
+    staleTime: 0,
   });
 
   const generateFullReportMutation = useMutation({
@@ -250,8 +272,15 @@ export default function Analytics() {
     },
     onSuccess: (data) => {
       const report = data.report || null;
+      const now = Date.now();
       setFullReport(report);
-      try { if (report && reportCacheKey) sessionStorage.setItem(reportCacheKey, report); } catch {}
+      setReportGeneratedAt(report ? new Date(now) : null);
+      try {
+        if (report && reportCacheKey) {
+          sessionStorage.setItem(reportCacheKey, report);
+          sessionStorage.setItem(reportTsKey, String(now));
+        }
+      } catch {}
       setActiveTab("ai-overview");
       toast({ title: "Full Overview Generated", description: "Your comprehensive AI analysis is ready!" });
     },
@@ -989,14 +1018,23 @@ export default function Analytics() {
               {fullReport ? (
                 <Card className="border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/30 to-purple-50/20 dark:from-violet-950/20 dark:to-purple-950/10" data-testid="card-full-ai-report">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
-                      <Crown className="w-5 h-5" />
-                      Full AI Overview
-                      <Badge variant="secondary" className="ml-auto text-xs">Premium</Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      Comprehensive analysis of your entire habit-building journey
-                    </CardDescription>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+                          <Crown className="w-5 h-5" />
+                          Full AI Overview
+                          <Badge variant="secondary" className="text-xs">Premium</Badge>
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                          Comprehensive analysis of your entire habit-building journey
+                        </CardDescription>
+                      </div>
+                      {reportGeneratedAt && (
+                        <p className="text-[11px] text-muted-foreground shrink-0 mt-1" data-testid="text-report-timestamp">
+                          Updated {reportGeneratedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </p>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="pb-6">
                     <div className="space-y-2" data-testid="text-full-ai-report">
@@ -1020,8 +1058,8 @@ export default function Analytics() {
                       disabled={generateFullReportMutation.isPending}
                       data-testid="button-regenerate-full-report"
                     >
-                      {generateFullReportMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                      Regenerate Report
+                      {generateFullReportMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                      Refresh Report
                     </Button>
                   </CardContent>
                 </Card>
