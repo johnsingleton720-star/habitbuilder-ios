@@ -187,7 +187,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
 
   const progressPercent = (() => {
     if (trackingMode === "simple") {
-      const simpleStepMap: Record<number, number> = { 1: 25, 2: 50, 3: 75 };
+      const simpleStepMap: Record<number, number> = { 1: 25, 2: 50, 3: 100 };
       return simpleStepMap[step] || Math.min((step / totalSteps) * 100, 100);
     }
     return Math.min((step / totalSteps) * 100, 100);
