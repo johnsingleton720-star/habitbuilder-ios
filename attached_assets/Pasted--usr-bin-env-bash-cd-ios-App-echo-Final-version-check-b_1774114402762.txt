@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+cd ios/App
+echo "=== Final version check before build ==="
+/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
+grep "MARKETING_VERSION" App.xcodeproj/project.pbxproj | head -3
+cd /Users/builder/clone
+xcode-project build-ipa \
+  --workspace "ios/App/App.xcworkspace" \
+  --scheme "App"
+=== Final version check before build ===
+1.2.3
+				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.3;
+Using Xcode 26.2 (17C52)
+Check App.xcworkspace build settings
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings"
+
+Archive App.xcworkspace
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_hnm_ntex.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=XWGZCDT3XH 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit' from project 'Pods')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit_Basics' from project 'Pods')
+    Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBAEMKit' from project 'Pods')
+Failed to archive ios/App/App.xcworkspace
+=== Final version check before build ===
+1.2.3
+				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.3;
+Using Xcode 26.2 (17C52)
+Check App.xcworkspace build settings
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings"
+
+Archive App.xcworkspace
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_hnm_ntex.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=XWGZCDT3XH 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit' from project 'Pods')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBSDKCoreKit_Basics' from project 'Pods')
+    Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+    Run script build phase '[CP] Copy XCFrameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'FBAEMKit' from project 'Pods')
+Failed to archive ios/App/App.xcworkspace
+
+
+Build failed :|
+Step 16 script `Build and export IPA` exited with status code 65
+
+
+Build failed :|
+Step 16 script `Build and export IPA` exited with status code 65
