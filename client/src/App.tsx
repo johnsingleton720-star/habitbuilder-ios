@@ -174,9 +174,12 @@ function Router() {
           queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          const isSimple = presignupData.trackingMode === "simple";
           toast({
-            title: "Your plan is saved!",
-            description: `"${presignupData.habitTitle}" is ready. Start your first session!`,
+            title: isSimple ? "Your habit is ready!" : "Your plan is saved!",
+            description: isSimple
+              ? `"${presignupData.habitTitle}" is set up. Check in daily to build your streak!`
+              : `"${presignupData.habitTitle}" is ready. Start your first session!`,
           });
         } else {
           try {

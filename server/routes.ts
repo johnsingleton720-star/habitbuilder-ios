@@ -1951,7 +1951,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
-      const { habitTitle, intent, frequency, timeOfDay, experience, plan, clientTimezone } = req.body;
+      const { habitTitle, intent, frequency, timeOfDay, experience, plan, clientTimezone, trackingMode } = req.body;
 
       if (!habitTitle || typeof habitTitle !== "string" || habitTitle.trim().length < 2 || habitTitle.length > 200) {
         return res.status(400).json({ error: "Missing or invalid habit title" });
@@ -1989,6 +1989,8 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         return res.status(400).json({ error: safetyCheck.message });
       }
 
+      const isSimpleMode = trackingMode === "simple";
+
       const scheduleMap: Record<string, string[]> = {
         "3x/week": ["monday", "wednesday", "friday"],
         "5x/week": ["monday", "tuesday", "wednesday", "thursday", "friday"],
@@ -1999,14 +2001,19 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         title: habitTitle,
         goal: `Build a consistent ${habitTitle} routine`,
         description: intent || "Created during onboarding",
-        schedule: frequency && scheduleMap[frequency] ? {
+        schedule: !isSimpleMode && frequency && scheduleMap[frequency] ? {
           type: "specific" as const,
           days: scheduleMap[frequency],
           time: timeOfDay === "Morning" ? "08:00" : timeOfDay === "Afternoon" ? "14:00" : timeOfDay === "Evening" ? "19:00" : "08:00",
         } : undefined,
+        trackingMode: isSimpleMode ? "simple" : undefined,
       });
 
-      if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
+      if (isSimpleMode) {
+        await storage.updateHabit(habit.id, userId, {
+          setupComplete: true,
+        });
+      } else if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
         const todayDate = getUserToday(user?.timezone || clientTimezone);
         const dailyPlans = [{
           date: todayDate,

@@ -24,6 +24,8 @@ import {
   Zap,
   Users,
   LogIn,
+  CheckCircle2,
+  ListChecks,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -79,8 +81,11 @@ const pageVariants = {
   exit: { opacity: 0, x: -40 },
 };
 
+type TrackingMode = "ai" | "simple" | "";
+
 export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }) {
   const [step, setStep] = useState(0);
+  const [trackingMode, setTrackingMode] = useState<TrackingMode>("");
   const [data, setData] = useState<PresignupData>({
     intent: "",
     habitTitle: "",
@@ -96,6 +101,8 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
 
   const selectedHabit = data.habitTitle || data.customHabit.trim();
 
+  const totalSteps = trackingMode === "simple" ? 4 : 7;
+
   useEffect(() => {
     if (!isGenerating) return;
     const interval = setInterval(() => {
@@ -108,7 +115,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
     setIsGenerating(true);
     setError("");
     setGeneratingStep(0);
-    setStep(4);
+    setStep(5);
 
     try {
       const res = await fetch("/api/presignup/generate-plan", {
@@ -130,10 +137,10 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
 
       const planData = await res.json();
       setPlan(planData);
-      setStep(5);
+      setStep(6);
     } catch (e: any) {
       setError(e.message || "Failed to generate plan. Please try again.");
-      setStep(3);
+      setStep(4);
     } finally {
       setIsGenerating(false);
     }
@@ -149,20 +156,51 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
         timeOfDay: data.timeOfDay,
         experience: data.experience,
         plan,
+        trackingMode: "ai",
+      })
+    );
+    onLogin();
+  };
+
+  const handleSaveSimple = () => {
+    localStorage.setItem(
+      "presignup_data",
+      JSON.stringify({
+        habitTitle: selectedHabit,
+        intent: data.intent,
+        trackingMode: "simple",
       })
     );
     onLogin();
   };
 
   const goBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step === 4 && trackingMode === "ai") {
+      setStep(3);
+    } else if (step === 3 && trackingMode === "simple") {
+      setTrackingMode("");
+      setStep(3);
+    } else if (step > 0) {
+      setStep(step - 1);
+    }
   };
 
-  const progressPercent = Math.min((step / 5) * 100, 100);
+  const progressPercent = (() => {
+    if (trackingMode === "simple") {
+      const simpleStepMap: Record<number, number> = { 1: 25, 2: 50, 3: 75 };
+      return simpleStepMap[step] || Math.min((step / totalSteps) * 100, 100);
+    }
+    return Math.min((step / totalSteps) * 100, 100);
+  })();
+
+  const showHeader = step > 0 && (
+    (trackingMode === "simple" && step <= 3) ||
+    (trackingMode !== "simple" && step < 6)
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col safe-top safe-bottom">
-      {step > 0 && step < 5 && (
+      {showHeader && (
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <button
@@ -375,7 +413,156 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
               </motion.div>
             )}
 
-            {step === 3 && (
+            {step === 3 && trackingMode === "" && (
+              <motion.div
+                key="tracking-choice"
+                variants={pageVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-display font-bold text-foreground" data-testid="text-presignup-mode-heading">
+                    How would you like to track?
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    Choose what works best for your <span className="font-medium text-foreground">{selectedHabit.toLowerCase()}</span> goal
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Card
+                    className="p-5 cursor-pointer transition-all hover:border-primary/50 relative overflow-hidden border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.06]"
+                    onClick={() => {
+                      setTrackingMode("ai");
+                      setStep(4);
+                    }}
+                    data-testid="card-mode-ai"
+                  >
+                    <Badge className="absolute top-3 right-3 bg-primary/15 text-primary border-primary/30 hover:bg-primary/15 text-[10px] px-2 py-0.5">
+                      Recommended
+                    </Badge>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <p className="font-semibold text-foreground">AI Coaching Plan</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Get a personalized daily action plan with guided sessions, progress tracking, and AI coaching tips
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Personalized plan</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Guided sessions</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">AI coaching</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card
+                    className="p-5 cursor-pointer transition-all hover:border-muted-foreground/40"
+                    onClick={() => {
+                      setTrackingMode("simple");
+                    }}
+                    data-testid="card-mode-simple"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <ListChecks className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <p className="font-semibold text-foreground">Simple Tracking</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Just check in daily and track your streak — no setup needed, start right away
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Daily check-in</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Streak tracking</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Quick start</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && trackingMode === "simple" && (
+              <motion.div
+                key="simple-confirm"
+                variants={pageVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center text-center space-y-8 py-4"
+              >
+                <div className="w-20 h-20 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-primary" />
+                </div>
+
+                <div className="space-y-3">
+                  <h2 className="text-2xl font-display font-bold text-foreground" data-testid="text-presignup-simple-ready">
+                    Your habit is ready!
+                  </h2>
+                  <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                    Sign up to start tracking <span className="font-medium text-foreground">{selectedHabit}</span> with daily check-ins and streak tracking
+                  </p>
+                </div>
+
+                <Card className="w-full p-4 bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                      <Check className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="font-semibold text-foreground text-sm">{selectedHabit}</p>
+                      <p className="text-xs text-muted-foreground">Simple daily tracking</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <div className="w-full space-y-4">
+                  <div className="space-y-2 text-left">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">What you get:</p>
+                    <div className="space-y-2">
+                      {[
+                        "Daily check-in reminders",
+                        "Streak tracking & stats",
+                        "Progress history",
+                        "Upgrade to AI coaching anytime",
+                      ].map((feature) => (
+                        <div key={feature} className="flex items-center gap-2 text-sm text-foreground">
+                          <Check className="w-4 h-4 text-primary shrink-0" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full space-y-3">
+                  <Button
+                    onClick={handleSaveSimple}
+                    size="lg"
+                    className="w-full gap-2 h-14 rounded-xl text-base"
+                    data-testid="button-presignup-save-simple"
+                  >
+                    Start My 7-Day Free Premium Trial
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+
+                  <p className="w-full text-center text-sm text-muted-foreground" data-testid="text-presignup-simple-trial-info">
+                    Sign up free — get 7 days of all Premium features
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 4 && trackingMode === "ai" && (
               <motion.div
                 key="setup"
                 variants={pageVariants}
@@ -487,7 +674,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
               </motion.div>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <motion.div
                 key="building"
                 variants={pageVariants}
@@ -545,7 +732,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
               </motion.div>
             )}
 
-            {step === 5 && plan && (
+            {step === 6 && plan && (
               <motion.div
                 key="reveal"
                 variants={pageVariants}
