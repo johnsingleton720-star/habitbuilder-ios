@@ -31,13 +31,6 @@ const ALL_STEPS: TourStep[] = [
     position: "bottom",
   },
   {
-    selector: '[data-tour="feature-links"]',
-    title: "Powerful Tools",
-    description: "Access Focus Timer for deep work sessions, Mood Check-in to track how you feel, Goals to set targets, and the Smart Planner for AI-optimized daily schedules.",
-    icon: <Layout className="w-5 h-5 text-blue-500" />,
-    position: "top",
-  },
-  {
     selector: '#habits-section',
     title: "Your Habits",
     description: "All your habits live here. Tap any habit to see your personalized AI action plan, start guided sessions, and track your streaks. Use the + button to add more.",
@@ -49,6 +42,13 @@ const ALL_STEPS: TourStep[] = [
     title: "Earn Rewards",
     description: "You'll earn achievement badges and XP for hitting milestones — streak goals, completion targets, and more. Watch your progress grow over time!",
     icon: <BarChart3 className="w-5 h-5 text-purple-500" />,
+    position: "top",
+  },
+  {
+    selector: '[data-tour="feature-links"]',
+    title: "Powerful Tools",
+    description: "Access Focus Timer for deep work sessions, Mood Check-in to track how you feel, Goals to set targets, and the Smart Planner for AI-optimized daily schedules.",
+    icon: <Layout className="w-5 h-5 text-blue-500" />,
     position: "top",
   },
   {

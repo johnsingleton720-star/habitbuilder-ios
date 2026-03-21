@@ -53,7 +53,7 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
-  const [habitsCollapsed, setHabitsCollapsed] = useState(true);
+  const [habitsCollapsed, setHabitsCollapsed] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const [planAdjustDismissed, setPlanAdjustDismissed] = useState(() =>
     localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
@@ -649,48 +649,6 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {isFreeUser && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.02 }}
-          >
-            <Card className="border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/15" data-testid="card-free-upgrade-cta">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Crown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Upgrade to unlock the full experience</p>
-                    <ul className="mt-1.5 space-y-1">
-                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        <span>Unlimited habits & AI-powered action plans</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        <span>Streak tracking, achievements & XP multipliers</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        <span>AI session summaries & curated resources</span>
-                      </li>
-                    </ul>
-                    <Link href="/paywall">
-                      <Button size="sm" className="gap-1.5 mt-3" data-testid="button-dashboard-upgrade">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        See Plans — Starting at $6/mo
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.section>
-        )}
-
         {isFreeUser && !levelUpDismissed && (() => {
           const daysActive = user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
           if (daysActive < 7) return null;
@@ -755,18 +713,65 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* Daily Quote - Positive start */}
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-        >
-          <DailyQuote />
-        </motion.section>
+        {isFreeUser && (() => {
+          const daysActive = user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          const levelUpVisible = daysActive >= 7 && !levelUpDismissed;
+          if (levelUpVisible) return null;
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.02 }}
+            >
+              <Card className="border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/15" data-testid="card-free-upgrade-cta">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Crown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">Upgrade to unlock the full experience</p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span>Unlimited habits & AI-powered action plans</span>
+                        </li>
+                        <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span>Streak tracking, achievements & XP multipliers</span>
+                        </li>
+                        <li className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span>AI session summaries & curated resources</span>
+                        </li>
+                      </ul>
+                      <Link href="/paywall">
+                        <Button size="sm" className="gap-1.5 mt-3" data-testid="button-dashboard-upgrade">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          See Plans — Starting at $6/mo
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          );
+        })()}
 
-        {/* Today's Focus - What to do NOW */}
+        {/* ===== SECTION 1: TODAY ===== */}
         <div data-tour="daily-action-center" className="section-group space-y-6">
-          <h2 className="section-title" data-testid="text-section-daily-focus">Daily Focus</h2>
+          <h2 className="section-title" data-testid="text-section-daily-focus">Today</h2>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+          >
+            <DailyQuote />
+          </motion.section>
+
           {habits && habits.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -777,7 +782,6 @@ export default function Dashboard() {
             </motion.section>
           )}
 
-          {/* Quick Tasks */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -787,165 +791,7 @@ export default function Dashboard() {
           </motion.section>
         </div>
 
-        {/* Daily Journal Card */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          {features.hasJournal ? (
-            <Link href="/journal">
-              <Card className="hover-elevate cursor-pointer border-2 border-indigo-200/60 dark:border-indigo-700/40 bg-gradient-to-r from-indigo-50/80 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/20 shadow-md hover:shadow-lg transition-shadow" data-testid="card-journal-link">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">Daily Journal</p>
-                      <p className="text-sm text-muted-foreground">Write reflections and get AI insights</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ) : (
-            <Card className="border-2 border-muted shadow-sm" data-testid="card-journal-locked">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      Daily Journal
-                      <Badge variant="secondary" className="text-xs">Pro+</Badge>
-                    </p>
-                    <p className="text-sm text-muted-foreground">Upgrade to write reflections and get AI insights</p>
-                  </div>
-                  <Link href="/paywall">
-                    <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
-                      <Crown className="w-3 h-3" />
-                      Upgrade
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </motion.section>
-
-        {/* Feature Quick Links */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-        >
-          <h2 className="section-title mb-4" data-testid="text-section-explore">Explore</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
-            <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-focus-timer-link">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                  <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                    <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Focus Timer</p>
-                    {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-mood-tracker-link">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                  <div className="w-11 h-11 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
-                    {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={features.hasGoals ? "/goals" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-goals-link">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                  <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Goals</p>
-                    {!features.hasGoals && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
-              <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-planner-link">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
-                  <div className="w-11 h-11 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Daily Planner</p>
-                    {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-        </motion.section>
-
-        {/* Progress Summary */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <ProgressSummary habits={activeHabits || []} allHabits={habits || []} />
-          </motion.section>
-        )}
-
-        {/* Achievements & Gamification Group */}
-        <div data-tour="achievements-section" className="section-group section-group-accent space-y-5">
-          <h2 className="section-title" data-testid="text-section-achievements">Achievements & Rewards</h2>
-          {habits && habits.length > 0 && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-            >
-              <AchievementsDisplay compact />
-            </motion.section>
-          )}
-
-          {/* Gamification - XP, Levels, Daily Challenges */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <GamificationDisplay />
-          </motion.section>
-        </div>
-
-        {/* Mood Check-in */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.45 }}
-        >
-          <MoodTracker />
-        </motion.section>
-
-        {/* Habits Section - Bottom, Collapsible */}
+        {/* ===== SECTION 2: YOUR HABITS ===== */}
         <section id="habits-section" className="space-y-4 pt-1">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <button
@@ -1031,10 +877,22 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {activeHabits?.map((habit) => (
-                      <HabitCard key={habit.id} habit={habit} />
-                    ))}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {activeHabits?.map((habit) => (
+                        <HabitCard key={habit.id} habit={habit} />
+                      ))}
+                    </div>
+
+                    {activeHabits && activeHabits.length >= 2 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
+                      >
+                        <HabitStacks />
+                      </motion.div>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -1042,16 +900,163 @@ export default function Dashboard() {
           </AnimatePresence>
         </section>
 
-        {/* Habit Stacks Section (Premium) */}
-        {activeHabits && activeHabits.length >= 2 && (
+        {/* ===== SECTION 3: PROGRESS ===== */}
+        {habits && habits.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <ProgressSummary habits={activeHabits || []} allHabits={habits || []} />
+          </motion.section>
+        )}
+
+        {/* ===== SECTION 4: ACHIEVEMENTS & REWARDS ===== */}
+        <div data-tour="achievements-section" className="section-group section-group-accent space-y-5">
+          <h2 className="section-title" data-testid="text-section-achievements">Achievements & Rewards</h2>
+          {habits && habits.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+            >
+              <AchievementsDisplay compact />
+            </motion.section>
+          )}
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <GamificationDisplay />
+          </motion.section>
+        </div>
+
+        {/* ===== SECTION 5: TOOLS ===== */}
+        <div className="space-y-5">
+          <h2 className="section-title" data-testid="text-section-tools" data-section="tools">Tools</h2>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <MoodTracker />
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            {features.hasJournal ? (
+              <Link href="/journal">
+                <Card className="hover-elevate cursor-pointer border-2 border-indigo-200/60 dark:border-indigo-700/40 bg-gradient-to-r from-indigo-50/80 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/20 shadow-md hover:shadow-lg transition-shadow" data-testid="card-journal-link">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
+                        <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Daily Journal</p>
+                        <p className="text-sm text-muted-foreground">Write reflections and get AI insights</p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <Card className="border-2 border-muted shadow-sm" data-testid="card-journal-locked">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        Daily Journal
+                        <Badge variant="secondary" className="text-xs">Pro+</Badge>
+                      </p>
+                      <p className="text-sm text-muted-foreground">Upgrade to write reflections and get AI insights</p>
+                    </div>
+                    <Link href="/paywall">
+                      <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
+                        <Crown className="w-3 h-3" />
+                        Upgrade
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </motion.section>
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.45 }}
           >
-            <HabitStacks />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="feature-links">
+              <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
+                <Card className="hover-elevate cursor-pointer border-2 border-amber-200/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-focus-timer-link">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                    <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                      <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Focus Timer</p>
+                      {!features.hasFocusTimer && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
+                <Card className="hover-elevate cursor-pointer border-2 border-teal-200/60 dark:border-teal-700/40 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-mood-tracker-link">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                    <div className="w-11 h-11 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                      <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Mood Check-in</p>
+                      {!features.hasMoodTracker && <Badge variant="secondary" className="text-xs mt-1">Pro+</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href={features.hasGoals ? "/goals" : "/paywall"}>
+                <Card className="hover-elevate cursor-pointer border-2 border-rose-200/60 dark:border-rose-700/40 bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-950/30 dark:to-pink-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-goals-link">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                    <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                      <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Goals</p>
+                      {!features.hasGoals && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
+                <Card className="hover-elevate cursor-pointer border-2 border-sky-200/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50/80 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 shadow-md hover:shadow-lg transition-shadow h-full" data-testid="card-planner-link">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-2.5">
+                    <div className="w-11 h-11 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Daily Planner</p>
+                      {!features.hasDailyPlanner && <Badge variant="secondary" className="text-xs mt-1">Premium</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </motion.section>
-        )}
+        </div>
       </div>
 
       <HabitFormDialog 
