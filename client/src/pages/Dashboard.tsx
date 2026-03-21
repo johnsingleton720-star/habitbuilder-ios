@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useHabitsSummary } from "@/hooks/use-habits";
+import { useHabitsSummary, useDeleteHabit } from "@/hooks/use-habits";
 import { HabitCard } from "@/components/HabitCard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { DailyQuote } from "@/components/DailyQuote";
@@ -19,7 +20,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,9 @@ export default function Dashboard() {
   const [showTour, setShowTour] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showInterviewOffer, setShowInterviewOffer] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<any>(null);
+  const [deletingHabit, setDeletingHabit] = useState<any>(null);
+  const deleteHabit = useDeleteHabit();
   const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const { theme, toggleTheme } = useTheme();
@@ -918,10 +922,76 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="space-y-3">
-                      {activeHabits?.map((habit) => (
-                        <HabitCard key={habit.id} habit={habit} />
-                      ))}
+                    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                      {activeHabits?.map((habit, i) => {
+                        const isSimple = habit.trackingMode === "simple";
+                        const streak = habit.currentStreak || 0;
+                        const plans = (habit.dailyPlans || []) as DailyPlan[];
+                        const todayStr = new Date().toISOString().slice(0, 10);
+                        const todayPlan = plans.find(p => p.date === todayStr);
+                        const todayTasks = todayPlan?.tasks || [];
+                        const completedTasks = todayTasks.filter((t: any) => t.completed).length;
+                        const totalTasks = todayTasks.length;
+                        const isCheckedIn = isSimple ? todayPlan?.completed === true : (totalTasks > 0 && completedTasks === totalTasks);
+                        const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
+                        const iconBg = iconColor ? `${iconColor}18` : undefined;
+                        const ICON_MAP: Record<string, any> = {
+                          Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
+                          Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
+                          Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
+                          TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
+                          Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
+                        };
+                        const IconComp = habit.customIcon ? ICON_MAP[habit.customIcon] : null;
+
+                        return (
+                          <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
+                            <Link href={`/habit/${habit.id}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                                style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
+                              >
+                                {IconComp ? (
+                                  <IconComp className="w-5 h-5" style={iconColor ? { color: iconColor } : undefined} />
+                                ) : (
+                                  <Star className="w-5 h-5 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[14px] font-semibold text-foreground truncate">{habit.title}</p>
+                                <div className="flex items-center gap-2.5 mt-0.5">
+                                  {streak > 0 && (
+                                    <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
+                                      <Flame className="w-3 h-3" />{streak}d
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {isSimple ? "Simple" : `${completedTasks}/${totalTasks}`}
+                                  </span>
+                                </div>
+                              </div>
+                            </Link>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-lg flex-shrink-0" data-testid={`button-habit-menu-${habit.id}`}>
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setEditingHabit(habit)}>
+                                  <Edit className="w-4 h-4 mr-2" />Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeletingHabit(habit)}>
+                                  <Trash2 className="w-4 h-4 mr-2" />Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isCheckedIn ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground/20'}`}>
+                              {isCheckedIn && <Check className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {activeHabits && activeHabits.length >= 2 && (
@@ -1108,6 +1178,41 @@ export default function Dashboard() {
           goal: selectedTemplate.suggestedGoal || '',
         } : undefined}
       />
+
+      {editingHabit && (
+        <HabitFormDialog
+          open={!!editingHabit}
+          onOpenChange={(open) => { if (!open) setEditingHabit(null); }}
+          habitToEdit={editingHabit}
+        />
+      )}
+
+      <AlertDialog open={!!deletingHabit} onOpenChange={(open) => { if (!open) setDeletingHabit(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Habit</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingHabit?.title}"? This action cannot be undone and your progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingHabit) {
+                  deleteHabit.mutate(deletingHabit.id, {
+                    onSuccess: () => setDeletingHabit(null),
+                    onError: () => toast({ title: "Failed to delete habit", variant: "destructive" })
+                  });
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteHabit.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isFreeUser && !user?.isAdmin && activeHabits && activeHabits.length > 1 && (
         <DowngradeHabitPicker habits={habits || []} open={true} />
