@@ -96,10 +96,22 @@ export const users = pgTable("users", {
   
   billingInterval: varchar("billing_interval"),
   isFoundingMember: boolean("is_founding_member").default(false),
+
+  passwordHash: varchar("password_hash"),
+  authProvider: varchar("auth_provider").default("replit"),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  token: varchar("token").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export const foundingMemberSlots = pgTable("founding_member_slots", {
   id: serial("id").primaryKey(),
