@@ -3,7 +3,7 @@ import {
   Target, Flame, Zap, Star, Play, Check, ChevronDown, ChevronUp,
   BookOpen, Timer, Heart, Calendar, Layers, Plus, ArrowRight,
   CheckSquare, Crown, Sparkles, BarChart3, TrendingUp, Trophy,
-  Moon, Sun, Bell, User, Settings, Quote
+  Bell, User, Settings, Quote, Smile, Frown, Meh, ThumbsUp, Lock
 } from "lucide-react";
 
 const habits = [
@@ -25,24 +25,21 @@ const achievements = [
   { emoji: "💎", label: "Diamond", earned: false },
 ];
 
-const tools = [
-  { icon: Timer, label: "Focus Timer", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-  { icon: Heart, label: "Mood Check-in", color: "text-teal-600", bg: "bg-teal-50", border: "border-teal-100" },
-  { icon: BookOpen, label: "Journal", color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
-  { icon: Target, label: "Goals", color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100", badge: "Premium" },
-  { icon: Calendar, label: "Planner", color: "text-sky-600", bg: "bg-sky-50", border: "border-sky-100", badge: "Premium" },
-  { icon: Layers, label: "Stacks", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100", badge: "Pro+" },
-];
-
 const quickTasks = [
   { id: 1, label: "Buy groceries", done: true },
   { id: 2, label: "Reply to emails", done: false },
   { id: 3, label: "Schedule dentist", done: false },
 ];
 
+const dailyChallenges = [
+  { label: "Complete 3 habits", progress: 1, total: 3, xp: 50 },
+  { label: "Log a mood entry", progress: 0, total: 1, xp: 20 },
+];
+
 export function FinalDesign() {
   const [habitsOpen, setHabitsOpen] = useState(true);
   const [tasks, setTasks] = useState(quickTasks);
+  const [selectedMood, setSelectedMood] = useState<number | null>(null);
 
   const toggleTask = (id: number) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
@@ -50,6 +47,13 @@ export function FinalDesign() {
 
   const completedCount = habits.filter(h => h.done).length;
   const progressPct = Math.round((completedCount / habits.length) * 100);
+
+  const moods = [
+    { icon: Frown, label: "Bad", color: "text-red-400", bg: "bg-red-50", border: "border-red-200" },
+    { icon: Meh, label: "Meh", color: "text-amber-400", bg: "bg-amber-50", border: "border-amber-200" },
+    { icon: Smile, label: "Good", color: "text-emerald-400", bg: "bg-emerald-50", border: "border-emerald-200" },
+    { icon: ThumbsUp, label: "Great", color: "text-violet-400", bg: "bg-violet-50", border: "border-violet-200" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f5f6f8] font-sans text-gray-900 overflow-y-auto">
@@ -140,10 +144,6 @@ export function FinalDesign() {
               </div>
             </div>
             <div className="px-4 py-2.5 border-b border-gray-50">
-              <div className="flex items-center justify-between text-[11px] text-gray-400 mb-1">
-                <span>Daily Progress</span>
-                <span>{completedCount}/{habits.length}</span>
-              </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-violet-500 to-emerald-400 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
               </div>
@@ -154,25 +154,28 @@ export function FinalDesign() {
                 <span className="text-2xl">🧘</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-bold text-gray-900 truncate">Morning Meditation</p>
-                  <p className="text-[11px] text-gray-400">Scheduled 7:00 AM · 0/3 tasks</p>
+                  <p className="text-[11px] text-gray-400">7:00 AM · 0/3 tasks</p>
                 </div>
                 <button className="flex items-center gap-1.5 bg-gray-900 text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm">
                   <Play className="w-3 h-3" fill="white" />Start
                 </button>
               </div>
-              <div className="mt-2.5 flex items-center gap-2">
-                <div className="flex-1 bg-gray-50 rounded-xl border border-gray-100 p-3 flex items-center gap-2.5">
-                  <span className="text-lg">📚</span>
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl border border-gray-100 p-2.5 flex items-center gap-2">
+                  <span className="text-base">📚</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-gray-800 truncate">Read 30 Minutes</p>
-                    <p className="text-[11px] text-gray-400">9:00 PM</p>
+                    <p className="text-[11px] font-semibold text-gray-800 truncate">Read 30 Min</p>
+                    <p className="text-[10px] text-gray-400">9:00 PM</p>
                   </div>
-                  <button className="bg-gray-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">Start</button>
+                </div>
+                <div className="bg-gray-50 rounded-xl border border-gray-100 p-2.5 flex items-center gap-2">
+                  <span className="text-base">💧</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-gray-800 truncate">Drink Water</p>
+                    <p className="text-[10px] text-gray-400">Simple</p>
+                  </div>
                 </div>
               </div>
-              <button className="w-full mt-2.5 text-[12px] text-gray-400 flex items-center justify-center gap-1 py-1 hover:text-gray-600">
-                <ChevronDown className="w-4 h-4" />2 more habits
-              </button>
             </div>
           </div>
 
@@ -279,9 +282,11 @@ export function FinalDesign() {
           </div>
         </div>
 
-        {/* ═══ ACHIEVEMENTS ═══ */}
+        {/* ═══ ACHIEVEMENTS & GAMIFICATION ═══ */}
         <div className="px-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">Achievements</p>
+
+          {/* Badges */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[15px] font-bold text-gray-900 flex items-center gap-1.5"><Trophy className="w-4 h-4 text-amber-500" />Badges & Rewards</p>
@@ -296,21 +301,113 @@ export function FinalDesign() {
               ))}
             </div>
           </div>
+
+          {/* Daily Challenges / Gamification */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[14px] font-bold text-gray-900 flex items-center gap-1.5"><Zap className="w-4 h-4 text-violet-500" />Daily Challenges</p>
+              <span className="text-[11px] text-gray-400">Resets at midnight</span>
+            </div>
+            <div className="space-y-3">
+              {dailyChallenges.map((c, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12px] font-medium text-gray-700">{c.label}</span>
+                    <span className="text-[11px] font-semibold text-violet-600">+{c.xp} XP</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${(c.progress / c.total) * 100}%` }} />
+                  </div>
+                  <span className="text-[10px] text-gray-400">{c.progress}/{c.total}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-gray-700">Weekly XP Goal</span>
+              <div className="flex items-center gap-2">
+                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '45%' }} />
+                </div>
+                <span className="text-[11px] text-gray-400">450/1000</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ═══ TOOLS ═══ */}
         <div className="px-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">Tools</p>
-          <div className="grid grid-cols-3 gap-2.5 mb-3">
-            {tools.map((t, i) => (
-              <div key={i} className={`bg-white rounded-2xl border ${t.border} shadow-sm p-3.5 flex flex-col items-center gap-2 ${t.badge ? 'opacity-70' : ''}`}>
-                <div className={`w-11 h-11 rounded-xl ${t.bg} flex items-center justify-center`}>
-                  <t.icon className={`w-5 h-5 ${t.color}`} />
-                </div>
-                <p className="text-[12px] font-semibold text-gray-700 text-center leading-tight">{t.label}</p>
-                {t.badge && <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">{t.badge}</span>}
+
+          {/* Mood Tracker Widget */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
+            <p className="text-[14px] font-bold text-gray-900 mb-3">How are you feeling?</p>
+            <div className="grid grid-cols-4 gap-2.5">
+              {moods.map((m, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedMood(i)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${selectedMood === i ? `${m.bg} ${m.border} scale-105` : 'border-gray-100 hover:border-gray-200'}`}
+                >
+                  <m.icon className={`w-6 h-6 ${selectedMood === i ? m.color : 'text-gray-400'}`} />
+                  <span className={`text-[11px] font-semibold ${selectedMood === i ? 'text-gray-700' : 'text-gray-400'}`}>{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Journal Card */}
+          <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 shadow-sm p-4 mb-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-semibold text-gray-900">Daily Journal</p>
+              <p className="text-[12px] text-gray-500">Write reflections & get AI insights</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          </div>
+
+          {/* Explore Grid — 4 tools matching real app */}
+          <div className="grid grid-cols-2 gap-2.5 mb-3">
+            <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <Timer className="w-5 h-5 text-amber-600" />
               </div>
-            ))}
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800">Focus Timer</p>
+                <p className="text-[10px] text-gray-400">Deep work sessions</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-teal-100 shadow-sm p-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
+                <Heart className="w-5 h-5 text-teal-600" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800">Mood Insights</p>
+                <p className="text-[10px] text-gray-400">Track your trends</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800">Goals</p>
+                <p className="text-[10px] text-gray-400 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-sky-100 shadow-sm p-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-sky-600" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800">Daily Planner</p>
+                <p className="text-[10px] text-gray-400 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
