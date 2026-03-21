@@ -318,6 +318,9 @@ workflows:
             /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:0 fbapi" Info.plist 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :LSApplicationQueriesSchemes:1 string fb-messenger-share-api" Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Set :LSApplicationQueriesSchemes:1 fb-messenger-share-api" Info.plist 2>/dev/null || true
+          # Export compliance (app only uses standard HTTPS, no custom encryption)
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" Info.plist
           echo "=== Privacy descriptions ==="
           /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" Info.plist
           /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Info.plist
