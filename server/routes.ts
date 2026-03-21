@@ -6899,6 +6899,7 @@ Return JSON with:
         stripeCustomerId: users.stripeCustomerId,
         trialEndsAt: users.trialEndsAt,
         createdAt: users.createdAt,
+        authProvider: users.authProvider,
       }).from(users);
       
       res.json(allUsers);

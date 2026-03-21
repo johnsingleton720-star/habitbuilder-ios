@@ -35,6 +35,7 @@ interface AdminUser {
   stripeCustomerId: string;
   trialEndsAt: string;
   createdAt: string;
+  authProvider: string | null;
 }
 
 interface UserActivity {
@@ -265,6 +266,9 @@ function AdminUserManager() {
                       {u.subscriptionTier || 'free'}
                     </Badge>
                     {u.hasPaid && <Badge variant="outline">Paid</Badge>}
+                    <Badge variant="outline" className="text-xs" data-testid={`badge-auth-${u.id}`}>
+                      {u.authProvider === "email" ? "Email" : "Social"}
+                    </Badge>
                     <span className="text-xs text-muted-foreground">
                       {u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : ''}
                     </span>

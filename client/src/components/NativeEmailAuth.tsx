@@ -137,6 +137,9 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 <SiGoogle className="w-4 h-4" />
                 Continue with Google
               </button>
+              <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
+                Opens secure sign-in by Replit, our authentication partner
+              </p>
             </div>
           )}
 

@@ -624,17 +624,13 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     className="w-full gap-2 h-14 rounded-xl text-base"
                     data-testid="button-presignup-save"
                   >
-                    Save My Plan & Start
+                    Start My 7-Day Free Premium Trial
                     <ArrowRight className="w-5 h-5" />
                   </Button>
 
-                  <button
-                    onClick={handleSavePlan}
-                    className="w-full text-center text-sm text-primary hover:underline"
-                    data-testid="button-presignup-create-account"
-                  >
-                    Create a free account to keep your plan
-                  </button>
+                  <p className="w-full text-center text-sm text-muted-foreground" data-testid="text-presignup-trial-info">
+                    Sign up free — get 7 days of all Premium features + your AI plan saved
+                  </p>
                 </div>
               </motion.div>
             )}
