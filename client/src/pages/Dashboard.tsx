@@ -37,7 +37,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Habit, HabitTemplate, HabitStack, DailyPlan } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAppTheme } from "@/components/ThemeSelector";
 
@@ -77,6 +77,34 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { features, isFreeUser } = useSubscription();
   const queryClient = useQueryClient();
+  const simpleCheckin = useMutation({
+    mutationFn: async (habitId: number) => {
+      return await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      toast({ title: "Checked in!" });
+    },
+  });
+  const simpleUncheckin = useMutation({
+    mutationFn: async (habitId: number) => {
+      return await apiRequest("POST", `/api/habits/${habitId}/simple-uncheckin`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Check-in removed" });
+    },
+  });
+  const archiveHabit = useMutation({
+    mutationFn: async (habitId: number) => {
+      return await apiRequest("POST", `/api/habits/${habitId}/archive`, { archived: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Habit archived" });
+    },
+  });
   useAppTheme();
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
@@ -981,14 +1009,32 @@ export default function Dashboard() {
                                 <DropdownMenuItem onClick={() => setEditingHabit(habit)}>
                                   <Edit className="w-4 h-4 mr-2" />Edit
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => archiveHabit.mutate(habit.id)}>
+                                  <Minimize2 className="w-4 h-4 mr-2" />Archive
+                                </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeletingHabit(habit)}>
                                   <Trash2 className="w-4 h-4 mr-2" />Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isCheckedIn ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground/20'}`}>
+                            <button
+                              className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isCheckedIn ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground/20 hover:border-emerald-400'}`}
+                              data-testid={`button-checkin-${habit.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isSimple) {
+                                  if (isCheckedIn) {
+                                    simpleUncheckin.mutate(habit.id);
+                                  } else {
+                                    simpleCheckin.mutate(habit.id);
+                                  }
+                                } else {
+                                  navigate(`/habit/${habit.id}`);
+                                }
+                              }}
+                            >
                               {isCheckedIn && <Check className="w-4 h-4 text-white" />}
-                            </div>
+                            </button>
                           </div>
                         );
                       })}
