@@ -176,10 +176,10 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
 
   const goBack = () => {
     if (step === 4 && trackingMode === "ai") {
+      setTrackingMode("");
       setStep(3);
     } else if (step === 3 && trackingMode === "simple") {
       setTrackingMode("");
-      setStep(3);
     } else if (step > 0) {
       setStep(step - 1);
     }
