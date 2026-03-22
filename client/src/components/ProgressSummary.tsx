@@ -52,9 +52,7 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     if (scheduleDays && scheduleDays.length > 0) {
       return scheduleDays.includes(todayDayName);
     }
-    if (h.trackingMode === "simple") {
-      return true;
-    }
+    if (h.trackingMode === "simple") return true;
     const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
     return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
   });
@@ -75,12 +73,8 @@ export function ProgressSummary({ habits, allHabits }: ProgressSummaryProps) {
     const scheduleDays = habit.schedule?.days as string[] | undefined;
     const hasSchedule = scheduleDays && scheduleDays.length > 0;
     const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
-    if (hasSchedule) {
-      return scheduleDays.includes(dayName);
-    }
-    if (habit.trackingMode === "simple") {
-      return true;
-    }
+    if (hasSchedule) return scheduleDays.includes(dayName);
+    if (habit.trackingMode === "simple") return true;
     const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
     return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
   };

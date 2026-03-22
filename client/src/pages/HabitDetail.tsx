@@ -441,26 +441,34 @@ export default function HabitDetail() {
     },
   });
 
-  // Find today's plan or the next upcoming plan, respecting URL date parameter
+  // Find today's plan or the next upcoming plan, respecting URL date parameter and schedule
   useEffect(() => {
     if (habit?.dailyPlans?.length && !selectedDay) {
+      const sched = habit.schedule?.days as string[] | undefined;
+      const hasSched = sched && sched.length > 0;
+      const isScheduledDate = (dateStr: string) => {
+        if (!hasSched) return true;
+        const dn = format(parseISO(dateStr), "EEEE").toLowerCase();
+        return sched.includes(dn);
+      };
+      const scheduledPlans = habit.dailyPlans.filter(p => isScheduledDate(p.date));
       if (urlDate) {
-        const urlPlan = habit.dailyPlans.find(p => p.date === urlDate);
+        const urlPlan = scheduledPlans.find(p => p.date === urlDate);
         if (urlPlan) {
           setSelectedDay(urlDate);
           return;
         }
       }
       const today = format(new Date(), "yyyy-MM-dd");
-      const todayPlan = habit.dailyPlans.find(p => p.date === today);
+      const todayPlan = scheduledPlans.find(p => p.date === today);
       if (todayPlan) {
         setSelectedDay(today);
       } else {
-        const futurePlan = habit.dailyPlans.find(p => isFuture(parseISO(p.date)));
+        const futurePlan = scheduledPlans.find(p => isFuture(parseISO(p.date)));
         if (futurePlan) {
           setSelectedDay(futurePlan.date);
         } else {
-          setSelectedDay(habit.dailyPlans[0]?.date);
+          setSelectedDay(scheduledPlans[scheduledPlans.length - 1]?.date || habit.dailyPlans[0]?.date);
         }
       }
     }
@@ -518,15 +526,23 @@ export default function HabitDetail() {
     );
   }
 
-  const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+  const allDailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+  const scheduleDays = habit.schedule?.days as string[] | undefined;
+  const hasSchedule = scheduleDays && scheduleDays.length > 0;
+  const dailyPlans = hasSchedule
+    ? allDailyPlans.filter(p => {
+        const dayName = format(parseISO(p.date), "EEEE").toLowerCase();
+        return scheduleDays.includes(dayName);
+      })
+    : allDailyPlans;
   const currentPlan = dailyPlans.find(p => p.date === selectedDay);
   const completedDays = dailyPlans.filter(p => p.completed || (p.tasks.length > 0 && p.tasks.every(t => t.completed))).length;
   const totalDays = dailyPlans.length;
   const overallProgress = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
   
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const planEndDate = habit.planEndDate ? habit.planEndDate : dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
-  const lastDailyPlanDate = dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null;
+  const planEndDate = habit.planEndDate ? habit.planEndDate : allDailyPlans.length > 0 ? allDailyPlans[allDailyPlans.length - 1].date : null;
+  const lastDailyPlanDate = allDailyPlans.length > 0 ? allDailyPlans[allDailyPlans.length - 1].date : null;
   const allDailyPlansExpired = habit.setupComplete && lastDailyPlanDate ? lastDailyPlanDate < todayStr : false;
   const isSimpleMode = habit.trackingMode === "simple";
   const isPlanExpired = !isSimpleMode && habit.setupComplete ? ((planEndDate ? planEndDate < todayStr : false) || allDailyPlansExpired) : false;
