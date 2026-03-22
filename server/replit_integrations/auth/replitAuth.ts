@@ -130,17 +130,16 @@ export async function setupAuth(app: Express) {
   app.get("/api/callback", (req, res, next) => {
     ensureStrategy(req.hostname);
     const returnTo = (req.session as any)?.returnTo || "/";
-    if (req.session) {
-      delete (req.session as any).returnTo;
-    }
     const utmData = (req.session as any)?.utmData;
     passport.authenticate(`replitauth:${req.hostname}`, async (err: any, user: any) => {
       if (err) {
         console.error("Callback authentication error:", err);
-        return res.redirect("/api/login");
+        const retryUrl = returnTo !== "/" ? `/api/login?returnTo=${encodeURIComponent(returnTo)}` : "/api/login";
+        return res.redirect(retryUrl);
       }
       if (!user) {
-        return res.redirect("/api/login");
+        const retryUrl = returnTo !== "/" ? `/api/login?returnTo=${encodeURIComponent(returnTo)}` : "/api/login";
+        return res.redirect(retryUrl);
       }
       if (utmData && user.claims) {
         try {
@@ -152,9 +151,11 @@ export async function setupAuth(app: Express) {
       req.login(user, (loginErr) => {
         if (loginErr) {
           console.error("Login session error:", loginErr);
-          return res.redirect("/api/login");
+          const retryUrl = returnTo !== "/" ? `/api/login?returnTo=${encodeURIComponent(returnTo)}` : "/api/login";
+          return res.redirect(retryUrl);
         }
         if (req.session) {
+          delete (req.session as any).returnTo;
           delete (req.session as any).utmData;
         }
         req.session.save((saveErr) => {
