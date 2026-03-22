@@ -206,10 +206,8 @@ export function DashboardHeroCard({
                       }`}>
                         {day.allComplete ? (
                           <Check className="w-5 h-5" strokeWidth={3} />
-                        ) : day.partial ? (
-                          <span className="text-[13px] font-bold">½</span>
                         ) : day.totalCount > 0 && !day.isFuture ? (
-                          <span className="text-[10px] font-semibold text-muted-foreground">{day.completedCount}/{day.totalCount}</span>
+                          <span className="text-[11px] font-bold">{day.completedCount}/{day.totalCount}</span>
                         ) : (
                           <span className="text-[10px] text-muted-foreground/40">·</span>
                         )}
