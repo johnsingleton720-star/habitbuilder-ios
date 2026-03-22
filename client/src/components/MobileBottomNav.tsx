@@ -1,4 +1,4 @@
-import { Home, BarChart3, Settings, Leaf } from "lucide-react";
+import { Home, BarChart3, Settings, Leaf, Wrench } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,12 @@ export function MobileBottomNav() {
       testId: "nav-item-habits",
     },
     {
+      label: "Tools",
+      icon: Wrench,
+      path: "/#tools",
+      testId: "nav-item-tools",
+    },
+    {
       label: "Progress",
       icon: BarChart3,
       path: "/progress/today",
@@ -39,18 +45,18 @@ export function MobileBottomNav() {
   ];
 
   const isActive = (path: string) => {
-    if (path === "/" || path === "/#habits") {
+    if (path === "/" || path === "/#habits" || path === "/#tools") {
       return location === "/";
     }
     return location.startsWith(path);
   };
 
-  const scrollToHabits = () => {
+  const scrollToSection = (sectionId: string) => {
     setTimeout(() => {
-      const habitsSection = document.getElementById("habits-section");
-      if (habitsSection) {
+      const section = document.getElementById(sectionId);
+      if (section) {
         const yOffset = -20;
-        const y = habitsSection.getBoundingClientRect().top + window.scrollY + yOffset;
+        const y = section.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({ top: y, behavior: "smooth" });
       }
     }, 100);
@@ -60,9 +66,16 @@ export function MobileBottomNav() {
     if (path === "/#habits") {
       e.preventDefault();
       if (location === "/") {
-        scrollToHabits();
+        scrollToSection("habits-section");
       } else {
         window.location.href = "/#habits";
+      }
+    } else if (path === "/#tools") {
+      e.preventDefault();
+      if (location === "/") {
+        scrollToSection("tools-section");
+      } else {
+        window.location.href = "/#tools";
       }
     }
   };
@@ -78,7 +91,7 @@ export function MobileBottomNav() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            const href = item.path === "/#habits" ? "/" : item.path;
+            const href = (item.path === "/#habits" || item.path === "/#tools") ? "/" : item.path;
 
             return (
               <Link key={item.path} href={href}>

@@ -1338,7 +1338,7 @@ export default function Dashboard() {
 
         {/* ===== SECTION 4: TOOLS ===== */}
         <div className="space-y-4">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-tools" data-section="tools">Tools</p>
+          <p id="tools-section" className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-tools" data-section="tools">Tools</p>
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -1346,21 +1346,6 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.35 }}
             className="space-y-3"
           >
-            <Link href={features.hasJournal ? "/journal" : "/paywall"}>
-              <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/40 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow" data-testid="card-journal-cta">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-foreground">Daily Journal</p>
-                  <p className="text-[12px] text-muted-foreground">
-                    {features.hasJournal ? "Write reflections & get AI insights" : "Pro+ — Write reflections & get AI insights"}
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              </div>
-            </Link>
-
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" data-tour="feature-links">
               <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
                 <div className="bg-card rounded-2xl border border-teal-100 dark:border-teal-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-mood-tracker-link">
