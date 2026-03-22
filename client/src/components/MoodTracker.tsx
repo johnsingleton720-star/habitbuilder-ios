@@ -86,7 +86,11 @@ interface MoodReport {
   }[];
 }
 
-export function MoodTracker() {
+interface MoodTrackerProps {
+  compact?: boolean;
+}
+
+export function MoodTracker({ compact = false }: MoodTrackerProps) {
   const { user } = useAuth();
   const { data: allHabits } = useHabits();
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -205,6 +209,41 @@ export function MoodTracker() {
     return MOOD_OPTIONS.find(o => o.value === mood);
   };
 
+  if (isFreeUser && compact) {
+    return (
+      <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact-locked">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+              How are you feeling?
+              <Badge variant="outline" className="text-[10px] gap-0.5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 px-1.5 py-0">
+                <Lock className="w-2.5 h-2.5" />
+                Pro
+              </Badge>
+            </p>
+            <Button size="sm" variant="outline" onClick={() => navigate("/paywall")} className="gap-1 h-7 text-xs" data-testid="button-upgrade-mood-compact">
+              <Crown className="w-3 h-3" />
+              Unlock
+            </Button>
+          </div>
+          <div className="flex justify-between gap-1 opacity-40 pointer-events-none select-none">
+            {MOOD_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              return (
+                <div key={option.value} className="flex flex-col items-center gap-1 flex-1 py-1.5">
+                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", option.bgColor)}>
+                    <Icon className={cn("w-5 h-5", option.color)} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isFreeUser) {
     return (
       <Card className="overflow-hidden">
@@ -249,308 +288,242 @@ export function MoodTracker() {
     );
   }
   
-  return (
-    <>
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 whitespace-nowrap">
-              <SmilePlus className="w-5 h-5 text-primary flex-shrink-0" />
-              <span>Mood Check-in</span>
-              {!isPremium && <Badge variant="secondary" className="text-xs flex-shrink-0">Premium</Badge>}
-            </CardTitle>
-            <CardDescription>Track how you feel and find patterns</CardDescription>
-          </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                size="sm" 
-                variant={todayEntry ? "outline" : "default"}
-                data-testid="button-log-mood"
-              >
-                {todayEntry ? "Update Mood" : "Log Mood"}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <SmilePlus className="w-5 h-5 text-primary" />
-                  How are you feeling today?
-                </DialogTitle>
-                <DialogDescription>
-                  Track your mood to discover patterns and correlations with your habits.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6 py-4">
-                <div className="flex justify-center gap-2">
-                  {MOOD_OPTIONS.map((option) => {
-                    const Icon = option.icon;
-                    const isSelected = selectedMood === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setSelectedMood(option.value)}
-                        className={cn(
-                          "flex flex-col items-center gap-1 p-3 rounded-lg transition-all",
-                          isSelected 
-                            ? `${option.bgColor} ring-2 ring-primary scale-110` 
-                            : "hover:bg-muted"
-                        )}
-                        data-testid={`button-mood-${option.value}`}
-                      >
-                        <Icon className={cn("w-8 h-8", option.color)} />
-                        <span className={cn("text-xs font-medium", isSelected && option.color)}>
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                <AnimatePresence>
-                  {selectedMood && isPremium && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-4"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-amber-500" />
-                          <span className="text-sm font-medium">Energy Level</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{energy[0]}/5</span>
-                        </div>
-                        <Slider
-                          value={energy}
-                          onValueChange={setEnergy}
-                          min={1}
-                          max={5}
-                          step={1}
-                          className="w-full"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Brain className="w-4 h-4 text-purple-500" />
-                          <span className="text-sm font-medium">Stress Level</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{stress[0]}/5</span>
-                        </div>
-                        <Slider
-                          value={stress}
-                          onValueChange={setStress}
-                          min={1}
-                          max={5}
-                          step={1}
-                          className="w-full"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Moon className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm font-medium">Sleep Quality</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{sleep[0]}/5</span>
-                        </div>
-                        <Slider
-                          value={sleep}
-                          onValueChange={setSleep}
-                          min={1}
-                          max={5}
-                          step={1}
-                          className="w-full"
-                        />
-                      </div>
-                      
-                      {habits && habits.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-medium">Habits completed today</span>
-                            <div className="relative group">
-                              <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" data-testid="icon-habit-info" />
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2 rounded-md bg-popover border border-border shadow-md text-xs text-muted-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
-                                Select habits you completed today. This helps track how your habits affect your mood over time.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {habits.map((habit: { id: number; title: string }) => (
-                              <Badge
-                                key={habit.id}
-                                variant={selectedHabits.includes(habit.id) ? "default" : "outline"}
-                                className="cursor-pointer"
-                                onClick={() => toggleHabit(habit.id)}
-                              >
-                                {selectedHabits.includes(habit.id) && <Check className="w-3 h-3 mr-1" />}
-                                {habit.title}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium">Notes (optional)</span>
-                        <Textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="How are you feeling? What happened today?"
-                          className="resize-none"
-                          rows={2}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                {!isPremium && selectedMood && (
-                  <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Upgrade to Premium to track energy, stress, sleep, and get AI insights
-                  </div>
+  const moodDialogContent = (
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <SmilePlus className="w-5 h-5 text-primary" />
+          How are you feeling today?
+        </DialogTitle>
+        <DialogDescription>
+          Track your mood to discover patterns and correlations with your habits.
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="space-y-6 py-4">
+        <div className="flex justify-center gap-2">
+          {MOOD_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const isSelected = selectedMood === option.value;
+            return (
+              <button
+                key={option.value}
+                onClick={() => setSelectedMood(option.value)}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-3 rounded-lg transition-all",
+                  isSelected 
+                    ? `${option.bgColor} ring-2 ring-primary scale-110` 
+                    : "hover:bg-muted"
                 )}
+                data-testid={`button-mood-${option.value}`}
+              >
+                <Icon className={cn("w-8 h-8", option.color)} />
+                <span className={cn("text-xs font-medium", isSelected && option.color)}>
+                  {option.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        
+        <AnimatePresence>
+          {selectedMood && isPremium && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-medium">Energy Level</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{energy[0]}/5</span>
+                </div>
+                <Slider
+                  value={energy}
+                  onValueChange={setEnergy}
+                  min={1}
+                  max={5}
+                  step={1}
+                  className="w-full"
+                />
               </div>
               
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button 
-                  onClick={handleSave} 
-                  disabled={!selectedMood || saveMoodMutation.isPending}
-                >
-                  {saveMoodMutation.isPending ? "Saving..." : "Save Mood"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {recentMoods.length > 0 && (
-          <div className="flex items-center gap-1">
-            {recentMoods.map((entry) => {
-              const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
-              if (!option) return null;
-              const Icon = option.icon;
-              return (
-                <div
-                  key={entry.id}
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center",
-                    option.bgColor
-                  )}
-                  title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
-                >
-                  <Icon className={cn("w-4 h-4", option.color)} />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm font-medium">Stress Level</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{stress[0]}/5</span>
                 </div>
-              );
-            })}
-            {recentMoods.length < 7 && (
-              <span className="text-xs text-muted-foreground ml-2">
-                Last {recentMoods.length} days
-              </span>
-            )}
-          </div>
-        )}
-        
-        {recentMoods.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Start tracking your mood to see patterns
-          </p>
-        )}
-        
-        {isPremium && (insights as MoodInsights | undefined)?.correlations && (insights as MoodInsights).correlations.length > 0 && (
-          <div className="pt-3 border-t">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-medium">Mood Correlations</span>
-            </div>
-            <div className="space-y-1">
-              {(() => {
-                const allCorrelations = (insights as MoodInsights).correlations;
-                const firstFour = allCorrelations.slice(0, 4);
-                const remaining = allCorrelations.slice(4);
-                const hiddenCount = remaining.length;
-
-                const renderCorrelationItem = (corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
-                  <button
-                    key={corr.habitId}
-                    onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
-                    className={cn(
-                      "flex items-center justify-between text-sm w-full p-2 rounded-lg transition-all text-left",
-                      corr.correlation !== null ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
-                    )}
-                    data-testid={`mood-correlation-${corr.habitId}`}
-                  >
-                    <span className="text-muted-foreground">{corr.habitTitle}</span>
-                    <div className="flex items-center gap-2">
-                      {corr.correlation !== null ? (
-                        <>
-                          <TrendingUp className="w-3 h-3 text-green-600" />
-                          <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/60">No data yet</span>
-                      )}
+                <Slider
+                  value={stress}
+                  onValueChange={setStress}
+                  min={1}
+                  max={5}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Moon className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm font-medium">Sleep Quality</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{sleep[0]}/5</span>
+                </div>
+                <Slider
+                  value={sleep}
+                  onValueChange={setSleep}
+                  min={1}
+                  max={5}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+              
+              {habits && habits.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium">Habits completed today</span>
+                    <div className="relative group">
+                      <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" data-testid="icon-habit-info" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2 rounded-md bg-popover border border-border shadow-md text-xs text-muted-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
+                        Select habits you completed today. This helps track how your habits affect your mood over time.
+                      </div>
                     </div>
-                  </button>
-                );
-
-                return (
-                  <>
-                    {firstFour.map(renderCorrelationItem)}
-                    <AnimatePresence>
-                      {showAllCorrelations && hiddenCount > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden space-y-1"
-                        >
-                          {remaining.map(renderCorrelationItem)}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {hiddenCount > 0 && (
-                      <button
-                        onClick={() => setShowAllCorrelations(!showAllCorrelations)}
-                        className="flex items-center gap-1 text-sm text-primary w-full justify-center pt-1 pb-0.5 transition-colors"
-                        data-testid="button-toggle-correlations"
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {habits.map((habit: { id: number; title: string }) => (
+                      <Badge
+                        key={habit.id}
+                        variant={selectedHabits.includes(habit.id) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => toggleHabit(habit.id)}
                       >
-                        {showAllCorrelations ? (
-                          <>
-                            <ChevronUp className="w-4 h-4" />
-                            Show less
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="w-4 h-4" />
-                            Show {hiddenCount} more
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
+                        {selectedHabits.includes(habit.id) && <Check className="w-3 h-3 mr-1" />}
+                        {habit.title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <span className="text-sm font-medium">Notes (optional)</span>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="How are you feeling? What happened today?"
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
-        {!isPremium && (
-          <div className="pt-3 border-t flex items-center gap-2 text-sm text-muted-foreground">
+        {!isPremium && selectedMood && (
+          <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground flex items-center gap-2">
             <Lock className="w-4 h-4" />
-            <span>Premium users can see mood-habit correlations and AI insights</span>
+            Upgrade to Premium to track energy, stress, sleep, and get AI insights
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      
+      <DialogFooter>
+        <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button 
+          onClick={handleSave} 
+          disabled={!selectedMood || saveMoodMutation.isPending}
+        >
+          {saveMoodMutation.isPending ? "Saving..." : "Save Mood"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
 
-    <Dialog open={reportOpen} onOpenChange={(open) => { setReportOpen(open); if (!open) setReportHabitId(null); }}>
+  const correlationsSection = isPremium && (insights as MoodInsights | undefined)?.correlations && (insights as MoodInsights).correlations.length > 0 ? (
+    <div className={compact ? "pt-2" : "pt-3 border-t"}>
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles className="w-4 h-4 text-amber-500" />
+        <span className="text-sm font-medium">Mood Correlations</span>
+      </div>
+      <div className="space-y-1">
+        {(() => {
+          const allCorrelations = (insights as MoodInsights).correlations;
+          const firstFour = allCorrelations.slice(0, 4);
+          const remaining = allCorrelations.slice(4);
+          const hiddenCount = remaining.length;
+
+          const renderCorrelationItem = (corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }) => (
+            <button
+              key={corr.habitId}
+              onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
+              className={cn(
+                "flex items-center justify-between text-sm w-full p-2 rounded-lg transition-all text-left",
+                corr.correlation !== null ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
+              )}
+              data-testid={`mood-correlation-${corr.habitId}`}
+            >
+              <span className="text-muted-foreground">{corr.habitTitle}</span>
+              <div className="flex items-center gap-2">
+                {corr.correlation !== null ? (
+                  <>
+                    <TrendingUp className="w-3 h-3 text-green-600" />
+                    <span className="text-green-600 font-medium">{corr.correlation}% positive</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground/60">No data yet</span>
+                )}
+              </div>
+            </button>
+          );
+
+          return (
+            <>
+              {firstFour.map(renderCorrelationItem)}
+              <AnimatePresence>
+                {showAllCorrelations && hiddenCount > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden space-y-1"
+                  >
+                    {remaining.map(renderCorrelationItem)}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {hiddenCount > 0 && (
+                <button
+                  onClick={() => setShowAllCorrelations(!showAllCorrelations)}
+                  className="flex items-center gap-1 text-sm text-primary w-full justify-center pt-1 pb-0.5 transition-colors"
+                  data-testid="button-toggle-correlations"
+                >
+                  {showAllCorrelations ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      Show {hiddenCount} more
+                    </>
+                  )}
+                </button>
+              )}
+            </>
+          );
+        })()}
+      </div>
+    </div>
+  ) : null;
+
+  const reportDialog = (
+    <Dialog open={reportOpen} onOpenChange={(o) => { setReportOpen(o); if (!o) setReportHabitId(null); }}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -756,6 +729,203 @@ export function MoodTracker() {
         )}
       </DialogContent>
     </Dialog>
+  );
+
+  if (compact) {
+    const handleCompactMoodClick = (mood: MoodType) => {
+      setSelectedMood(mood);
+      setOpen(true);
+    };
+
+    return (
+      <>
+        <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact">
+          <CardContent className="p-4">
+            {todayEntry ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {(() => {
+                      const opt = MOOD_OPTIONS.find(o => o.value === todayEntry.mood);
+                      if (!opt) return null;
+                      const TodayIcon = opt.icon;
+                      return (
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", opt.bgColor)}>
+                          <TodayIcon className={cn("w-5 h-5", opt.color)} />
+                        </div>
+                      );
+                    })()}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Mood logged today</p>
+                      <p className="text-[11px] text-muted-foreground capitalize">Feeling {todayEntry.mood}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setOpen(true)} data-testid="button-update-mood-compact">
+                      Update
+                    </Button>
+                    <button onClick={() => navigate("/mood")} className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-history-compact">
+                      History <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                {recentMoods.length > 1 && (
+                  <div className="flex items-center gap-1 pt-1">
+                    {recentMoods.map((entry) => {
+                      const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
+                      if (!option) return null;
+                      const Icon = option.icon;
+                      return (
+                        <div
+                          key={entry.id}
+                          className={cn("w-7 h-7 rounded-full flex items-center justify-center", option.bgColor)}
+                          title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
+                        >
+                          <Icon className={cn("w-3.5 h-3.5", option.color)} />
+                        </div>
+                      );
+                    })}
+                    {recentMoods.length < 7 && (
+                      <span className="text-[10px] text-muted-foreground ml-1.5">Last {recentMoods.length} days</span>
+                    )}
+                  </div>
+                )}
+                {correlationsSection}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
+                  <button onClick={() => navigate("/mood")} className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-insights-compact">
+                    History <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex justify-between gap-1">
+                  {MOOD_OPTIONS.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => handleCompactMoodClick(option.value)}
+                        className="flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                        data-testid={`button-mood-compact-${option.value}`}
+                      >
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", option.bgColor)}>
+                          <Icon className={cn("w-5 h-5", option.color)} />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {recentMoods.length > 0 && (
+                  <div className="flex items-center gap-1 pt-1">
+                    {recentMoods.map((entry) => {
+                      const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
+                      if (!option) return null;
+                      const Icon = option.icon;
+                      return (
+                        <div
+                          key={entry.id}
+                          className={cn("w-7 h-7 rounded-full flex items-center justify-center", option.bgColor)}
+                          title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
+                        >
+                          <Icon className={cn("w-3.5 h-3.5", option.color)} />
+                        </div>
+                      );
+                    })}
+                    {recentMoods.length < 7 && (
+                      <span className="text-[10px] text-muted-foreground ml-1.5">Last {recentMoods.length} days</span>
+                    )}
+                  </div>
+                )}
+                {correlationsSection}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Dialog open={open} onOpenChange={setOpen}>
+          {moodDialogContent}
+        </Dialog>
+        {reportDialog}
+      </>
+    );
+  }
+
+  return (
+    <>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 whitespace-nowrap">
+              <SmilePlus className="w-5 h-5 text-primary flex-shrink-0" />
+              <span>Mood Check-in</span>
+              {!isPremium && <Badge variant="secondary" className="text-xs flex-shrink-0">Premium</Badge>}
+            </CardTitle>
+            <CardDescription>Track how you feel and find patterns</CardDescription>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                size="sm" 
+                variant={todayEntry ? "outline" : "default"}
+                data-testid="button-log-mood"
+              >
+                {todayEntry ? "Update Mood" : "Log Mood"}
+              </Button>
+            </DialogTrigger>
+            {moodDialogContent}
+          </Dialog>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {recentMoods.length > 0 && (
+          <div className="flex items-center gap-1">
+            {recentMoods.map((entry) => {
+              const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
+              if (!option) return null;
+              const Icon = option.icon;
+              return (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center",
+                    option.bgColor
+                  )}
+                  title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
+                >
+                  <Icon className={cn("w-4 h-4", option.color)} />
+                </div>
+              );
+            })}
+            {recentMoods.length < 7 && (
+              <span className="text-xs text-muted-foreground ml-2">
+                Last {recentMoods.length} days
+              </span>
+            )}
+          </div>
+        )}
+        
+        {recentMoods.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Start tracking your mood to see patterns
+          </p>
+        )}
+        
+        {correlationsSection}
+        
+        {!isPremium && (
+          <div className="pt-3 border-t flex items-center gap-2 text-sm text-muted-foreground">
+            <Lock className="w-4 h-4" />
+            <span>Premium users can see mood-habit correlations and AI insights</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    {reportDialog}
     </>
   );
 }
