@@ -783,8 +783,6 @@ export async function registerRoutes(
     colorTheme: z.enum(ALL_THEMES),
   });
 
-  const premiumThemes = ["ocean", "sunset", "lavender", "forest", "ruby", "amber", "cyan", "rose", "emerald", "platinum", "champion_gold"];
-
   // Save user color theme preference
   app.patch("/api/user/color-theme", isAuthenticated, async (req: any, res) => {
     try {
@@ -792,13 +790,6 @@ export async function registerRoutes(
       
       const validatedData = colorThemeSchema.parse(req.body);
       const { colorTheme } = validatedData;
-      
-      const user = await storage.getUser(userId);
-      const isPremium = user?.subscriptionTier === "premium" || user?.isAdmin || isTrialActive(user);
-      
-      if (premiumThemes.includes(colorTheme) && !isPremium) {
-        return res.status(403).json({ error: "This theme requires a Premium subscription" });
-      }
       
       const [updated] = await db.update(users)
         .set({ colorTheme, updatedAt: new Date() })

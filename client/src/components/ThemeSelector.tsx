@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Palette, Lock } from "lucide-react";
+import { Check, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -45,7 +43,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "ocean",
     name: "Ocean",
     description: "Deep blues and aquas",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "210 100% 50%",
       primaryForeground: "0 0% 100%",
@@ -60,7 +58,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "sunset",
     name: "Sunset",
     description: "Warm oranges and pinks",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "20 90% 55%",
       primaryForeground: "0 0% 100%",
@@ -75,7 +73,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "lavender",
     name: "Lavender",
     description: "Soft purples and violets",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "270 60% 55%",
       primaryForeground: "0 0% 100%",
@@ -90,7 +88,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "forest",
     name: "Forest",
     description: "Earthy greens and browns",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "140 50% 40%",
       primaryForeground: "0 0% 100%",
@@ -105,7 +103,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "ruby",
     name: "Ruby",
     description: "Bold reds and crimsons",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "350 75% 50%",
       primaryForeground: "0 0% 100%",
@@ -120,7 +118,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "amber",
     name: "Amber",
     description: "Warm golden tones",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "40 90% 50%",
       primaryForeground: "0 0% 100%",
@@ -135,7 +133,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "cyan",
     name: "Cyan",
     description: "Electric aqua vibes",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "185 80% 45%",
       primaryForeground: "0 0% 100%",
@@ -150,7 +148,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "rose",
     name: "Rose",
     description: "Elegant pinks",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "330 70% 55%",
       primaryForeground: "0 0% 100%",
@@ -165,7 +163,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "emerald",
     name: "Emerald",
     description: "Rich elite greens",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "155 75% 40%",
       primaryForeground: "0 0% 100%",
@@ -180,7 +178,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "platinum",
     name: "Platinum",
     description: "Sleek silver tones",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "220 15% 55%",
       primaryForeground: "0 0% 100%",
@@ -195,7 +193,7 @@ export const APP_THEMES: AppTheme[] = [
     id: "champion_gold",
     name: "Champion Gold",
     description: "Ultimate golden glory",
-    isPremium: true,
+    isPremium: false,
     colors: {
       primary: "45 95% 50%",
       primaryForeground: "0 0% 15%",
@@ -241,53 +239,33 @@ export function applyThemeToDocument(theme: AppTheme) {
 
 export function useAppTheme() {
   const { user } = useAuth();
-  const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   
   const [currentTheme, setCurrentTheme] = useState<string>(() => {
     const savedTheme = localStorage.getItem("appColorTheme") || "nature";
     return savedTheme;
   });
 
-  // Sync with server theme when user data loads
   useEffect(() => {
     if (!user) return;
     if (user.colorTheme) {
       const serverTheme = APP_THEMES.find(t => t.id === user.colorTheme);
       if (serverTheme) {
-        if (!serverTheme.isPremium || isPremium) {
-          setCurrentTheme(user.colorTheme);
-          localStorage.setItem("appColorTheme", user.colorTheme);
-          applyThemeToDocument(serverTheme);
-        } else if (user.subscriptionTier) {
-          setCurrentTheme("nature");
-          localStorage.setItem("appColorTheme", "nature");
-          applyThemeToDocument(APP_THEMES.find(t => t.id === "nature")!);
-        }
+        setCurrentTheme(user.colorTheme);
+        localStorage.setItem("appColorTheme", user.colorTheme);
+        applyThemeToDocument(serverTheme);
       }
     }
-  }, [user?.colorTheme, user?.subscriptionTier, isPremium]);
+  }, [user?.colorTheme]);
 
-  // Apply theme when currentTheme changes
   useEffect(() => {
     const theme = APP_THEMES.find(t => t.id === currentTheme);
     if (theme) {
-      if (theme.isPremium && !isPremium && user?.subscriptionTier) {
-        const defaultTheme = APP_THEMES.find(t => t.id === "nature")!;
-        applyThemeToDocument(defaultTheme);
-        setCurrentTheme("nature");
-        localStorage.setItem("appColorTheme", "nature");
-      } else {
-        applyThemeToDocument(theme);
-        localStorage.setItem("appColorTheme", theme.id);
-      }
+      applyThemeToDocument(theme);
+      localStorage.setItem("appColorTheme", theme.id);
     }
-  }, [currentTheme, isPremium, user?.subscriptionTier]);
+  }, [currentTheme]);
 
   const setTheme = (themeId: string) => {
-    const theme = APP_THEMES.find(t => t.id === themeId);
-    if (theme && (theme.isPremium && !isPremium)) {
-      return;
-    }
     setCurrentTheme(themeId);
   };
 
@@ -299,11 +277,8 @@ interface ThemeSelectorProps {
 }
 
 export function ThemeSelector({ onThemeChange }: ThemeSelectorProps) {
-  const { user } = useAuth();
   const { currentTheme, setTheme } = useAppTheme();
   const { toast } = useToast();
-  
-  const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
 
   const [previousTheme, setPreviousTheme] = useState<string>(currentTheme);
 
@@ -325,9 +300,6 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps) {
   });
 
   const handleThemeSelect = (theme: AppTheme) => {
-    if (theme.isPremium && !isPremium) {
-      return;
-    }
     setPreviousTheme(currentTheme);
     setTheme(theme.id);
     saveThemeMutation.mutate(theme.id);
@@ -345,31 +317,23 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps) {
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {APP_THEMES.map((theme) => {
-            const isLocked = theme.isPremium && !isPremium;
             const isSelected = currentTheme === theme.id;
             
             return (
               <button
                 key={theme.id}
                 onClick={() => handleThemeSelect(theme)}
-                disabled={isLocked}
                 className={cn(
                   "relative p-3 rounded-lg border-2 transition-all text-left",
                   isSelected 
                     ? "border-primary bg-primary/5" 
-                    : "border-transparent bg-muted/30 hover:bg-muted/50",
-                  isLocked && "opacity-60 cursor-not-allowed"
+                    : "border-transparent bg-muted/30 hover:bg-muted/50"
                 )}
                 data-testid={`theme-${theme.id}`}
               >
                 {isSelected && (
                   <div className="absolute top-2 right-2">
                     <Check className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-                {isLocked && (
-                  <div className="absolute top-2 right-2">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
                   </div>
                 )}
                 
@@ -388,25 +352,12 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps) {
                   />
                 </div>
                 
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-sm">{theme.name}</span>
-                  {theme.isPremium && (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                      Premium
-                    </Badge>
-                  )}
-                </div>
+                <span className="font-medium text-sm">{theme.name}</span>
                 <p className="text-xs text-muted-foreground">{theme.description}</p>
               </button>
             );
           })}
         </div>
-        
-        {!isPremium && (
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            Upgrade to Premium to unlock all color themes
-          </p>
-        )}
       </CardContent>
     </Card>
   );

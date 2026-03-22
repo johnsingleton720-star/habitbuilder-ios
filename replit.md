@@ -64,7 +64,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Achievements & Gamification
 -   Rewards users with XP and badges for streaks, completions, and milestones.
--   **Tiered Gamification**: Features like XP multipliers, weekly XP goals, unlockable accent colors, and achievement celebration pop-ups are progressively unlocked with higher subscription tiers.
+-   **Tiered Gamification**: Features like XP multipliers, weekly XP goals, and achievement celebration pop-ups are progressively unlocked with higher subscription tiers. All color themes/accent colors are available to every user.
 
 ### Habit Templates
 -   A library of pre-built, categorized habit templates available via a public gallery.

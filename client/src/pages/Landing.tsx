@@ -475,7 +475,7 @@ function LandingPricing({ scrollToLogin }: { scrollToLogin: () => void }) {
                   "Accountability partners",
                   "Community forum & messaging",
                   "Voice notes",
-                  "Unlockable accent colors",
+                  "Custom accent colors",
                   "CSV data export",
                   "Priority support",
                 ].map((f, i) => (
