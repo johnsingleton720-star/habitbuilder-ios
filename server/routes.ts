@@ -1664,8 +1664,9 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const todayStr = `${userNow.getFullYear()}-${String(userNow.getMonth() + 1).padStart(2, "0")}-${String(userNow.getDate()).padStart(2, "0")}`;
 
       const dayOfWeek = userNow.getDay();
+      const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const weekStartDate = new Date(userNow);
-      weekStartDate.setDate(weekStartDate.getDate() - dayOfWeek);
+      weekStartDate.setDate(weekStartDate.getDate() - mondayOffset);
       const weekStartStr = `${weekStartDate.getFullYear()}-${String(weekStartDate.getMonth() + 1).padStart(2, "0")}-${String(weekStartDate.getDate()).padStart(2, "0")}`;
       const weekEndDate = new Date(weekStartDate);
       weekEndDate.setDate(weekEndDate.getDate() + 6);
