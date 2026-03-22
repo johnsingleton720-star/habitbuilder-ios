@@ -697,62 +697,80 @@ export default function Dashboard() {
                         {(() => {
                           const dayHabits = dashboardStats.getHabitsForDate(selectedWeekDay);
                           if (dayHabits.length === 0) {
-                            return <p className="text-sm text-muted-foreground py-3 text-center">No habits scheduled for this day</p>;
+                            return (
+                              <div className="border border-dashed border-border/50 rounded-xl py-5 text-center">
+                                <p className="text-sm text-muted-foreground/60">No habits scheduled</p>
+                              </div>
+                            );
                           }
                           return (
                             <div className="space-y-1.5">
-                              {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => (
-                                <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
-                                  <div
-                                    className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
-                                      isComplete
-                                        ? 'bg-primary/10 border border-primary/20 shadow-sm'
-                                        : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
-                                    }`}
-                                    data-testid={`day-view-habit-${habit.id}`}
-                                  >
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                      isComplete
-                                        ? 'bg-primary text-white'
-                                        : 'bg-muted/50 border border-border'
-                                    }`}>
-                                      {isComplete ? (
-                                        <Check className="w-3.5 h-3.5" />
-                                      ) : (
-                                        <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <span className={`text-sm font-medium truncate block ${
-                                        isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
+                              {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => {
+                                const accentColor = habit.customColor || '#6366f1';
+                                const habitEmoji = getEmojiForIcon(habit.customIcon);
+                                return (
+                                  <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
+                                    <div
+                                      className={`flex items-center gap-3 pl-0 pr-2.5 py-2.5 rounded-xl transition-all cursor-pointer overflow-hidden ${
+                                        isComplete
+                                          ? 'bg-primary/8 border border-primary/15 shadow-sm'
+                                          : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
+                                      }`}
+                                      data-testid={`day-view-habit-${habit.id}`}
+                                    >
+                                      {/* Colored left accent bar */}
+                                      <div
+                                        className="w-1 self-stretch rounded-r-full flex-shrink-0"
+                                        style={{ backgroundColor: isComplete ? accentColor : accentColor + '99', minWidth: '4px' }}
+                                      />
+                                      {/* Habit icon */}
+                                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm ${isComplete ? 'opacity-60' : ''}`}
+                                        style={{ backgroundColor: accentColor + '20' }}>
+                                        {habitEmoji || <span style={{ color: accentColor }}>●</span>}
+                                      </div>
+                                      {/* Completion circle */}
+                                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+                                        isComplete
+                                          ? 'bg-primary border-primary text-white'
+                                          : 'border-border/60 bg-transparent'
                                       }`}>
-                                        {habit.title}
-                                      </span>
-                                      {totalTasks > 0 && (
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
-                                            <div
-                                              className={`h-full rounded-full ${isComplete ? 'bg-primary' : 'bg-amber-500'}`}
-                                              style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }}
-                                            />
+                                        {isComplete && <Check className="w-3 h-3" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <span className={`text-sm font-medium truncate block ${
+                                          isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
+                                        }`}>
+                                          {habit.title}
+                                        </span>
+                                        {totalTasks > 0 && (
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
+                                              <div
+                                                className="h-full rounded-full transition-all"
+                                                style={{
+                                                  width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
+                                                  backgroundColor: isComplete ? accentColor : accentColor
+                                                }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                              {completedTasks}/{totalTasks} tasks
+                                            </span>
                                           </div>
-                                          <span className="text-xs text-muted-foreground">
-                                            {completedTasks}/{totalTasks} tasks
-                                          </span>
-                                        </div>
+                                        )}
+                                      </div>
+                                      {habit.schedule?.time && (
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                                          {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                          })}
+                                        </span>
                                       )}
                                     </div>
-                                    {habit.schedule?.time && (
-                                      <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                                        {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
-                                          hour: "numeric",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    )}
-                                  </div>
-                                </Link>
-                              ))}
+                                  </Link>
+                                );
+                              })}
                             </div>
                           );
                         })()}
@@ -1316,8 +1334,9 @@ export default function Dashboard() {
         </section>
 
         {/* ===== SECTION 3: ACHIEVEMENTS & REWARDS ===== */}
-        <div data-tour="achievements-section" className="space-y-4">
+        <div data-tour="achievements-section" className="space-y-3">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-achievements">Achievements & Rewards</p>
+
           {habits && habits.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}

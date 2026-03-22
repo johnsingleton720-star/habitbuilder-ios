@@ -292,12 +292,15 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
   const moodDialogContent = (
     <DialogContent className="max-w-md">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+        <DialogTitle className="flex items-center gap-1.5">
           <SmilePlus className="w-5 h-5 text-primary" />
           How are you feeling today?
+        </DialogTitle>
+        <DialogDescription className="flex items-start justify-between gap-2">
+          <span>Track your mood to discover patterns and correlations with your habits.</span>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors ml-auto" data-testid="button-mood-help">
+              <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0 mt-0.5" data-testid="button-mood-help">
                 <HelpCircle className="w-4 h-4" />
               </button>
             </PopoverTrigger>
@@ -319,9 +322,6 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
               </div>
             </PopoverContent>
           </Popover>
-        </DialogTitle>
-        <DialogDescription>
-          Track your mood to discover patterns and correlations with your habits.
         </DialogDescription>
       </DialogHeader>
       
@@ -878,9 +878,18 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
       );
     };
 
+    const todayOpt = todayEntry ? MOOD_OPTIONS.find(o => o.value === todayEntry.mood) : null;
+    const moodCardBg = todayEntry
+      ? todayEntry.mood === 'great' ? 'bg-green-50/60 dark:bg-green-950/20 border-green-200/60 dark:border-green-800/40'
+      : todayEntry.mood === 'good' ? 'bg-emerald-50/50 dark:bg-emerald-950/15 border-emerald-200/50 dark:border-emerald-800/30'
+      : todayEntry.mood === 'okay' ? 'bg-amber-50/50 dark:bg-amber-950/15 border-amber-200/50 dark:border-amber-800/30'
+      : todayEntry.mood === 'bad' ? 'bg-orange-50/50 dark:bg-orange-950/15 border-orange-200/50 dark:border-orange-800/30'
+      : 'bg-red-50/40 dark:bg-red-950/10 border-red-200/40 dark:border-red-800/20'
+      : 'bg-card border-border/60';
+
     return (
       <>
-        <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact">
+        <Card className={cn("shadow-sm transition-colors duration-300", moodCardBg)} data-testid="card-mood-compact">
           <CardContent className="p-4 space-y-3">
             {todayEntry ? (
               <>
@@ -888,7 +897,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     {(() => {
-                      const opt = MOOD_OPTIONS.find(o => o.value === todayEntry.mood);
+                      const opt = todayOpt;
                       if (!opt) return null;
                       const TodayIcon = opt.icon;
                       return (
@@ -977,18 +986,21 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                   {MOOD_OPTIONS.map((option) => {
                     const Icon = option.icon;
                     return (
-                      <button
+                      <motion.button
                         key={option.value}
                         onClick={() => { setSelectedMood(option.value); setOpen(true); }}
                         className={cn(
                           "flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-all cursor-pointer",
-                          "hover:bg-muted/60 active:scale-95"
+                          "hover:bg-muted/60"
                         )}
+                        whileTap={{ scale: 0.85 }}
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
                         data-testid={`button-mood-compact-${option.value}`}
                       >
                         <Icon className={cn("w-7 h-7", option.color)} />
                         <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>

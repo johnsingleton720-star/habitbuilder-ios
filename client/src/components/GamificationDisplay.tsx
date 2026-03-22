@@ -496,8 +496,8 @@ export function GamificationDisplay({ hideLevelCard = false }: { hideLevelCard?:
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Zap className="w-5 h-5 text-amber-500" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Zap className="w-4 h-4 text-amber-500" />
               Daily Challenges
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -505,33 +505,38 @@ export function GamificationDisplay({ hideLevelCard = false }: { hideLevelCard?:
                 <Crown className="w-3 h-3 mr-1" />
                 Pro / Premium
               </Badge>
-              <Badge variant="outline" className="text-xs" data-testid="badge-challenges-count">
-                {stats.todaysChallenges.filter(c => c.completed).length}/{stats.todaysChallenges.length} Complete
-              </Badge>
+              {hasChallenges && (
+                <Badge variant="outline" className="text-xs" data-testid="badge-challenges-count">
+                  {stats.todaysChallenges.filter(c => c.completed).length}/{stats.todaysChallenges.length}
+                </Badge>
+              )}
             </div>
           </div>
           {hasChallenges && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1" data-testid="text-challenge-reset">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-0.5" data-testid="text-challenge-reset">
               <RotateCcw className="w-3 h-3" />
-              <span>Challenges reset in {timeUntilReset}</span>
+              <span>Resets in {timeUntilReset}</span>
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {!hasChallenges ? (
-            <div className="text-center py-4">
-              <Sparkles className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
-              <p className="text-muted-foreground mb-3">No challenges yet today</p>
+            <div className="flex items-center justify-between py-2">
+              <p className="text-sm text-muted-foreground">No challenges yet today</p>
               <Button 
+                size="sm"
+                variant="outline"
                 onClick={() => generateChallengesMutation.mutate()}
                 disabled={generateChallengesMutation.isPending}
+                className="h-7 text-xs gap-1.5"
                 data-testid="button-generate-challenges"
               >
-                {generateChallengesMutation.isPending ? "Generating..." : "Generate Daily Challenges"}
+                <Sparkles className="w-3 h-3" />
+                {generateChallengesMutation.isPending ? "Generating..." : "Generate"}
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               <AnimatePresence>
                 {stats.todaysChallenges.map((challenge) => {
                   const ChallengeIcon = CHALLENGE_ICONS[challenge.challengeType] || Target;
@@ -542,52 +547,50 @@ export function GamificationDisplay({ hideLevelCard = false }: { hideLevelCard?:
                   return (
                     <motion.div
                       key={challenge.id}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                        "flex items-center gap-2.5 px-3 py-2 rounded-lg border-l-[3px] transition-colors",
                         challenge.completed 
-                          ? "bg-green-500/10 border-green-500/30" 
-                          : "bg-muted/30 border-transparent hover:border-muted-foreground/20"
+                          ? "bg-green-500/8 border-l-green-500" 
+                          : "bg-muted/20 border-l-primary/40"
                       )}
                       data-testid={`challenge-${challenge.id}`}
                     >
                       <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                        "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
                         challenge.completed ? "bg-green-500/20" : "bg-primary/10"
                       )}>
                         {challenge.completed ? (
-                          <Check className="w-5 h-5 text-green-600" />
+                          <Check className="w-3 h-3 text-green-600" />
                         ) : (
-                          <ChallengeIcon className="w-5 h-5 text-primary" />
+                          <ChallengeIcon className="w-3 h-3 text-primary" />
                         )}
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={cn(
-                            "font-medium text-sm",
+                            "text-sm",
                             challenge.completed && "line-through text-muted-foreground"
                           )}>
                             {challenge.title}
                           </span>
-                          <Badge variant="secondary" className="text-xs">
-                            +{challenge.xpReward} XP
-                          </Badge>
-                          {isPro && stats.streakMultiplier > 1 && !challenge.completed && (
-                            <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30">
-                              {stats.streakMultiplierLabel}
-                            </Badge>
-                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground">{challenge.description}</p>
                         {challenge.targetValue && !challenge.completed && (
-                          <div className="mt-1">
+                          <div className="mt-0.5">
                             <Progress value={progress} className="h-1" />
-                            <span className="text-xs text-muted-foreground">
-                              {challenge.currentValue || 0}/{challenge.targetValue}
-                            </span>
                           </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-5">
+                          +{challenge.xpReward} XP
+                        </Badge>
+                        {isPro && stats.streakMultiplier > 1 && !challenge.completed && (
+                          <Badge variant="outline" className="text-[11px] px-1.5 py-0 h-5 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                            {stats.streakMultiplierLabel}
+                          </Badge>
                         )}
                       </div>
                     </motion.div>

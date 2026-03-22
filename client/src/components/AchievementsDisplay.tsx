@@ -59,14 +59,14 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
   if (compact) {
     const recentUnlocked = achievementsWithStatus
       .filter(a => a.unlocked)
-      .slice(0, 5);
+      .slice(0, 6);
     
     return (
       <>
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-500" />
               Achievements
               {isFreeUser && (
                 <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800" data-testid="badge-achievements-pro">
@@ -79,14 +79,16 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 flex-wrap">
+          <CardContent className="pt-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               {recentUnlocked.length > 0 ? (
-                recentUnlocked.map(achievement => (
-                  <button
+                recentUnlocked.map((achievement, i) => (
+                  <motion.button
                     key={achievement.id}
                     onClick={() => setSelectedAchievement(achievement)}
-                    className="focus:outline-none"
+                    className="focus:outline-none flex-shrink-0 drop-shadow-sm"
+                    animate={{ scale: [1, 1.08, 1] }}
+                    transition={{ duration: 0.5, delay: 0.15 + i * 0.08, ease: "easeInOut" }}
                     data-testid={`achievement-badge-${achievement.id}`}
                   >
                     <AchievementBadge
@@ -95,7 +97,7 @@ export function AchievementsDisplay({ compact = false }: AchievementsDisplayProp
                       size="sm"
                       showTooltip={false}
                     />
-                  </button>
+                  </motion.button>
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground">
