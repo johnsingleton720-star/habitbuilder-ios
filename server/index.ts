@@ -253,23 +253,8 @@ async function seedFoundingMemberSlots() {
       host: "0.0.0.0",
       reusePort: true,
     },
-    async () => {
+    () => {
       log(`serving on port ${port}`);
-      try {
-        const { db } = await import("./db");
-        const { funnelEvents } = await import("@shared/schema");
-        const { eq, inArray } = await import("drizzle-orm");
-        const adminSessions = await db.select({ sessionId: funnelEvents.sessionId }).from(funnelEvents).where(eq(funnelEvents.userId, "53886343"));
-        const ids = [...new Set(adminSessions.map(r => r.sessionId).filter(Boolean))] as string[];
-        if (ids.length > 0) {
-          const result = await db.delete(funnelEvents).where(inArray(funnelEvents.sessionId, ids));
-          log(`[Cleanup] Deleted ${result.rowCount || 0} admin funnel events from ${ids.length} sessions`);
-        } else {
-          log(`[Cleanup] No admin funnel events to clean`);
-        }
-      } catch (e) {
-        log(`[Cleanup] Error: ${e}`);
-      }
     },
   );
 })();
