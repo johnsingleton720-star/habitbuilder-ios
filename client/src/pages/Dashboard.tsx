@@ -216,6 +216,11 @@ export default function Dashboard() {
       return plan.completed || activeTasks.every((t: any) => t.completed);
     };
 
+    const hasDailyPlanForDate = (habit: Habit, dateStr: string) => {
+      const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+      return dailyPlans.some(p => p.date === dateStr);
+    };
+
     const isPlanExpired = (habit: Habit, dateStr: string) => {
       if (habit.trackingMode === "simple") return false;
       if (!habit.setupComplete) return false;
@@ -226,13 +231,14 @@ export default function Dashboard() {
     };
 
     const isHabitScheduledForDate = (habit: Habit, dateStr: string) => {
+      if (hasDailyPlanForDate(habit, dateStr)) return true;
       if (isPlanExpired(habit, dateStr)) return false;
       const scheduleDays = habit.schedule?.days as string[] | undefined;
       const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
       if (habit.trackingMode === "simple") return true;
       const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0) || !habit.setupComplete;
+      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
     };
 
     const habitsScheduledToday = activeHabits.filter(h => {

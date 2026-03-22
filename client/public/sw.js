@@ -1,4 +1,4 @@
-const CACHE_NAME = 'habitgrow-v6';
+const CACHE_NAME = 'habitgrow-v7';
 const urlsToCache = [
   '/',
   '/manifest.json'
