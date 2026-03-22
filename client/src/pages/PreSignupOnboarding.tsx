@@ -26,6 +26,9 @@ import {
   LogIn,
   CheckCircle2,
   ListChecks,
+  Star,
+  TrendingUp,
+  Shield,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
@@ -262,7 +265,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                 transition={{ duration: 0.3 }}
                 className="flex flex-col items-center text-center space-y-8"
               >
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="flex items-center justify-center">
                     <Logo size="md" />
                   </div>
@@ -273,15 +276,23 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                       <span className="text-primary">actually stick.</span>
                     </h1>
                     <p className="text-muted-foreground text-base sm:text-lg max-w-md mx-auto">
-                      Your AI coach creates a personalized action plan in 30 seconds — then walks you through it daily.
+                      Tell us your goal. Get a personalized plan in 30 seconds.
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4 text-primary" />
-                      <span>500+ people building better habits</span>
-                    </div>
+                  <div className="w-full space-y-2.5 text-left max-w-sm mx-auto">
+                    {[
+                      { icon: Sparkles, text: "AI builds your daily action plan" },
+                      { icon: TrendingUp, text: "Guided sessions keep you on track" },
+                      { icon: Star, text: "7-day free premium trial included" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 py-1.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                          <item.icon className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground">{item.text}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -296,9 +307,16 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     <ArrowRight className="w-5 h-5" />
                   </Button>
 
-                  <p className="text-xs text-muted-foreground">
-                    Free — no account needed to start
-                  </p>
+                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>No credit card needed</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Takes 30 seconds</span>
+                    </div>
+                  </div>
                 </div>
 
                 <button

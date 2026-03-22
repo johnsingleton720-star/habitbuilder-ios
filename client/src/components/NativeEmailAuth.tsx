@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
-import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, User } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, User, Sparkles } from "lucide-react";
 import { SiApple, SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -28,6 +28,15 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const { toast } = useToast();
+
+  const presignupHabit = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("presignup_data");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed.habitTitle || null;
+    } catch { return null; }
+  }, []);
 
   useEffect(() => {
     trackFunnelEvent("auth_screen_shown", { mode });
@@ -186,6 +195,16 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             </p>
           </div>
 
+          {mode === "signup" && presignupHabit && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 mb-6" data-testid="presignup-plan-banner">
+              <Sparkles className="w-5 h-5 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">Your plan for "{presignupHabit}" is ready</p>
+                <p className="text-xs text-muted-foreground">Sign up to save it and start your free trial</p>
+              </div>
+            </div>
+          )}
+
           {mode !== "forgot" && (
             <div className="space-y-3 mb-6">
               <button
@@ -210,7 +229,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 Continue with Google
               </button>
               <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
-                Google sign-in opens secure sign-in by Replit, our authentication partner
+                You'll be redirected to Google to sign in, then brought right back
               </p>
             </div>
           )}
