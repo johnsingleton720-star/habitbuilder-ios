@@ -108,7 +108,10 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-      toast({ title: "Habit archived" });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/streak-breaks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      toast({ title: "Habit archived", description: "This habit has been moved to your archive." });
     },
   });
 
