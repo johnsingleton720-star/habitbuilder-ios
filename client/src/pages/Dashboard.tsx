@@ -611,40 +611,40 @@ export default function Dashboard() {
             transition={{ duration: 0.3 }}
           >
             <div className="space-y-2">
-              <div className="flex justify-between gap-1" data-testid="weekly-completion-strip">
+              <div className="flex justify-between items-start" data-testid="weekly-completion-strip">
                   {dashboardStats.weekDays.map((day, i) => {
                     const isSelected = selectedWeekDay === day.dateStr;
                     return (
                       <button
                         key={i}
                         onClick={() => setSelectedWeekDay(isSelected ? null : day.dateStr)}
-                        className={`flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        className={`flex flex-col items-center gap-1.5 flex-1 py-2 rounded-2xl transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-primary/15 ring-2 ring-primary/50'
+                            ? 'bg-card shadow-md ring-1 ring-border'
                             : day.isToday
-                              ? 'bg-primary/5 ring-1 ring-primary/20'
-                              : 'hover:bg-muted/50'
+                              ? 'bg-card shadow-sm ring-1 ring-border/60'
+                              : 'hover:bg-muted/30'
                         }`}
                         data-testid={`calendar-day-${day.dateStr}`}
                       >
-                        <span className={`text-[10px] font-medium ${day.isToday || isSelected ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                        <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                           day.allComplete
-                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900'
                             : day.partial
-                              ? 'bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300 border border-violet-200 dark:border-violet-700'
+                              ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-sm'
                               : day.isToday
-                                ? 'bg-card text-foreground ring-2 ring-primary/40 shadow-sm'
+                                ? 'bg-muted/60 text-foreground ring-2 ring-primary/30'
                                 : day.isFuture
                                   ? 'bg-muted/30 text-muted-foreground/40'
-                                  : 'bg-muted/50 text-muted-foreground'
+                                  : 'bg-muted/40 text-muted-foreground/60'
                         }`}>
                           {day.allComplete ? (
-                            <Check className="w-4 h-4" />
+                            <Check className="w-5 h-5" strokeWidth={3} />
                           ) : day.partial ? (
-                            <span className="text-[10px]">½</span>
+                            <span className="text-[11px] font-bold">½</span>
                           ) : (
-                            format(day.date, "d")
+                            <span className="text-[13px]">{format(day.date, "d")}</span>
                           )}
                         </div>
                       </button>

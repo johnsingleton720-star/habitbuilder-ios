@@ -61,7 +61,7 @@ export function DashboardHeroCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.01 }}
     >
-      <Card className="border border-border/60 bg-gradient-to-r from-primary/8 to-emerald-50 dark:from-primary/10 dark:to-emerald-950/20 overflow-hidden relative shadow-sm" data-testid="card-dashboard-hero">
+      <Card className="border border-primary/20 dark:border-primary/30 bg-gradient-to-r from-violet-50 to-emerald-50 dark:from-violet-950/30 dark:to-emerald-950/20 overflow-hidden relative shadow-sm" data-testid="card-dashboard-hero">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" data-testid="xp-progress-ring">
