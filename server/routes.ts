@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { sql, eq, and, isNotNull, gte, lte, desc, gt } from "drizzle-orm";
+import { sql, eq, and, isNotNull, gte, lte, desc, gt, inArray } from "drizzle-orm";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -9695,6 +9695,31 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     } catch (error) {
       console.error("Error fetching funnel data:", error);
       res.status(500).json({ error: "Failed to fetch funnel data" });
+    }
+  });
+
+  app.post("/api/admin/funnel/cleanup", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const { sessionIds, adminUserId } = req.body;
+      let deleted = 0;
+      if (sessionIds && Array.isArray(sessionIds) && sessionIds.length > 0) {
+        const result = await db.delete(funnelEvents).where(inArray(funnelEvents.sessionId, sessionIds));
+        deleted = result.rowCount || 0;
+      } else if (adminUserId) {
+        const adminSessions = await db.select({ sessionId: funnelEvents.sessionId }).from(funnelEvents).where(eq(funnelEvents.userId, String(adminUserId)));
+        const ids = [...new Set(adminSessions.map(r => r.sessionId).filter(Boolean))] as string[];
+        if (ids.length > 0) {
+          const result = await db.delete(funnelEvents).where(inArray(funnelEvents.sessionId, ids));
+          deleted = result.rowCount || 0;
+        }
+      }
+      res.json({ success: true, deleted });
+    } catch (error) {
+      console.error("Funnel cleanup error:", error);
+      res.status(500).json({ error: "Cleanup failed" });
     }
   });
 
