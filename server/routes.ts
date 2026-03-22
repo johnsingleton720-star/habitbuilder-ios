@@ -8932,7 +8932,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const entries = await db.select().from(moodEntries)
         .where(eq(moodEntries.userId, userId))
         .orderBy(sql`${moodEntries.date} DESC`)
-        .limit(14);
+        .limit(30);
 
       if (entries.length < 3) {
         return res.json({ insight: "Keep logging your mood! After a few days, I'll spot patterns for you." });
@@ -8950,12 +8950,28 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: "Analyze mood tracking data and provide brief, personalized insights about patterns. Reference specific dates, scores, and trends from the data (e.g., 'Your energy dipped to 2/5 on days when stress was above 4' or 'Sleep quality improved from 2 to 4 over the past week'). Focus on connections between mood, energy, sleep, stress, and habits. Do NOT give generic advice — every observation must cite the actual data. Be encouraging and warm. 2-3 sentences max. SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content."
+          content: `Analyze mood tracking data and provide detailed, personalized insights about patterns and trends.
+
+Your response should include:
+1. **Key Patterns** — Identify specific correlations (e.g., stress/energy relationships, day-of-week trends, how habits affect mood). Reference exact dates and scores from the data.
+2. **Notable Trends** — Highlight improvements, declines, or interesting observations with specific numbers.
+3. **Mood Drivers** — What appears to boost or drain energy/mood based on the data and notes.
+4. **Actionable Suggestions** — 2-3 specific, evidence-based recommendations tied directly to patterns you see (not generic advice).
+5. **Encouragement** — Celebrate what they're tracking well and growth you observe.
+
+CRITICAL RULES:
+- Every observation MUST cite specific data (dates, scores, values from notes)
+- Connect findings to the listed habits where possible
+- Be warm, encouraging, and substantive
+- Do NOT give generic wellness advice
+- Focus on what the data actually reveals about their patterns
+
+SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.`
         }, {
           role: "user",
-          content: `Mood entries (newest first): ${entries.map(e => `${e.date}: mood=${e.mood}, energy=${e.energy}/5, stress=${e.stress}/5, sleep=${e.sleep}/5, notes="${e.notes || 'none'}"`).join("\n")}\n\nHabits: ${userHabits.map((h: any) => h.title).join(", ")}`
+          content: `Recent mood entries (newest first, last 30 days): ${entries.map(e => `${e.date}: mood=${e.mood}, energy=${e.energy}/5, stress=${e.stress}/5, sleep=${e.sleep}/5${e.notes ? `, notes="${e.notes}"` : ''}`).join("\n")}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ") || 'None yet'}`
         }],
-        max_tokens: 300,
+        max_tokens: 1000,
       });
 
       res.json({ insight: response.choices[0]?.message?.content || "Keep tracking!" });
