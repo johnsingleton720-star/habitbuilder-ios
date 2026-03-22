@@ -117,6 +117,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
   const [reportOpen, setReportOpen] = useState(false);
   const [showMoodImpactInfo, setShowMoodImpactInfo] = useState(false);
   const [showAllCorrelations, setShowAllCorrelations] = useState(false);
+  const [showCompactCorrelations, setShowCompactCorrelations] = useState(false);
   
   const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   const today = todayStr;
@@ -731,11 +732,6 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
   );
 
   if (compact) {
-    const handleCompactMoodClick = (mood: MoodType) => {
-      setSelectedMood(mood);
-      setOpen(true);
-    };
-
     const MoodHistoryDots = () => (
       recentMoods.length > 0 ? (
         <div className="flex items-center gap-1 flex-wrap">
@@ -760,6 +756,103 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
       ) : null
     );
 
+    const CompactCorrelations = () => {
+      const allCorrelations = (insights as MoodInsights | undefined)?.correlations ?? [];
+      if (!isPremium || allCorrelations.length === 0) return null;
+
+      return (
+        <div className="pt-1">
+          {/* Toggle button */}
+          <button
+            onClick={() => setShowCompactCorrelations(v => !v)}
+            className="flex items-center justify-between w-full py-1.5 text-left group"
+            data-testid="button-toggle-compact-correlations"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-foreground">Mood Correlations</span>
+            </div>
+            {showCompactCorrelations
+              ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            }
+          </button>
+
+          <AnimatePresence>
+            {showCompactCorrelations && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-0.5 pt-1">
+                  {(() => {
+                    const firstFour = allCorrelations.slice(0, 4);
+                    const remaining = allCorrelations.slice(4);
+                    const hiddenCount = remaining.length;
+
+                    const renderRow = (corr: { habitId: number; habitTitle: string; correlation: string | null; timesCompleted: number }, idx: number) => (
+                      <button
+                        key={corr.habitId}
+                        onClick={() => corr.correlation !== null ? openReport(corr.habitId) : undefined}
+                        className={cn(
+                          "flex items-center justify-between text-sm w-full px-2 py-2.5 rounded-lg transition-all text-left",
+                          idx % 2 === 0 ? "hover:bg-muted/60" : "bg-muted/30 hover:bg-muted/60"
+                        )}
+                        data-testid={`mood-correlation-compact-${corr.habitId}`}
+                      >
+                        <span className="text-muted-foreground">{corr.habitTitle}</span>
+                        {corr.correlation !== null ? (
+                          <div className="flex items-center gap-1.5">
+                            <TrendingUp className="w-3 h-3 text-green-600" />
+                            <span className="text-green-600 font-medium text-xs">{corr.correlation}% positive</span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50">No data yet</span>
+                        )}
+                      </button>
+                    );
+
+                    return (
+                      <>
+                        {firstFour.map((c, i) => renderRow(c, i))}
+                        <AnimatePresence>
+                          {showAllCorrelations && hiddenCount > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden space-y-0.5"
+                            >
+                              {remaining.map((c, i) => renderRow(c, firstFour.length + i))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        {hiddenCount > 0 && (
+                          <button
+                            onClick={() => setShowAllCorrelations(!showAllCorrelations)}
+                            className="flex items-center gap-1 text-sm text-primary w-full justify-center py-2 transition-colors"
+                            data-testid="button-toggle-all-correlations-compact"
+                          >
+                            {showAllCorrelations
+                              ? <><ChevronUp className="w-4 h-4" /> Show less</>
+                              : <><ChevronDown className="w-4 h-4" /> Show {hiddenCount} more</>
+                            }
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    };
+
     return (
       <>
         <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact">
@@ -780,7 +873,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       );
                     })()}
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Mood logged today</p>
+                      <p className="text-sm font-bold text-foreground">Mood logged today</p>
                       <p className="text-[11px] text-muted-foreground capitalize">Feeling {todayEntry.mood}</p>
                     </div>
                   </div>
@@ -789,7 +882,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs"
-                      onClick={() => { resetForm(); setOpen(true); }}
+                      onClick={() => navigate("/mood")}
                       data-testid="button-log-another-mood-compact"
                     >
                       + Log Another
@@ -804,7 +897,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                   </div>
                 </div>
                 <MoodHistoryDots />
-                {correlationsSection}
+                <CompactCorrelations />
               </>
             ) : (
               <>
@@ -813,7 +906,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                   <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => { resetForm(); setOpen(true); }}
+                      onClick={() => navigate("/mood")}
                       className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                       data-testid="button-mood-details"
                     >
@@ -828,14 +921,14 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                     </button>
                   </div>
                 </div>
-                {/* Flat colored icon row — no circles, just the colored Lucide icons */}
+                {/* Flat colored icon row — colored Lucide icons, no circle backgrounds */}
                 <div className="flex justify-between gap-1">
                   {MOOD_OPTIONS.map((option) => {
                     const Icon = option.icon;
                     return (
                       <button
                         key={option.value}
-                        onClick={() => handleCompactMoodClick(option.value)}
+                        onClick={() => navigate("/mood")}
                         className={cn(
                           "flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-all cursor-pointer",
                           "hover:bg-muted/60 active:scale-95"
@@ -849,7 +942,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                   })}
                 </div>
                 <MoodHistoryDots />
-                {correlationsSection}
+                <CompactCorrelations />
               </>
             )}
           </CardContent>
