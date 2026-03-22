@@ -627,24 +627,24 @@ export default function Dashboard() {
                         }`}
                         data-testid={`calendar-day-${day.dateStr}`}
                       >
-                        <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                        <span className={`text-xs font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold transition-all ${
                           day.allComplete
-                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900'
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200 dark:shadow-emerald-900'
                             : day.partial
-                              ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-sm'
+                              ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-md'
                               : day.isToday
-                                ? 'bg-muted/60 text-foreground ring-2 ring-primary/30'
+                                ? 'bg-card text-foreground ring-2 ring-primary shadow-sm'
                                 : day.isFuture
-                                  ? 'bg-muted/30 text-muted-foreground/40'
-                                  : 'bg-muted/40 text-muted-foreground/60'
+                                  ? 'bg-muted/30 text-muted-foreground/50'
+                                  : 'bg-muted/50 text-muted-foreground'
                         }`}>
                           {day.allComplete ? (
                             <Check className="w-5 h-5" strokeWidth={3} />
                           ) : day.partial ? (
-                            <span className="text-[11px] font-bold">½</span>
+                            <span className="text-xs font-bold">½</span>
                           ) : (
-                            <span className="text-[13px]">{format(day.date, "d")}</span>
+                            <span className="text-sm font-semibold">{format(day.date, "d")}</span>
                           )}
                         </div>
                       </button>
