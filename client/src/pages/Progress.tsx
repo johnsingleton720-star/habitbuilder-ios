@@ -42,10 +42,20 @@ export default function ProgressPage() {
 
   const dayName = format(today, "EEEE").toLowerCase();
 
+  const isPlanExpired = (habit: Habit) => {
+    if (habit.trackingMode === "simple") return false;
+    if (!habit.setupComplete) return false;
+    const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+    const endDate = habit.planEndDate || (dailyPlans.length > 0 ? dailyPlans[dailyPlans.length - 1].date : null);
+    if (endDate && endDate < todayStr) return true;
+    return false;
+  };
+
   const getTodayStats = () => {
     if (!habits) return { completed: 0, total: 0, habits: [] };
     const habitsWithTasks = habits.filter(h => {
       if (h.archived) return false;
+      if (isPlanExpired(h)) return false;
       const scheduleDays = h.schedule?.days as string[] | undefined;
       if (scheduleDays && scheduleDays.length > 0) {
         if (!scheduleDays.includes(dayName)) return false;
@@ -824,6 +834,8 @@ function WeeklyView({ habits }: { habits: any[] }) {
     const isFuture = dateStr > todayStr;
     
     const scheduledHabits = habits.filter(h => {
+      if (h.archived) return false;
+      if (isPlanExpired(h)) return false;
       const scheduleDays = h.schedule?.days as string[] | undefined;
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
       if (h.trackingMode === "simple") return true;

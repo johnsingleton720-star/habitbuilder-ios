@@ -58,6 +58,7 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
 
   const getScheduledHabits = () => {
     return habits.filter((habit) => {
+      if (isPlanExpired(habit)) return false;
       const scheduleDays = habit.schedule?.days as string[] | undefined;
       if (scheduleDays && scheduleDays.length > 0) {
         return scheduleDays.includes(dayName);
