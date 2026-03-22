@@ -1655,6 +1655,16 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const activeHabits = habits.filter(h => !h.archived);
 
       const summaries = activeHabits.map((h) => {
+        const trimmedPlans = ((h.dailyPlans || []) as any[]).map((p: any) => ({
+          date: p.date,
+          completed: p.completed,
+          dayNumber: p.dayNumber,
+          tasks: (p.tasks || []).map((t: any) => ({
+            id: t.id,
+            completed: t.completed,
+            skipped: t.skipped,
+          })),
+        }));
         return {
           id: h.id,
           userId: h.userId,
@@ -1666,7 +1676,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           planStartDate: h.planStartDate,
           planEndDate: h.planEndDate,
           schedule: h.schedule,
-          dailyPlans: h.dailyPlans || [],
+          dailyPlans: trimmedPlans,
           progress: [],
           progressCount: ((h.progress || []) as any[]).length,
           totalTimeSpent: h.totalTimeSpent,

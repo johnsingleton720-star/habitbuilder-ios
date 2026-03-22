@@ -930,8 +930,8 @@ export default function Dashboard() {
           </motion.section>
         )}
 
-        {/* Welcome Banner for new users with no habits */}
-        {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && (
+        {/* Welcome Banner for genuinely new users with no habits */}
+        {(!habits || habits.length === 0) && !isLoading && !welcomeBannerDismissed && !user?.onboardingComplete && !user?.isAdmin && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

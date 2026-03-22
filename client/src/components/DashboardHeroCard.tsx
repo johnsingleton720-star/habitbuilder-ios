@@ -67,7 +67,44 @@ export function DashboardHeroCard({
   });
   const { tier } = useSubscription();
 
-  if (!stats) return null;
+  if (!stats) {
+    return (
+      <div className="animate-pulse" data-testid="hero-card-skeleton">
+        <Card className="border border-primary/20 dark:border-primary/30 bg-gradient-to-r from-primary/5 to-accent/8 dark:from-primary/10 dark:to-accent/5 overflow-hidden relative shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-[68px] h-[68px] rounded-full bg-muted/40" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted/40 rounded w-24" />
+                <div className="h-3 bg-muted/30 rounded w-32" />
+                <div className="h-3 bg-muted/30 rounded w-20" />
+              </div>
+            </div>
+            <div className="border-t border-border/30 mt-4 pt-3">
+              <div className="grid grid-cols-4 gap-2">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="text-center space-y-1">
+                    <div className="h-5 bg-muted/40 rounded w-8 mx-auto" />
+                    <div className="h-2 bg-muted/30 rounded w-12 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-border/30 mt-3 pt-4">
+              <div className="flex justify-between items-start">
+                {[0,1,2,3,4,5,6].map(i => (
+                  <div key={i} className="flex flex-col items-center gap-1.5 flex-1 py-1">
+                    <div className="h-3 bg-muted/30 rounded w-3" />
+                    <div className="w-11 h-11 rounded-full bg-muted/30" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const xpProgress = stats.levelProgress;
   const circumference = 2 * Math.PI * 28;
