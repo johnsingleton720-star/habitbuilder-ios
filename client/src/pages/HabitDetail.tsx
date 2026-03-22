@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -227,7 +228,8 @@ export default function HabitDetail() {
   const queryClient = useQueryClient();
   const { features, isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
-  const firstCompletion = useFirstCompletionCelebration();
+  const { user } = useAuth();
+  const firstCompletion = useFirstCompletionCelebration(user?.id);
 
   const urlDate = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("date")
@@ -380,6 +382,9 @@ export default function HabitDetail() {
       setSimpleNotes("");
       setTrackedValuesMap({});
       toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
+      if (!firstCompletion.hasBeenCelebrated()) {
+        firstCompletion.triggerIfFirst(25);
+      }
     },
     onError: () => {
       toast({ title: "Already checked in today", variant: "destructive" });

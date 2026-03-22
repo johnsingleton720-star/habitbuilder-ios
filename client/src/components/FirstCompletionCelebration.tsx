@@ -35,26 +35,28 @@ function generateConfetti(count: number): ConfettiPiece[] {
   }));
 }
 
-const STORAGE_KEY = "firstCompletionCelebrated";
+const STORAGE_KEY_PREFIX = "firstCompletionCelebrated";
 
-export function useFirstCompletionCelebration() {
+export function useFirstCompletionCelebration(userId?: number | string) {
   const [show, setShow] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
 
+  const storageKey = `${STORAGE_KEY_PREFIX}_${userId || "default"}`;
+
   const triggerIfFirst = useCallback((earnedXp: number = 0) => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
-    localStorage.setItem(STORAGE_KEY, "true");
+    if (localStorage.getItem(storageKey)) return;
+    localStorage.setItem(storageKey, "true");
     setXpEarned(earnedXp);
     setShow(true);
-  }, []);
+  }, [storageKey]);
 
   const dismiss = useCallback(() => {
     setShow(false);
   }, []);
 
   const hasBeenCelebrated = useCallback(() => {
-    return !!localStorage.getItem(STORAGE_KEY);
-  }, []);
+    return !!localStorage.getItem(storageKey);
+  }, [storageKey]);
 
   return { show, xpEarned, triggerIfFirst, dismiss, hasBeenCelebrated };
 }

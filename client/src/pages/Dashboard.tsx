@@ -122,7 +122,7 @@ export default function Dashboard() {
 
 
   useAppTheme();
-  const firstCompletion = useFirstCompletionCelebration();
+  const firstCompletion = useFirstCompletionCelebration(user?.id);
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
     if (!dismissedAt) return false;
