@@ -25,6 +25,7 @@ interface DashboardHeroCardProps {
   weeklyPercent?: number;
   totalSessions?: number;
   longestStreak?: number;
+  statsLoaded?: boolean;
 }
 
 const TIER_LABELS: Record<string, { label: string; color: string }> = {
@@ -34,7 +35,13 @@ const TIER_LABELS: Record<string, { label: string; color: string }> = {
   premium: { label: "Premium", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300" },
 };
 
-export function DashboardHeroCard({ todayPercent, weeklyPercent, totalSessions, longestStreak }: DashboardHeroCardProps) {
+export function DashboardHeroCard({
+  todayPercent,
+  weeklyPercent,
+  totalSessions,
+  longestStreak,
+  statsLoaded = false,
+}: DashboardHeroCardProps) {
   const { data: stats } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
     staleTime: 2 * 60 * 1000,
@@ -57,8 +64,7 @@ export function DashboardHeroCard({ todayPercent, weeklyPercent, totalSessions, 
     >
       <Card className="border-2 border-primary/25 dark:border-primary/35 bg-gradient-to-r from-primary/10 via-card to-accent/10 dark:from-primary/15 dark:via-card dark:to-accent/15 overflow-hidden relative shadow-md" data-testid="card-dashboard-hero">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-        <CardContent className="p-4">
-          {/* Level / XP row */}
+        <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" data-testid="xp-progress-ring">
               <svg width="68" height="68" viewBox="0 0 68 68" className="progress-ring">
@@ -129,25 +135,24 @@ export function DashboardHeroCard({ todayPercent, weeklyPercent, totalSessions, 
             </div>
           </div>
 
-          {/* Stats row — only shown when data is passed in */}
-          {hasStats && (
+          {statsLoaded && (
             <>
               <div className="border-t border-border/40 mt-4 pt-3">
                 <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-primary">{todayPercent}%</p>
+                    <p className="text-lg font-bold text-primary">{todayPercent ?? 0}%</p>
                     <p className="text-[10px] text-muted-foreground font-medium">Today</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-violet-500">{weeklyPercent}%</p>
+                    <p className="text-lg font-bold text-violet-500">{weeklyPercent ?? 0}%</p>
                     <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-amber-500">{totalSessions}</p>
+                    <p className="text-lg font-bold text-amber-500">{totalSessions ?? 0}</p>
                     <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-orange-500">{longestStreak}</p>
+                    <p className="text-lg font-bold text-orange-500">{longestStreak ?? 0}</p>
                     <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
                   </div>
                 </div>
@@ -160,6 +165,16 @@ export function DashboardHeroCard({ todayPercent, weeklyPercent, totalSessions, 
                     </button>
                   </Link>
                 </div>
+              </div>
+
+              <div className="flex justify-center pt-1">
+                <Link href="/progress/today">
+                  <button className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1 px-2 rounded-lg hover:bg-primary/5">
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>View all stats</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </Link>
               </div>
             </>
           )}

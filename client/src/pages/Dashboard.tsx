@@ -594,15 +594,181 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
-        {/* Hero Card - Level, XP, Streak + Stats in one unified card */}
+        {/* Hero Card - Level, XP, Streak at a glance + inline stats */}
         <DashboardHeroCard
           todayPercent={dashboardStats?.todayPercent}
           weeklyPercent={dashboardStats?.weeklyPercent}
           totalSessions={dashboardStats?.totalSessions}
           longestStreak={dashboardStats?.longestStreak}
+          statsLoaded={!!dashboardStats}
         />
 
-        {/* Daily Quote — right after hero card */}
+        {/* 7-day calendar strip — bare background, no Card wrapper */}
+        {dashboardStats && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="space-y-2">
+              <div className="flex justify-between gap-1" data-testid="weekly-completion-strip">
+                  {dashboardStats.weekDays.map((day, i) => {
+                    const isSelected = selectedWeekDay === day.dateStr;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedWeekDay(isSelected ? null : day.dateStr)}
+                        className={`flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary/15 ring-2 ring-primary/50'
+                            : day.isToday
+                              ? 'bg-primary/5 ring-1 ring-primary/20'
+                              : 'hover:bg-muted/50'
+                        }`}
+                        data-testid={`calendar-day-${day.dateStr}`}
+                      >
+                        <span className={`text-[10px] font-medium ${day.isToday || isSelected ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                          day.allComplete
+                            ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                            : day.partial
+                              ? 'bg-primary/20 text-primary border border-primary/30'
+                              : day.isFuture
+                                ? 'bg-muted/30 text-muted-foreground/40'
+                                : 'bg-muted/50 text-muted-foreground'
+                        }`}>
+                          {day.allComplete ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : (
+                            format(day.date, "d")
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <AnimatePresence>
+                  {selectedWeekDay && dashboardStats.getHabitsForDate && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            {format(new Date(selectedWeekDay + "T12:00:00"), "EEEE, MMM d")}
+                          </span>
+                          <button
+                            onClick={() => setSelectedWeekDay(null)}
+                            className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                            data-testid="button-close-day-view"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {(() => {
+                          const dayHabits = dashboardStats.getHabitsForDate(selectedWeekDay);
+                          if (dayHabits.length === 0) {
+                            return (
+                              <div className="border border-dashed border-border/50 rounded-xl py-5 text-center">
+                                <p className="text-sm text-muted-foreground/60">No habits scheduled</p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="space-y-1.5">
+                              {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => {
+                                const accentColor = habit.customColor || '#6366f1';
+                                const habitEmoji = getEmojiForIcon(habit.customIcon);
+                                return (
+                                  <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
+                                    <div
+                                      className={`flex items-center gap-3 pl-0 pr-2.5 py-2.5 rounded-xl transition-all cursor-pointer overflow-hidden ${
+                                        isComplete
+                                          ? 'bg-primary/8 border border-primary/15 shadow-sm'
+                                          : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
+                                      }`}
+                                      data-testid={`day-view-habit-${habit.id}`}
+                                    >
+                                      {/* Colored left accent bar */}
+                                      <div
+                                        className="w-1 self-stretch rounded-r-full flex-shrink-0"
+                                        style={{ backgroundColor: isComplete ? accentColor : accentColor + '99', minWidth: '4px' }}
+                                      />
+                                      {/* Habit icon */}
+                                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm ${isComplete ? 'opacity-60' : ''}`}
+                                        style={{ backgroundColor: accentColor + '20' }}>
+                                        {habitEmoji || <span style={{ color: accentColor }}>●</span>}
+                                      </div>
+                                      {/* Completion circle */}
+                                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+                                        isComplete
+                                          ? 'bg-primary border-primary text-white'
+                                          : 'border-border/60 bg-transparent'
+                                      }`}>
+                                        {isComplete && <Check className="w-3 h-3" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <span className={`text-sm font-medium truncate block ${
+                                          isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
+                                        }`}>
+                                          {habit.title}
+                                        </span>
+                                        {totalTasks > 0 && (
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
+                                              <div
+                                                className="h-full rounded-full transition-all"
+                                                style={{
+                                                  width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
+                                                  backgroundColor: isComplete ? accentColor : accentColor
+                                                }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                              {completedTasks}/{totalTasks} tasks
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {habit.schedule?.time && (
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                                          {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                          })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Mood Check-in — full MoodTracker component with colored icons, sliders, habit linking, AI insights */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          <MoodTracker compact />
+        </motion.div>
+
+        {/* Daily Quote — from HEAD, positioned after mood tracker */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

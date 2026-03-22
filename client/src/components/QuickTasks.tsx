@@ -308,8 +308,8 @@ export function QuickTasks() {
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1 py-2 px-1.5 rounded-md text-[13px] font-semibold transition-all",
                   isActive
-                    ? "bg-primary/10 text-primary dark:bg-primary/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary/15 text-primary shadow-sm dark:bg-primary/20"
+                    : "text-muted-foreground/70 hover:text-foreground"
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
               >
@@ -318,7 +318,7 @@ export function QuickTasks() {
                 {tab.count > 0 && (
                   <span className={cn(
                     "text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full font-bold",
-                    isActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-muted-foreground"
+                    isActive ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground"
                   )}>
                     {tab.count}
                   </span>
@@ -800,6 +800,13 @@ function TaskItem({
       )}
       data-testid={`quick-task-${task.id}`}
     >
+      {!isSubtask && (
+        <span
+          className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[7px]", task.completed ? "bg-muted-foreground/20" : config.dotColor)}
+          aria-hidden="true"
+        />
+      )}
+
       {hasSubtasks && onToggleExpand && (
         <button onClick={onToggleExpand} className="shrink-0 text-muted-foreground p-1.5 -ml-1 rounded-md active:bg-muted/70 hover:bg-muted/50" data-testid={`button-expand-${task.id}`}>
           {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
