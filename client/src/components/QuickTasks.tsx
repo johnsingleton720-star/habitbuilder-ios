@@ -19,11 +19,11 @@ import { useCompletionCelebration } from "./CompletionCelebration";
 type TabType = "today" | "upcoming" | "completed";
 type Priority = "low" | "normal" | "high" | "urgent";
 
-const PRIORITY_CONFIG: Record<Priority, { label: string; dotColor: string; borderColor: string; bgAccent: string }> = {
-  low: { label: "Low", dotColor: "bg-gray-400", borderColor: "border-l-gray-400", bgAccent: "from-gray-100/80 to-gray-50/60 dark:from-gray-800/30 dark:to-gray-900/20" },
-  normal: { label: "Normal", dotColor: "bg-blue-500", borderColor: "border-l-blue-500", bgAccent: "from-blue-100/60 to-blue-50/40 dark:from-blue-900/30 dark:to-blue-950/20" },
-  high: { label: "High", dotColor: "bg-amber-500", borderColor: "border-l-amber-500", bgAccent: "from-amber-100/70 to-amber-50/50 dark:from-amber-900/30 dark:to-amber-950/20" },
-  urgent: { label: "Urgent", dotColor: "bg-red-500", borderColor: "border-l-red-500", bgAccent: "from-red-100/60 to-red-50/40 dark:from-red-900/30 dark:to-red-950/20" },
+const PRIORITY_CONFIG: Record<Priority, { label: string; dotColor: string; borderColor: string; bgAccent: string; rowBg: string }> = {
+  low: { label: "Low", dotColor: "bg-gray-400", borderColor: "border-l-gray-400", bgAccent: "from-gray-100/80 to-gray-50/60 dark:from-gray-800/30 dark:to-gray-900/20", rowBg: "bg-gray-50/60 dark:bg-gray-800/20" },
+  normal: { label: "Normal", dotColor: "bg-blue-500", borderColor: "border-l-blue-500", bgAccent: "from-blue-100/60 to-blue-50/40 dark:from-blue-900/30 dark:to-blue-950/20", rowBg: "bg-blue-50/40 dark:bg-blue-900/15" },
+  high: { label: "High", dotColor: "bg-amber-500", borderColor: "border-l-amber-500", bgAccent: "from-amber-100/70 to-amber-50/50 dark:from-amber-900/30 dark:to-amber-950/20", rowBg: "bg-amber-50/50 dark:bg-amber-900/15" },
+  urgent: { label: "Urgent", dotColor: "bg-red-500", borderColor: "border-l-red-500", bgAccent: "from-red-100/60 to-red-50/40 dark:from-red-900/30 dark:to-red-950/20", rowBg: "bg-red-50/50 dark:bg-red-900/15" },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -460,7 +460,7 @@ export function QuickTasks() {
           </div>
         )}
 
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <AnimatePresence mode="popLayout">
             {activeTab === "today" && (
               <>
@@ -792,17 +792,17 @@ function TaskItem({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-start gap-2 group py-2 px-2.5 rounded-lg transition-all",
-        isSubtask && "ml-8 pl-2.5 border-l-2 border-muted-foreground/10",
+        "flex items-start gap-2 group py-2.5 px-3 rounded-xl transition-all border",
+        isSubtask && "ml-8 pl-2.5 border-l-2 border-muted-foreground/10 border-t-0 border-r-0 border-b-0 rounded-none",
         task.completed
-          ? "bg-muted/20"
-          : "bg-card hover:bg-muted/30"
+          ? "bg-muted/20 border-transparent"
+          : cn(config.rowBg, "border-border/30 hover:border-border/60 hover:shadow-sm")
       )}
       data-testid={`quick-task-${task.id}`}
     >
       {!isSubtask && (
         <span
-          className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[7px]", task.completed ? "bg-muted-foreground/20" : config.dotColor)}
+          className={cn("w-2 h-2 rounded-full flex-shrink-0 mt-[6px] ring-2 ring-white dark:ring-gray-900", task.completed ? "bg-muted-foreground/20 ring-0" : config.dotColor)}
           aria-hidden="true"
         />
       )}

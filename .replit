@@ -73,3 +73,7 @@ APNS_PRODUCTION = "false"
 
 [userenv.production]
 APNS_PRODUCTION = "true"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
