@@ -697,6 +697,16 @@ export default function Dashboard() {
                   })}
                 </div>
 
+                <div className="flex justify-center pt-0.5">
+                  <Link href="/progress/today">
+                    <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
+                      <BarChart3 className="w-3 h-3" />
+                      View all stats
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </Link>
+                </div>
+
                 <AnimatePresence>
                   {selectedWeekDay && dashboardStats.getHabitsForDate && (
                     <motion.div
@@ -786,6 +796,120 @@ export default function Dashboard() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Mood Quick-Log Card */}
+        {features.hasMoodTracker && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+          >
+            <Card className="border-border/60 shadow-sm" data-testid="card-mood-quicklog">
+              <CardContent className="p-4">
+                {todayMoodEntry ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
+                        {todayMoodEntry.mood === "great" ? "😄" : todayMoodEntry.mood === "good" ? "🙂" : todayMoodEntry.mood === "okay" ? "😐" : todayMoodEntry.mood === "bad" ? "😟" : "😢"}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Mood logged today</p>
+                        <p className="text-[11px] text-muted-foreground capitalize">Feeling {todayMoodEntry.mood}</p>
+                      </div>
+                    </div>
+                    <Link href="/mood">
+                      <button className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-history">
+                        History <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setMoodExpanded(!moodExpanded)}
+                          className="text-[11px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+                          data-testid="button-mood-add-details"
+                        >
+                          {moodExpanded ? "Less" : "+ Details"}
+                        </button>
+                        <Link href="/mood">
+                          <button className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-insights">
+                            Insights <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </Link>
+                      </div>
+                    </div>
+                    <AnimatePresence>
+                      {moodExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-3 pb-1">
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-muted-foreground font-medium">Energy</span>
+                                <span className="font-semibold">{moodEnergy}/10</span>
+                              </div>
+                              <Slider value={[moodEnergy]} onValueChange={([v]) => setMoodEnergy(v)} min={1} max={10} step={1} className="w-full" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-muted-foreground font-medium">Stress</span>
+                                <span className="font-semibold">{moodStress}/10</span>
+                              </div>
+                              <Slider value={[moodStress]} onValueChange={([v]) => setMoodStress(v)} min={1} max={10} step={1} className="w-full" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-muted-foreground font-medium">Sleep (hours)</span>
+                                <span className="font-semibold">{moodSleep}h</span>
+                              </div>
+                              <Slider value={[moodSleep]} onValueChange={([v]) => setMoodSleep(v)} min={1} max={12} step={0.5} className="w-full" />
+                            </div>
+                            <Textarea
+                              placeholder="Any notes? (optional)"
+                              value={moodNotes}
+                              onChange={(e) => setMoodNotes(e.target.value)}
+                              className="text-sm min-h-[60px] resize-none"
+                              data-testid="input-mood-notes"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <div className="flex justify-between gap-1">
+                      {[
+                        { value: "great", emoji: "😄", label: "Great" },
+                        { value: "good", emoji: "🙂", label: "Good" },
+                        { value: "okay", emoji: "😐", label: "Okay" },
+                        { value: "bad", emoji: "😟", label: "Bad" },
+                        { value: "terrible", emoji: "😢", label: "Terrible" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => logMoodMutation.mutate(option.value)}
+                          disabled={logMoodMutation.isPending}
+                          className="flex flex-col items-center gap-1 flex-1 py-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                          data-testid={`button-mood-${option.value}`}
+                        >
+                          <span className="text-2xl">{option.emoji}</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
