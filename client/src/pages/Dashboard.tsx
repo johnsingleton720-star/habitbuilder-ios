@@ -18,13 +18,12 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home, SmilePlus, Smile, Meh, Frown, AlertCircle } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
+import { MoodTracker } from "@/components/MoodTracker";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -71,11 +70,6 @@ export default function Dashboard() {
   const [showTour, setShowTour] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showInterviewOffer, setShowInterviewOffer] = useState(false);
-  const [moodExpanded, setMoodExpanded] = useState(false);
-  const [moodEnergy, setMoodEnergy] = useState(3);
-  const [moodStress, setMoodStress] = useState(3);
-  const [moodSleep, setMoodSleep] = useState(3);
-  const [moodNotes, setMoodNotes] = useState("");
   const [editingHabit, setEditingHabit] = useState<any>(null);
   const [deletingHabit, setDeletingHabit] = useState<any>(null);
   const deleteHabit = useDeleteHabit();
@@ -118,39 +112,6 @@ export default function Dashboard() {
     },
   });
 
-  const { data: moodEntries } = useQuery<{ id: number; mood: string; date: string }[]>({
-    queryKey: ["/api/mood"],
-  });
-  const todayMoodEntry = useMemo(() => {
-    if (!moodEntries || !Array.isArray(moodEntries)) return null;
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    return moodEntries.find(e => e.date === todayStr) || null;
-  }, [moodEntries]);
-
-  const logMoodMutation = useMutation({
-    mutationFn: async (mood: string) => {
-      return await apiRequest("POST", "/api/mood", {
-        date: format(new Date(), "yyyy-MM-dd"),
-        mood,
-        energy: moodEnergy,
-        stress: moodStress,
-        sleep: moodSleep,
-        notes: moodNotes || undefined,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
-      setMoodExpanded(false);
-      setMoodNotes("");
-      setMoodEnergy(3);
-      setMoodStress(3);
-      setMoodSleep(3);
-      toast({ title: "Mood logged!" });
-    },
-    onError: () => {
-      toast({ title: "Couldn't log mood", variant: "destructive" });
-    },
-  });
 
   useAppTheme();
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
@@ -804,119 +765,14 @@ export default function Dashboard() {
           </motion.div>
         )}
 
-        {/* Mood Quick-Log Card */}
-        {features.hasMoodTracker && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-          >
-            <Card className="border-border/60 shadow-sm" data-testid="card-mood-quicklog">
-              <CardContent className="p-4">
-                {todayMoodEntry ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
-                        {todayMoodEntry.mood === "great" ? "😄" : todayMoodEntry.mood === "good" ? "🙂" : todayMoodEntry.mood === "okay" ? "😐" : todayMoodEntry.mood === "bad" ? "😟" : "😢"}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Mood logged today</p>
-                        <p className="text-[11px] text-muted-foreground capitalize">Feeling {todayMoodEntry.mood}</p>
-                      </div>
-                    </div>
-                    <Link href="/mood">
-                      <button className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-history">
-                        History <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMoodExpanded(!moodExpanded)}
-                          className="text-[11px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
-                          data-testid="button-mood-add-details"
-                        >
-                          {moodExpanded ? "Less" : "+ Details"}
-                        </button>
-                        <Link href="/mood">
-                          <button className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-insights">
-                            Insights <ArrowRight className="w-3 h-3" />
-                          </button>
-                        </Link>
-                      </div>
-                    </div>
-                    <AnimatePresence>
-                      {moodExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="space-y-3 pb-1">
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[11px]">
-                                <span className="text-muted-foreground font-medium">Energy</span>
-                                <span className="font-semibold">{moodEnergy}/5</span>
-                              </div>
-                              <Slider value={[moodEnergy]} onValueChange={([v]) => setMoodEnergy(v)} min={1} max={5} step={1} className="w-full" />
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[11px]">
-                                <span className="text-muted-foreground font-medium">Stress</span>
-                                <span className="font-semibold">{moodStress}/5</span>
-                              </div>
-                              <Slider value={[moodStress]} onValueChange={([v]) => setMoodStress(v)} min={1} max={5} step={1} className="w-full" />
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[11px]">
-                                <span className="text-muted-foreground font-medium">Sleep</span>
-                                <span className="font-semibold">{moodSleep}/5</span>
-                              </div>
-                              <Slider value={[moodSleep]} onValueChange={([v]) => setMoodSleep(v)} min={1} max={5} step={1} className="w-full" />
-                            </div>
-                            <Textarea
-                              placeholder="Any notes? (optional)"
-                              value={moodNotes}
-                              onChange={(e) => setMoodNotes(e.target.value)}
-                              className="text-sm min-h-[60px] resize-none"
-                              data-testid="input-mood-notes"
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <div className="flex justify-between gap-1">
-                      {[
-                        { value: "great", emoji: "😄", label: "Great" },
-                        { value: "good", emoji: "🙂", label: "Good" },
-                        { value: "okay", emoji: "😐", label: "Okay" },
-                        { value: "bad", emoji: "😟", label: "Bad" },
-                        { value: "terrible", emoji: "😢", label: "Terrible" },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => logMoodMutation.mutate(option.value)}
-                          disabled={logMoodMutation.isPending}
-                          className="flex flex-col items-center gap-1 flex-1 py-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-                          data-testid={`button-mood-${option.value}`}
-                        >
-                          <span className="text-2xl">{option.emoji}</span>
-                          <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* Mood Check-in — full MoodTracker component with colored icons, sliders, habit linking, AI insights */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          <MoodTracker />
+        </motion.div>
 
         {filteredHabitsNeedingAdjustment && filteredHabitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
           <motion.section
