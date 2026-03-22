@@ -23,6 +23,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { MoodTracker } from "@/components/MoodTracker";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -722,6 +723,15 @@ export default function Dashboard() {
         >
           <DailyQuote />
         </motion.section>
+
+        {/* Mood Check-in */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          <MoodTracker compact />
+        </motion.div>
 
         {filteredHabitsNeedingAdjustment && filteredHabitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
           <motion.section
