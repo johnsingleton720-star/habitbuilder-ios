@@ -132,7 +132,7 @@ function useTimeUntilMidnight() {
   return timeLeft;
 }
 
-export function GamificationDisplay() {
+export function GamificationDisplay({ hideLevelCard = false }: { hideLevelCard?: boolean } = {}) {
   const { toast } = useToast();
   const timeUntilReset = useTimeUntilMidnight();
   const [celebration, setCelebration] = useState<{
@@ -290,7 +290,7 @@ export function GamificationDisplay() {
       onComplete={() => setCelebration(prev => ({ ...prev, show: false }))}
     />
     <div className="space-y-4" style={accentStyle}>
-      <Card
+      {!hideLevelCard && <Card
         className={cn(!activeAccentColor && "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent", "border-primary/20")}
         style={activeAccentColor ? {
           background: `linear-gradient(to bottom right, ${activeAccentColor.replace(')', ', 0.12)').replace('hsl(', 'hsla(')}, ${activeAccentColor.replace(')', ', 0.04)').replace('hsl(', 'hsla(')}, transparent)`,
@@ -491,9 +491,7 @@ export function GamificationDisplay() {
             </div>
           )}
         </CardContent>
-      </Card>
-
-      
+      </Card>}
 
       <Card>
         <CardHeader className="pb-2">

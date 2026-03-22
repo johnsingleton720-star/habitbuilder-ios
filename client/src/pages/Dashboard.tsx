@@ -6,13 +6,11 @@ import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
-import { ProgressSummary } from "@/components/ProgressSummary";
 import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal, type MissReason } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { GamificationDisplay } from "@/components/GamificationDisplay";
-import { MoodTracker } from "@/components/MoodTracker";
 import { QuickTasks } from "@/components/QuickTasks";
 import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
@@ -20,13 +18,13 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, Link2, ArrowRight, Crown, ChevronDown, ChevronUp, Maximize2, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile, MoreVertical, Edit, Trash2, Layers } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -40,6 +38,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAppTheme } from "@/components/ThemeSelector";
+import { format, startOfWeek, addDays } from "date-fns";
 
 interface BrokenStreakInfo {
   habitId: number;
@@ -194,9 +193,91 @@ export default function Dashboard() {
     }
   }, [streakBreaks]);
 
-  // Get greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const dashboardStats = useMemo(() => {
+    if (!activeHabits || activeHabits.length === 0) return null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayDayName = format(new Date(), "EEEE").toLowerCase();
+
+    const getHabitDayComplete = (habit: Habit, dateStr: string) => {
+      const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+      const plan = dailyPlans.find(p => p.date === dateStr);
+      if (habit.trackingMode === "simple") return plan?.completed === true;
+      if (!plan || plan.tasks.length === 0) return false;
+      const activeTasks = plan.tasks.filter((t: any) => !t.skipped);
+      if (activeTasks.length === 0) return false;
+      return plan.completed || activeTasks.every((t: any) => t.completed);
+    };
+
+    const isPlanExpired = (habit: Habit, dateStr: string) => {
+      if (habit.trackingMode === "simple") return false;
+      if (!habit.setupComplete) return false;
+      const dPlans = (habit.dailyPlans || []) as DailyPlan[];
+      const endDate = habit.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1].date : null);
+      if (endDate && endDate < dateStr) return true;
+      return false;
+    };
+
+    const isHabitScheduledForDate = (habit: Habit, dateStr: string) => {
+      if (isPlanExpired(habit, dateStr)) return false;
+      const scheduleDays = habit.schedule?.days as string[] | undefined;
+      const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
+      if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
+      if (habit.trackingMode === "simple") return true;
+      const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
+      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
+    };
+
+    const habitsScheduledToday = activeHabits.filter(h => {
+      if (isPlanExpired(h, todayStr)) return false;
+      const scheduleDays = h.schedule?.days as string[] | undefined;
+      if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(todayDayName);
+      if (h.trackingMode === "simple") return true;
+      const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
+      return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
+    });
+    const todayCompletions = habitsScheduledToday.filter(h => getHabitDayComplete(h, todayStr)).length;
+    const todayTotal = habitsScheduledToday.length;
+    const todayPercent = todayTotal > 0 ? Math.round((todayCompletions / todayTotal) * 100) : 0;
+
+    const totalSessions = (habits || []).reduce((sum, h) =>
+      sum + ((h as any).progressCount ?? ((h.progress || []) as any[]).length), 0
+    );
+    const longestStreak = Math.max(...activeHabits.map(h => h.longestStreak || 0), 0);
+    const bestActiveStreak = Math.max(...activeHabits.map(h => h.currentStreak || 0), 0);
+
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(weekStart, i);
+      const dateStr = format(date, "yyyy-MM-dd");
+      const scheduled = activeHabits.filter(h => isHabitScheduledForDate(h, dateStr));
+      const completedCount = scheduled.filter(h => getHabitDayComplete(h, dateStr)).length;
+      const totalCount = scheduled.length;
+      return {
+        dayLetter: format(date, "EEEEE"),
+        isToday: dateStr === todayStr,
+        allComplete: totalCount > 0 && completedCount === totalCount,
+        partial: totalCount > 0 && completedCount > 0 && completedCount < totalCount,
+        isFuture: dateStr > todayStr,
+      };
+    });
+
+    const weeklyCompletions = (() => {
+      let completed = 0, total = 0;
+      for (let i = 0; i < 7; i++) {
+        const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+        if (dateStr > todayStr) break;
+        const scheduled = activeHabits.filter(h => isHabitScheduledForDate(h, dateStr));
+        completed += scheduled.filter(h => getHabitDayComplete(h, dateStr)).length;
+        total += scheduled.length;
+      }
+      return total > 0 ? Math.round((completed / total) * 100) : 0;
+    })();
+
+    return { todayPercent, weeklyPercent: weeklyCompletions, totalSessions, longestStreak, bestActiveStreak, weekDays };
+  }, [activeHabits, habits]);
 
   const handleStartFresh = async (reason?: MissReason) => {
     if (brokenStreak) {
@@ -239,6 +320,13 @@ export default function Dashboard() {
               </h1>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {dashboardStats && dashboardStats.bestActiveStreak > 0 && (
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-800 rounded-full px-3 py-1.5" data-testid="streak-badge-header">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span className="text-[13px] font-bold text-orange-600 dark:text-orange-400">{dashboardStats.bestActiveStreak}d</span>
+              </div>
+            )}
 
           {isMobile ? (
             <>
@@ -467,6 +555,7 @@ export default function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
           )}
+          </div>
         </header>
 
         {/* Trial Banner */}
@@ -474,6 +563,60 @@ export default function Dashboard() {
 
         {/* Hero Card - Level, XP, Streak at a glance */}
         <DashboardHeroCard />
+
+        {/* Compact Stats Row + Weekly Strip */}
+        {dashboardStats && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="border-border/60 shadow-sm">
+              <CardContent className="p-4 space-y-3">
+                <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-primary">{dashboardStats.todayPercent}%</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Today</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-violet-500">{dashboardStats.weeklyPercent}%</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-amber-500">{dashboardStats.totalSessions}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-orange-500">{dashboardStats.longestStreak}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
+                  </div>
+                </div>
+                <div className="flex justify-between gap-1 pt-1" data-testid="weekly-completion-strip">
+                  {dashboardStats.weekDays.map((day, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                      <span className={`text-[10px] font-medium ${day.isToday ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                        day.allComplete
+                          ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                          : day.partial
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : day.isFuture
+                              ? 'bg-muted/30 text-muted-foreground/40'
+                              : 'bg-muted/50 text-muted-foreground'
+                      }`}>
+                        {day.allComplete ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <span className="text-[10px]">{day.dayLetter}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {filteredHabitsNeedingAdjustment && filteredHabitsNeedingAdjustment.length > 0 && !planAdjustDismissed && (
           <motion.section
@@ -796,46 +939,6 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* ===== QUICK ACCESS BAR ===== */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar"
-          data-testid="quick-access-bar"
-        >
-          <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
-            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
-              <Timer className="w-4 h-4 text-amber-600" />
-              <span className="text-[12px] font-medium text-foreground">Focus</span>
-            </div>
-          </Link>
-          <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
-            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
-              <Heart className="w-4 h-4 text-teal-600" />
-              <span className="text-[12px] font-medium text-foreground">Mood</span>
-            </div>
-          </Link>
-          <Link href="/journal">
-            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
-              <BookOpen className="w-4 h-4 text-indigo-600" />
-              <span className="text-[12px] font-medium text-foreground">Journal</span>
-            </div>
-          </Link>
-          <Link href={features.hasGoals ? "/goals" : "/paywall"}>
-            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
-              <Target className="w-4 h-4 text-rose-600" />
-              <span className="text-[12px] font-medium text-foreground">Goals</span>
-            </div>
-          </Link>
-          <Link href={features.hasDailyPlanner ? "/planner" : "/paywall"}>
-            <div className="flex items-center gap-2 bg-card rounded-full px-3.5 py-2 border border-border/60 shadow-sm whitespace-nowrap cursor-pointer hover:shadow-md transition-shadow">
-              <Calendar className="w-4 h-4 text-sky-600" />
-              <span className="text-[12px] font-medium text-foreground">Planner</span>
-            </div>
-          </Link>
-        </motion.div>
-
         {/* ===== SECTION 1: TODAY ===== */}
         <div data-tour="daily-action-center" className="space-y-4">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-daily-focus">Today</p>
@@ -868,35 +971,38 @@ export default function Dashboard() {
         </div>
 
         {/* ===== SECTION 2: YOUR HABITS ===== */}
-        <section id="habits-section" className="space-y-4 pt-1">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <button
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
-              data-testid="button-toggle-habits-view"
-            >
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
-                Your Habits
-              </p>
-              <span className="bg-primary/10 text-primary text-[11px] px-2 py-0.5 rounded-full font-bold">
-                {activeHabits?.length || 0}
-              </span>
-              {activeHabits && activeHabits.length > 0 && (
-                habitsCollapsed ? (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                )
-              )}
-            </button>
-            <div className="flex gap-2">
-              <TemplateGallery onSelectTemplate={handleSelectTemplate} />
-              <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} size="sm" className="gap-1.5 rounded-xl shadow-sm shadow-primary/20">
-                <Plus className="w-3.5 h-3.5" />
-                New Habit
-              </Button>
+        <section id="habits-section" className="pt-1">
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/10 to-emerald-500/10 dark:from-primary/20 dark:to-emerald-500/15 px-4 py-3 flex items-center justify-between flex-wrap gap-3 border-b border-border/40">
+              <button
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => activeHabits && activeHabits.length > 0 && setHabitsCollapsed(!habitsCollapsed)}
+                data-testid="button-toggle-habits-view"
+              >
+                <Layers className="w-4 h-4 text-primary" />
+                <p className="text-sm font-bold text-foreground">
+                  Your Habits
+                </p>
+                <span className="bg-primary/15 text-primary text-[11px] px-2 py-0.5 rounded-full font-bold">
+                  {activeHabits?.length || 0}
+                </span>
+                {activeHabits && activeHabits.length > 0 && (
+                  habitsCollapsed ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  )
+                )}
+              </button>
+              <div className="flex gap-2">
+                <TemplateGallery onSelectTemplate={handleSelectTemplate} />
+                <Button onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }} size="sm" className="gap-1.5 rounded-xl shadow-sm shadow-primary/20 h-8 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  New Habit
+                </Button>
+              </div>
             </div>
-          </div>
+            <CardContent className="p-0">
 
           <AnimatePresence initial={false}>
             {!habitsCollapsed && (
@@ -1055,24 +1161,16 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
+              className="p-4 pt-0"
             >
               <HabitStacks />
             </motion.div>
           )}
+            </CardContent>
+          </Card>
         </section>
 
-        {/* ===== SECTION 3: PROGRESS ===== */}
-        {habits && habits.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <ProgressSummary habits={activeHabits || []} allHabits={habits || []} />
-          </motion.section>
-        )}
-
-        {/* ===== SECTION 4: ACHIEVEMENTS & REWARDS ===== */}
+        {/* ===== SECTION 3: ACHIEVEMENTS & REWARDS ===== */}
         <div data-tour="achievements-section" className="space-y-4">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-achievements">Achievements & Rewards</p>
           {habits && habits.length > 0 && (
@@ -1090,11 +1188,11 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <GamificationDisplay />
+            <GamificationDisplay hideLevelCard />
           </motion.section>
         </div>
 
-        {/* ===== SECTION 5: TOOLS ===== */}
+        {/* ===== SECTION 4: TOOLS ===== */}
         <div className="space-y-4">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em]" data-testid="text-section-tools" data-section="tools">Tools</p>
 
@@ -1103,82 +1201,50 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}
           >
-            <MoodTracker />
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            {features.hasJournal ? (
-              <Link href="/journal">
-                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/40 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow" data-testid="card-journal-link">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-foreground">Daily Journal</p>
-                    <p className="text-[12px] text-muted-foreground">Write reflections & get AI insights</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </div>
-              </Link>
-            ) : (
-              <div className="bg-card rounded-2xl border border-border shadow-sm p-4 flex items-center gap-3" data-testid="card-journal-locked">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-                    Daily Journal
-                    <Badge variant="secondary" className="text-xs">Pro+</Badge>
-                  </p>
-                  <p className="text-[12px] text-muted-foreground">Upgrade to write reflections and get AI insights</p>
-                </div>
-                <Link href="/paywall">
-                  <Button size="sm" variant="outline" className="gap-1 flex-shrink-0" data-testid="button-journal-upgrade">
-                    <Crown className="w-3 h-3" />
-                    Upgrade
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.45 }}
-          >
-            <div className="grid grid-cols-2 gap-2.5" data-tour="feature-links">
-              <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
-                <div className="bg-card rounded-2xl border border-amber-100 dark:border-amber-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-focus-timer-link">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                    <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-foreground">Focus Timer</p>
-                    {!features.hasFocusTimer ? (
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Pro+</p>
-                    ) : (
-                      <p className="text-[10px] text-muted-foreground">Deep work sessions</p>
-                    )}
-                  </div>
-                </div>
-              </Link>
-
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" data-tour="feature-links">
               <Link href={features.hasMoodTracker ? "/mood" : "/paywall"}>
                 <div className="bg-card rounded-2xl border border-teal-100 dark:border-teal-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-mood-tracker-link">
                   <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
                     <Heart className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-foreground">Mood Insights</p>
+                    <p className="text-[13px] font-semibold text-foreground">Mood</p>
                     {!features.hasMoodTracker ? (
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Pro+</p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Pro+</p>
                     ) : (
-                      <p className="text-[10px] text-muted-foreground">Track your trends</p>
+                      <p className="text-[10px] text-muted-foreground">Log mood</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+
+              <Link href={features.hasJournal ? "/journal" : "/paywall"}>
+                <div className="bg-card rounded-2xl border border-indigo-100 dark:border-indigo-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-journal-link">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Journal</p>
+                    {!features.hasJournal ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Pro+</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Reflections</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+
+              <Link href={features.hasFocusTimer ? "/focus" : "/paywall"}>
+                <div className="bg-card rounded-2xl border border-amber-100 dark:border-amber-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-focus-timer-link">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                    <Timer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Focus</p>
+                    {!features.hasFocusTimer ? (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Pro+</p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Deep work</p>
                     )}
                   </div>
                 </div>
@@ -1192,9 +1258,9 @@ export default function Dashboard() {
                   <div>
                     <p className="text-[13px] font-semibold text-foreground">Goals</p>
                     {!features.hasGoals ? (
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Premium</p>
                     ) : (
-                      <p className="text-[10px] text-muted-foreground">Set & track goals</p>
+                      <p className="text-[10px] text-muted-foreground">Set & track</p>
                     )}
                   </div>
                 </div>
@@ -1206,12 +1272,24 @@ export default function Dashboard() {
                     <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-foreground">Daily Planner</p>
+                    <p className="text-[13px] font-semibold text-foreground">Planner</p>
                     {!features.hasDailyPlanner ? (
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" />Premium</p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Premium</p>
                     ) : (
                       <p className="text-[10px] text-muted-foreground">Plan your day</p>
                     )}
+                  </div>
+                </div>
+              </Link>
+
+              <Link href="/analytics">
+                <div className="bg-card rounded-2xl border border-purple-100 dark:border-purple-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-analytics-link">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">Analytics</p>
+                    <p className="text-[10px] text-muted-foreground">View insights</p>
                   </div>
                 </div>
               </Link>
