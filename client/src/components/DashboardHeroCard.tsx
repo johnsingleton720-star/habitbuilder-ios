@@ -169,7 +169,7 @@ export function DashboardHeroCard({
           )}
 
           {weekDays && weekDays.length > 0 && (
-            <div className="border-t border-border/30 mt-3 pt-3">
+            <div className="border-t border-border/30 mt-3 pt-4">
               <div className="flex justify-between items-start" data-testid="weekly-completion-strip">
                 {weekDays.map((day, i) => {
                   const isSelected = selectedWeekDay === day.dateStr;
@@ -177,39 +177,41 @@ export function DashboardHeroCard({
                     <button
                       key={i}
                       onClick={() => onSelectWeekDay?.(isSelected ? null : day.dateStr)}
-                      className={`flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      className={`flex flex-col items-center gap-1.5 flex-1 py-1 rounded-xl transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-white/60 dark:bg-white/10 shadow-sm ring-1 ring-border/60'
-                          : day.isToday
-                            ? 'bg-white/40 dark:bg-white/5'
-                            : 'hover:bg-white/30'
+                          : 'hover:bg-white/30'
                       }`}
                       data-testid={`calendar-day-${day.dateStr}`}
                     >
-                      <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                      <span className={`text-[14px] font-bold tracking-wide ${
+                        day.isToday
+                          ? 'text-primary'
+                          : isSelected
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                      }`}>{day.dayLetter}</span>
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold transition-all ${
                         day.allComplete
-                          ? 'bg-primary text-white shadow-sm'
+                          ? 'bg-gradient-to-br from-primary to-emerald-400 text-white shadow-md'
                           : day.partial
-                            ? 'bg-gradient-to-br from-primary/70 to-accent/70 text-white'
+                            ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300'
                             : day.isToday
-                              ? 'bg-white dark:bg-card text-foreground ring-2 ring-primary/40 shadow-sm'
+                              ? 'bg-white dark:bg-card text-muted-foreground ring-2 ring-muted-foreground/30 shadow-sm'
                               : day.isFuture
-                                ? 'bg-white/40 dark:bg-muted/30 text-muted-foreground/40'
+                                ? 'bg-gray-100 dark:bg-muted/30 text-muted-foreground/30'
                                 : day.totalCount > 0
-                                  ? 'bg-white/60 dark:bg-muted/40 text-muted-foreground'
-                                  : 'bg-white/40 dark:bg-muted/30 text-muted-foreground/40'
+                                  ? 'bg-white dark:bg-muted/40 text-muted-foreground'
+                                  : 'bg-gray-100 dark:bg-muted/30 text-muted-foreground/30'
                       }`}>
                         {day.allComplete ? (
                           <Check className="w-5 h-5" strokeWidth={3} />
                         ) : day.partial ? (
-                          <span className="text-[10px] font-bold">½</span>
+                          <span className="text-[13px] font-bold">½</span>
                         ) : day.totalCount > 0 && !day.isFuture ? (
-                          <span className="text-[9px] font-bold">{day.completedCount}/{day.totalCount}</span>
-                        ) : day.isFuture ? (
-                          <span className="text-[8px]">·</span>
+                          <span className="text-[10px] font-semibold text-muted-foreground">{day.completedCount}/{day.totalCount}</span>
                         ) : (
-                          <span className="text-[8px]">·</span>
+                          <span className="text-[10px] text-muted-foreground/40">·</span>
                         )}
                       </div>
                     </button>
