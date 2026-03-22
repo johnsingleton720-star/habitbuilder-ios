@@ -1651,23 +1651,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const habits = await storage.getHabits(userId);
       const activeHabits = habits.filter(h => !h.archived);
 
-      const now = new Date();
-      const userNow = userTz
-        ? new Date(now.toLocaleString("en-US", { timeZone: userTz }))
-        : now;
-      const todayStr = `${userNow.getFullYear()}-${String(userNow.getMonth() + 1).padStart(2, "0")}-${String(userNow.getDate()).padStart(2, "0")}`;
-
-      const dayOfWeek = userNow.getDay();
-      const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const weekStartDate = new Date(userNow);
-      weekStartDate.setDate(weekStartDate.getDate() - mondayOffset);
-      const weekStartStr = `${weekStartDate.getFullYear()}-${String(weekStartDate.getMonth() + 1).padStart(2, "0")}-${String(weekStartDate.getDate()).padStart(2, "0")}`;
-      const weekEndDate = new Date(weekStartDate);
-      weekEndDate.setDate(weekEndDate.getDate() + 6);
-      const weekEndStr = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, "0")}-${String(weekEndDate.getDate()).padStart(2, "0")}`;
-
       const summaries = activeHabits.map((h) => {
-        const weekPlans = (h.dailyPlans || []).filter((p: any) => p.date >= weekStartStr && p.date <= weekEndStr);
         return {
           id: h.id,
           userId: h.userId,
@@ -1679,7 +1663,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           planStartDate: h.planStartDate,
           planEndDate: h.planEndDate,
           schedule: h.schedule,
-          dailyPlans: weekPlans,
+          dailyPlans: h.dailyPlans || [],
           progress: [],
           progressCount: ((h.progress || []) as any[]).length,
           totalTimeSpent: h.totalTimeSpent,
