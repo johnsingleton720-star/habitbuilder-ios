@@ -835,7 +835,11 @@ function WeeklyView({ habits }: { habits: any[] }) {
     
     const scheduledHabits = habits.filter(h => {
       if (h.archived) return false;
-      if (isPlanExpired(h)) return false;
+      if (h.trackingMode !== "simple" && h.setupComplete) {
+        const dPlans = (h.dailyPlans || []) as any[];
+        const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1].date : null);
+        if (endDate && endDate < dateStr) return false;
+      }
       const scheduleDays = h.schedule?.days as string[] | undefined;
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
       if (h.trackingMode === "simple") return true;

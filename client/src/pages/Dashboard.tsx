@@ -234,7 +234,6 @@ export default function Dashboard() {
     };
 
     const isHabitScheduledForDate = (habit: Habit, dateStr: string) => {
-      if (hasDailyPlanForDate(habit, dateStr)) return true;
       if (isPlanExpired(habit, dateStr)) return false;
       const scheduleDays = habit.schedule?.days as string[] | undefined;
       const dayName = format(new Date(dateStr + "T12:00:00"), "EEEE").toLowerCase();
