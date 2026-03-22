@@ -27,7 +27,9 @@ import {
   Crown,
   PenLine,
   FilePlus,
+  HelpCircle,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "wouter";
 import { format, addDays, subDays, parseISO } from "date-fns";
 import type { JournalEntry } from "@shared/schema";
@@ -316,6 +318,30 @@ export default function Journal() {
               <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground flex items-center gap-3">
                 <BookOpen className="w-7 h-7 text-indigo-500" />
                 Daily Journal
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors" data-testid="button-journal-help">
+                      <HelpCircle className="w-5 h-5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 text-sm" side="bottom" align="start">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-foreground flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-500" />
+                        About Daily Journal
+                      </p>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Your journal is read by the AI to generate personalized habit plans and insights. The more detail you share, the smarter your coaching becomes.
+                      </p>
+                      <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-3 border border-indigo-100 dark:border-indigo-900">
+                        <p className="font-medium text-indigo-700 dark:text-indigo-300 text-xs mb-1">💡 Tip: More detail = better AI</p>
+                        <p className="text-xs text-indigo-600/80 dark:text-indigo-400/80 leading-relaxed">
+                          Share how you felt, what went well or poorly, energy levels, any challenges — even small details help the AI tailor your habit plan more accurately.
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </h1>
               <p className="text-base text-muted-foreground mt-1">Reflect on your day and discover patterns</p>
             </div>

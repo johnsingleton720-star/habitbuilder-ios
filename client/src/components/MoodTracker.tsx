@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SmilePlus, Smile, Meh, Frown, AlertCircle, Zap, Brain, Moon, Lock, TrendingUp, TrendingDown, Check, Sparkles, ChevronRight, ChevronDown, ChevronUp, X, BarChart3, FileText, ArrowUp, ArrowDown, Minus, HelpCircle, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -294,6 +295,30 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
         <DialogTitle className="flex items-center gap-2">
           <SmilePlus className="w-5 h-5 text-primary" />
           How are you feeling today?
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors ml-auto" data-testid="button-mood-help">
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 text-sm" side="bottom" align="end">
+              <div className="space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-2">
+                  <SmilePlus className="w-4 h-4 text-primary" />
+                  About Mood Check-in
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Your mood data helps the AI understand how your habits affect your wellbeing and personalize your coaching.
+                </p>
+                <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+                  <p className="font-medium text-primary text-xs mb-1">💡 Tip: More detail = smarter AI</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Log energy, stress, sleep, and notes as often as possible — even brief notes like "tired after late meeting" give the AI rich context to improve your plan.
+                  </p>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </DialogTitle>
         <DialogDescription>
           Track your mood to discover patterns and correlations with your habits.

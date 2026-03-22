@@ -21,7 +21,9 @@ import {
   TrendingUp,
   Activity,
   Home,
+  HelpCircle,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -132,6 +134,30 @@ export default function MoodTracker() {
               <h1 className="text-xl font-bold text-foreground flex items-center gap-2" data-testid="text-mood-title">
                 <Activity className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 Mood Insights
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors" data-testid="button-mood-page-help">
+                      <HelpCircle className="w-4 h-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-76 text-sm" side="bottom" align="start">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-foreground flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-teal-600" />
+                        About Mood Insights
+                      </p>
+                      <p className="text-muted-foreground leading-relaxed">
+                        This page shows trends from all your mood check-ins. The AI uses this data to understand how your habits and lifestyle affect how you feel.
+                      </p>
+                      <div className="bg-teal-50 dark:bg-teal-950/30 rounded-lg p-3 border border-teal-100 dark:border-teal-900">
+                        <p className="font-medium text-teal-700 dark:text-teal-300 text-xs mb-1">💡 Tip: More detail = better coaching</p>
+                        <p className="text-xs text-teal-600/80 dark:text-teal-400/80 leading-relaxed">
+                          Log mood daily and always fill in energy, stress, sleep, and notes — even a few words help the AI spot patterns and personalize your habit plan.
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </h1>
               <p className="text-sm text-muted-foreground">Trends and patterns from your mood check-ins</p>
             </div>
