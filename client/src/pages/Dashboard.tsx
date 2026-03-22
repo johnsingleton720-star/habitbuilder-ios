@@ -627,18 +627,22 @@ export default function Dashboard() {
                         }`}
                         data-testid={`calendar-day-${day.dateStr}`}
                       >
-                        <span className={`text-[10px] font-medium ${day.isToday || isSelected ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                        <span className={`text-[10px] font-medium ${day.isToday || isSelected ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
                           day.allComplete
-                            ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
                             : day.partial
-                              ? 'bg-primary/20 text-primary border border-primary/30'
-                              : day.isFuture
-                                ? 'bg-muted/30 text-muted-foreground/40'
-                                : 'bg-muted/50 text-muted-foreground'
+                              ? 'bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300 border border-violet-200 dark:border-violet-700'
+                              : day.isToday
+                                ? 'bg-card text-foreground ring-2 ring-primary/40 shadow-sm'
+                                : day.isFuture
+                                  ? 'bg-muted/30 text-muted-foreground/40'
+                                  : 'bg-muted/50 text-muted-foreground'
                         }`}>
                           {day.allComplete ? (
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-4 h-4" />
+                          ) : day.partial ? (
+                            <span className="text-[10px]">½</span>
                           ) : (
                             format(day.date, "d")
                           )}

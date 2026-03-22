@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Flame, Crown, BarChart3, ArrowRight } from "lucide-react";
+import { Zap, Flame, Crown, BarChart3, ArrowRight, Star } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -54,7 +54,6 @@ export function DashboardHeroCard({
   const circumference = 2 * Math.PI * 28;
   const strokeDashoffset = circumference - (xpProgress / 100) * circumference;
   const tierConfig = TIER_LABELS[tier] || TIER_LABELS.free;
-  const hasStats = todayPercent !== undefined && weeklyPercent !== undefined && totalSessions !== undefined && longestStreak !== undefined;
 
   return (
     <motion.div
@@ -62,36 +61,33 @@ export function DashboardHeroCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.01 }}
     >
-      <Card className="border-2 border-primary/25 dark:border-primary/35 bg-gradient-to-r from-primary/10 via-card to-accent/10 dark:from-primary/15 dark:via-card dark:to-accent/15 overflow-hidden relative shadow-md" data-testid="card-dashboard-hero">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-        <CardContent className="p-4 space-y-3">
+      <Card className="border border-border/60 bg-gradient-to-r from-primary/8 to-emerald-50 dark:from-primary/10 dark:to-emerald-950/20 overflow-hidden relative shadow-sm" data-testid="card-dashboard-hero">
+        <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" data-testid="xp-progress-ring">
-              <svg width="68" height="68" viewBox="0 0 68 68" className="progress-ring">
+              <svg width="68" height="68" viewBox="0 0 68 68">
                 <circle
-                  cx="34"
-                  cy="34"
-                  r="28"
+                  cx="34" cy="34" r="28"
                   fill="none"
-                  stroke="hsl(var(--muted) / 0.5)"
+                  className="stroke-muted"
                   strokeWidth="5"
                 />
                 <circle
-                  cx="34"
-                  cy="34"
-                  r="28"
+                  cx="34" cy="34" r="28"
                   fill="none"
-                  stroke="hsl(var(--primary))"
+                  className="stroke-violet-500 dark:stroke-violet-400"
                   strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
-                  className="progress-ring-circle"
                   transform="rotate(-90 34 34)"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">{stats.level}</span>
+                <span className="text-[14px] font-bold text-violet-600 dark:text-violet-400">{stats.level}</span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center">
+                <Star className="w-2.5 h-2.5 text-white" fill="white" />
               </div>
             </div>
 
@@ -104,7 +100,7 @@ export function DashboardHeroCard({
                 </Badge>
               </div>
               <p className="text-[12px] text-muted-foreground mb-1.5">
-                {stats.xpPoints.toLocaleString()} XP · {stats.xpToNextLevel.toLocaleString()} to next level
+                {stats.xpPoints.toLocaleString()} XP · {stats.xpToNextLevel.toLocaleString()} to next
               </p>
               <div className="flex gap-3 text-[12px]">
                 {stats.maxStreak > 0 && (
@@ -113,7 +109,7 @@ export function DashboardHeroCard({
                   </span>
                 )}
                 {stats.streakMultiplier > 1 && (
-                  <span className="flex items-center gap-1 text-primary font-semibold">
+                  <span className="flex items-center gap-1 text-violet-500 dark:text-violet-400 font-semibold">
                     <Zap className="w-3.5 h-3.5" />{stats.streakMultiplierLabel}
                   </span>
                 )}
@@ -143,7 +139,7 @@ export function DashboardHeroCard({
               </div>
               <div className="flex justify-center mt-2.5">
                 <Link href="/progress/today">
-                  <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
+                  <button className="text-[11px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
                     <BarChart3 className="w-3 h-3" />
                     View all stats
                     <ArrowRight className="w-3 h-3" />
