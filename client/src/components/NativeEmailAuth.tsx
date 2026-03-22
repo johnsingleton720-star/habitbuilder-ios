@@ -229,7 +229,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 Continue with Google
               </button>
               <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
-                You'll be redirected to Google to sign in, then brought right back
+                Opens Replit secure sign-in, then brings you right back
               </p>
             </div>
           )}
