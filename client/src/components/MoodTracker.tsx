@@ -761,7 +761,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setOpen(true)} data-testid="button-update-mood-compact">
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { if (todayEntry) { setSelectedMood(todayEntry.mood as MoodType); if (todayEntry.energy) setEnergy([todayEntry.energy]); if (todayEntry.stress) setStress([todayEntry.stress]); if (todayEntry.sleep) setSleep([todayEntry.sleep]); if (todayEntry.notes) setNotes(todayEntry.notes); if (todayEntry.habitIds) setSelectedHabits(todayEntry.habitIds); } setOpen(true); }} data-testid="button-update-mood-compact">
                       Update
                     </Button>
                     <button onClick={() => navigate("/mood")} className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-history-compact">
