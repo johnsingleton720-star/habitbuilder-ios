@@ -73,7 +73,7 @@ export function DashboardHeroCard({
                   cy="34"
                   r="28"
                   fill="none"
-                  stroke="#e5e7eb"
+                  stroke="hsl(var(--muted) / 0.5)"
                   strokeWidth="5"
                 />
                 <circle
@@ -81,7 +81,7 @@ export function DashboardHeroCard({
                   cy="34"
                   r="28"
                   fill="none"
-                  stroke="#7c3aed"
+                  stroke="hsl(var(--primary))"
                   strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
@@ -91,7 +91,7 @@ export function DashboardHeroCard({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-foreground">{stats.level}</span>
+                <span className="text-lg font-bold text-primary">{stats.level}</span>
               </div>
             </div>
 
