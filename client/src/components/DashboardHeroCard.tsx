@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Flame, Crown, BarChart3, ArrowRight, Star } from "lucide-react";
+import { Zap, Flame, Crown, BarChart3, ArrowRight, Star, Check } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { format } from "date-fns";
 
 interface GamificationStats {
   xpPoints: number;
@@ -20,12 +21,27 @@ interface GamificationStats {
   subscriptionTier: string;
 }
 
+interface WeekDay {
+  date: Date;
+  dateStr: string;
+  dayLetter: string;
+  isToday: boolean;
+  allComplete: boolean;
+  partial: boolean;
+  isFuture: boolean;
+  completedCount: number;
+  totalCount: number;
+}
+
 interface DashboardHeroCardProps {
   todayPercent?: number;
   weeklyPercent?: number;
   totalSessions?: number;
   longestStreak?: number;
   statsLoaded?: boolean;
+  weekDays?: WeekDay[];
+  selectedWeekDay?: string | null;
+  onSelectWeekDay?: (dateStr: string | null) => void;
 }
 
 const TIER_LABELS: Record<string, { label: string; color: string }> = {
@@ -41,6 +57,9 @@ export function DashboardHeroCard({
   totalSessions,
   longestStreak,
   statsLoaded = false,
+  weekDays,
+  selectedWeekDay,
+  onSelectWeekDay,
 }: DashboardHeroCardProps) {
   const { data: stats } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
@@ -118,7 +137,7 @@ export function DashboardHeroCard({
           </div>
 
           {statsLoaded && (
-            <div className="border-t border-border/40 mt-4 pt-3">
+            <div className="border-t border-border/30 mt-4 pt-3">
               <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
                 <div className="text-center">
                   <p className="text-lg font-bold text-primary">{todayPercent ?? 0}%</p>
@@ -145,6 +164,57 @@ export function DashboardHeroCard({
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </Link>
+              </div>
+            </div>
+          )}
+
+          {weekDays && weekDays.length > 0 && (
+            <div className="border-t border-border/30 mt-3 pt-3">
+              <div className="flex justify-between items-start" data-testid="weekly-completion-strip">
+                {weekDays.map((day, i) => {
+                  const isSelected = selectedWeekDay === day.dateStr;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => onSelectWeekDay?.(isSelected ? null : day.dateStr)}
+                      className={`flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-white/60 dark:bg-white/10 shadow-sm ring-1 ring-border/60'
+                          : day.isToday
+                            ? 'bg-white/40 dark:bg-white/5'
+                            : 'hover:bg-white/30'
+                      }`}
+                      data-testid={`calendar-day-${day.dateStr}`}
+                    >
+                      <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                        day.allComplete
+                          ? 'bg-primary text-white shadow-sm'
+                          : day.partial
+                            ? 'bg-gradient-to-br from-primary/70 to-accent/70 text-white'
+                            : day.isToday
+                              ? 'bg-white dark:bg-card text-foreground ring-2 ring-primary/40 shadow-sm'
+                              : day.isFuture
+                                ? 'bg-white/40 dark:bg-muted/30 text-muted-foreground/40'
+                                : day.totalCount > 0
+                                  ? 'bg-white/60 dark:bg-muted/40 text-muted-foreground'
+                                  : 'bg-white/40 dark:bg-muted/30 text-muted-foreground/40'
+                      }`}>
+                        {day.allComplete ? (
+                          <Check className="w-5 h-5" strokeWidth={3} />
+                        ) : day.partial ? (
+                          <span className="text-[10px] font-bold">½</span>
+                        ) : day.totalCount > 0 && !day.isFuture ? (
+                          <span className="text-[9px] font-bold">{day.completedCount}/{day.totalCount}</span>
+                        ) : day.isFuture ? (
+                          <span className="text-[8px]">·</span>
+                        ) : (
+                          <span className="text-[8px]">·</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

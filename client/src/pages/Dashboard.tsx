@@ -23,7 +23,6 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { MoodTracker } from "@/components/MoodTracker";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -596,192 +595,126 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
-        {/* Hero Card - Level, XP, Streak at a glance + inline stats */}
+        {/* Hero Card - Level, XP, Streak, Stats, Calendar all in one box */}
         <DashboardHeroCard
           todayPercent={dashboardStats?.todayPercent}
           weeklyPercent={dashboardStats?.weeklyPercent}
           totalSessions={dashboardStats?.totalSessions}
           longestStreak={dashboardStats?.longestStreak}
           statsLoaded={!!dashboardStats}
+          weekDays={dashboardStats?.weekDays}
+          selectedWeekDay={selectedWeekDay}
+          onSelectWeekDay={setSelectedWeekDay}
         />
 
-        {/* 7-day calendar strip — bare background, no Card wrapper */}
-        {dashboardStats && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="space-y-2">
-              <div className="flex justify-between items-start" data-testid="weekly-completion-strip">
-                  {dashboardStats.weekDays.map((day, i) => {
-                    const isSelected = selectedWeekDay === day.dateStr;
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedWeekDay(isSelected ? null : day.dateStr)}
-                        className={`flex flex-col items-center gap-1.5 flex-1 py-2 rounded-2xl transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-card shadow-md ring-1 ring-border'
-                            : day.isToday
-                              ? 'bg-card shadow-sm ring-1 ring-border/60'
-                              : 'hover:bg-muted/30'
-                        }`}
-                        data-testid={`calendar-day-${day.dateStr}`}
-                      >
-                        <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                          day.allComplete
-                            ? 'bg-primary text-white shadow-md'
-                            : day.partial
-                              ? 'bg-gradient-to-br from-primary/80 to-accent/80 text-white shadow-sm'
-                              : day.isToday
-                                ? 'bg-card text-foreground ring-2 ring-primary shadow-sm'
-                                : day.isFuture
-                                  ? 'bg-muted/30 text-muted-foreground/50'
-                                  : day.totalCount > 0
-                                    ? 'bg-muted/50 text-muted-foreground'
-                                    : 'bg-muted/30 text-muted-foreground/40'
-                        }`}>
-                          {day.allComplete ? (
-                            <Check className="w-5 h-5" strokeWidth={3} />
-                          ) : day.partial ? (
-                            <span className="text-[10px] font-bold">½</span>
-                          ) : (
-                            <span className="text-sm font-semibold">{format(day.date, "d")}</span>
-                          )}
-                        </div>
-                        {day.totalCount > 0 && !day.isFuture && (
-                          <span className={`text-[9px] font-medium ${day.allComplete ? 'text-primary' : day.partial ? 'text-primary/70' : 'text-muted-foreground'}`}>
-                            {day.completedCount}/{day.totalCount}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <AnimatePresence>
-                  {selectedWeekDay && dashboardStats.getHabitsForDate && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+        {/* Expanded day detail (shown when tapping a calendar day in hero card) */}
+        {dashboardStats && selectedWeekDay && dashboardStats.getHabitsForDate && (
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      {format(new Date(selectedWeekDay + "T12:00:00"), "EEEE, MMM d")}
+                    </span>
+                    <button
+                      onClick={() => setSelectedWeekDay(null)}
+                      className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                      data-testid="button-close-day-view"
                     >
-                      <div className="mt-3 pt-3 border-t border-border/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-foreground">
-                            {format(new Date(selectedWeekDay + "T12:00:00"), "EEEE, MMM d")}
-                          </span>
-                          <button
-                            onClick={() => setSelectedWeekDay(null)}
-                            className="text-muted-foreground hover:text-foreground p-1 rounded-md"
-                            data-testid="button-close-day-view"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {(() => {
+                    const dayHabits = dashboardStats.getHabitsForDate(selectedWeekDay);
+                    if (dayHabits.length === 0) {
+                      return (
+                        <div className="border border-dashed border-border/50 rounded-xl py-5 text-center">
+                          <p className="text-sm text-muted-foreground/60">No habits scheduled</p>
                         </div>
-
-                        {(() => {
-                          const dayHabits = dashboardStats.getHabitsForDate(selectedWeekDay);
-                          if (dayHabits.length === 0) {
-                            return (
-                              <div className="border border-dashed border-border/50 rounded-xl py-5 text-center">
-                                <p className="text-sm text-muted-foreground/60">No habits scheduled</p>
-                              </div>
-                            );
-                          }
+                      );
+                    }
+                    return (
+                      <div className="space-y-1.5">
+                        {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => {
+                          const accentColor = habit.customColor || '#6366f1';
+                          const habitEmoji = getEmojiForIcon(habit.customIcon);
                           return (
-                            <div className="space-y-1.5">
-                              {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => {
-                                const accentColor = habit.customColor || '#6366f1';
-                                const habitEmoji = getEmojiForIcon(habit.customIcon);
-                                return (
-                                  <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
-                                    <div
-                                      className={`flex items-center gap-3 pl-0 pr-2.5 py-2.5 rounded-xl transition-all cursor-pointer overflow-hidden ${
-                                        isComplete
-                                          ? 'bg-primary/8 border border-primary/15 shadow-sm'
-                                          : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
-                                      }`}
-                                      data-testid={`day-view-habit-${habit.id}`}
-                                    >
-                                      {/* Colored left accent bar */}
-                                      <div
-                                        className="w-1 self-stretch rounded-r-full flex-shrink-0"
-                                        style={{ backgroundColor: isComplete ? accentColor : accentColor + '99', minWidth: '4px' }}
-                                      />
-                                      {/* Habit icon */}
-                                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm ${isComplete ? 'opacity-60' : ''}`}
-                                        style={{ backgroundColor: accentColor + '20' }}>
-                                        {habitEmoji || <span style={{ color: accentColor }}>●</span>}
+                            <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
+                              <div
+                                className={`flex items-center gap-3 pl-0 pr-2.5 py-2.5 rounded-xl transition-all cursor-pointer overflow-hidden ${
+                                  isComplete
+                                    ? 'bg-primary/8 border border-primary/15 shadow-sm'
+                                    : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
+                                }`}
+                                data-testid={`day-view-habit-${habit.id}`}
+                              >
+                                <div
+                                  className="w-1 self-stretch rounded-r-full flex-shrink-0"
+                                  style={{ backgroundColor: isComplete ? accentColor : accentColor + '99', minWidth: '4px' }}
+                                />
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm ${isComplete ? 'opacity-60' : ''}`}
+                                  style={{ backgroundColor: accentColor + '20' }}>
+                                  {habitEmoji || <span style={{ color: accentColor }}>●</span>}
+                                </div>
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+                                  isComplete
+                                    ? 'bg-primary border-primary text-white'
+                                    : 'border-border/60 bg-transparent'
+                                }`}>
+                                  {isComplete && <Check className="w-3 h-3" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className={`text-sm font-medium truncate block ${
+                                    isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
+                                  }`}>
+                                    {habit.title}
+                                  </span>
+                                  {totalTasks > 0 && (
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
+                                        <div
+                                          className="h-full rounded-full transition-all"
+                                          style={{
+                                            width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
+                                            backgroundColor: accentColor
+                                          }}
+                                        />
                                       </div>
-                                      {/* Completion circle */}
-                                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
-                                        isComplete
-                                          ? 'bg-primary border-primary text-white'
-                                          : 'border-border/60 bg-transparent'
-                                      }`}>
-                                        {isComplete && <Check className="w-3 h-3" />}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <span className={`text-sm font-medium truncate block ${
-                                          isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
-                                        }`}>
-                                          {habit.title}
-                                        </span>
-                                        {totalTasks > 0 && (
-                                          <div className="flex items-center gap-2 mt-0.5">
-                                            <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
-                                              <div
-                                                className="h-full rounded-full transition-all"
-                                                style={{
-                                                  width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
-                                                  backgroundColor: isComplete ? accentColor : accentColor
-                                                }}
-                                              />
-                                            </div>
-                                            <span className="text-xs text-muted-foreground">
-                                              {completedTasks}/{totalTasks} tasks
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      {habit.schedule?.time && (
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                                          {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
-                                            hour: "numeric",
-                                            minute: "2-digit",
-                                          })}
-                                        </span>
-                                      )}
+                                      <span className="text-xs text-muted-foreground">
+                                        {completedTasks}/{totalTasks} tasks
+                                      </span>
                                     </div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
+                                  )}
+                                </div>
+                                {habit.schedule?.time && (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                                    {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </Link>
                           );
-                        })()}
+                        })}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-            </div>
-          </motion.div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </AnimatePresence>
         )}
 
-        {/* Mood Check-in */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-        >
-          <MoodTracker compact />
-        </motion.div>
-
-        {/* Daily Quote */}
+        {/* Daily Quote - right after hero card */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
