@@ -18,7 +18,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, TrendingUp, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, TrendingUp, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home, AlertTriangle } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -650,7 +650,7 @@ export default function Dashboard() {
                     return (
                       <div className="space-y-1.5">
                         {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => {
-                          const accentColor = habit.customColor || '#6366f1';
+                          const accentColor = habit.customColor || 'hsl(var(--primary))';
                           const habitEmoji = getEmojiForIcon(habit.customIcon);
                           return (
                             <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
@@ -931,7 +931,7 @@ export default function Dashboard() {
                       <span className="text-border">|</span>
                       <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5 text-primary" /> Guided daily sessions</span>
                       <span className="text-border">|</span>
-                      <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-500" /> Track your progress</span>
+                      <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-primary" /> Track your progress</span>
                     </div>
                     <Button
                       onClick={() => { setSelectedTemplate(null); setIsDialogOpen(true); }}
@@ -1190,27 +1190,36 @@ export default function Dashboard() {
                         const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
                         const iconBg = iconColor ? `${iconColor}20` : undefined;
                         const habitEmoji = getEmojiForIcon(habit.customIcon);
+                        const isPlanDone = !isSimple && habit.setupComplete && habit.planEndDate && habit.planEndDate < todayStr;
 
                         return (
                           <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group transition-opacity ${isCheckedIn ? 'opacity-60' : ''} ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
                             <Link href={`/habit/${habit.id}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
                               <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-opacity ${isCheckedIn ? 'opacity-50' : ''}`}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-opacity ${isCheckedIn || isPlanDone ? 'opacity-50' : ''}`}
                                 style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
                               >
                                 <span className="text-xl leading-none">{habitEmoji}</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`text-[14px] font-semibold truncate ${isCheckedIn ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{habit.title}</p>
+                                <p className={`text-[14px] font-semibold truncate ${isCheckedIn ? 'line-through text-muted-foreground' : isPlanDone ? 'text-muted-foreground' : 'text-foreground'}`}>{habit.title}</p>
                                 <div className="flex items-center gap-2.5 mt-0.5">
-                                  {streak > 0 && (
-                                    <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
-                                      <Flame className="w-3 h-3" />{streak}d
+                                  {isPlanDone ? (
+                                    <span className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                                      <AlertTriangle className="w-3 h-3" />Plan ended · <span className="text-primary cursor-pointer hover:underline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/habit/${habit.id}`); }}>Continue →</span>
                                     </span>
+                                  ) : (
+                                    <>
+                                      {streak > 0 && (
+                                        <span className="flex items-center gap-0.5 text-[11px] text-orange-500 font-semibold">
+                                          <Flame className="w-3 h-3" />{streak}d
+                                        </span>
+                                      )}
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {isSimple ? (isCheckedIn ? "Done" : "Simple") : `${completedTasks}/${totalTasks}`}
+                                      </span>
+                                    </>
                                   )}
-                                  <span className="text-[11px] text-muted-foreground">
-                                    {isSimple ? (isCheckedIn ? "Done" : "Simple") : `${completedTasks}/${totalTasks}`}
-                                  </span>
                                 </div>
                               </div>
                             </Link>
@@ -1390,9 +1399,9 @@ export default function Dashboard() {
               </Link>
 
               <Link href="/analytics">
-                <div className="bg-card rounded-2xl border border-purple-100 dark:border-purple-800/40 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-analytics-link">
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <div className="bg-card rounded-2xl border border-primary/15 dark:border-primary/25 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow h-full" data-testid="card-analytics-link">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-foreground">Analytics</p>

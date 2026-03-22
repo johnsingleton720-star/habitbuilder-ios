@@ -48,7 +48,7 @@ const TIER_LABELS: Record<string, { label: string; color: string }> = {
   free: { label: "Free", color: "bg-muted text-muted-foreground" },
   trial: { label: "Trial", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" },
   pro: { label: "Pro", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300" },
-  premium: { label: "Premium", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300" },
+  premium: { label: "Premium", color: "bg-primary/15 text-primary" },
 };
 
 export function DashboardHeroCard({
@@ -80,7 +80,7 @@ export function DashboardHeroCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.01 }}
     >
-      <Card className="border border-primary/20 dark:border-primary/30 bg-gradient-to-r from-violet-50 to-emerald-50 dark:from-violet-950/30 dark:to-emerald-950/20 overflow-hidden relative shadow-sm" data-testid="card-dashboard-hero">
+      <Card className="border border-primary/20 dark:border-primary/30 bg-gradient-to-r from-primary/5 to-accent/8 dark:from-primary/10 dark:to-accent/5 overflow-hidden relative shadow-sm" data-testid="card-dashboard-hero">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" data-testid="xp-progress-ring">
@@ -94,7 +94,7 @@ export function DashboardHeroCard({
                 <circle
                   cx="34" cy="34" r="28"
                   fill="none"
-                  className="stroke-violet-500 dark:stroke-violet-400"
+                  className="stroke-primary"
                   strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
@@ -103,9 +103,9 @@ export function DashboardHeroCard({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[14px] font-bold text-violet-600 dark:text-violet-400">{stats.level}</span>
+                <span className="text-[14px] font-bold text-primary">{stats.level}</span>
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center">
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                 <Star className="w-2.5 h-2.5 text-white" fill="white" />
               </div>
             </div>
@@ -128,7 +128,7 @@ export function DashboardHeroCard({
                   </span>
                 )}
                 {stats.streakMultiplier > 1 && (
-                  <span className="flex items-center gap-1 text-violet-500 dark:text-violet-400 font-semibold">
+                  <span className="flex items-center gap-1 text-primary font-semibold">
                     <Zap className="w-3.5 h-3.5" />{stats.streakMultiplierLabel}
                   </span>
                 )}
@@ -144,7 +144,7 @@ export function DashboardHeroCard({
                   <p className="text-[10px] text-muted-foreground font-medium">Today</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-violet-500">{weeklyPercent ?? 0}%</p>
+                  <p className="text-lg font-bold text-primary">{weeklyPercent ?? 0}%</p>
                   <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
                 </div>
                 <div className="text-center">
@@ -195,7 +195,7 @@ export function DashboardHeroCard({
                         day.allComplete
                           ? 'bg-gradient-to-br from-primary to-emerald-400 text-white shadow-md'
                           : day.partial
-                            ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300'
+                            ? 'bg-primary/15 text-primary'
                             : day.isToday
                               ? 'bg-white dark:bg-card text-muted-foreground ring-2 ring-muted-foreground/30 shadow-sm'
                               : day.isFuture

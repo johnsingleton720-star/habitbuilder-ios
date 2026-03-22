@@ -144,11 +144,11 @@ export function TodaysFocus({ habits, stacks }: TodaysFocusProps) {
 
   return (
     <>
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden" data-testid="card-todays-focus">
+      <div className="bg-card rounded-2xl border border-primary/15 shadow-sm overflow-hidden" data-testid="card-todays-focus">
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center justify-between">
+        <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center justify-between bg-gradient-to-r from-primary/8 via-accent/5 to-transparent">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center shadow-sm">
               <Target className="w-4 h-4 text-primary" />
             </div>
             <div>

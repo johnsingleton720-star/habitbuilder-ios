@@ -268,10 +268,10 @@ export function QuickTasks() {
   const isDateFuture = newDate > todayStr;
 
   return (
-    <Card className="overflow-hidden border border-primary/15 dark:border-primary/25 card-modern" data-testid="card-quick-tasks">
-      <CardHeader className="pb-2 bg-gradient-to-r from-primary/8 via-accent/5 to-secondary/20 dark:from-primary/15 dark:via-accent/10 dark:to-secondary/15">
+    <Card className="overflow-hidden border border-primary/20 dark:border-primary/30 shadow-sm" data-testid="card-quick-tasks">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/10 via-accent/8 to-emerald-500/5 dark:from-primary/20 dark:via-accent/12 dark:to-emerald-500/8">
         <CardTitle className="flex items-center gap-2 text-base flex-wrap">
-          <div className="p-1.5 rounded-lg bg-primary/10">
+          <div className="p-1.5 rounded-lg bg-primary/15 shadow-sm">
             <ListChecks className="w-4 h-4 text-primary" />
           </div>
           Quick Tasks

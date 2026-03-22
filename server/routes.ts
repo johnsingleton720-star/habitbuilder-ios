@@ -81,8 +81,10 @@ function calcSimpleStreak(dailyPlans: any[], todayStr: string, scheduleDays?: st
     : null;
 
   let streak = 0;
+  const todayCompleted = completedDates.has(todayStr);
+  const startDay = todayCompleted ? 0 : 1;
 
-  for (let daysBack = 0; daysBack <= 1000; daysBack++) {
+  for (let daysBack = startDay; daysBack <= 1000; daysBack++) {
     const dateStr = subtractDays(todayStr, daysBack);
 
     // Skip days not in the habit's schedule (they don't count for or against the streak)
@@ -1783,13 +1785,12 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
             // Use gap-aware algorithm for simple habits (no uncompleted entries exist for missed days)
             actualStreak = calcSimpleStreak(dailyPlans, today, (habit.schedule as any)?.days);
           } else {
-            // Plan habits create uncompleted entries ahead of time; old algorithm works fine
             const sorted = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
             actualStreak = 0;
             for (const plan of sorted) {
               if (plan.completed) {
                 actualStreak++;
-              } else if (plan.date <= today) {
+              } else if (plan.date < today) {
                 break;
               }
             }
