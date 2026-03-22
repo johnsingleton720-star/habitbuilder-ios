@@ -18,11 +18,13 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home, SmilePlus, Smile, Meh, Frown, AlertCircle } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { InstallAppDialog } from "@/components/InstallAppDialog";
 import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -69,6 +71,11 @@ export default function Dashboard() {
   const [showTour, setShowTour] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showInterviewOffer, setShowInterviewOffer] = useState(false);
+  const [moodExpanded, setMoodExpanded] = useState(false);
+  const [moodEnergy, setMoodEnergy] = useState(5);
+  const [moodStress, setMoodStress] = useState(5);
+  const [moodSleep, setMoodSleep] = useState(7);
+  const [moodNotes, setMoodNotes] = useState("");
   const [editingHabit, setEditingHabit] = useState<any>(null);
   const [deletingHabit, setDeletingHabit] = useState<any>(null);
   const deleteHabit = useDeleteHabit();
@@ -110,6 +117,38 @@ export default function Dashboard() {
       toast({ title: "Habit archived" });
     },
   });
+
+  const { data: moodEntries } = useQuery<{ id: number; mood: string; date: string }[]>({
+    queryKey: ["/api/mood"],
+  });
+  const todayMoodEntry = useMemo(() => {
+    if (!moodEntries || !Array.isArray(moodEntries)) return null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return moodEntries.find(e => e.date === todayStr) || null;
+  }, [moodEntries]);
+
+  const logMoodMutation = useMutation({
+    mutationFn: async (mood: string) => {
+      return await apiRequest("POST", "/api/mood", {
+        mood,
+        energy: moodEnergy,
+        stress: moodStress,
+        sleep: moodSleep,
+        notes: moodNotes || undefined,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mood/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
+      setMoodExpanded(false);
+      setMoodNotes("");
+      toast({ title: "Mood logged!" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't log mood", variant: "destructive" });
+    },
+  });
+
   useAppTheme();
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
