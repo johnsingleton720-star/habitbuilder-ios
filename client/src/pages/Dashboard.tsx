@@ -268,6 +268,8 @@ export default function Dashboard() {
         allComplete: totalCount > 0 && completedCount === totalCount,
         partial: totalCount > 0 && completedCount > 0 && completedCount < totalCount,
         isFuture: dateStr > todayStr,
+        completedCount,
+        totalCount,
       };
     });
 
@@ -627,26 +629,33 @@ export default function Dashboard() {
                         }`}
                         data-testid={`calendar-day-${day.dateStr}`}
                       >
-                        <span className={`text-xs font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold transition-all ${
+                        <span className={`text-[11px] font-semibold ${day.isToday || isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                           day.allComplete
-                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200 dark:shadow-emerald-900'
+                            ? 'bg-primary text-white shadow-md'
                             : day.partial
-                              ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-md'
+                              ? 'bg-gradient-to-br from-primary/80 to-accent/80 text-white shadow-sm'
                               : day.isToday
                                 ? 'bg-card text-foreground ring-2 ring-primary shadow-sm'
                                 : day.isFuture
                                   ? 'bg-muted/30 text-muted-foreground/50'
-                                  : 'bg-muted/50 text-muted-foreground'
+                                  : day.totalCount > 0
+                                    ? 'bg-muted/50 text-muted-foreground'
+                                    : 'bg-muted/30 text-muted-foreground/40'
                         }`}>
                           {day.allComplete ? (
                             <Check className="w-5 h-5" strokeWidth={3} />
                           ) : day.partial ? (
-                            <span className="text-xs font-bold">½</span>
+                            <span className="text-[10px] font-bold">½</span>
                           ) : (
                             <span className="text-sm font-semibold">{format(day.date, "d")}</span>
                           )}
                         </div>
+                        {day.totalCount > 0 && !day.isFuture && (
+                          <span className={`text-[9px] font-medium ${day.allComplete ? 'text-primary' : day.partial ? 'text-primary/70' : 'text-muted-foreground'}`}>
+                            {day.completedCount}/{day.totalCount}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

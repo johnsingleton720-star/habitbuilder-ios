@@ -10,7 +10,7 @@
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
   /* Base Light Theme */
-  --background: 160 20% 98%;      /* Soft Mint White */
+  --background: 160 15% 95%;      /* Faded Sage - visible tint for section contrast */
   --foreground: 164 45% 12%;      /* Deep Forest Green - darkened for readability */
   
   --primary: 164 80% 32%;         /* Rich Emerald - more saturated */
