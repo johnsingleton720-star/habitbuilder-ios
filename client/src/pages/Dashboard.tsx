@@ -54,6 +54,7 @@ export default function Dashboard() {
   const [selectedTemplate, setSelectedTemplate] = useState<HabitTemplate | null>(null);
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
+  const [selectedWeekDay, setSelectedWeekDay] = useState<string | null>(null);
   const todayKey = new Date().toISOString().slice(0, 10);
   const [planAdjustDismissed, setPlanAdjustDismissed] = useState(() =>
     localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
@@ -256,6 +257,8 @@ export default function Dashboard() {
       const completedCount = scheduled.filter(h => getHabitDayComplete(h, dateStr)).length;
       const totalCount = scheduled.length;
       return {
+        date,
+        dateStr,
         dayLetter: format(date, "EEEEE"),
         isToday: dateStr === todayStr,
         allComplete: totalCount > 0 && completedCount === totalCount,
@@ -276,7 +279,33 @@ export default function Dashboard() {
       return total > 0 ? Math.round((completed / total) * 100) : 0;
     })();
 
-    return { todayPercent, weeklyPercent: weeklyCompletions, totalSessions, longestStreak, bestActiveStreak, weekDays };
+    const getHabitsForDate = (dateStr: string) => {
+      const sortByTime = (a: Habit, b: Habit) => {
+        const tA = a.schedule?.time, tB = b.schedule?.time;
+        if (tA && tB) return tA.localeCompare(tB);
+        if (tA) return -1;
+        if (tB) return 1;
+        return 0;
+      };
+      return activeHabits
+        .filter(h => isHabitScheduledForDate(h, dateStr))
+        .sort(sortByTime)
+        .map(habit => {
+          const dPlans = (habit.dailyPlans || []) as DailyPlan[];
+          const plan = dPlans.find(p => p.date === dateStr);
+          const isComplete = getHabitDayComplete(habit, dateStr);
+          const isSimple = habit.trackingMode === "simple";
+          return {
+            habit,
+            plan,
+            isComplete,
+            completedTasks: isSimple ? (isComplete ? 1 : 0) : (plan ? plan.tasks.filter((t: any) => t.completed).length : 0),
+            totalTasks: isSimple ? 1 : (plan ? plan.tasks.filter((t: any) => !t.skipped).length : 0),
+          };
+        });
+    };
+
+    return { todayPercent, weeklyPercent: weeklyCompletions, totalSessions, longestStreak, bestActiveStreak, weekDays, getHabitsForDate };
   }, [activeHabits, habits]);
 
   const handleStartFresh = async (reason?: MissReason) => {
@@ -592,27 +621,131 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex justify-between gap-1 pt-1" data-testid="weekly-completion-strip">
-                  {dashboardStats.weekDays.map((day, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                      <span className={`text-[10px] font-medium ${day.isToday ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                        day.allComplete
-                          ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                          : day.partial
-                            ? 'bg-primary/20 text-primary border border-primary/30'
-                            : day.isFuture
-                              ? 'bg-muted/30 text-muted-foreground/40'
-                              : 'bg-muted/50 text-muted-foreground'
-                      }`}>
-                        {day.allComplete ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <span className="text-[10px]">{day.dayLetter}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {dashboardStats.weekDays.map((day, i) => {
+                    const isSelected = selectedWeekDay === day.dateStr;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedWeekDay(isSelected ? null : day.dateStr)}
+                        className={`flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary/15 ring-2 ring-primary/50'
+                            : day.isToday
+                              ? 'bg-primary/5 ring-1 ring-primary/20'
+                              : 'hover:bg-muted/50'
+                        }`}
+                        data-testid={`calendar-day-${day.dateStr}`}
+                      >
+                        <span className={`text-[10px] font-medium ${day.isToday || isSelected ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{day.dayLetter}</span>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                          day.allComplete
+                            ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                            : day.partial
+                              ? 'bg-primary/20 text-primary border border-primary/30'
+                              : day.isFuture
+                                ? 'bg-muted/30 text-muted-foreground/40'
+                                : 'bg-muted/50 text-muted-foreground'
+                        }`}>
+                          {day.allComplete ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : (
+                            format(day.date, "d")
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                <AnimatePresence>
+                  {selectedWeekDay && dashboardStats.getHabitsForDate && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            {format(new Date(selectedWeekDay + "T12:00:00"), "EEEE, MMM d")}
+                          </span>
+                          <button
+                            onClick={() => setSelectedWeekDay(null)}
+                            className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                            data-testid="button-close-day-view"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {(() => {
+                          const dayHabits = dashboardStats.getHabitsForDate(selectedWeekDay);
+                          if (dayHabits.length === 0) {
+                            return <p className="text-sm text-muted-foreground py-3 text-center">No habits scheduled for this day</p>;
+                          }
+                          return (
+                            <div className="space-y-1.5">
+                              {dayHabits.map(({ habit, plan, isComplete, completedTasks, totalTasks }) => (
+                                <Link key={habit.id} href={`/habit/${habit.id}?date=${plan?.date || format(new Date(), "yyyy-MM-dd")}`}>
+                                  <div
+                                    className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
+                                      isComplete
+                                        ? 'bg-primary/10 border border-primary/20 shadow-sm'
+                                        : 'bg-white/60 dark:bg-white/5 border border-border/60 hover:border-primary/20 hover:shadow-sm'
+                                    }`}
+                                    data-testid={`day-view-habit-${habit.id}`}
+                                  >
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                      isComplete
+                                        ? 'bg-primary text-white'
+                                        : 'bg-muted/50 border border-border'
+                                    }`}>
+                                      {isComplete ? (
+                                        <Check className="w-3.5 h-3.5" />
+                                      ) : (
+                                        <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <span className={`text-sm font-medium truncate block ${
+                                        isComplete ? 'text-muted-foreground line-through' : 'text-foreground'
+                                      }`}>
+                                        {habit.title}
+                                      </span>
+                                      {totalTasks > 0 && (
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden max-w-[80px]">
+                                            <div
+                                              className={`h-full rounded-full ${isComplete ? 'bg-primary' : 'bg-amber-500'}`}
+                                              style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }}
+                                            />
+                                          </div>
+                                          <span className="text-xs text-muted-foreground">
+                                            {completedTasks}/{totalTasks} tasks
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {habit.schedule?.time && (
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                                        {new Date(`2000-01-01T${habit.schedule.time}`).toLocaleTimeString([], {
+                                          hour: "numeric",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             </Card>
           </motion.div>
