@@ -594,37 +594,23 @@ export default function Dashboard() {
         {/* Trial Banner */}
         <TrialBanner />
 
-        {/* Hero Card - Level, XP, Streak at a glance */}
-        <DashboardHeroCard />
+        {/* Hero Card - Level, XP, Streak + Stats in one unified card */}
+        <DashboardHeroCard
+          todayPercent={dashboardStats?.todayPercent}
+          weeklyPercent={dashboardStats?.weeklyPercent}
+          totalSessions={dashboardStats?.totalSessions}
+          longestStreak={dashboardStats?.longestStreak}
+        />
 
-        {/* Compact Stats Row + Weekly Strip */}
+        {/* Weekly Calendar Strip — sits on bare background below the hero card */}
         {dashboardStats && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="space-y-2"
           >
-            <Card className="border-border/60 shadow-sm">
-              <CardContent className="p-4 space-y-3">
-                <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-primary">{dashboardStats.todayPercent}%</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Today</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-violet-500">{dashboardStats.weeklyPercent}%</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-amber-500">{dashboardStats.totalSessions}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-orange-500">{dashboardStats.longestStreak}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
-                  </div>
-                </div>
-                <div className="flex justify-between gap-1 pt-1" data-testid="weekly-completion-strip">
+                <div className="flex justify-between gap-1 px-1" data-testid="weekly-completion-strip">
                   {dashboardStats.weekDays.map((day, i) => {
                     const isSelected = selectedWeekDay === day.dateStr;
                     return (
@@ -661,26 +647,16 @@ export default function Dashboard() {
                   })}
                 </div>
 
-                <div className="flex justify-center pt-0.5">
-                  <Link href="/progress/today">
-                    <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
-                      <BarChart3 className="w-3 h-3" />
-                      View all stats
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </Link>
-                </div>
-
-                <AnimatePresence>
-                  {selectedWeekDay && dashboardStats.getHabitsForDate && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-3 pt-3 border-t border-border/50">
+            <AnimatePresence>
+              {selectedWeekDay && dashboardStats.getHabitsForDate && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden px-1"
+                >
+                  <div className="mt-2 pt-3 border-t border-border/40">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-semibold text-foreground">
                             {format(new Date(selectedWeekDay + "T12:00:00"), "EEEE, MMM d")}
@@ -775,11 +751,9 @@ export default function Dashboard() {
                           );
                         })()}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 

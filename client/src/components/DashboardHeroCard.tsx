@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Flame, Crown, Star, TrendingUp } from "lucide-react";
+import { Zap, Flame, Crown, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 interface GamificationStats {
   xpPoints: number;
@@ -19,6 +20,13 @@ interface GamificationStats {
   subscriptionTier: string;
 }
 
+interface DashboardHeroCardProps {
+  todayPercent?: number;
+  weeklyPercent?: number;
+  totalSessions?: number;
+  longestStreak?: number;
+}
+
 const TIER_LABELS: Record<string, { label: string; color: string }> = {
   free: { label: "Free", color: "bg-muted text-muted-foreground" },
   trial: { label: "Trial", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" },
@@ -26,7 +34,7 @@ const TIER_LABELS: Record<string, { label: string; color: string }> = {
   premium: { label: "Premium", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300" },
 };
 
-export function DashboardHeroCard() {
+export function DashboardHeroCard({ todayPercent, weeklyPercent, totalSessions, longestStreak }: DashboardHeroCardProps) {
   const { data: stats } = useQuery<GamificationStats>({
     queryKey: ["/api/gamification/stats"],
     staleTime: 2 * 60 * 1000,
@@ -39,6 +47,7 @@ export function DashboardHeroCard() {
   const circumference = 2 * Math.PI * 28;
   const strokeDashoffset = circumference - (xpProgress / 100) * circumference;
   const tierConfig = TIER_LABELS[tier] || TIER_LABELS.free;
+  const hasStats = todayPercent !== undefined && weeklyPercent !== undefined && totalSessions !== undefined && longestStreak !== undefined;
 
   return (
     <motion.div
@@ -49,6 +58,7 @@ export function DashboardHeroCard() {
       <Card className="border-2 border-primary/25 dark:border-primary/35 bg-gradient-to-r from-primary/10 via-card to-accent/10 dark:from-primary/15 dark:via-card dark:to-accent/15 overflow-hidden relative shadow-md" data-testid="card-dashboard-hero">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
         <CardContent className="p-4">
+          {/* Level / XP row */}
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0" data-testid="xp-progress-ring">
               <svg width="68" height="68" viewBox="0 0 68 68" className="progress-ring">
@@ -118,6 +128,41 @@ export function DashboardHeroCard() {
               )}
             </div>
           </div>
+
+          {/* Stats row — only shown when data is passed in */}
+          {hasStats && (
+            <>
+              <div className="border-t border-border/40 mt-4 pt-3">
+                <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-primary">{todayPercent}%</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Today</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-violet-500">{weeklyPercent}%</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-amber-500">{totalSessions}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-orange-500">{longestStreak}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
+                  </div>
+                </div>
+                <div className="flex justify-center mt-2.5">
+                  <Link href="/progress/today">
+                    <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
+                      <BarChart3 className="w-3 h-3" />
+                      View all stats
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </motion.div>

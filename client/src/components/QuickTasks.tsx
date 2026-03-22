@@ -295,9 +295,9 @@ export function QuickTasks() {
       <CardContent className="pt-3 px-3 space-y-2">
         <div className="flex gap-1 p-1 bg-muted/40 rounded-lg" data-testid="quick-tasks-tabs">
           {[
-            { id: "today" as TabType, label: "Today", count: todayPending.length, icon: Calendar, active: "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 shadow-sm", inactive: "text-teal-600/70 dark:text-teal-400/60", countCls: "bg-teal-200/70 text-teal-800 dark:bg-teal-800/50 dark:text-teal-200" },
-            { id: "upcoming" as TabType, label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays, active: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 shadow-sm", inactive: "text-blue-600/70 dark:text-blue-400/60", countCls: "bg-blue-200/70 text-blue-800 dark:bg-blue-800/50 dark:text-blue-200" },
-            { id: "completed" as TabType, label: "Done", count: allCompleted.length, icon: CheckCircle2, active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 shadow-sm", inactive: "text-emerald-600/70 dark:text-emerald-400/60", countCls: "bg-emerald-200/70 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-200" },
+            { id: "today" as TabType, label: "Today", count: todayPending.length, icon: Calendar },
+            { id: "upcoming" as TabType, label: "Upcoming", count: Object.values(groupedUpcoming).flat().length, icon: CalendarDays },
+            { id: "completed" as TabType, label: "Done", count: allCompleted.length, icon: CheckCircle2 },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -307,7 +307,9 @@ export function QuickTasks() {
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1 py-2 px-1.5 rounded-md text-[13px] font-semibold transition-all",
-                  isActive ? tab.active : tab.inactive
+                  isActive
+                    ? "bg-primary/10 text-primary dark:bg-primary/20 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 data-testid={`tab-quick-tasks-${tab.id}`}
               >
@@ -316,7 +318,7 @@ export function QuickTasks() {
                 {tab.count > 0 && (
                   <span className={cn(
                     "text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full font-bold",
-                    isActive ? tab.countCls : "bg-muted/60 text-muted-foreground"
+                    isActive ? "bg-primary/15 text-primary" : "bg-muted/60 text-muted-foreground"
                   )}>
                     {tab.count}
                   </span>
@@ -792,8 +794,6 @@ function TaskItem({
       className={cn(
         "flex items-start gap-2 group py-2 px-2.5 rounded-lg transition-all",
         isSubtask && "ml-8 pl-2.5 border-l-2 border-muted-foreground/10",
-        !isSubtask && "border-l-[3px]",
-        !isSubtask && (task.completed ? "border-l-muted-foreground/20" : config.borderColor),
         task.completed
           ? "bg-muted/20"
           : "bg-card hover:bg-muted/30"
@@ -876,7 +876,7 @@ function TaskItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         {!task.completed && !isSubtask && onStartAddSubtask && (
           <button
             onClick={onStartAddSubtask}
