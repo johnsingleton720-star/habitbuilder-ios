@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useHabits } from "@/hooks/use-habits";
 import { format } from "date-fns";
@@ -371,6 +372,8 @@ function TimezoneSettings({ user }: { user: any }) {
     },
   });
 
+  const isUTCOrNotSet = !user?.timezone || user?.timezone === "UTC";
+
   return (
     <Card>
       <CardHeader>
@@ -382,6 +385,16 @@ function TimezoneSettings({ user }: { user: any }) {
           Set your timezone so tasks and schedules match your local time
         </CardDescription>
       </CardHeader>
+      {isUTCOrNotSet && (
+        <div className="px-6 pt-4">
+          <Alert variant="default" className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              Your timezone is currently set to UTC. Please update it to your actual location so your habits and reminders are scheduled for the correct time.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="timezone-select" className="text-base">Your Timezone</Label>
