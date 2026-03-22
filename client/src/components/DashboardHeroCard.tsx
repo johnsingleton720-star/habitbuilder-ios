@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Flame, Crown, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
+import { Zap, Flame, Crown, BarChart3, ArrowRight } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -95,43 +95,29 @@ export function DashboardHeroCard({
               </div>
             </div>
 
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-foreground truncate">{stats.levelTitle}</h3>
-                <Badge variant="outline" className={`text-xs px-1.5 py-0 h-4 ${tierConfig.color} border-0`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-[15px] font-bold text-foreground">Level {stats.level}</span>
+                <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 h-auto ${tierConfig.color} border-0 rounded-full`}>
                   {tierConfig.label === "Premium" && <Crown className="w-2.5 h-2.5 mr-0.5" />}
                   {tierConfig.label}
                 </Badge>
               </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Zap className="w-3 h-3 text-amber-500" />
-                <span>{stats.xpPoints.toLocaleString()} XP</span>
-                <span className="mx-1">·</span>
-                <span>{stats.xpToNextLevel.toLocaleString()} to next level</span>
+              <p className="text-[12px] text-muted-foreground mb-1.5">
+                {stats.xpPoints.toLocaleString()} XP · {stats.xpToNextLevel.toLocaleString()} to next level
+              </p>
+              <div className="flex gap-3 text-[12px]">
+                {stats.maxStreak > 0 && (
+                  <span className="flex items-center gap-1 text-orange-500 font-semibold" data-testid="text-streak-display">
+                    <Flame className="w-3.5 h-3.5" />{stats.maxStreak} days
+                  </span>
+                )}
+                {stats.streakMultiplier > 1 && (
+                  <span className="flex items-center gap-1 text-primary font-semibold">
+                    <Zap className="w-3.5 h-3.5" />{stats.streakMultiplierLabel}
+                  </span>
+                )}
               </div>
-              <div className="w-full bg-muted/50 rounded-full h-1.5 mt-1">
-                <motion.div
-                  className="bg-primary h-1.5 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${xpProgress}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 flex-shrink-0">
-              {stats.maxStreak > 0 && (
-                <div className="flex items-center gap-1 text-sm" data-testid="text-streak-display">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <span className="font-bold text-foreground">{stats.maxStreak}</span>
-                </div>
-              )}
-              {stats.streakMultiplier > 1 && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 border-0">
-                  <TrendingUp className="w-2.5 h-2.5 mr-0.5" />
-                  {stats.streakMultiplierLabel}
-                </Badge>
-              )}
             </div>
           </div>
 

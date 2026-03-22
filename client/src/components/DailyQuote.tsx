@@ -1,18 +1,16 @@
 import { useDailyQuote } from "@/hooks/use-habits";
-import { Quote, Sparkles } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Quote } from "lucide-react";
 
 export function DailyQuote() {
   const { data, isLoading } = useDailyQuote();
 
   if (isLoading) {
     return (
-      <div className="w-full h-32 rounded-2xl bg-muted/30 relative overflow-hidden">
+      <div className="w-full h-20 rounded-2xl bg-muted/30 relative overflow-hidden">
         <div className="absolute inset-0 animate-shimmer" />
-        <div className="p-6 space-y-3">
-          <div className="h-3 w-24 bg-muted/50 rounded-lg" />
-          <div className="h-5 w-full bg-muted/40 rounded-lg" />
-          <div className="h-5 w-3/4 bg-muted/40 rounded-lg" />
+        <div className="p-4 space-y-2">
+          <div className="h-3 w-full bg-muted/40 rounded-lg" />
+          <div className="h-3 w-3/4 bg-muted/40 rounded-lg" />
         </div>
       </div>
     );
@@ -21,26 +19,18 @@ export function DailyQuote() {
   if (!data) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-6 text-primary-foreground shadow-lg shadow-primary/25">
-      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-      <div className="absolute top-0 right-0 p-4 opacity-20">
-        <Quote className="w-16 h-16 rotate-180" />
+    <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-4 flex items-start gap-3" data-testid="card-daily-quote">
+      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <Quote className="w-4 h-4 text-primary" />
       </div>
-      
-      <div className="relative z-10 flex flex-col gap-4">
-        <div className="flex items-center gap-2 text-primary-foreground/80 text-sm font-medium uppercase tracking-wider">
-          <Sparkles className="w-4 h-4" />
-          <span>Daily Inspiration</span>
-        </div>
-        
-        <blockquote className="font-display text-2xl md:text-3xl font-medium leading-snug">
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] text-foreground/80 italic leading-relaxed">
           "{data.quote}"
-        </blockquote>
-        
+        </p>
         {data.author && (
-          <cite className="text-sm font-medium text-primary-foreground/80 not-italic">
+          <p className="text-[11px] text-muted-foreground mt-1">
             — {data.author}
-          </cite>
+          </p>
         )}
       </div>
     </div>
