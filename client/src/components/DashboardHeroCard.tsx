@@ -73,21 +73,21 @@ export function DashboardHeroCard({
                   cy="34"
                   r="28"
                   fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="text-muted/50"
+                  stroke="#e5e7eb"
+                  strokeWidth="5"
                 />
                 <circle
                   cx="34"
                   cy="34"
                   r="28"
                   fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
+                  stroke="#7c3aed"
+                  strokeWidth="5"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
-                  className="text-primary progress-ring-circle"
+                  className="progress-ring-circle"
+                  transform="rotate(-90 34 34)"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
@@ -136,47 +136,35 @@ export function DashboardHeroCard({
           </div>
 
           {statsLoaded && (
-            <>
-              <div className="border-t border-border/40 mt-4 pt-3">
-                <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-primary">{todayPercent ?? 0}%</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Today</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-violet-500">{weeklyPercent ?? 0}%</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-amber-500">{totalSessions ?? 0}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-orange-500">{longestStreak ?? 0}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
-                  </div>
+            <div className="border-t border-border/40 mt-4 pt-3">
+              <div className="grid grid-cols-4 gap-2" data-testid="compact-stats-row">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-primary">{todayPercent ?? 0}%</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Today</p>
                 </div>
-                <div className="flex justify-center mt-2.5">
-                  <Link href="/progress/today">
-                    <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
-                      <BarChart3 className="w-3 h-3" />
-                      View all stats
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </Link>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-violet-500">{weeklyPercent ?? 0}%</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">This Week</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-amber-500">{totalSessions ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Total Done</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-orange-500">{longestStreak ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Best Streak</p>
                 </div>
               </div>
-
-              <div className="flex justify-center pt-1">
+              <div className="flex justify-center mt-2.5">
                 <Link href="/progress/today">
-                  <button className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1 px-2 rounded-lg hover:bg-primary/5">
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>View all stats</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                  <button className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors" data-testid="link-view-all-stats">
+                    <BarChart3 className="w-3 h-3" />
+                    View all stats
+                    <ArrowRight className="w-3 h-3" />
                   </button>
                 </Link>
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
