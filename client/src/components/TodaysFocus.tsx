@@ -2,38 +2,27 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Link2, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, BookOpen, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code, Laptop, Gamepad2, Heart, Smile, Timer, Flame } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers, Star, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { HabitResponse } from "@shared/routes";
 import type { DailyPlan, HabitStack } from "@shared/schema";
 import { UnifiedRoutineSession } from "./UnifiedRoutineSession";
-
-const ICON_MAP: Record<string, any> = {
-  Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
-  Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
-  Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
-  TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
-  Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
-};
+import { getEmojiForIcon } from "./IconColorPicker";
 
 function HabitIcon({ habit, size = "sm" }: { habit: HabitResponse; size?: "sm" | "md" }) {
   const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
-  const iconBg = iconColor ? `${iconColor}18` : undefined;
-  const IconComp = habit.customIcon ? ICON_MAP[habit.customIcon] : null;
+  const iconBg = iconColor ? `${iconColor}20` : undefined;
+  const emoji = getEmojiForIcon(habit.customIcon);
   const sizeClass = size === "md" ? "w-9 h-9 rounded-xl" : "w-7 h-7 rounded-lg";
-  const iconSizeClass = size === "md" ? "w-4.5 h-4.5" : "w-3.5 h-3.5";
+  const emojiSize = size === "md" ? "text-lg" : "text-sm";
   return (
     <div
       className={`${sizeClass} flex items-center justify-center flex-shrink-0`}
       style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
     >
-      {IconComp ? (
-        <IconComp className={iconSizeClass} style={iconColor ? { color: iconColor } : undefined} />
-      ) : (
-        <Star className={`${iconSizeClass} text-primary`} />
-      )}
+      <span className={`${emojiSize} leading-none`}>{emoji}</span>
     </div>
   );
 }

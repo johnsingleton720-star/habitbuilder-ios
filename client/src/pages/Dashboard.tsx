@@ -18,7 +18,7 @@ import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, Leaf, Compass, Trophy, Droplets, Coffee, Footprints, Brain, Dumbbell, Bed, GlassWater, Salad, Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain, TreePine, Flower2, Pill, Home, PiggyBank, Languages, Code, Laptop, Gamepad2, Smile, MoreVertical, Edit, Trash2, Layers } from "lucide-react";
+import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAppTheme } from "@/components/ThemeSelector";
+import { getEmojiForIcon } from "@/components/IconColorPicker";
 import { format, startOfWeek, addDays } from "date-fns";
 
 interface BrokenStreakInfo {
@@ -228,7 +229,7 @@ export default function Dashboard() {
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(dayName);
       if (habit.trackingMode === "simple") return true;
       const dailyPlans = (habit.dailyPlans || []) as DailyPlan[];
-      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0);
+      return dailyPlans.some(p => p.date === dateStr && p.tasks.length > 0) || !habit.setupComplete;
     };
 
     const habitsScheduledToday = activeHabits.filter(h => {
@@ -237,7 +238,7 @@ export default function Dashboard() {
       if (scheduleDays && scheduleDays.length > 0) return scheduleDays.includes(todayDayName);
       if (h.trackingMode === "simple") return true;
       const dailyPlans = (h.dailyPlans || []) as DailyPlan[];
-      return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0);
+      return dailyPlans.some(p => p.date === todayStr && p.tasks.length > 0) || !h.setupComplete;
     });
     const todayCompletions = habitsScheduledToday.filter(h => getHabitDayComplete(h, todayStr)).length;
     const todayTotal = habitsScheduledToday.length;
@@ -1205,28 +1206,17 @@ export default function Dashboard() {
                         const totalTasks = todayTasks.length;
                         const isCheckedIn = isSimple ? todayPlan?.completed === true : (totalTasks > 0 && completedTasks === totalTasks);
                         const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
-                        const iconBg = iconColor ? `${iconColor}18` : undefined;
-                        const ICON_MAP: Record<string, any> = {
-                          Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
-                          Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
-                          Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
-                          TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
-                          Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Flame
-                        };
-                        const IconComp = habit.customIcon ? ICON_MAP[habit.customIcon] : null;
+                        const iconBg = iconColor ? `${iconColor}20` : undefined;
+                        const habitEmoji = getEmojiForIcon(habit.customIcon);
 
                         return (
                           <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group transition-opacity ${isCheckedIn ? 'opacity-60' : ''} ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
                             <Link href={`/habit/${habit.id}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
                               <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 transition-opacity ${isCheckedIn ? 'opacity-50' : ''}`}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-opacity ${isCheckedIn ? 'opacity-50' : ''}`}
                                 style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
                               >
-                                {IconComp ? (
-                                  <IconComp className="w-5 h-5" style={iconColor ? { color: iconColor } : undefined} />
-                                ) : (
-                                  <Star className="w-5 h-5 text-primary" />
-                                )}
+                                <span className="text-xl leading-none">{habitEmoji}</span>
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-[14px] font-semibold truncate ${isCheckedIn ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{habit.title}</p>

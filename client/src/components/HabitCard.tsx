@@ -13,6 +13,7 @@ import {
 import { type HabitResponse } from "@shared/routes";
 import { useDeleteHabit } from "@/hooks/use-habits";
 import { cn } from "@/lib/utils";
+import { getEmojiForIcon } from "./IconColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -240,13 +241,14 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
     },
   });
 
-  const { icon: HabitIcon, color: iconColor, colorStyle } = getSmartHabitIcon(
+  const { color: iconColor, colorStyle } = getSmartHabitIcon(
     habit.title, 
     habit.description, 
     habit.id,
     habit.customIcon,
     habit.customColor
   );
+  const habitEmoji = getEmojiForIcon(habit.customIcon);
   const pastelClass = getPastelClass(habit.id);
   const { bgStyle: customCardBg, useCustomBg } = getCardBackgroundFromColor(habit.customColor, isDarkMode);
 
@@ -332,10 +334,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                   ? "bg-muted/50 dark:bg-muted/20 border-muted" 
                   : "bg-white/80 dark:bg-white/10 border-white/50 dark:border-white/10"
               )}>
-                <HabitIcon 
-                  className={cn("w-6 h-6", isPlanCompleted ? "text-muted-foreground" : iconColor)} 
-                  style={!isPlanCompleted && colorStyle ? { color: colorStyle } : undefined}
-                />
+                <span className={cn("text-2xl leading-none", isPlanCompleted && "opacity-50")}>{habitEmoji}</span>
               </div>
               <div className="flex-1">
                 <h3 className={cn(

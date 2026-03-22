@@ -69,7 +69,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const contentRef = useRef<HTMLDivElement>(null);
   
-  const SelectedIcon = ICON_OPTIONS.find(i => i.name === customIcon)?.icon || Star;
+  const selectedEmoji = ICON_OPTIONS.find(i => i.name === customIcon)?.emoji || "⭐";
 
   const form = useForm<HabitFormData>({
     resolver: zodResolver(habitFormSchema),
@@ -282,7 +282,7 @@ export function HabitFormDialog({ open, onOpenChange, habitToEdit, initialValues
                 title="Click to customize icon and color"
                 onClick={() => setShowIconPicker(!showIconPicker)}
               >
-                <SelectedIcon className="w-7 h-7" style={{ color: customColor }} />
+                <span className="text-2xl leading-none">{selectedEmoji}</span>
               </button>
               
               <FormField

@@ -2,56 +2,75 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import {
-  Star, Leaf, Compass, Trophy, Sparkles, Droplets, Moon, Coffee,
-  Footprints, Brain, BookOpen, Dumbbell, Bed, Sun, GlassWater, Salad,
-  Apple, Pencil, Music, Palette, Camera, Wind, Waves, Bike, Mountain,
-  TreePine, Flower2, Pill, Home, Users, PiggyBank, Languages, Code,
-  Laptop, Gamepad2, Target, Heart, Smile, Timer, Zap, Check
-} from "lucide-react";
+import { Check } from "lucide-react";
 
 const ICON_OPTIONS = [
-  { name: "Star", icon: Star },
-  { name: "Target", icon: Target },
-  { name: "Heart", icon: Heart },
-  { name: "Trophy", icon: Trophy },
-  { name: "Sparkles", icon: Sparkles },
-  { name: "Zap", icon: Zap },
-  { name: "Brain", icon: Brain },
-  { name: "BookOpen", icon: BookOpen },
-  { name: "Dumbbell", icon: Dumbbell },
-  { name: "Footprints", icon: Footprints },
-  { name: "GlassWater", icon: GlassWater },
-  { name: "Salad", icon: Salad },
-  { name: "Apple", icon: Apple },
-  { name: "Coffee", icon: Coffee },
-  { name: "Moon", icon: Moon },
-  { name: "Sun", icon: Sun },
-  { name: "Bed", icon: Bed },
-  { name: "Pencil", icon: Pencil },
-  { name: "Music", icon: Music },
-  { name: "Palette", icon: Palette },
-  { name: "Camera", icon: Camera },
-  { name: "Wind", icon: Wind },
-  { name: "Waves", icon: Waves },
-  { name: "Bike", icon: Bike },
-  { name: "Mountain", icon: Mountain },
-  { name: "TreePine", icon: TreePine },
-  { name: "Flower2", icon: Flower2 },
-  { name: "Leaf", icon: Leaf },
-  { name: "Droplets", icon: Droplets },
-  { name: "Pill", icon: Pill },
-  { name: "Home", icon: Home },
-  { name: "Users", icon: Users },
-  { name: "PiggyBank", icon: PiggyBank },
-  { name: "Languages", icon: Languages },
-  { name: "Code", icon: Code },
-  { name: "Laptop", icon: Laptop },
-  { name: "Gamepad2", icon: Gamepad2 },
-  { name: "Smile", icon: Smile },
-  { name: "Timer", icon: Timer },
-  { name: "Compass", icon: Compass },
+  { name: "Star", emoji: "⭐" },
+  { name: "Target", emoji: "🎯" },
+  { name: "Heart", emoji: "❤️" },
+  { name: "Trophy", emoji: "🏆" },
+  { name: "Sparkles", emoji: "✨" },
+  { name: "Zap", emoji: "⚡" },
+  { name: "Brain", emoji: "🧠" },
+  { name: "BookOpen", emoji: "📚" },
+  { name: "Dumbbell", emoji: "💪" },
+  { name: "Footprints", emoji: "👣" },
+  { name: "GlassWater", emoji: "💧" },
+  { name: "Salad", emoji: "🥗" },
+  { name: "Apple", emoji: "🍎" },
+  { name: "Coffee", emoji: "☕" },
+  { name: "Moon", emoji: "🌙" },
+  { name: "Sun", emoji: "☀️" },
+  { name: "Bed", emoji: "🛏️" },
+  { name: "Pencil", emoji: "✏️" },
+  { name: "Music", emoji: "🎵" },
+  { name: "Palette", emoji: "🎨" },
+  { name: "Camera", emoji: "📷" },
+  { name: "Wind", emoji: "🌬️" },
+  { name: "Waves", emoji: "🌊" },
+  { name: "Bike", emoji: "🚴" },
+  { name: "Mountain", emoji: "⛰️" },
+  { name: "TreePine", emoji: "🌲" },
+  { name: "Flower2", emoji: "🌸" },
+  { name: "Leaf", emoji: "🍃" },
+  { name: "Droplets", emoji: "💦" },
+  { name: "Pill", emoji: "💊" },
+  { name: "Home", emoji: "🏠" },
+  { name: "Users", emoji: "👥" },
+  { name: "PiggyBank", emoji: "🐷" },
+  { name: "Languages", emoji: "🌐" },
+  { name: "Code", emoji: "💻" },
+  { name: "Laptop", emoji: "🖥️" },
+  { name: "Gamepad2", emoji: "🎮" },
+  { name: "Smile", emoji: "😊" },
+  { name: "Timer", emoji: "⏱️" },
+  { name: "Compass", emoji: "🧭" },
+  { name: "Flame", emoji: "🔥" },
+  { name: "Meditation", emoji: "🧘" },
+  { name: "Running", emoji: "🏃" },
+  { name: "Cooking", emoji: "🍳" },
+  { name: "Writing", emoji: "📝" },
+  { name: "Yoga", emoji: "🧘‍♀️" },
+  { name: "Swimming", emoji: "🏊" },
+  { name: "Guitar", emoji: "🎸" },
+  { name: "Prayer", emoji: "🙏" },
+  { name: "Sleep", emoji: "😴" },
+  { name: "Vitamins", emoji: "💉" },
+  { name: "Walking", emoji: "🚶" },
+  { name: "Stretching", emoji: "🤸" },
+  { name: "Journaling", emoji: "📓" },
+  { name: "Breathing", emoji: "🌬️" },
+  { name: "Cleaning", emoji: "🧹" },
+  { name: "Gardening", emoji: "🌱" },
+  { name: "Dog", emoji: "🐕" },
+  { name: "Cat", emoji: "🐈" },
+  { name: "Baby", emoji: "👶" },
+  { name: "Shopping", emoji: "🛒" },
+  { name: "Study", emoji: "📖" },
 ];
+
+const EMOJI_MAP: Record<string, string> = {};
+ICON_OPTIONS.forEach(opt => { EMOJI_MAP[opt.name] = opt.emoji; });
 
 const COLOR_OPTIONS = [
   { name: "Teal", value: "#0d9488", class: "bg-teal-600" },
@@ -67,6 +86,11 @@ const COLOR_OPTIONS = [
   { name: "Indigo", value: "#4f46e5", class: "bg-indigo-600" },
   { name: "Rose", value: "#e11d48", class: "bg-rose-600" },
 ];
+
+function getEmojiForIcon(iconName: string | undefined | null): string {
+  if (!iconName) return "⭐";
+  return EMOJI_MAP[iconName] || "⭐";
+}
 
 interface IconColorPickerProps {
   selectedIcon?: string;
@@ -115,7 +139,7 @@ export function IconColorPicker({
       </div>
 
       {activeTab === "icon" && (
-        <ScrollArea className="h-40">
+        <ScrollArea className="h-48">
           <div className="grid grid-cols-7 gap-1">
             {ICON_OPTIONS.map((option) => (
               <Button
@@ -123,11 +147,11 @@ export function IconColorPicker({
                 type="button"
                 variant={selectedIcon === option.name ? "default" : "ghost"}
                 size="icon"
-                className="h-9 w-9"
+                className="h-9 w-9 text-lg"
                 onClick={() => onIconChange(option.name)}
                 data-testid={`icon-option-${option.name}`}
               >
-                <option.icon className="w-4 h-4" />
+                {option.emoji}
               </Button>
             ))}
           </div>
@@ -159,4 +183,4 @@ export function IconColorPicker({
   );
 }
 
-export { ICON_OPTIONS, COLOR_OPTIONS };
+export { ICON_OPTIONS, COLOR_OPTIONS, EMOJI_MAP, getEmojiForIcon };
