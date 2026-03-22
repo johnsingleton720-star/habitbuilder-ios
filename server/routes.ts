@@ -1649,6 +1649,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const user = await storage.getUser(userId);
       const userTz = user?.timezone;
       const habits = await storage.getHabits(userId);
+      const activeHabits = habits.filter(h => !h.archived);
 
       const now = new Date();
       const userNow = userTz
@@ -1665,7 +1666,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       weekEndDate.setDate(weekEndDate.getDate() + 6);
       const weekEndStr = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, "0")}-${String(weekEndDate.getDate()).padStart(2, "0")}`;
 
-      const summaries = habits.map((h) => {
+      const summaries = activeHabits.map((h) => {
         const weekPlans = (h.dailyPlans || []).filter((p: any) => p.date >= weekStartStr && p.date <= weekEndStr);
         return {
           id: h.id,
