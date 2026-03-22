@@ -307,16 +307,9 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     <ArrowRight className="w-5 h-5" />
                   </Button>
 
-                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5" />
-                      <span>No credit card needed</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Takes 30 seconds</span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    No credit card needed
+                  </p>
                 </div>
 
                 <button
