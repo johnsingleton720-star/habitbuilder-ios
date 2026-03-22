@@ -28,6 +28,7 @@ import {
   ListChecks,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
 
 interface PresignupData {
   intent: string;
@@ -104,6 +105,29 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
   const totalSteps = trackingMode === "simple" ? 4 : 7;
 
   useEffect(() => {
+    trackFunnelEvent("app_open");
+  }, []);
+
+  useEffect(() => {
+    const stepEvents: Record<number, () => void> = {
+      0: () => trackFunnelEvent("onboarding_welcome"),
+      1: () => trackFunnelEvent("onboarding_intent", { intent: data.intent }),
+      2: () => trackFunnelEvent("onboarding_habit_select", { habit: selectedHabit }),
+      3: () => {
+        if (trackingMode === "simple") {
+          trackFunnelEvent("onboarding_simple_details");
+        } else if (trackingMode === "") {
+          trackFunnelEvent("onboarding_tracking_mode");
+        }
+      },
+      4: () => trackFunnelEvent("onboarding_ai_details"),
+      5: () => trackFunnelEvent("onboarding_ai_generating"),
+      6: () => trackFunnelEvent("onboarding_plan_preview"),
+    };
+    stepEvents[step]?.();
+  }, [step, trackingMode]);
+
+  useEffect(() => {
     if (!isGenerating) return;
     const interval = setInterval(() => {
       setGeneratingStep((prev) => (prev < BUILDING_STEPS.length - 1 ? prev + 1 : prev));
@@ -147,6 +171,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
   }, [selectedHabit, data]);
 
   const handleSavePlan = () => {
+    trackFunnelEvent("onboarding_cta_signup", { mode: "ai", habit: selectedHabit });
     localStorage.setItem(
       "presignup_data",
       JSON.stringify({
@@ -163,6 +188,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
   };
 
   const handleSaveSimple = () => {
+    trackFunnelEvent("onboarding_cta_signup", { mode: "simple", habit: selectedHabit });
     localStorage.setItem(
       "presignup_data",
       JSON.stringify({

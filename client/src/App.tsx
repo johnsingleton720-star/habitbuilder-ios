@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
+import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useState, useEffect, Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
@@ -61,6 +62,7 @@ import Account from "@/pages/Account";
 import Progress from "@/pages/Progress";
 import AdminFeedback from "@/pages/AdminFeedback";
 import AdminEmail from "@/pages/AdminEmail";
+import AdminFunnel from "@/pages/AdminFunnel";
 import Analytics from "@/pages/Analytics";
 import Accountability from "@/pages/Accountability";
 import Community from "@/pages/Community";
@@ -170,6 +172,7 @@ function Router() {
           const createdHabit = await res.json();
           if (createdHabit?.id) {
             localStorage.setItem("presignup_habit_id", String(createdHabit.id));
+            trackFunnelEvent("first_habit_created", { habitId: createdHabit.id, mode: presignupData.trackingMode || "ai" });
           }
           queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
@@ -302,6 +305,7 @@ function Router() {
       <Route path="/coach"><PageTransition><CoachChat /></PageTransition></Route>
       <Route path="/admin/feedback"><PageTransition><AdminFeedback /></PageTransition></Route>
       <Route path="/admin/email"><PageTransition><AdminEmail /></PageTransition></Route>
+      <Route path="/admin/funnel"><PageTransition><AdminFunnel /></PageTransition></Route>
       <Route path="/journal"><PageTransition><Journal /></PageTransition></Route>
       <Route path="/focus"><PageTransition><FocusTimer /></PageTransition></Route>
       <Route path="/mood"><PageTransition><MoodTracker /></PageTransition></Route>

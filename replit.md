@@ -58,6 +58,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Analytics
 -   **Admin Analytics**: Tracks page views, unique visitors, and registrations.
+-   **Conversion Funnel (Admin)**: Tracks user journey from app open through onboarding steps to auth screen and first habit creation. Events stored in `funnel_events` table. Admin dashboard at `/admin/funnel` shows drop-off rates, platform breakdown, and date range filtering. Tracking fires without cookie consent on native iOS via `trackFunnelEvent()` from `use-funnel-tracking.ts`.
 -   **Advanced Analytics (Premium)**: Includes trend charts, habit performance breakdowns, and AI-generated insights.
 -   **Comprehensive Analytics (Premium)**: Full overview dashboard with 6 tabs (Overview, Habits, Wellness, Activity, Trends, AI Report). Aggregates data from habits, mood, journal, coaching, quick tasks, achievements, focus sessions, and goals. An AI analysis report is generated and cached.
 

@@ -8,7 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { openai as openaiClient } from "./replit_integrations/audio";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { db } from "./db";
-import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens, habitReminders, habitStacks, passwordResetTokens } from "@shared/schema";
+import { users, feedback, userAchievements, habitTemplates, userTemplates, accountabilityPartners, progressReports, habits, dailyChallenges, moodEntries, pageViews, funnelEvents, userProfiles, forumCategories, forumPosts, forumComments, postLikes, commentLikes, profileLikes, conversations, messages, coachChats, coachMessages, quickTasks, foundingMemberSlots, pushSubscriptions, journalEntries, focusSessions, goals, goalMilestones, dailyPlannerEntries, userCommitments, insertCommitmentSchema, nativeAuthTokens, habitReminders, habitStacks, passwordResetTokens } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { saveSubscription, syncSubscription, syncDeviceToken, removeSubscription, removeAllSubscriptions, sendPushToUser } from "./pushNotifications";
 import crypto from "crypto";
@@ -9615,6 +9615,79 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     } catch (error) {
       console.error("Error tracking page view:", error);
       res.status(500).json({ error: "Failed to track" });
+    }
+  });
+
+  app.post("/api/track/funnel", async (req: any, res) => {
+    try {
+      const { eventName, sessionId, platform, metadata } = req.body;
+      if (!eventName) return res.status(400).json({ error: "eventName required" });
+      const userId = req.user?.claims?.sub || null;
+      await db.insert(funnelEvents).values({
+        eventName,
+        sessionId: sessionId || null,
+        userId,
+        platform: platform || null,
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking funnel event:", error);
+      res.status(500).json({ error: "Failed to track" });
+    }
+  });
+
+  app.get("/api/admin/funnel", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const timeRange = (req.query.range as string) || "7d";
+      let daysBack = 7;
+      if (timeRange === "30d") daysBack = 30;
+      if (timeRange === "90d") daysBack = 90;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+
+      const steps = await db.select({
+        eventName: funnelEvents.eventName,
+        count: sql<number>`count(*)`,
+        uniqueSessions: sql<number>`count(distinct ${funnelEvents.sessionId})`,
+      })
+        .from(funnelEvents)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .groupBy(funnelEvents.eventName)
+        .orderBy(sql`count(*) desc`);
+
+      const byDay = await db.select({
+        date: sql<string>`date(${funnelEvents.createdAt})`,
+        eventName: funnelEvents.eventName,
+        count: sql<number>`count(*)`,
+      })
+        .from(funnelEvents)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .groupBy(sql`date(${funnelEvents.createdAt})`, funnelEvents.eventName)
+        .orderBy(sql`date(${funnelEvents.createdAt})`);
+
+      const byPlatform = await db.select({
+        platform: funnelEvents.platform,
+        eventName: funnelEvents.eventName,
+        count: sql<number>`count(*)`,
+      })
+        .from(funnelEvents)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .groupBy(funnelEvents.platform, funnelEvents.eventName)
+        .orderBy(sql`count(*) desc`);
+
+      const totalUsers = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`${users.createdAt} >= ${startDate}`);
+
+      res.json({ steps, byDay, byPlatform, newRegistrations: totalUsers[0]?.count || 0 });
+    } catch (error) {
+      console.error("Error fetching funnel data:", error);
+      res.status(500).json({ error: "Failed to fetch funnel data" });
     }
   });
 

@@ -1084,6 +1084,16 @@ export default function Account() {
                       Email Dashboard (Admin)
                     </Button>
                   </Link>
+                  <Link href="/admin/funnel">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2 text-muted-foreground"
+                      data-testid="button-admin-funnel"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Conversion Funnel (Admin)
+                    </Button>
+                  </Link>
                 </>
               )}
             </CardContent>

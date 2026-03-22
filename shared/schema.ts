@@ -427,6 +427,19 @@ export const pageViews = pgTable("page_views", {
 export type PageView = typeof pageViews.$inferSelect;
 export type InsertPageView = typeof pageViews.$inferInsert;
 
+export const funnelEvents = pgTable("funnel_events", {
+  id: serial("id").primaryKey(),
+  eventName: text("event_name").notNull(),
+  sessionId: text("session_id"),
+  userId: varchar("user_id"),
+  platform: text("platform"),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type FunnelEvent = typeof funnelEvents.$inferSelect;
+export type InsertFunnelEvent = typeof funnelEvents.$inferInsert;
+
 // ==========================================
 // COMMUNITY FEATURES (Premium Only)
 // ==========================================

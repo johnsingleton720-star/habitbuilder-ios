@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { SiApple, SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { isIOS, isNative } from "@/lib/platform";
+import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
 
 type AuthMode = "signup" | "login" | "forgot";
 
@@ -28,7 +29,12 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [forgotSent, setForgotSent] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    trackFunnelEvent("auth_screen_shown", { mode });
+  }, []);
+
   const handleAppleNativeSignIn = async () => {
+    trackFunnelEvent("auth_apple_tapped");
     if (!isNative() || !isIOS()) {
       onSocialAuth("apple");
       return;
@@ -68,6 +74,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
 
+      trackFunnelEvent("auth_signup_success", { method: "apple" });
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       window.location.href = "/";
     } catch (err: any) {
@@ -75,6 +82,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         setAppleLoading(false);
         return;
       }
+      trackFunnelEvent("auth_signup_failed", { method: "apple", error: err?.message || "unknown" });
       console.warn("Native Apple Sign In failed, falling back:", err);
       setAppleLoading(false);
       onSocialAuth("apple");
@@ -83,6 +91,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    trackFunnelEvent("auth_email_submit", { mode });
     setError("");
     setLoading(true);
 
@@ -103,14 +112,17 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       const data = await res.json();
 
       if (!res.ok) {
+        trackFunnelEvent(mode === "signup" ? "auth_signup_failed" : "auth_login_failed", { method: "email", error: data.error || "unknown" });
         setError(data.error || "Something went wrong");
         setLoading(false);
         return;
       }
 
+      trackFunnelEvent(mode === "signup" ? "auth_signup_success" : "auth_login_success", { method: "email" });
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       window.location.href = "/";
     } catch (err) {
+      trackFunnelEvent(mode === "signup" ? "auth_signup_failed" : "auth_login_failed", { method: "email", error: "connection_failed" });
       setError("Connection failed. Please check your internet and try again.");
       setLoading(false);
     }
@@ -190,7 +202,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 Continue with Apple
               </button>
               <button
-                onClick={() => onSocialAuth("google")}
+                onClick={() => { trackFunnelEvent("auth_google_tapped"); onSocialAuth("google"); }}
                 className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm"
                 data-testid="button-auth-google"
               >
