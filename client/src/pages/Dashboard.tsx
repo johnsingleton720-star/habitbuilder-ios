@@ -6,6 +6,8 @@ import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { DailyQuote } from "@/components/DailyQuote";
 import { TrialBanner } from "@/components/TrialBanner";
+import { FirstTaskPrompt } from "@/components/FirstTaskPrompt";
+import { FirstCompletionCelebration, useFirstCompletionCelebration } from "@/components/FirstCompletionCelebration";
 import { TodaysFocus } from "@/components/TodaysFocus";
 import { StreakBrokenModal, type MissReason } from "@/components/StreakBrokenModal";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
@@ -89,6 +91,9 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
       toast({ title: "Checked in!" });
+      if (!firstCompletion.hasBeenCelebrated()) {
+        firstCompletion.triggerIfFirst(25);
+      }
     },
   });
   const simpleUncheckin = useMutation({
@@ -117,6 +122,7 @@ export default function Dashboard() {
 
 
   useAppTheme();
+  const firstCompletion = useFirstCompletionCelebration();
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
     if (!dismissedAt) return false;
@@ -603,6 +609,33 @@ export default function Dashboard() {
 
         {/* Trial Banner */}
         <TrialBanner />
+
+        {/* First Task Prompt for new users */}
+        {(() => {
+          const presignupHabitId = localStorage.getItem("presignup_habit_id");
+          if (!presignupHabitId || !user?.id || !habits) return null;
+          const promptKey = `firstTaskPromptDismissed_${user.id}`;
+          if (localStorage.getItem(promptKey) === "true") return null;
+          const habit = habits.find(h => h.id === Number(presignupHabitId));
+          if (!habit) return null;
+          return (
+            <FirstTaskPrompt
+              habitId={habit.id}
+              habitTitle={habit.title}
+              habitIcon={habit.customIcon}
+              habitColor={habit.customColor}
+              isSimple={habit.trackingMode === "simple"}
+              userId={user.id}
+            />
+          );
+        })()}
+
+        {/* First Completion Celebration */}
+        <FirstCompletionCelebration
+          show={firstCompletion.show}
+          xpEarned={firstCompletion.xpEarned}
+          onDismiss={firstCompletion.dismiss}
+        />
 
         {/* Hero Card - Level, XP, Streak, Stats, Calendar all in one box */}
         <DashboardHeroCard

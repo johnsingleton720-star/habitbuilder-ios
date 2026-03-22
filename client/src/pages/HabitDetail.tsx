@@ -26,6 +26,7 @@ import { StreakProtection } from "@/components/StreakProtection";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { FirstCompletionCelebration, useFirstCompletionCelebration } from "@/components/FirstCompletionCelebration";
 
 function RecentlyAdjustedBanner({ habitId, summary }: { habitId: number; summary: string | null }) {
   const [dismissed, setDismissed] = useState(false);
@@ -226,6 +227,7 @@ export default function HabitDetail() {
   const queryClient = useQueryClient();
   const { features, isFreeUser } = useSubscription();
   const [, navigate] = useLocation();
+  const firstCompletion = useFirstCompletionCelebration();
 
   const urlDate = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("date")
@@ -429,12 +431,15 @@ export default function HabitDetail() {
       const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, skipped, notes, timeSpent });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      if (variables.completed && !firstCompletion.hasBeenCelebrated()) {
+        firstCompletion.triggerIfFirst(25);
+      }
     },
     onError: () => {
       toast({ title: "Failed to update task", variant: "destructive" });
@@ -583,6 +588,11 @@ export default function HabitDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <FirstCompletionCelebration
+        show={firstCompletion.show}
+        xpEarned={firstCompletion.xpEarned}
+        onDismiss={firstCompletion.dismiss}
+      />
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b safe-top">
         <div className="container max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">

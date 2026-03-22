@@ -1,19 +1,49 @@
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { Crown, Clock, ArrowRight, Sparkles, Flame, Zap, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+
+interface GamificationStats {
+  xpPoints: number;
+  level: number;
+  maxStreak: number;
+}
 
 export function TrialBanner() {
   const { user } = useAuth();
   const { isInTrial, trialExpired, trialDaysRemaining, trialEndsAt } = useSubscription();
 
+  const showStats = isInTrial ? trialDaysRemaining <= 3 : trialExpired;
+
+  const { data: gamStats } = useQuery<GamificationStats>({
+    queryKey: ["/api/gamification/stats"],
+    enabled: !!user && showStats,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: habitsSummary } = useQuery<any[]>({
+    queryKey: ["/api/habits/summary"],
+    enabled: !!user && showStats,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (!user) return null;
   if (user.isAdmin) return null;
   if (user.hasPaid) return null;
+
+  const tasksCompleted = habitsSummary?.reduce((sum, h) => {
+    const plans = (h.dailyPlans || []) as any[];
+    return sum + plans.reduce((pSum: number, p: any) => {
+      return pSum + (p.tasks || []).filter((t: any) => t.completed).length;
+    }, 0);
+  }, 0) || 0;
+
+  const habitsCreated = habitsSummary?.length || 0;
 
   if (isInTrial) {
     const hoursRemaining = trialEndsAt
@@ -26,13 +56,16 @@ export function TrialBanner() {
         ? hoursRemaining <= 24 ? `${hoursRemaining} hours left` : "1 day left"
         : `${hoursRemaining} hours left`;
 
+    const hasUsageData = gamStats && (tasksCompleted > 0 || (gamStats.xpPoints || 0) > 0);
+    const isUrgent = trialDaysRemaining <= 3;
+
     return (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5 dark:from-primary/10 dark:via-emerald-500/10 dark:to-primary/10" data-testid="card-trial-active">
+        <Card className={`${isUrgent ? 'border-amber-400/50 dark:border-amber-600/40' : 'border-primary/30'} bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5 dark:from-primary/10 dark:via-emerald-500/10 dark:to-primary/10`} data-testid="card-trial-active">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -41,14 +74,39 @@ export function TrialBanner() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-foreground" data-testid="text-trial-active">Premium Trial Active</p>
-                  <Badge variant="secondary" className="text-xs gap-1">
+                  <Badge variant={isUrgent ? "destructive" : "secondary"} className="text-xs gap-1">
                     <Clock className="w-3 h-3" />
                     {timeLabel}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  You have full access to all Premium features. Subscribe before your trial ends to keep them.
-                </p>
+                {isUrgent && hasUsageData ? (
+                  <div className="mt-1.5">
+                    <p className="text-xs text-muted-foreground" data-testid="text-trial-usage">
+                      You've completed {tasksCompleted} task{tasksCompleted !== 1 ? 's' : ''} and earned {gamStats!.xpPoints.toLocaleString()} XP with Premium.
+                    </p>
+                    <div className="flex gap-3 mt-1.5">
+                      {tasksCompleted > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] text-primary font-medium">
+                          <CheckCircle2 className="w-3 h-3" />{tasksCompleted} done
+                        </span>
+                      )}
+                      {(gamStats!.xpPoints || 0) > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] text-primary font-medium">
+                          <Zap className="w-3 h-3" />{gamStats!.xpPoints.toLocaleString()} XP
+                        </span>
+                      )}
+                      {(gamStats!.maxStreak || 0) > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] text-orange-500 font-medium">
+                          <Flame className="w-3 h-3" />{gamStats!.maxStreak}d streak
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    You have full access to all Premium features. Subscribe before your trial ends to keep them.
+                  </p>
+                )}
               </div>
               <Link href="/paywall">
                 <Button size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-trial-upgrade">
@@ -64,6 +122,8 @@ export function TrialBanner() {
   }
 
   if (trialExpired) {
+    const hasUsageData = gamStats && (tasksCompleted > 0 || (gamStats.xpPoints || 0) > 0);
+
     return (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -78,9 +138,20 @@ export function TrialBanner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground" data-testid="text-trial-expired">Your Premium trial has ended</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Subscribe now to keep unlimited habits, AI coaching, and all Premium features.
-                </p>
+                {hasUsageData ? (
+                  <div className="mt-1">
+                    <p className="text-xs text-muted-foreground" data-testid="text-trial-expired-usage">
+                      During your trial you completed {tasksCompleted} task{tasksCompleted !== 1 ? 's' : ''}{habitsCreated > 1 ? ` across ${habitsCreated} habits` : ''}{(gamStats!.xpPoints || 0) > 0 ? ` and earned ${gamStats!.xpPoints.toLocaleString()} XP` : ''}.
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mt-0.5">
+                      Upgrade to keep your progress going.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Subscribe now to keep unlimited habits, AI coaching, and all Premium features.
+                  </p>
+                )}
               </div>
               <Link href="/paywall">
                 <Button size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-trial-expired-upgrade">
