@@ -140,7 +140,7 @@ export default function MoodTracker() {
                       <HelpCircle className="w-4 h-4" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-76 text-sm" side="bottom" align="start">
+                  <PopoverContent className="w-80 text-sm" side="bottom" align="start">
                     <div className="space-y-2">
                       <p className="font-semibold text-foreground flex items-center gap-2">
                         <Activity className="w-4 h-4 text-teal-600" />

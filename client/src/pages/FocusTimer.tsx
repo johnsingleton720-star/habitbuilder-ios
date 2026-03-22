@@ -298,7 +298,16 @@ export default function FocusTimer() {
 
   const stats = statsQuery.data;
   const sessions = sessionsQuery.data || [];
-  const habits = habitsQuery.data || [];
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const habits = (habitsQuery.data || []).filter((h: any) => {
+    if (h.archived) return false;
+    if (h.setupComplete) {
+      const dPlans = (h.dailyPlans || []) as any[];
+      const endDate = h.planEndDate || (dPlans.length > 0 ? dPlans[dPlans.length - 1]?.date : null);
+      if (endDate && endDate < todayStr) return false;
+    }
+    return true;
+  });
   const completedSessions = sessions.filter(s => s.status === "completed");
 
   return (

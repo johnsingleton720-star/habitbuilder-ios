@@ -928,7 +928,33 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
               <>
                 {/* Not logged today header */}
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors" data-testid="button-mood-compact-help">
+                          <HelpCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 text-sm" side="bottom" align="start">
+                        <div className="space-y-2">
+                          <p className="font-semibold text-foreground flex items-center gap-2">
+                            <SmilePlus className="w-4 h-4 text-primary" />
+                            Mood Check-in
+                          </p>
+                          <p className="text-muted-foreground leading-relaxed">
+                            Tap an emoji to quickly log your mood, or tap "+ Details" to also record energy, stress, sleep levels, and notes.
+                          </p>
+                          <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+                            <p className="font-medium text-primary text-xs mb-1">💡 Tip: More detail = smarter AI</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              The AI reads your mood logs alongside your journal to personalize your habit coaching. Even a few words in the notes field makes a big difference.
+                            </p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => { resetForm(); setOpen(true); }}
