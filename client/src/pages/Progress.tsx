@@ -250,27 +250,30 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="progress-view-tabs">
-          {viewTabs.map((tab) => {
-            const isActive = view === tab.key;
-            const TabIcon = tab.icon;
-            return (
-              <Link key={tab.key} href={`/progress/${tab.key}`}>
-                <button
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-                    isActive
-                      ? `${viewConfig[tab.key].bgColor} ${viewConfig[tab.key].borderColor} border shadow-sm ${viewConfig[tab.key].color}`
-                      : "text-muted-foreground hover-elevate"
-                  )}
-                  data-testid={`tab-${tab.key}`}
-                >
-                  <TabIcon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              </Link>
-            );
-          })}
+        <div className="relative" data-testid="progress-view-tabs">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pr-8">
+            {viewTabs.map((tab) => {
+              const isActive = view === tab.key;
+              const TabIcon = tab.icon;
+              return (
+                <Link key={tab.key} href={`/progress/${tab.key}`}>
+                  <button
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                      isActive
+                        ? `${viewConfig[tab.key].bgColor} ${viewConfig[tab.key].borderColor} border shadow-sm ${viewConfig[tab.key].color}`
+                        : "text-muted-foreground hover-elevate"
+                    )}
+                    data-testid={`tab-${tab.key}`}
+                  >
+                    <TabIcon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="absolute right-0 top-0 bottom-1 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
         </div>
 
         {view === "today" && (

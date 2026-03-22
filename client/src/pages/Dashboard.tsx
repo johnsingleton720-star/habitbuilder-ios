@@ -58,7 +58,7 @@ export default function Dashboard() {
   const [brokenStreak, setBrokenStreak] = useState<BrokenStreakInfo | null>(null);
   const [habitsCollapsed, setHabitsCollapsed] = useState(true);
   const [selectedWeekDay, setSelectedWeekDay] = useState<string | null>(null);
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = format(new Date(), "yyyy-MM-dd");
   const [planAdjustDismissed, setPlanAdjustDismissed] = useState(() =>
     localStorage.getItem(`planAdjustDismissed_${todayKey}`) === "true"
   );
@@ -72,9 +72,9 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showInterviewOffer, setShowInterviewOffer] = useState(false);
   const [moodExpanded, setMoodExpanded] = useState(false);
-  const [moodEnergy, setMoodEnergy] = useState(5);
-  const [moodStress, setMoodStress] = useState(5);
-  const [moodSleep, setMoodSleep] = useState(7);
+  const [moodEnergy, setMoodEnergy] = useState(3);
+  const [moodStress, setMoodStress] = useState(3);
+  const [moodSleep, setMoodSleep] = useState(3);
   const [moodNotes, setMoodNotes] = useState("");
   const [editingHabit, setEditingHabit] = useState<any>(null);
   const [deletingHabit, setDeletingHabit] = useState<any>(null);
@@ -123,13 +123,14 @@ export default function Dashboard() {
   });
   const todayMoodEntry = useMemo(() => {
     if (!moodEntries || !Array.isArray(moodEntries)) return null;
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = format(new Date(), "yyyy-MM-dd");
     return moodEntries.find(e => e.date === todayStr) || null;
   }, [moodEntries]);
 
   const logMoodMutation = useMutation({
     mutationFn: async (mood: string) => {
       return await apiRequest("POST", "/api/mood", {
+        date: format(new Date(), "yyyy-MM-dd"),
         mood,
         energy: moodEnergy,
         stress: moodStress,
@@ -138,10 +139,12 @@ export default function Dashboard() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mood/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/mood"] });
       setMoodExpanded(false);
       setMoodNotes("");
+      setMoodEnergy(3);
+      setMoodStress(3);
+      setMoodSleep(3);
       toast({ title: "Mood logged!" });
     },
     onError: () => {
@@ -239,7 +242,7 @@ export default function Dashboard() {
 
   const dashboardStats = useMemo(() => {
     if (!activeHabits || activeHabits.length === 0) return null;
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = format(new Date(), "yyyy-MM-dd");
     const todayDayName = format(new Date(), "EEEE").toLowerCase();
 
     const getHabitDayComplete = (habit: Habit, dateStr: string) => {
@@ -859,23 +862,23 @@ export default function Dashboard() {
                             <div className="space-y-1.5">
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground font-medium">Energy</span>
-                                <span className="font-semibold">{moodEnergy}/10</span>
+                                <span className="font-semibold">{moodEnergy}/5</span>
                               </div>
-                              <Slider value={[moodEnergy]} onValueChange={([v]) => setMoodEnergy(v)} min={1} max={10} step={1} className="w-full" />
+                              <Slider value={[moodEnergy]} onValueChange={([v]) => setMoodEnergy(v)} min={1} max={5} step={1} className="w-full" />
                             </div>
                             <div className="space-y-1.5">
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground font-medium">Stress</span>
-                                <span className="font-semibold">{moodStress}/10</span>
+                                <span className="font-semibold">{moodStress}/5</span>
                               </div>
-                              <Slider value={[moodStress]} onValueChange={([v]) => setMoodStress(v)} min={1} max={10} step={1} className="w-full" />
+                              <Slider value={[moodStress]} onValueChange={([v]) => setMoodStress(v)} min={1} max={5} step={1} className="w-full" />
                             </div>
                             <div className="space-y-1.5">
                               <div className="flex justify-between text-[11px]">
-                                <span className="text-muted-foreground font-medium">Sleep (hours)</span>
-                                <span className="font-semibold">{moodSleep}h</span>
+                                <span className="text-muted-foreground font-medium">Sleep</span>
+                                <span className="font-semibold">{moodSleep}/5</span>
                               </div>
-                              <Slider value={[moodSleep]} onValueChange={([v]) => setMoodSleep(v)} min={1} max={12} step={0.5} className="w-full" />
+                              <Slider value={[moodSleep]} onValueChange={([v]) => setMoodSleep(v)} min={1} max={5} step={1} className="w-full" />
                             </div>
                             <Textarea
                               placeholder="Any notes? (optional)"
@@ -1362,7 +1365,7 @@ export default function Dashboard() {
                         const isSimple = habit.trackingMode === "simple";
                         const streak = habit.currentStreak || 0;
                         const plans = (habit.dailyPlans || []) as DailyPlan[];
-                        const todayStr = new Date().toISOString().slice(0, 10);
+                        const todayStr = format(new Date(), "yyyy-MM-dd");
                         const todayPlan = plans.find(p => p.date === todayStr);
                         const todayTasks = todayPlan?.tasks || [];
                         const completedTasks = todayTasks.filter((t: any) => t.completed).length;
