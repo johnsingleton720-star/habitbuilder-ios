@@ -297,7 +297,20 @@ export default function MoodTracker() {
           <CardContent>
             {aiInsight ? (
               <div className="space-y-3">
-                <p className="text-sm text-foreground leading-relaxed" data-testid="text-ai-insight">{aiInsight}</p>
+                <div 
+                  className="text-sm text-foreground leading-relaxed whitespace-pre-wrap space-y-4" 
+                  data-testid="text-ai-insight"
+                >
+                  {aiInsight.split('\n\n').map((section, idx) => (
+                    <div key={idx} className="space-y-2">
+                      {section.split('\n').map((line, lineIdx) => (
+                        <p key={lineIdx} className="text-sm">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"

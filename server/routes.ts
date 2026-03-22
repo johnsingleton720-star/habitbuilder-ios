@@ -8952,26 +8952,36 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
           role: "system",
           content: `Analyze mood tracking data and provide detailed, personalized insights about patterns and trends.
 
-Your response should include:
-1. **Key Patterns** — Identify specific correlations (e.g., stress/energy relationships, day-of-week trends, how habits affect mood). Reference exact dates and scores from the data.
-2. **Notable Trends** — Highlight improvements, declines, or interesting observations with specific numbers.
-3. **Mood Drivers** — What appears to boost or drain energy/mood based on the data and notes.
-4. **Actionable Suggestions** — 2-3 specific, evidence-based recommendations tied directly to patterns you see (not generic advice).
-5. **Encouragement** — Celebrate what they're tracking well and growth you observe.
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS (with clear section headers and line breaks):
+
+Key Patterns
+Identify specific correlations like stress/energy relationships or day-of-week trends. Reference exact dates and scores. Keep this section to 2-3 sentences.
+
+Notable Trends
+Highlight improvements, declines, or interesting observations with specific numbers. Keep this section to 2-3 sentences.
+
+Mood Drivers
+What appears to boost or drain energy/mood based on the data and notes. Keep this section to 2-3 sentences.
+
+Actionable Suggestions
+2-3 specific, evidence-based recommendations tied directly to patterns you see.
+
+Encouragement
+Celebrate what they're tracking well and growth you observe. Keep this brief but warm.
 
 CRITICAL RULES:
-- Every observation MUST cite specific data (dates, scores, values from notes)
-- Connect findings to the listed habits where possible
-- Be warm, encouraging, and substantive
-- Do NOT give generic wellness advice
-- Focus on what the data actually reveals about their patterns
+- Use clean, readable formatting with blank lines between sections
+- Every observation must cite specific data (dates, scores)
+- No excessive bold formatting or special characters
+- Each section should be concise but substantive
+- Be warm and encouraging throughout
 
 SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.`
         }, {
           role: "user",
           content: `Recent mood entries (newest first, last 30 days): ${entries.map(e => `${e.date}: mood=${e.mood}, energy=${e.energy}/5, stress=${e.stress}/5, sleep=${e.sleep}/5${e.notes ? `, notes="${e.notes}"` : ''}`).join("\n")}\n\nActive habits: ${userHabits.map((h: any) => h.title).join(", ") || 'None yet'}`
         }],
-        max_tokens: 1000,
+        max_tokens: 800,
       });
 
       res.json({ insight: response.choices[0]?.message?.content || "Keep tracking!" });
