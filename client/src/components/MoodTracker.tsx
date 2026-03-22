@@ -907,7 +907,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs"
-                      onClick={() => navigate("/mood")}
+                      onClick={() => { resetForm(); setOpen(true); }}
                       data-testid="button-log-another-mood-compact"
                     >
                       + Log Another
@@ -931,7 +931,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                   <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => navigate("/mood")}
+                      onClick={() => { resetForm(); setOpen(true); }}
                       className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                       data-testid="button-mood-details"
                     >
@@ -946,14 +946,14 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                     </button>
                   </div>
                 </div>
-                {/* Flat colored icon row — colored Lucide icons, no circle backgrounds */}
+                {/* Flat colored icon row — tap an emoji to pre-select it and open the log dialog */}
                 <div className="flex justify-between gap-1">
                   {MOOD_OPTIONS.map((option) => {
                     const Icon = option.icon;
                     return (
                       <button
                         key={option.value}
-                        onClick={() => navigate("/mood")}
+                        onClick={() => { setSelectedMood(option.value); setOpen(true); }}
                         className={cn(
                           "flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-all cursor-pointer",
                           "hover:bg-muted/60 active:scale-95"
