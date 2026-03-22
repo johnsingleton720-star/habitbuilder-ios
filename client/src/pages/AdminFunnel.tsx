@@ -117,8 +117,8 @@ export default function AdminFunnel() {
             <div className="grid grid-cols-3 gap-3">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold" data-testid="text-funnel-total-events">{data?.steps?.reduce((sum, s) => sum + s.count, 0) || 0}</p>
-                  <p className="text-xs text-muted-foreground">Total Events</p>
+                  <p className="text-2xl font-bold" data-testid="text-funnel-total-sessions">{stepMap.get("app_open")?.uniqueSessions || 0}</p>
+                  <p className="text-xs text-muted-foreground">Unique Opens</p>
                 </CardContent>
               </Card>
               <Card>

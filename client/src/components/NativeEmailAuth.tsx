@@ -74,7 +74,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
 
-      trackFunnelEvent("auth_signup_success", { method: "apple" });
+      trackFunnelEvent(data.isNewUser ? "auth_signup_success" : "auth_login_success", { method: "apple" });
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       window.location.href = "/";
     } catch (err: any) {

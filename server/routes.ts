@@ -573,8 +573,10 @@ export async function registerRoutes(
       }
 
       let finalUser = existingUser;
+      let isNewUser = false;
 
       if (!finalUser) {
+        isNewUser = true;
         const userId = crypto.randomUUID();
         const isOwner = userEmail === OWNER_EMAIL;
         const trialEndsAt = isOwner ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -612,6 +614,7 @@ export async function registerRoutes(
           if (saveErr) console.error("Session save error:", saveErr);
           res.json({
             success: true,
+            isNewUser,
             user: { id: finalUser.id, email: finalUser.email, firstName: finalUser.firstName, lastName: finalUser.lastName },
           });
         });
@@ -9665,7 +9668,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const byDay = await db.select({
         date: sql<string>`date(${funnelEvents.createdAt})`,
         eventName: funnelEvents.eventName,
-        count: sql<number>`count(*)`,
+        count: sql<number>`count(distinct ${funnelEvents.sessionId})`,
       })
         .from(funnelEvents)
         .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
@@ -9675,18 +9678,20 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const byPlatform = await db.select({
         platform: funnelEvents.platform,
         eventName: funnelEvents.eventName,
-        count: sql<number>`count(*)`,
+        count: sql<number>`count(distinct ${funnelEvents.sessionId})`,
       })
         .from(funnelEvents)
         .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
         .groupBy(funnelEvents.platform, funnelEvents.eventName)
         .orderBy(sql`count(*) desc`);
 
-      const totalUsers = await db.select({ count: sql<number>`count(*)` })
-        .from(users)
-        .where(sql`${users.createdAt} >= ${startDate}`);
+      const newSignups = await db.select({
+        count: sql<number>`count(distinct ${funnelEvents.userId})`,
+      })
+        .from(funnelEvents)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${funnelEvents.eventName} = 'auth_signup_success' AND ${funnelEvents.userId} IS NOT NULL`);
 
-      res.json({ steps, byDay, byPlatform, newRegistrations: totalUsers[0]?.count || 0 });
+      res.json({ steps, byDay, byPlatform, newRegistrations: newSignups[0]?.count || 0 });
     } catch (error) {
       console.error("Error fetching funnel data:", error);
       res.status(500).json({ error: "Failed to fetch funnel data" });
