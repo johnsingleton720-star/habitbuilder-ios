@@ -253,8 +253,26 @@ async function seedFoundingMemberSlots() {
       host: "0.0.0.0",
       reusePort: true,
     },
-    () => {
+    async () => {
       log(`serving on port ${port}`);
+      try {
+        const { db } = await import("./db");
+        const { funnelEvents } = await import("@shared/schema");
+        const { inArray, eq } = await import("drizzle-orm");
+        // Clean known test sessions (owner testing with main + jayriles2412 accounts)
+        const testSessionIds = [
+          "107f7459-3ce4-4402-a6e2-b83dc1ddcfe7",
+          "89638d86-f2c4-4179-bae9-ca14285f33c6",
+          "02111ec8-6966-49da-96c5-ec1da6e9f2cb",
+        ];
+        // Also catch any sessions tied to the jayriles account (53887655)
+        const jairSessions = await db.select({ sessionId: funnelEvents.sessionId }).from(funnelEvents).where(eq(funnelEvents.userId, "53887655"));
+        const allIds = [...new Set([...testSessionIds, ...jairSessions.map(r => r.sessionId).filter(Boolean)])] as string[];
+        const result = await db.delete(funnelEvents).where(inArray(funnelEvents.sessionId, allIds));
+        log(`[Cleanup] Deleted ${result.rowCount || 0} test funnel events`);
+      } catch (e) {
+        log(`[Cleanup] Error: ${e}`);
+      }
     },
   );
 })();
