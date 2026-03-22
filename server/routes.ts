@@ -8785,22 +8785,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const validatedData = moodEntrySchema.parse(req.body);
       const { date, mood, energy, stress, sleep, notes, habitIds } = validatedData;
       
-      // Check if entry exists for this date
-      const existing = await db.select()
-        .from(moodEntries)
-        .where(and(eq(moodEntries.userId, userId), eq(moodEntries.date, date)))
-        .limit(1);
-      
-      if (existing.length > 0) {
-        // Update existing entry
-        const [updated] = await db.update(moodEntries)
-          .set({ mood, energy, stress, sleep, notes, habitIds })
-          .where(eq(moodEntries.id, existing[0].id))
-          .returning();
-        return res.json(updated);
-      }
-      
-      // Create new entry
+      // Always insert a new entry — multiple moods per day are supported
       const [entry] = await db.insert(moodEntries)
         .values({
           userId,

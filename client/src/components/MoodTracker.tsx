@@ -136,7 +136,8 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
     enabled: Boolean(reportHabitId && reportOpen),
   });
   
-  const todayEntry = entries.find(e => e.date === today);
+  const todayEntries = entries.filter(e => e.date === today);
+  const todayEntry = todayEntries.length > 0 ? todayEntries[todayEntries.length - 1] : null;
   
   const saveMoodMutation = useMutation({
     mutationFn: async (data: Partial<MoodEntry>) => {
@@ -212,8 +213,8 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
   if (isFreeUser && compact) {
     return (
       <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact-locked">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground flex items-center gap-2">
               How are you feeling?
               <Badge variant="outline" className="text-[10px] gap-0.5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 px-1.5 py-0">
@@ -226,14 +227,12 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
               Unlock
             </Button>
           </div>
-          <div className="flex justify-between gap-1 opacity-40 pointer-events-none select-none">
+          <div className="flex justify-between gap-1 opacity-35 pointer-events-none select-none">
             {MOOD_OPTIONS.map((option) => {
               const Icon = option.icon;
               return (
-                <div key={option.value} className="flex flex-col items-center gap-1 flex-1 py-1.5">
-                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", option.bgColor)}>
-                    <Icon className={cn("w-5 h-5", option.color)} />
-                  </div>
+                <div key={option.value} className="flex flex-col items-center gap-1.5 flex-1 py-1">
+                  <Icon className={cn("w-7 h-7", option.color)} />
                   <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
                 </div>
               );
@@ -737,12 +736,37 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
       setOpen(true);
     };
 
+    const MoodHistoryDots = () => (
+      recentMoods.length > 0 ? (
+        <div className="flex items-center gap-1 flex-wrap">
+          {recentMoods.map((entry) => {
+            const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
+            if (!option) return null;
+            const Icon = option.icon;
+            return (
+              <div
+                key={entry.id}
+                className={cn("w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0", option.bgColor)}
+                title={`${format(new Date(entry.date + "T12:00:00"), "MMM d")}: ${option.label}`}
+              >
+                <Icon className={cn("w-3.5 h-3.5", option.color)} />
+              </div>
+            );
+          })}
+          <span className="text-[10px] text-muted-foreground ml-0.5">
+            {recentMoods.length < 7 ? `Last ${recentMoods.length}` : "Last 7"}
+          </span>
+        </div>
+      ) : null
+    );
+
     return (
       <>
         <Card className="border-border/60 shadow-sm" data-testid="card-mood-compact">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-3">
             {todayEntry ? (
-              <div className="space-y-3">
+              <>
+                {/* Logged today header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     {(() => {
@@ -750,7 +774,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       if (!opt) return null;
                       const TodayIcon = opt.icon;
                       return (
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", opt.bgColor)}>
+                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", opt.bgColor)}>
                           <TodayIcon className={cn("w-5 h-5", opt.color)} />
                         </div>
                       );
@@ -760,46 +784,51 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       <p className="text-[11px] text-muted-foreground capitalize">Feeling {todayEntry.mood}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { if (todayEntry) { setSelectedMood(todayEntry.mood as MoodType); if (todayEntry.energy) setEnergy([todayEntry.energy]); if (todayEntry.stress) setStress([todayEntry.stress]); if (todayEntry.sleep) setSleep([todayEntry.sleep]); if (todayEntry.notes) setNotes(todayEntry.notes); if (todayEntry.habitIds) setSelectedHabits(todayEntry.habitIds); } setOpen(true); }} data-testid="button-update-mood-compact">
-                      Update
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => { resetForm(); setOpen(true); }}
+                      data-testid="button-log-another-mood-compact"
+                    >
+                      + Log Another
                     </Button>
-                    <button onClick={() => navigate("/mood")} className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-history-compact">
+                    <button
+                      onClick={() => navigate("/mood")}
+                      className="text-[11px] font-medium text-primary flex items-center gap-0.5 whitespace-nowrap"
+                      data-testid="link-mood-history-compact"
+                    >
                       History <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-                {recentMoods.length > 1 && (
-                  <div className="flex items-center gap-1 pt-1">
-                    {recentMoods.map((entry) => {
-                      const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
-                      if (!option) return null;
-                      const Icon = option.icon;
-                      return (
-                        <div
-                          key={entry.id}
-                          className={cn("w-7 h-7 rounded-full flex items-center justify-center", option.bgColor)}
-                          title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
-                        >
-                          <Icon className={cn("w-3.5 h-3.5", option.color)} />
-                        </div>
-                      );
-                    })}
-                    {recentMoods.length < 7 && (
-                      <span className="text-[10px] text-muted-foreground ml-1.5">Last {recentMoods.length} days</span>
-                    )}
-                  </div>
-                )}
+                <MoodHistoryDots />
                 {correlationsSection}
-              </div>
+              </>
             ) : (
-              <div className="space-y-3">
+              <>
+                {/* Not logged today header */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">How are you feeling?</p>
-                  <button onClick={() => navigate("/mood")} className="text-[11px] font-medium text-primary flex items-center gap-0.5" data-testid="link-mood-insights-compact">
-                    History <ArrowRight className="w-3 h-3" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { resetForm(); setOpen(true); }}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid="button-mood-details"
+                    >
+                      + Details
+                    </button>
+                    <button
+                      onClick={() => navigate("/mood")}
+                      className="text-[11px] font-medium text-primary flex items-center gap-0.5"
+                      data-testid="link-mood-insights-compact"
+                    >
+                      Insights <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
+                {/* Flat colored icon row — no circles, just the colored Lucide icons */}
                 <div className="flex justify-between gap-1">
                   {MOOD_OPTIONS.map((option) => {
                     const Icon = option.icon;
@@ -807,40 +836,21 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
                       <button
                         key={option.value}
                         onClick={() => handleCompactMoodClick(option.value)}
-                        className="flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 flex-1 py-2 rounded-xl transition-all cursor-pointer",
+                          "hover:bg-muted/60 active:scale-95"
+                        )}
                         data-testid={`button-mood-compact-${option.value}`}
                       >
-                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", option.bgColor)}>
-                          <Icon className={cn("w-5 h-5", option.color)} />
-                        </div>
+                        <Icon className={cn("w-7 h-7", option.color)} />
                         <span className="text-[10px] text-muted-foreground font-medium">{option.label}</span>
                       </button>
                     );
                   })}
                 </div>
-                {recentMoods.length > 0 && (
-                  <div className="flex items-center gap-1 pt-1">
-                    {recentMoods.map((entry) => {
-                      const option = MOOD_OPTIONS.find(o => o.value === entry.mood);
-                      if (!option) return null;
-                      const Icon = option.icon;
-                      return (
-                        <div
-                          key={entry.id}
-                          className={cn("w-7 h-7 rounded-full flex items-center justify-center", option.bgColor)}
-                          title={`${format(new Date(entry.date), "MMM d")}: ${option.label}`}
-                        >
-                          <Icon className={cn("w-3.5 h-3.5", option.color)} />
-                        </div>
-                      );
-                    })}
-                    {recentMoods.length < 7 && (
-                      <span className="text-[10px] text-muted-foreground ml-1.5">Last {recentMoods.length} days</span>
-                    )}
-                  </div>
-                )}
+                <MoodHistoryDots />
                 {correlationsSection}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -870,9 +880,10 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
               <Button 
                 size="sm" 
                 variant={todayEntry ? "outline" : "default"}
+                onClick={resetForm}
                 data-testid="button-log-mood"
               >
-                {todayEntry ? "Update Mood" : "Log Mood"}
+                {todayEntry ? "+ Log Another" : "Log Mood"}
               </Button>
             </DialogTrigger>
             {moodDialogContent}
