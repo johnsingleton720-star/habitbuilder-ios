@@ -332,7 +332,9 @@ export async function registerRoutes(
       console.error("Failed to store native auth token:", err);
       return res.status(500).send("Authentication error. Please try again.");
     }
-    const deepLink = `habitbuilder://auth?token=${token}`;
+    const [userRow] = await db.select({ createdAt: users.createdAt }).from(users).where(eq(users.id, userId)).limit(1);
+    const isNewUser = userRow && (Date.now() - new Date(userRow.createdAt as any).getTime() < 120000);
+    const deepLink = `habitbuilder://auth?token=${token}&isNewUser=${isNewUser ? 'true' : 'false'}`;
     res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -9682,13 +9684,22 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysBack);
 
+      const returningSessionFilter = sql`session_id NOT IN (
+        SELECT DISTINCT session_id FROM funnel_events
+        WHERE event_name = 'auth_login_success'
+        AND session_id NOT IN (
+          SELECT DISTINCT session_id FROM funnel_events
+          WHERE event_name = 'auth_signup_success'
+        )
+      )`;
+
       const steps = await db.select({
         eventName: funnelEvents.eventName,
         count: sql<number>`count(*)`,
         uniqueSessions: sql<number>`count(distinct ${funnelEvents.sessionId})`,
       })
         .from(funnelEvents)
-        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${returningSessionFilter}`)
         .groupBy(funnelEvents.eventName)
         .orderBy(sql`count(*) desc`);
 
@@ -9698,7 +9709,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         count: sql<number>`count(distinct ${funnelEvents.sessionId})`,
       })
         .from(funnelEvents)
-        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${returningSessionFilter}`)
         .groupBy(sql`date(${funnelEvents.createdAt})`, funnelEvents.eventName)
         .orderBy(sql`date(${funnelEvents.createdAt})`);
 
@@ -9708,7 +9719,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         count: sql<number>`count(distinct ${funnelEvents.sessionId})`,
       })
         .from(funnelEvents)
-        .where(sql`${funnelEvents.createdAt} >= ${startDate}`)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${returningSessionFilter}`)
         .groupBy(funnelEvents.platform, funnelEvents.eventName)
         .orderBy(sql`count(*) desc`);
 

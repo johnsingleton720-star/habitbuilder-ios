@@ -28,7 +28,8 @@ export async function openAuthFlow() {
             await apiRequest('POST', '/api/auth/exchange-token', { token });
             try {
               const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
-              trackFunnelEvent("auth_login_success", { method: "google" });
+              const isNewUser = params.searchParams.get('isNewUser') === 'true';
+              trackFunnelEvent(isNewUser ? "auth_signup_success" : "auth_login_success", { method: "google" });
             } catch {}
             window.location.href = '/';
             return;
