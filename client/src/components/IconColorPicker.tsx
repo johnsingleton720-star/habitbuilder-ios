@@ -202,15 +202,15 @@ export function IconColorPicker({
       </div>
 
       {activeTab === "icon" && (
-        <ScrollArea className="h-48">
-          <div className="grid grid-cols-7 gap-1">
+        <ScrollArea className="h-56">
+          <div className="grid grid-cols-6 gap-1.5">
             {ICON_OPTIONS.map((option) => (
               <Button
                 key={option.name}
                 type="button"
                 variant={selectedIcon === option.name ? "default" : "ghost"}
                 size="icon"
-                className="h-9 w-9 text-lg"
+                className="h-11 w-full text-2xl"
                 onClick={() => onIconChange(option.name)}
                 data-testid={`icon-option-${option.name}`}
               >
