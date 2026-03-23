@@ -59,6 +59,7 @@ interface UserActivity {
     timezone: string;
     isFoundingMember: boolean;
     billingInterval: string;
+    isFunnelViewer: boolean;
   };
   habits: {
     id: number;
@@ -74,12 +75,28 @@ interface UserActivity {
 }
 
 function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery<UserActivity>({
     queryKey: ['/api/admin/users', userId, 'activity'],
     queryFn: async () => {
       const res = await fetch(`/api/admin/users/${userId}/activity`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch');
       return res.json();
+    },
+  });
+
+  const funnelAccessMutation = useMutation({
+    mutationFn: async (isFunnelViewer: boolean) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/funnel-access`, { isFunnelViewer });
+      return res.json();
+    },
+    onSuccess: (_, isFunnelViewer) => {
+      toast({ title: isFunnelViewer ? "Funnel access granted" : "Funnel access revoked" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users', userId, 'activity'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update funnel access", variant: "destructive" });
     },
   });
 
@@ -201,6 +218,25 @@ function UserActivityPanel({ userId, onClose }: { userId: string; onClose: () =>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="border-t pt-3">
+        <p className="text-xs text-muted-foreground mb-2 font-medium">Access Controls</p>
+        <Button
+          size="sm"
+          variant={data.user.isFunnelViewer ? "destructive" : "outline"}
+          className="w-full gap-2 text-xs"
+          onClick={() => funnelAccessMutation.mutate(!data.user.isFunnelViewer)}
+          disabled={funnelAccessMutation.isPending}
+          data-testid={`button-funnel-access-${userId}`}
+        >
+          {funnelAccessMutation.isPending ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <TrendingUp className="w-3 h-3" />
+          )}
+          {data.user.isFunnelViewer ? "Revoke Funnel Access" : "Grant Funnel Access"}
+        </Button>
       </div>
     </div>
   );
@@ -1108,6 +1144,18 @@ export default function Account() {
                     </Button>
                   </Link>
                 </>
+              )}
+              {!user?.isAdmin && user?.isFunnelViewer && (
+                <Link href="/admin/funnel">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 text-muted-foreground"
+                    data-testid="button-funnel-viewer"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    Conversion Funnel
+                  </Button>
+                </Link>
               )}
             </CardContent>
           </Card>

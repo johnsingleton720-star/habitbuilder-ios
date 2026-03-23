@@ -30,6 +30,7 @@ export const users = pgTable("users", {
   subscriptionId: varchar("subscription_id"),
   subscriptionStatus: varchar("subscription_status"), // active, cancelled, past_due, etc.
   isAdmin: boolean("is_admin").default(false),
+  isFunnelViewer: boolean("is_funnel_viewer").default(false),
   theme: varchar("theme").default("light"), // light, dark, auto
   colorTheme: varchar("color_theme").default("nature"), // nature, minimal, ocean, sunset, lavender, forest
   darkModeSchedule: jsonb("dark_mode_schedule").$type<{ enabled: boolean; startHour: number; endHour: number }>(), // Auto dark mode

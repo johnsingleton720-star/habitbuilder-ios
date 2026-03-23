@@ -7043,12 +7043,29 @@ Return JSON with:
           timezone: user.timezone,
           isFoundingMember: user.isFoundingMember,
           billingInterval: user.billingInterval,
+          isFunnelViewer: user.isFunnelViewer,
         },
         habits: userHabits,
       });
     } catch (error) {
       console.error("Error fetching user activity:", error);
       res.status(500).json({ error: "Failed to fetch user activity" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/funnel-access", isAuthenticated, async (req: any, res) => {
+    try {
+      const adminId = req.user!.claims.sub;
+      const admin = await storage.getUser(adminId);
+      if (!admin?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const { userId } = req.params;
+      const { isFunnelViewer } = req.body;
+      await db.update(users).set({ isFunnelViewer: !!isFunnelViewer }).where(eq(users.id, userId));
+      console.log(`Admin ${adminId} set funnel access for ${userId} to ${isFunnelViewer}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating funnel access:", error);
+      res.status(500).json({ error: "Failed to update funnel access" });
     }
   });
 
@@ -9656,7 +9673,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const user = await storage.getUser(userId);
-      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      if (!user?.isAdmin && !user?.isFunnelViewer) return res.status(403).json({ error: "Admin access required" });
 
       const timeRange = (req.query.range as string) || "7d";
       let daysBack = 7;
