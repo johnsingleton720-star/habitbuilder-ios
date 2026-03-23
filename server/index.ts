@@ -53,6 +53,15 @@ async function backfillProgressEntries() {
   }
 }
 
+async function runStartupMigrations() {
+  try {
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_funnel_viewer boolean DEFAULT false`);
+    console.log('[Migrations] Startup migrations complete');
+  } catch (err) {
+    console.error('[Migrations] Startup migration error:', err);
+  }
+}
+
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception (server kept running):', err.message);
 });
@@ -197,6 +206,7 @@ async function seedFoundingMemberSlots() {
 }
 
 (async () => {
+  await runStartupMigrations();
   await initStripe();
   await seedFoundingMemberSlots();
   await registerRoutes(httpServer, app);
