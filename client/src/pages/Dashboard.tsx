@@ -142,7 +142,7 @@ export default function Dashboard() {
       setTimeout(() => {
         const habitsSection = document.getElementById("habits-section");
         if (habitsSection) {
-          const yOffset = -20;
+          const yOffset = -72;
           const y = habitsSection.getBoundingClientRect().top + window.scrollY + yOffset;
           window.scrollTo({ top: y, behavior: "smooth" });
         }
