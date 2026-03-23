@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
+import { isNative, isIOS } from "@/lib/platform";
 
 interface PresignupData {
   intent: string;
@@ -312,14 +313,24 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                   </p>
                 </div>
 
-                <button
-                  onClick={onLogin}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="button-presignup-existing-login"
-                >
-                  <LogIn className="w-4 h-4" />
-                  Already have an account? Sign in
-                </button>
+                <div className="w-full space-y-2 pt-2">
+                  <button
+                    onClick={onLogin}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-foreground border-2 border-border rounded-xl h-12 hover:bg-muted/50 active:bg-muted transition-colors"
+                    data-testid="button-presignup-existing-login"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Already have an account? Sign in
+                  </button>
+                  {isNative() && isIOS() && (
+                    <p className="text-xs text-muted-foreground text-center">
+                       Sign in with Apple — just one tap
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground text-center">
+                    You can always set up your plan later
+                  </p>
+                </div>
               </motion.div>
             )}
 
