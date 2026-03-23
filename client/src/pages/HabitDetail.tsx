@@ -551,8 +551,8 @@ export default function HabitDetail() {
   const overallProgress = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
   
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const planEndDate = habit.planEndDate ? habit.planEndDate : allDailyPlans.length > 0 ? allDailyPlans[allDailyPlans.length - 1].date : null;
-  const lastDailyPlanDate = allDailyPlans.length > 0 ? allDailyPlans[allDailyPlans.length - 1].date : null;
+  const lastDailyPlanDate = allDailyPlans.length > 0 ? allDailyPlans.reduce((max: string, p: DailyPlan) => p.date > max ? p.date : max, allDailyPlans[0].date) : null;
+  const planEndDate = habit.planEndDate ? habit.planEndDate : lastDailyPlanDate;
   const allDailyPlansExpired = habit.setupComplete && lastDailyPlanDate ? lastDailyPlanDate < todayStr : false;
   const isSimpleMode = habit.trackingMode === "simple";
   const isPlanExpired = !isSimpleMode && habit.setupComplete ? ((planEndDate ? planEndDate < todayStr : false) || allDailyPlansExpired) : false;
@@ -721,7 +721,7 @@ export default function HabitDetail() {
         )}
 
         {/* Plan Completed/Expired Banner */}
-        {!isSimpleMode && habit.setupComplete && isPlanDone && dailyPlans.length > 0 && (
+        {!isSimpleMode && habit.setupComplete && isPlanDone && allDailyPlans.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
