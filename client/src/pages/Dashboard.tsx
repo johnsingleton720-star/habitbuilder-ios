@@ -1225,7 +1225,9 @@ export default function Dashboard() {
                         const iconColor = habit.customColor?.startsWith('#') ? habit.customColor : undefined;
                         const iconBg = iconColor ? `${iconColor}20` : undefined;
                         const habitEmoji = getEmojiForIcon(habit.customIcon);
-                        const isPlanDone = !isSimple && habit.setupComplete && habit.planEndDate && habit.planEndDate < todayStr;
+                        const lastPlanDate = plans.length > 0 ? plans[plans.length - 1].date : null;
+                        const effectivePlanEnd = habit.planEndDate || lastPlanDate;
+                        const isPlanDone = !isSimple && !!habit.setupComplete && !!effectivePlanEnd && effectivePlanEnd < todayStr;
 
                         return (
                           <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group transition-opacity ${isCheckedIn ? 'opacity-60' : ''} ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
