@@ -34,7 +34,19 @@ export function usePushNotifications() {
       clearBadge();
       if (!attemptedRef.current) {
         attemptedRef.current = true;
-        registerNativePush();
+        // Only auto-register if permission is already granted.
+        // If still "prompt", IOSNotificationPrompt handles requesting it.
+        (async () => {
+          try {
+            const { PushNotifications } = await import("@capacitor/push-notifications");
+            const status = await PushNotifications.checkPermissions();
+            if (status.receive === "granted") {
+              registerNativePush();
+            }
+          } catch {
+            registerNativePush();
+          }
+        })();
       }
     } else {
       if (!attemptedRef.current) {

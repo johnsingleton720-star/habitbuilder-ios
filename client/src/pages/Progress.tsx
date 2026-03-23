@@ -235,9 +235,9 @@ export default function ProgressPage() {
   return (
     <div className="min-h-screen bg-gradient-subtle p-4 md:p-8 font-body">
       <div className="mx-auto max-w-3xl space-y-8">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col gap-2">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
+            <Button variant="ghost" size="sm" className="gap-2 -ml-2" data-testid="button-back-home">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>

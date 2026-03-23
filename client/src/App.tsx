@@ -18,6 +18,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { isNative, isIOS } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
 import { NativeEmailAuth } from "@/components/NativeEmailAuth";
+import { IOSNotificationPrompt } from "@/components/IOSNotificationPrompt";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -287,6 +288,7 @@ function Router() {
   return (
     <>
     {updateAvailable && <VersionUpdateBanner />}
+    {user && isNative() && isIOS() && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
       <Route path="/"><PageTransition><Dashboard /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>

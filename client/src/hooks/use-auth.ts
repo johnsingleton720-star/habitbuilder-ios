@@ -26,7 +26,7 @@ function detectAndSyncTimezone(user: User | null) {
   if (!user) return;
   const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   if (!browserTz) return;
-  if (user.timezone) return;
+  if (user.timezone === browserTz) return;
   fetch("/api/user/timezone", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

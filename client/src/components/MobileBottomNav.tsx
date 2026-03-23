@@ -55,7 +55,7 @@ export function MobileBottomNav() {
     setTimeout(() => {
       const section = document.getElementById(sectionId);
       if (section) {
-        const yOffset = -20;
+        const yOffset = -72;
         const y = section.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({ top: y, behavior: "smooth" });
       }
@@ -63,7 +63,12 @@ export function MobileBottomNav() {
   };
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if (path === "/#habits") {
+    if (path === "/") {
+      if (location === "/") {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } else if (path === "/#habits") {
       e.preventDefault();
       if (location === "/") {
         scrollToSection("habits-section");

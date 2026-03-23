@@ -1233,7 +1233,7 @@ export default function Dashboard() {
 
                         return (
                           <div key={habit.id} className={`flex items-center gap-3.5 px-4 py-3.5 group transition-opacity ${isCheckedIn ? 'opacity-60' : ''} ${i < (activeHabits?.length || 0) - 1 ? 'border-b border-border/50' : ''}`} data-testid={`card-habit-${habit.id}`}>
-                            <Link href={`/habit/${habit.id}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+                            <Link href={`/habit/${habit.id}?date=${todayStr}`} className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
                               <div
                                 className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-opacity ${isCheckedIn || isPlanDone ? 'opacity-50' : ''}`}
                                 style={{ backgroundColor: iconBg || 'hsl(var(--primary) / 0.1)' }}
