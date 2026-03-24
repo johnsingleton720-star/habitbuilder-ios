@@ -2100,6 +2100,10 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         .set({ habitIds: sql`(SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) FROM jsonb_array_elements(habit_ids) elem WHERE elem::text::int != ${habitId})` })
         .where(and(eq(goals.userId, userId), sql`habit_ids IS NOT NULL AND habit_ids @> ${JSON.stringify([habitId])}::jsonb`));
 
+      await db.update(userTemplates)
+        .set({ habitId: null })
+        .where(and(eq(userTemplates.userId, userId), eq(userTemplates.habitId, habitId)));
+
       await storage.deleteHabit(habitId, userId);
       res.status(204).send();
     } catch (error) {

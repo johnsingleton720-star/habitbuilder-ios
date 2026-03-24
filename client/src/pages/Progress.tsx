@@ -869,8 +869,8 @@ function WeeklyView({ habits }: { habits: any[] }) {
     };
   });
   
-  const totalCompleted = weekDays.reduce((sum, d) => sum + d.completed, 0);
-  const totalScheduled = weekDays.reduce((sum, d) => sum + d.total, 0);
+  const totalCompleted = weekDays.filter(d => !d.isFuture).reduce((sum, d) => sum + d.completed, 0);
+  const totalScheduled = weekDays.filter(d => !d.isFuture).reduce((sum, d) => sum + d.total, 0);
   const weeklyPercent = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
   const daysWithPerfect = weekDays.filter(d => d.allComplete && !d.isFuture).length;
   
