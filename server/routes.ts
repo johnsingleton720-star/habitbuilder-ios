@@ -386,7 +386,11 @@ export async function registerRoutes(
     <a class="btn" href="${deepLink}">Return to HabitBuilder</a>
   </div>
   <script>
-    setTimeout(function() { window.location.href = "${deepLink}"; }, 500);
+    (function() {
+      var link = "${deepLink}";
+      window.location.href = link;
+      setTimeout(function() { window.location.href = link; }, 300);
+    })();
   </script>
 </body>
 </html>`);

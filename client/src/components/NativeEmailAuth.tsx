@@ -25,6 +25,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const { toast } = useToast();
@@ -53,11 +54,20 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setError("");
 
     try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (!Capacitor.isPluginAvailable("AppleSignIn")) {
+        trackFunnelEvent("auth_signup_failed", { method: "apple", error: "plugin_not_available" });
+        setError("Apple Sign-In isn't available on this device. Please use your email to sign up instead.");
+        setAppleLoading(false);
+        return;
+      }
+
       const { AppleSignIn } = await import("capacitor-apple-sign-in");
       const result = await AppleSignIn.signIn();
 
       if (!result.identityToken) {
-        setError("Apple Sign In failed — no identity token received.");
+        trackFunnelEvent("auth_signup_failed", { method: "apple", error: "no_identity_token" });
+        setError("Apple Sign In failed — no identity token received. Please try email instead.");
         setAppleLoading(false);
         return;
       }
@@ -78,6 +88,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       const data = await res.json();
 
       if (!res.ok) {
+        trackFunnelEvent("auth_signup_failed", { method: "apple", error: data.error || "server_error" });
         setError(data.error || "Apple Sign In failed. Please try again.");
         setAppleLoading(false);
         return;
@@ -92,9 +103,46 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
       trackFunnelEvent("auth_signup_failed", { method: "apple", error: err?.message || "unknown" });
-      console.warn("Native Apple Sign In failed, falling back:", err);
+      setError("Apple Sign-In failed. Please use your email to sign up instead.");
       setAppleLoading(false);
-      onSocialAuth("apple");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    trackFunnelEvent("auth_google_tapped");
+
+    if (!isNative() || !isIOS()) {
+      onSocialAuth("google");
+      return;
+    }
+
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      const { openAuthFlow } = await import("@/lib/auth-flow");
+      const result = await openAuthFlow();
+
+      if (result.success) {
+        return;
+      }
+
+      if (result.error === "cancelled") {
+        setGoogleLoading(false);
+        return;
+      }
+
+      trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
+      setError("Google sign-in didn't complete. Please use Apple Sign-In or enter your email instead.");
+    } catch (e: any) {
+      if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
+        setGoogleLoading(false);
+        return;
+      }
+      trackFunnelEvent("auth_signup_failed", { method: "google", error: e?.message || "unknown" });
+      setError("Google sign-in failed. Please use Apple Sign-In or enter your email instead.");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -209,7 +257,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             <div className="space-y-3 mb-6">
               <button
                 onClick={handleAppleNativeSignIn}
-                disabled={appleLoading}
+                disabled={appleLoading || googleLoading || loading}
                 className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
                 data-testid="button-auth-apple"
               >
@@ -221,11 +269,16 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 Continue with Apple
               </button>
               <button
-                onClick={() => { trackFunnelEvent("auth_google_tapped"); onSocialAuth("google"); }}
-                className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading || appleLoading || loading}
+                className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
                 data-testid="button-auth-google"
               >
-                <SiGoogle className="w-4 h-4" />
+                {googleLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <SiGoogle className="w-4 h-4" />
+                )}
                 Continue with Google
               </button>
               <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
@@ -328,7 +381,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 </p>
               )}
 
-              <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading} data-testid="button-auth-submit">
+              <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading || appleLoading || googleLoading} data-testid="button-auth-submit">
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : mode === "signup" ? (

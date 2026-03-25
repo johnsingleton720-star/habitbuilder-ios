@@ -1,4 +1,4 @@
-export async function openAuthFlow() {
+export async function openAuthFlow(): Promise<{ success: boolean; error?: string }> {
   const stored = sessionStorage.getItem("utm_params");
   if (stored) {
     try {
@@ -25,28 +25,36 @@ export async function openAuthFlow() {
           const token = params.searchParams.get('token');
           if (token) {
             const { apiRequest } = await import('@/lib/queryClient');
-            await apiRequest('POST', '/api/auth/exchange-token', { token });
+            const exchangeRes = await apiRequest('POST', '/api/auth/exchange-token', { token });
+            if (!exchangeRes.ok) {
+              return { success: false, error: 'token_exchange_failed' };
+            }
             try {
               const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
               const isNewUser = params.searchParams.get('isNewUser') === 'true';
               trackFunnelEvent(isNewUser ? "auth_signup_success" : "auth_login_success", { method: "google" });
             } catch {}
             window.location.href = '/';
-            return;
+            return { success: true };
           }
+          return { success: false, error: 'no_token_in_callback' };
         }
+        return { success: false, error: 'unexpected_callback_url' };
       } catch (e: any) {
-        if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) return;
-        console.warn('AuthSession not available, falling back to Browser:', e);
+        if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) {
+          return { success: false, error: 'cancelled' };
+        }
+        return { success: false, error: e?.message || 'auth_session_failed' };
       }
     }
     try {
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete' });
-      return;
+      return { success: false, error: 'browser_opened' };
     } catch (e) {
       console.warn('Browser plugin not available, using webview redirect:', e);
     }
   }
   window.location.href = "/api/login";
+  return { success: true };
 }
