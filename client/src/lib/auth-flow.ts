@@ -27,7 +27,12 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
             const { apiRequest } = await import('@/lib/queryClient');
             const exchangeRes = await apiRequest('POST', '/api/auth/exchange-token', { token });
             if (!exchangeRes.ok) {
-              return { success: false, error: 'token_exchange_failed' };
+              try {
+                const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
+                trackFunnelEvent("auth_google_webview_fallback", { reason: 'token_exchange_failed' });
+              } catch {}
+              window.location.href = "/api/login";
+              return { success: true };
             }
             try {
               const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
@@ -37,20 +42,31 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
             window.location.href = '/';
             return { success: true };
           }
-          return { success: false, error: 'no_token_in_callback' };
+          try {
+            const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
+            trackFunnelEvent("auth_google_webview_fallback", { reason: 'no_token_in_callback' });
+          } catch {}
+          window.location.href = "/api/login";
+          return { success: true };
         }
-        return { success: false, error: 'unexpected_callback_url' };
+        try {
+          const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
+          trackFunnelEvent("auth_google_webview_fallback", { reason: 'unexpected_callback_url' });
+        } catch {}
+        window.location.href = "/api/login";
+        return { success: true };
       } catch (e: any) {
         if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) {
           return { success: false, error: 'cancelled' };
         }
-        // Do NOT fall back to Browser.open() on iOS — a regular browser can't handle
-        // the habitbuilder:// callback URL scheme, so the user would complete OAuth in
-        // Safari but be unable to return to the app. Surfacing the error is better.
-        return { success: false, error: e?.message || 'auth_session_failed' };
+        try {
+          const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
+          trackFunnelEvent("auth_google_webview_fallback", { reason: e?.message || 'auth_session_failed' });
+        } catch {}
+        window.location.href = "/api/login";
+        return { success: true };
       }
     }
-    // Android: Browser.open() works because the OS handles the custom URL scheme
     try {
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete' });

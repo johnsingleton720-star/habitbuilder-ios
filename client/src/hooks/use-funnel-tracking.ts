@@ -29,6 +29,7 @@ export type FunnelEventName =
   | "auth_login_success"
   | "auth_signup_failed"
   | "auth_login_failed"
+  | "auth_google_webview_fallback"
   | "first_habit_created";
 
 export function trackFunnelEvent(
