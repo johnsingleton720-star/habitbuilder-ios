@@ -44,9 +44,13 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
         if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) {
           return { success: false, error: 'cancelled' };
         }
+        // Do NOT fall back to Browser.open() on iOS — a regular browser can't handle
+        // the habitbuilder:// callback URL scheme, so the user would complete OAuth in
+        // Safari but be unable to return to the app. Surfacing the error is better.
         return { success: false, error: e?.message || 'auth_session_failed' };
       }
     }
+    // Android: Browser.open() works because the OS handles the custom URL scheme
     try {
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete' });
