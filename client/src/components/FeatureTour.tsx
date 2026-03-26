@@ -64,6 +64,7 @@ const ALL_STEPS: TourStep[] = [
     description: "View your habit streaks, completion trends, and detailed stats over time. See how your consistency builds real results!",
     icon: <BarChart3 className="w-5 h-5 text-indigo-500" />,
     position: "top",
+    mobileOnly: true,
   },
   {
     selector: '[data-testid="mobile-bottom-nav"]',

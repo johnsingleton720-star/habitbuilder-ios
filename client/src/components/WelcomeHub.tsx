@@ -37,10 +37,16 @@ function markWelcomeHubSeen(userId: string) {
   localStorage.setItem(getWelcomeHubKey(userId), "true");
 }
 
-export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin"> | null): boolean {
+const WELCOME_HUB_LAUNCH_DATE = new Date("2026-03-26T00:00:00Z");
+
+export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin" | "createdAt"> | null): boolean {
   if (!user?.id) return false;
   if (user.isAdmin) return false;
   if (hasSeenWelcomeHub(user.id)) return false;
+  if (user.createdAt) {
+    const createdAt = new Date(user.createdAt);
+    if (createdAt < WELCOME_HUB_LAUNCH_DATE) return false;
+  }
   return true;
 }
 
