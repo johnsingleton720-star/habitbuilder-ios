@@ -221,22 +221,8 @@ function Router() {
   useEffect(() => {
     if (!user?.id || isAuthLoading || isPaymentLoading) return;
     if (welcomeHubCheckedUserId === user.id) return;
-    if (!shouldShowWelcomeHub(user)) {
-      setWelcomeHubCheckedUserId(user.id);
-      return;
-    }
-    const presignupHandoff = (window as any).__presignupHandoffInProgress;
-    if (presignupHandoff) {
-      const checkInterval = setInterval(() => {
-        if (!(window as any).__presignupHandoffInProgress) {
-          clearInterval(checkInterval);
-          setWelcomeHubCheckedUserId(user.id);
-          setShowWelcomeHub(true);
-        }
-      }, 200);
-      return () => clearInterval(checkInterval);
-    }
     setWelcomeHubCheckedUserId(user.id);
+    if (!shouldShowWelcomeHub(user)) return;
     setShowWelcomeHub(true);
   }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId]);
 
