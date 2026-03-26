@@ -50,7 +50,12 @@ interface BrokenStreakInfo {
   previousStreak: number;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  triggerTour?: boolean;
+  onTourTriggered?: () => void;
+}
+
+export default function Dashboard({ triggerTour, onTourTriggered }: DashboardProps = {}) {
   usePageTitle("Dashboard", "Your personal habit coaching dashboard. Track progress, complete guided sessions, earn XP, and stay on top of your daily habits.");
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabitsSummary();
@@ -174,6 +179,15 @@ export default function Dashboard() {
       setTimeout(() => setShowTour(true), 1000);
     }
   }, [user?.id, user?.onboardingComplete, user?.tourCompleted, habits, isLoading]);
+
+  useEffect(() => {
+    if (triggerTour && !showTour) {
+      setTimeout(() => {
+        setShowTour(true);
+        onTourTriggered?.();
+      }, 500);
+    }
+  }, [triggerTour]);
 
   const { data: habitStacks } = useQuery<HabitStack[]>({
     queryKey: ["/api/habit-stacks"],

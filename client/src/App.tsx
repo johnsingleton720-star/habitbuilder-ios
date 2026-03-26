@@ -19,6 +19,7 @@ import { isNative, isIOS } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
 import { NativeEmailAuth } from "@/components/NativeEmailAuth";
 import { IOSNotificationPrompt } from "@/components/IOSNotificationPrompt";
+import { WelcomeHub, hasSeenWelcomeHub } from "@/components/WelcomeHub";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -115,6 +116,9 @@ function Router() {
   const [location] = useLocation();
   const { toast } = useToast();
   const [showNativeAuth, setShowNativeAuth] = useState(false);
+  const [showWelcomeHub, setShowWelcomeHub] = useState(false);
+  const [welcomeHubCheckedUserId, setWelcomeHubCheckedUserId] = useState<string | null>(null);
+  const [triggerTourAfterHub, setTriggerTourAfterHub] = useState(false);
   
   useTracking();
   usePushNotifications();
@@ -213,6 +217,44 @@ function Router() {
     })();
   }, [user, toast]);
 
+  useEffect(() => {
+    if (!user?.id || isAuthLoading || isPaymentLoading) return;
+    if (welcomeHubCheckedUserId === user.id) return;
+    if (user.isAdmin) {
+      setWelcomeHubCheckedUserId(user.id);
+      return;
+    }
+    if (hasSeenWelcomeHub(user.id)) {
+      setWelcomeHubCheckedUserId(user.id);
+      return;
+    }
+    const presignupHandoff = (window as any).__presignupHandoffInProgress;
+    if (presignupHandoff) {
+      const checkInterval = setInterval(() => {
+        if (!(window as any).__presignupHandoffInProgress) {
+          clearInterval(checkInterval);
+          setWelcomeHubCheckedUserId(user.id);
+          setShowWelcomeHub(true);
+        }
+      }, 200);
+      return () => clearInterval(checkInterval);
+    }
+    setWelcomeHubCheckedUserId(user.id);
+    setShowWelcomeHub(true);
+  }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId]);
+
+  const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore") => {
+    setShowWelcomeHub(false);
+    if (action === "tour") {
+      setTriggerTourAfterHub(true);
+    } else if (action === "habit") {
+      const presignupHabitId = localStorage.getItem("presignup_habit_id");
+      if (presignupHabitId) {
+        // Let the existing interview offer dialog on Dashboard handle this
+      }
+    }
+  };
+
   const isPublicRoute = PUBLIC_ROUTES.some(route => location.startsWith(route));
 
   if (isPublicRoute) {
@@ -287,10 +329,11 @@ function Router() {
 
   return (
     <>
+    {showWelcomeHub && <WelcomeHub onDismiss={handleWelcomeHubDismiss} />}
     {updateAvailable && <VersionUpdateBanner />}
     {user && isNative() && isIOS() && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
-      <Route path="/"><PageTransition><Dashboard /></PageTransition></Route>
+      <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
       <Route path="/stack/:id">{(params) => <PageTransition><StackDetail /></PageTransition>}</Route>
       <Route path="/progress/:view">{(params) => <PageTransition><Progress /></PageTransition>}</Route>
