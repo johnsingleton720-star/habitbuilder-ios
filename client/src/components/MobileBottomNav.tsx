@@ -35,6 +35,7 @@ export function MobileBottomNav() {
       icon: BarChart3,
       path: "/progress/today",
       testId: "nav-item-progress",
+      dataTour: "progress-link",
     },
     {
       label: "Account",
@@ -108,6 +109,7 @@ export function MobileBottomNav() {
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   data-testid={item.testId}
+                  data-tour={item.dataTour}
                   aria-label={item.label}
                   onClick={(e) => handleNavClick(e, item.path)}
                 >

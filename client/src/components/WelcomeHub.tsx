@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useQuery } from "@tanstack/react-query";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
+import type { User } from "@shared/models/auth";
 import {
   Sparkles,
   ArrowRight,
@@ -36,16 +37,20 @@ function markWelcomeHubSeen(userId: string) {
   localStorage.setItem(getWelcomeHubKey(userId), "true");
 }
 
-export function shouldShowWelcomeHub(user: any): boolean {
+export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin"> | null): boolean {
   if (!user?.id) return false;
   if (user.isAdmin) return false;
   if (hasSeenWelcomeHub(user.id)) return false;
-  if (user.createdAt) {
-    const createdAt = new Date(user.createdAt);
-    const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceCreation > 48) return false;
-  }
   return true;
+}
+
+interface HabitSummary {
+  id: number;
+  title: string;
+  setupComplete: boolean;
+  trackingMode: string | null;
+  customIcon: string | null;
+  customColor: string | null;
 }
 
 interface WelcomeHubProps {
@@ -69,13 +74,13 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
 
   const presignupHabitId = localStorage.getItem("presignup_habit_id");
 
-  const { data: habits } = useQuery<any[]>({
+  const { data: habits } = useQuery<HabitSummary[]>({
     queryKey: ["/api/habits/summary"],
     enabled: !!user,
   });
 
   const presignupHabit = presignupHabitId && habits
-    ? habits.find((h: any) => h.id === Number(presignupHabitId))
+    ? habits.find((h) => h.id === Number(presignupHabitId))
     : null;
 
   const hasExistingHabit = habits && habits.length > 0;

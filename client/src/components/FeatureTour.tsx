@@ -59,6 +59,13 @@ const ALL_STEPS: TourStep[] = [
     position: "bottom",
   },
   {
+    selector: '[data-tour="progress-link"]',
+    title: "Track Your Progress",
+    description: "View your habit streaks, completion trends, and detailed stats over time. See how your consistency builds real results!",
+    icon: <BarChart3 className="w-5 h-5 text-indigo-500" />,
+    position: "top",
+  },
+  {
     selector: '[data-testid="mobile-bottom-nav"]',
     title: "Navigate the App",
     description: "Use the bottom bar to quickly jump between your Dashboard, Habits, Progress charts, and Account settings.",
