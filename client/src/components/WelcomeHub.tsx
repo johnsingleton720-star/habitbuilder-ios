@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useQuery } from "@tanstack/react-query";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User } from "@shared/models/auth";
 import {
   Sparkles,
@@ -100,19 +101,37 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     });
   }, [habits, presignupHabit, hasExistingHabit]);
 
-  const presignupIsSetup = presignupHabit?.setupComplete === true;
+  const handleStartInterview = async () => {
+    if (!user || !presignupHabit) return;
+    markWelcomeHubSeen(user.id);
+    trackFunnelEvent("welcome_hub_action", {
+      action: "start_interview",
+      habitId: presignupHabit.id,
+    });
+    try {
+      await apiRequest("PUT", `/api/habits/${presignupHabit.id}`, { setupComplete: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+    } catch {}
+    localStorage.removeItem("presignup_habit_id");
+    onDismiss("habit", `/habit/${presignupHabit.id}`);
+  };
+
+  const handleKeepPlan = () => {
+    if (!user || !presignupHabit) return;
+    markWelcomeHubSeen(user.id);
+    trackFunnelEvent("welcome_hub_action", {
+      action: "keep_plan",
+      habitId: presignupHabit.id,
+    });
+    localStorage.removeItem("presignup_habit_id");
+    onDismiss("habit", `/habit/${presignupHabit.id}`);
+  };
 
   const handleStartHabit = () => {
     if (!user) return;
     markWelcomeHubSeen(user.id);
-    if (presignupHabit) {
-      trackFunnelEvent("welcome_hub_action", {
-        action: "start_habit",
-        branch: presignupIsSetup ? "first_task" : "ai_interview",
-        habitId: presignupHabit.id,
-      });
-      onDismiss("habit", `/habit/${presignupHabit.id}`);
-    } else if (hasExistingHabit) {
+    if (hasExistingHabit) {
       trackFunnelEvent("welcome_hub_action", { action: "go_to_habits" });
       onDismiss("explore");
       setTimeout(() => {
@@ -255,17 +274,27 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                 {presignupHabit ? (
                   <>
                     <p className="text-center text-sm font-medium text-foreground" data-testid="text-welcome-habit-ready">
-                      Your "{presignupHabit.title}" plan is ready!
+                      Your "{presignupHabit.title}" plan is saved!
                     </p>
                     <Button
-                      onClick={handleStartHabit}
+                      onClick={handleStartInterview}
                       size="lg"
                       className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
-                      data-testid="button-welcome-start-habit"
+                      data-testid="button-welcome-start-interview"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      Personalize with AI Interview
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleKeepPlan}
+                      size="lg"
+                      className="w-full gap-2 h-12 rounded-xl"
+                      data-testid="button-welcome-keep-plan"
                     >
                       <Rocket className="w-5 h-5" />
-                      {presignupIsSetup ? "Start Your First Task" : "Start AI Interview"}
-                      <ArrowRight className="w-4 h-4" />
+                      Keep Basic Plan
                     </Button>
                   </>
                 ) : hasExistingHabit ? (
