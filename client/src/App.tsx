@@ -19,7 +19,7 @@ import { isNative, isIOS } from "@/lib/platform";
 import { apiRequest } from "@/lib/queryClient";
 import { NativeEmailAuth } from "@/components/NativeEmailAuth";
 import { IOSNotificationPrompt } from "@/components/IOSNotificationPrompt";
-import { WelcomeHub, hasSeenWelcomeHub } from "@/components/WelcomeHub";
+import { WelcomeHub, shouldShowWelcomeHub } from "@/components/WelcomeHub";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -119,6 +119,7 @@ function Router() {
   const [showWelcomeHub, setShowWelcomeHub] = useState(false);
   const [welcomeHubCheckedUserId, setWelcomeHubCheckedUserId] = useState<string | null>(null);
   const [triggerTourAfterHub, setTriggerTourAfterHub] = useState(false);
+  const [triggerCreateHabit, setTriggerCreateHabit] = useState(false);
   
   useTracking();
   usePushNotifications();
@@ -220,11 +221,7 @@ function Router() {
   useEffect(() => {
     if (!user?.id || isAuthLoading || isPaymentLoading) return;
     if (welcomeHubCheckedUserId === user.id) return;
-    if (user.isAdmin) {
-      setWelcomeHubCheckedUserId(user.id);
-      return;
-    }
-    if (hasSeenWelcomeHub(user.id)) {
+    if (!shouldShowWelcomeHub(user)) {
       setWelcomeHubCheckedUserId(user.id);
       return;
     }
@@ -243,15 +240,12 @@ function Router() {
     setShowWelcomeHub(true);
   }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId]);
 
-  const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore") => {
+  const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);
     if (action === "tour") {
       setTriggerTourAfterHub(true);
-    } else if (action === "habit") {
-      const presignupHabitId = localStorage.getItem("presignup_habit_id");
-      if (presignupHabitId) {
-        // Let the existing interview offer dialog on Dashboard handle this
-      }
+    } else if (action === "habit" && !navigationTarget) {
+      setTriggerCreateHabit(true);
     }
   };
 
@@ -333,7 +327,7 @@ function Router() {
     {updateAvailable && <VersionUpdateBanner />}
     {user && isNative() && isIOS() && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
-      <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} /></PageTransition></Route>
+      <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} triggerCreateHabit={triggerCreateHabit} onCreateHabitTriggered={() => setTriggerCreateHabit(false)} /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
       <Route path="/stack/:id">{(params) => <PageTransition><StackDetail /></PageTransition>}</Route>
       <Route path="/progress/:view">{(params) => <PageTransition><Progress /></PageTransition>}</Route>

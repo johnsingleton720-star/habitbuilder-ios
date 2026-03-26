@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,8 +36,20 @@ function markWelcomeHubSeen(userId: string) {
   localStorage.setItem(getWelcomeHubKey(userId), "true");
 }
 
+export function shouldShowWelcomeHub(user: any): boolean {
+  if (!user?.id) return false;
+  if (user.isAdmin) return false;
+  if (hasSeenWelcomeHub(user.id)) return false;
+  if (user.createdAt) {
+    const createdAt = new Date(user.createdAt);
+    const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+    if (hoursSinceCreation > 48) return false;
+  }
+  return true;
+}
+
 interface WelcomeHubProps {
-  onDismiss: (action: "habit" | "tour" | "explore") => void;
+  onDismiss: (action: "habit" | "tour" | "explore", navigationTarget?: string) => void;
 }
 
 const PREMIUM_FEATURES = [
@@ -82,7 +95,15 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     if (!user) return;
     markWelcomeHubSeen(user.id);
     trackFunnelEvent("welcome_hub_action", { action: "start_habit" });
-    onDismiss("habit");
+    if (presignupHabit) {
+      const isSetup = presignupHabit.setupComplete;
+      navigate(`/habit/${presignupHabit.id}`);
+      onDismiss("habit", `/habit/${presignupHabit.id}`);
+    } else if (hasExistingHabit) {
+      onDismiss("habit");
+    } else {
+      onDismiss("habit");
+    }
   };
 
   const handleShowMeAround = () => {
