@@ -1,0 +1,27 @@
+High app installs with low sign-ups typically indicate a disconnect between user expectations and the app’s value proposition, or friction in the onboarding process. Common causes include confusing store listings, forced immediate registration, poor performance, or low-quality traffic, such as bot activity from ads. 
+Reddit
+Reddit
+ +2
+Primary Reasons for Low Sign-Ups:
+Forced or Complex Registration: Users often abandon apps that demand an email or personal details immediately upon opening without experiencing value first.
+Misleading App Store Listing: If your app listing promises functionality not clearly seen, users will install, realize it's not what they expected, and abandon it.
+Poor Initial Value Proposition: If the "hook" (the reason to sign up) isn't immediately obvious, users will delete the app, say users on Reddit www.reddit.com/r/SaaS/comments/1n1r13g/downloads_but_no_signups_how_common_it_is/.
+Bot Fraud: Ads might be targeting bot traffic, which can generate thousands of fraudulent installs but no genuine user sign-ups, according to a post on Reddit www.reddit.com/r/marketing/comments/18hw0ie/why_would_my_app_get_installs_but_barely_any_sign/.
+Unclear User Intent: Some users click "install" but forget to open the app later, particularly with ads, say users in a Reddit discussion www.reddit.com/r/androiddev/comments/nu5jm0/google_play_store_ads_only_installs_but_no_sign/. 
+Reddit
+Reddit
+ +4
+How to Improve Conversion:
+Introduce "Sign-Up Later": Allow users to explore the app and experience its value before forcing a sign-up.
+Enable Social Logins: Implement easy sign-up options like Google or Apple ID to reduce friction.
+Audit Ad Targeting: Refine your paid ads to target high-quality users rather than broad audiences to avoid bot traffic.
+Optimize Onboarding: Ensure the first screen clearly explains the benefit and the signup process is fast. 
+Google Help
+Google Help
+ +3
+Other Potential Factors:
+Bugs: The signup screen might be broken, say users on Reddit www.reddit.com/r/AppBusiness/comments/1n1qvn0/downloads_but_no_signups_how_common_it_is/.
+App Size: Larger apps may take longer to install, leading to lost interest, as noted in this Reddit thread www.reddit.com/r/androiddev/comments/nu5jm0/google_play_store_ads_only_installs_but_no_sign/. 
+Reddit
+Reddit
+ +1
