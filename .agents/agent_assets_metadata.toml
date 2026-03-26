@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "G5lc7eIJ69bZqM6g9m-yh"
+uri = "file://.local/ai-coaching-analysis.md"
+type = "text"
+title = "AI Coaching Analysis - HabitBuilder.pro"
