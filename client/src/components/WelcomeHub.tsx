@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -75,7 +74,6 @@ const PREMIUM_FEATURES = [
 export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
   const { user } = useAuth();
   const { trialDaysRemaining } = useSubscription();
-  const [, navigate] = useLocation();
   const [step, setStep] = useState<"welcome" | "features">("welcome");
 
   const presignupHabitId = localStorage.getItem("presignup_habit_id");
@@ -113,7 +111,6 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
         branch: presignupIsSetup ? "first_task" : "ai_interview",
         habitId: presignupHabit.id,
       });
-      navigate(`/habit/${presignupHabit.id}`);
       onDismiss("habit", `/habit/${presignupHabit.id}`);
     } else if (hasExistingHabit) {
       trackFunnelEvent("welcome_hub_action", { action: "go_to_habits" });

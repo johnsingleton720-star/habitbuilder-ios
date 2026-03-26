@@ -113,7 +113,7 @@ const PUBLIC_ROUTES = ["/templates", "/blog", "/privacy", "/terms", "/accept-inv
 function Router() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { hasAccess, isLoading: isPaymentLoading } = usePaymentStatus();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const [showNativeAuth, setShowNativeAuth] = useState(false);
   const [showWelcomeHub, setShowWelcomeHub] = useState(false);
@@ -243,7 +243,9 @@ function Router() {
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);
     if (action === "tour") {
-      setTriggerTourAfterHub(true);
+      setTimeout(() => setTriggerTourAfterHub(true), 300);
+    } else if (action === "habit" && navigationTarget) {
+      setTimeout(() => navigate(navigationTarget), 100);
     } else if (action === "habit" && !navigationTarget) {
       setTriggerCreateHabit(true);
     }
