@@ -91,17 +91,24 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     });
   }, [habits, presignupHabit, hasExistingHabit]);
 
+  const presignupIsSetup = presignupHabit?.setupComplete === true;
+
   const handleStartHabit = () => {
     if (!user) return;
     markWelcomeHubSeen(user.id);
-    trackFunnelEvent("welcome_hub_action", { action: "start_habit" });
     if (presignupHabit) {
-      const isSetup = presignupHabit.setupComplete;
+      trackFunnelEvent("welcome_hub_action", {
+        action: "start_habit",
+        branch: presignupIsSetup ? "first_task" : "ai_interview",
+        habitId: presignupHabit.id,
+      });
       navigate(`/habit/${presignupHabit.id}`);
       onDismiss("habit", `/habit/${presignupHabit.id}`);
     } else if (hasExistingHabit) {
-      onDismiss("habit");
+      trackFunnelEvent("welcome_hub_action", { action: "go_to_habits" });
+      onDismiss("explore");
     } else {
+      trackFunnelEvent("welcome_hub_action", { action: "create_habit" });
       onDismiss("habit");
     }
   };
@@ -232,16 +239,21 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                 className="space-y-3"
               >
                 {presignupHabit ? (
-                  <Button
-                    onClick={handleStartHabit}
-                    size="lg"
-                    className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
-                    data-testid="button-welcome-start-habit"
-                  >
-                    <Rocket className="w-5 h-5" />
-                    Start "{presignupHabit.title}"
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <>
+                    <p className="text-center text-sm font-medium text-foreground" data-testid="text-welcome-habit-ready">
+                      Your "{presignupHabit.title}" plan is ready!
+                    </p>
+                    <Button
+                      onClick={handleStartHabit}
+                      size="lg"
+                      className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
+                      data-testid="button-welcome-start-habit"
+                    >
+                      <Rocket className="w-5 h-5" />
+                      {presignupIsSetup ? "Start Your First Task" : "Start AI Interview"}
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </>
                 ) : hasExistingHabit ? (
                   <Button
                     onClick={handleStartHabit}
