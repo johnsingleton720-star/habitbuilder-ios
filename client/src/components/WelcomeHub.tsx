@@ -118,6 +118,12 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     } else if (hasExistingHabit) {
       trackFunnelEvent("welcome_hub_action", { action: "go_to_habits" });
       onDismiss("explore");
+      setTimeout(() => {
+        const section = document.getElementById("habits-section");
+        if (section) {
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 300);
     } else {
       trackFunnelEvent("welcome_hub_action", { action: "create_habit" });
       onDismiss("habit");
