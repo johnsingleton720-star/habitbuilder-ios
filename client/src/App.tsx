@@ -325,7 +325,7 @@ function Router() {
     <>
     {showWelcomeHub && <WelcomeHub onDismiss={handleWelcomeHubDismiss} />}
     {updateAvailable && <VersionUpdateBanner />}
-    {user && isNative() && isIOS() && <IOSNotificationPrompt userId={user.id} />}
+    {user && isNative() && isIOS() && !showWelcomeHub && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
       <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} triggerCreateHabit={triggerCreateHabit} onCreateHabitTriggered={() => setTriggerCreateHabit(false)} /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
