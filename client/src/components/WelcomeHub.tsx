@@ -160,12 +160,13 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     onDismiss("explore");
   };
 
-  const firstName = user?.email
-    ? user.email.split("@")[0].replace(/[^a-zA-Z]/g, "").slice(0, 12)
-    : null;
+  const displayName = user?.firstName
+    || (user?.email && !user.email.includes("privaterelay.appleid.com")
+        ? user.email.split("@")[0].replace(/[^a-zA-Z]/g, "").slice(0, 12)
+        : null);
 
-  const greeting = firstName && firstName.length > 2
-    ? `Welcome, ${firstName.charAt(0).toUpperCase() + firstName.slice(1)}!`
+  const greeting = displayName && displayName.length > 2
+    ? `Welcome, ${displayName.charAt(0).toUpperCase() + displayName.slice(1)}!`
     : "Welcome to HabitBuilder!";
 
   return (

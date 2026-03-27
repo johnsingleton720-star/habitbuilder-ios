@@ -105,7 +105,7 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
     return true;
   }) || null;
   const { toast } = useToast();
-  const { isFreeUser } = useSubscription();
+  const { isFreeUser, isPremium } = useSubscription();
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
@@ -119,8 +119,6 @@ export function MoodTracker({ compact = false }: MoodTrackerProps) {
   const [showMoodImpactInfo, setShowMoodImpactInfo] = useState(false);
   const [showAllCorrelations, setShowAllCorrelations] = useState(false);
   const [showCompactCorrelations, setShowCompactCorrelations] = useState(false);
-  
-  const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
   const today = todayStr;
   
   const { data: entries = [] } = useQuery<MoodEntry[]>({

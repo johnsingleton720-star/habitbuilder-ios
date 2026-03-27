@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, habits, habitReminders, quickTasks, goalMilestones, goals, moodEntries, journalEntries, userAchievements } from "@shared/schema";
+import { users, habits, quickTasks, goalMilestones, goals, moodEntries, journalEntries, userAchievements } from "@shared/schema";
 import { eq, and, isNotNull, or, gte } from "drizzle-orm";
 import { sendDailyReminderEmail, sendWeeklyDigestEmail, sendPaidWeeklyDigestEmail } from "./email";
 import { sendPushToUser } from "./pushNotifications";
@@ -540,78 +540,6 @@ async function processStreakAlerts() {
   }
 }
 
-async function processHabitReminders() {
-  try {
-    const allReminders = await db.query.habitReminders.findMany({
-      where: eq(habitReminders.enabled, true),
-    });
-
-    if (allReminders.length === 0) return;
-
-    const userIdSet = new Set(allReminders.map(r => r.userId));
-    const userIds = Array.from(userIdSet);
-    const usersData = await db.query.users.findMany({
-      where: or(...userIds.map(id => eq(users.id, id))),
-    });
-    const usersMap = new Map(usersData.map(u => [u.id, u]));
-
-    const habitIdSet = new Set(allReminders.map(r => r.habitId));
-    const habitIds = Array.from(habitIdSet);
-    const habitsData = await db.query.habits.findMany({
-      where: or(...habitIds.map(id => eq(habits.id, id))),
-    });
-    const habitsMap = new Map(habitsData.map(h => [h.id, h]));
-
-    let pushSent = 0;
-    for (const reminder of allReminders) {
-      const user = usersMap.get(reminder.userId);
-      if (!user) continue;
-      if (!user.pushNotificationsEnabled || !user.pushHabitReminders) continue;
-
-      const habit = habitsMap.get(reminder.habitId);
-      if (!habit || habit.archived) continue;
-
-      const localTime = getUserLocalTime(user.timezone);
-
-      const reminderDays = (reminder.days as string[]) || [];
-      if (reminderDays.length > 0 && !reminderDays.includes(localTime.dayName)) continue;
-
-      if (!isTimeMatch(localTime, reminder.reminderTime)) continue;
-
-      const sentTracker = (user.lastHabitRemindersSent as Record<string, string>) || {};
-      const dedupeKey = `${reminder.habitId}_${localTime.dateStr}`;
-      if (sentTracker[dedupeKey]) continue;
-
-      try {
-        await sendPushToUser(user.id, {
-          title: "Habit Reminder",
-          body: `Time for ${habit.title}!`,
-          url: `/habits/${habit.id}`,
-          tag: `habit-reminder-${habit.id}`,
-        });
-        pushSent++;
-        console.log(`[Scheduler] Habit reminder push sent to user ${user.id} for habit ${habit.id}`);
-
-        const updatedTracker = { ...sentTracker, [dedupeKey]: localTime.dateStr };
-        const oldKeys = Object.keys(updatedTracker).filter(k => !k.endsWith(`_${localTime.dateStr}`));
-        for (const k of oldKeys) delete updatedTracker[k];
-
-        await db.update(users).set({ lastHabitRemindersSent: updatedTracker }).where(eq(users.id, user.id));
-      } catch (err) {
-        console.error(`[Scheduler] Failed habit reminder for user ${user.id}, habit ${habit.id}:`, err);
-      }
-
-      await new Promise(r => setTimeout(r, 300));
-    }
-
-    if (pushSent > 0) {
-      console.log(`[Scheduler] Habit reminders: ${pushSent} push`);
-    }
-  } catch (error) {
-    console.error("[Scheduler] Error processing habit reminders:", error);
-  }
-}
-
 async function processDailyPlanner() {
   try {
     const eligibleUsers = await db.query.users.findMany({
@@ -906,7 +834,6 @@ function runAllSchedulerTasks() {
   processJournalReminders();
   processMoodCheckins();
   processStreakAlerts();
-  processHabitReminders();
   processDailyPlanner();
   processGoalMilestones();
   processPlanAdjustmentAlerts();

@@ -88,11 +88,24 @@ export default function AdminFunnel() {
   const stepMap = new Map<string, FunnelStep>();
   data?.steps?.forEach((s) => stepMap.set(s.eventName, s));
 
-  const orderedSteps = FUNNEL_ORDER.map((f) => ({
-    ...f,
-    count: stepMap.get(f.key)?.count || 0,
-    uniqueSessions: stepMap.get(f.key)?.uniqueSessions || 0,
-  })).filter((s) => s.count > 0);
+  const knownKeys = new Set(FUNNEL_ORDER.map((f) => f.key));
+  const discoveredSteps = (data?.steps || [])
+    .filter((s) => !knownKeys.has(s.eventName) && s.count > 0)
+    .map((s) => ({
+      key: s.eventName,
+      label: s.eventName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      count: s.count,
+      uniqueSessions: s.uniqueSessions,
+    }));
+
+  const orderedSteps = [
+    ...FUNNEL_ORDER.map((f) => ({
+      ...f,
+      count: stepMap.get(f.key)?.count || 0,
+      uniqueSessions: stepMap.get(f.key)?.uniqueSessions || 0,
+    })).filter((s) => s.count > 0),
+    ...discoveredSteps,
+  ];
 
   const maxSessions = orderedSteps.length > 0 ? Math.max(...orderedSteps.map((s) => s.uniqueSessions)) : 1;
 

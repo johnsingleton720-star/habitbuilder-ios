@@ -416,7 +416,6 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Token expired" });
       }
       tokenData = { userId: row.userId, expiresAt: row.expiresAt };
-      await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
     } catch (err) {
       console.error("Token lookup error:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -428,11 +427,12 @@ export async function registerRoutes(
       }
       const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
       const sessionUser = { claims: { sub: String(user.id), email: user.email, first_name: user.firstName, last_name: user.lastName, profile_image: user.profileImageUrl }, expires_at: expiresAtSeconds };
-      req.login(sessionUser, (err) => {
+      req.login(sessionUser, async (err) => {
         if (err) {
           console.error("Native token exchange login error:", err);
           return res.status(500).json({ error: "Session creation failed" });
         }
+        await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
         req.session.save((saveErr) => {
           if (saveErr) console.error("Session save error:", saveErr);
           res.json({ success: true, user });
@@ -1219,11 +1219,13 @@ export async function registerRoutes(
       if (!Array.isArray(taskIds)) {
         return res.status(400).json({ error: "taskIds array is required" });
       }
-      for (let i = 0; i < taskIds.length; i++) {
-        await db.update(quickTasks)
-          .set({ sortOrder: i })
-          .where(and(eq(quickTasks.id, taskIds[i]), eq(quickTasks.userId, userId)));
-      }
+      await db.transaction(async (tx) => {
+        for (let i = 0; i < taskIds.length; i++) {
+          await tx.update(quickTasks)
+            .set({ sortOrder: i })
+            .where(and(eq(quickTasks.id, taskIds[i]), eq(quickTasks.userId, userId)));
+        }
+      });
       res.json({ success: true });
     } catch (error) {
       console.error("Error reordering quick tasks:", error);
@@ -10786,8 +10788,16 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const { habitId, title, duration, breakDuration } = req.body;
+      const dur = typeof duration === 'number' ? duration : 25;
+      const brk = typeof breakDuration === 'number' ? breakDuration : 5;
+      if (dur < 1 || dur > 240 || !Number.isFinite(dur)) {
+        return res.status(400).json({ error: "Duration must be between 1 and 240 minutes" });
+      }
+      if (brk < 0 || brk > 60 || !Number.isFinite(brk)) {
+        return res.status(400).json({ error: "Break duration must be between 0 and 60 minutes" });
+      }
       const [session] = await db.insert(focusSessions)
-        .values({ userId, habitId, title, duration: duration || 25, breakDuration: breakDuration || 5, status: "active", startedAt: new Date() })
+        .values({ userId, habitId, title, duration: dur, breakDuration: brk, status: "active", startedAt: new Date() })
         .returning();
       res.json(session);
     } catch (error) {

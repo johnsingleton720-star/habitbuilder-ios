@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/use-subscription";
 import { CelebrationAnimation } from "./CelebrationAnimation";
 import { ACHIEVEMENTS, getAchievementById } from "@/lib/achievements";
 
@@ -158,8 +159,7 @@ export function GamificationDisplay({ hideLevelCard = false }: { hideLevelCard?:
     }
   }, [stats?.selectedColor]);
 
-  const isPro = stats ? (stats.subscriptionTier === 'pro' || stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
-  const isPremium = stats ? (stats.subscriptionTier === 'premium' || stats.isAdmin) : false;
+  const { isPro, isPremium } = useSubscription();
   
 
   useEffect(() => {

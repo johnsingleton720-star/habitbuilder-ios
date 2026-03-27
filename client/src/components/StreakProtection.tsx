@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Link } from "wouter";
 
 interface HabitWithStreak {
@@ -29,7 +30,7 @@ export function StreakProtection({ habit, onFreezeUsed }: StreakProtectionProps)
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
   
-  const isPremium = user?.subscriptionTier === 'premium' || user?.isAdmin;
+  const { isPremium } = useSubscription();
   
   const currentMonth = new Date().toISOString().slice(0, 7);
   const freezesUsedThisMonth = habit.streakFreezeMonth === currentMonth ? (habit.streakFreezeUsed || 0) : 0;
