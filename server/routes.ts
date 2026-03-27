@@ -10788,14 +10788,14 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     try {
       const userId = req.user!.claims.sub;
       const { habitId, title, duration, breakDuration } = req.body;
-      const dur = typeof duration === 'number' ? duration : 25;
-      const brk = typeof breakDuration === 'number' ? breakDuration : 5;
-      if (dur < 1 || dur > 240 || !Number.isFinite(dur)) {
-        return res.status(400).json({ error: "Duration must be between 1 and 240 minutes" });
+      if (duration !== undefined && (typeof duration !== 'number' || !Number.isFinite(duration) || duration < 1 || duration > 240)) {
+        return res.status(400).json({ error: "Duration must be a number between 1 and 240 minutes" });
       }
-      if (brk < 0 || brk > 60 || !Number.isFinite(brk)) {
-        return res.status(400).json({ error: "Break duration must be between 0 and 60 minutes" });
+      if (breakDuration !== undefined && (typeof breakDuration !== 'number' || !Number.isFinite(breakDuration) || breakDuration < 0 || breakDuration > 60)) {
+        return res.status(400).json({ error: "Break duration must be a number between 0 and 60 minutes" });
       }
+      const dur = duration || 25;
+      const brk = breakDuration ?? 5;
       const [session] = await db.insert(focusSessions)
         .values({ userId, habitId, title, duration: dur, breakDuration: brk, status: "active", startedAt: new Date() })
         .returning();
