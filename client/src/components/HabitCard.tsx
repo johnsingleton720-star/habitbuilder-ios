@@ -383,7 +383,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 <div className="flex items-center gap-3 mb-5">
                   {isFreeUser ? (
                     <>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75 bg-gradient-to-br from-primary to-primary/70">
                         <Flame className="w-4 h-4 fill-current" />
                         <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
@@ -396,7 +396,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm bg-gradient-to-br from-primary to-primary/70">
                         <Flame className="w-4 h-4 fill-current" />
                         <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
@@ -675,7 +675,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                 <div className="flex items-center gap-3 mb-5">
                   {isFreeUser ? (
                     <>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm opacity-75 bg-gradient-to-br from-primary to-primary/70">
                         <Flame className="w-4 h-4 fill-current" />
                         <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>
@@ -688,7 +688,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-white px-3.5 py-2 rounded-full shadow-sm bg-gradient-to-br from-primary to-primary/70">
                         <Flame className="w-4 h-4 fill-current" />
                         <span>{streak} day{streak !== 1 ? 's' : ''}</span>
                       </div>

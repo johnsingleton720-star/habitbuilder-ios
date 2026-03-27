@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { DailyPlan, ProgressEntry, Habit } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { AchievementsDisplay } from "@/components/AchievementsDisplay";
 
 type ViewType = "today" | "yesterday" | "total" | "streak" | "weekly";
 
@@ -175,9 +176,9 @@ export default function ProgressPage() {
     yesterday: {
       title: "Yesterday's Progress",
       icon: TrendingUp,
-      color: "text-emerald-500",
-      bgColor: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30",
-      borderColor: "border-emerald-200/50 dark:border-emerald-800/50",
+      color: "text-primary",
+      bgColor: "bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10",
+      borderColor: "border-primary/20 dark:border-primary/30",
     },
     total: {
       title: "All-Time Progress",
@@ -196,9 +197,9 @@ export default function ProgressPage() {
     weekly: {
       title: "Weekly Progress",
       icon: CalendarCheck,
-      color: "text-violet-500",
-      bgColor: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30",
-      borderColor: "border-violet-200/50 dark:border-violet-800/50",
+      color: "text-primary",
+      bgColor: "bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10",
+      borderColor: "border-primary/20 dark:border-primary/30",
     },
   };
 
@@ -383,6 +384,8 @@ export default function ProgressPage() {
             <WeeklyView habits={(habits || []).filter(h => !h.archived)} />
           )
         )}
+
+        <AchievementsDisplay />
       </div>
     </div>
   );
@@ -431,7 +434,7 @@ function TodayView({ stats }: { stats: { completed: number; total: number; habit
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         habit.isComplete 
-                          ? 'bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-md shadow-emerald-500/20' 
+                          ? 'bg-gradient-to-br from-primary to-primary/70 text-white shadow-md shadow-primary/20' 
                           : 'bg-blue-50 dark:bg-blue-950/30'
                       }`}>
                         {habit.isComplete ? (
@@ -472,12 +475,12 @@ function YesterdayView({ stats }: { stats: { completed: number; total: number; h
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
     >
-      <Card className="border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden bg-gradient-to-br from-emerald-50/50 to-green-50/30 dark:from-emerald-950/20 dark:to-green-950/10">
-        <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-green-500" style={{ width: `${progress}%` }} />
+      <Card className="border-primary/20 dark:border-primary/30 overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10">
+        <div className="h-1.5 bg-gradient-to-r from-primary to-primary/70" style={{ width: `${progress}%` }} />
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xl font-semibold">Yesterday's Results</span>
-            <Badge variant={progress === 100 ? "default" : "secondary"} className={progress === 100 ? "bg-gradient-to-r from-emerald-500 to-green-500" : ""}>
+            <Badge variant={progress === 100 ? "default" : "secondary"} className={progress === 100 ? "bg-gradient-to-r from-primary to-primary/70" : ""}>
               {stats.completed}/{stats.total} habits
             </Badge>
           </div>
@@ -488,7 +491,7 @@ function YesterdayView({ stats }: { stats: { completed: number; total: number; h
 
       <div className="space-y-3">
         <h3 className="font-semibold flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-500" />
+          <TrendingUp className="w-4 h-4 text-primary" />
           Yesterday's Habits
         </h3>
         {stats.habits.length === 0 ? (
@@ -506,13 +509,13 @@ function YesterdayView({ stats }: { stats: { completed: number; total: number; h
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         habit.isComplete 
-                          ? 'bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-md shadow-emerald-500/20' 
-                          : 'bg-emerald-50 dark:bg-emerald-950/30'
+                          ? 'bg-gradient-to-br from-primary to-primary/70 text-white shadow-md shadow-primary/20' 
+                          : 'bg-primary/10 dark:bg-primary/20'
                       }`}>
                         {habit.isComplete ? (
                           <CheckCircle2 className="w-5 h-5" />
                         ) : (
-                          <span className="text-sm font-bold text-emerald-500">{Math.round((habit.completed / Math.max(habit.total, 1)) * 100)}%</span>
+                          <span className="text-sm font-bold text-primary">{Math.round((habit.completed / Math.max(habit.total, 1)) * 100)}%</span>
                         )}
                       </div>
                       <div className="min-w-0">
@@ -564,7 +567,7 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
         {[
           { icon: Calendar, value: stats.totalSessions, label: "Sessions", gradient: "from-amber-500 to-orange-500", bg: "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30" },
           { icon: Clock, value: formatTime(stats.totalTime), label: "Time Spent", gradient: "from-blue-500 to-cyan-500", bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30" },
-          { icon: CheckCircle2, value: stats.totalTasks, label: "Tasks Done", gradient: "from-emerald-500 to-green-500", bg: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30" },
+          { icon: CheckCircle2, value: stats.totalTasks, label: "Tasks Done", gradient: "from-primary to-primary/70", bg: "bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10" },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 15, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: i * 0.1, type: "spring", stiffness: 300 }}>
             <Card className={`${stat.bg} border-0 shadow-sm overflow-hidden`}>
@@ -590,11 +593,11 @@ function TotalView({ stats }: { stats: { totalSessions: number; totalTime: numbe
       {(mostConsistent || mostTimeInvested) && (
         <div className="grid grid-cols-2 gap-3">
           {mostConsistent && mostConsistent.sessions > 0 && (
-            <Card className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border-violet-200/50 dark:border-violet-800/50">
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border-primary/20 dark:border-primary/30">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-4 h-4 text-violet-500" />
-                  <span className="text-sm font-medium text-violet-600 dark:text-violet-400">Most Consistent</span>
+                  <Star className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Most Consistent</span>
                 </div>
                 <p className="text-base font-semibold truncate">{mostConsistent.title}</p>
                 <p className="text-sm text-muted-foreground">{mostConsistent.sessions} session{mostConsistent.sessions !== 1 ? 's' : ''}</p>
@@ -906,12 +909,12 @@ function WeeklyView({ habits }: { habits: any[] }) {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
     >
-      <Card className="border-violet-200/50 dark:border-violet-800/50 overflow-hidden bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-950/20 dark:to-purple-950/10">
-        <div className="h-1.5 bg-gradient-to-r from-violet-500 to-purple-500" style={{ width: `${weeklyPercent}%` }} />
+      <Card className="border-primary/20 dark:border-primary/30 overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10">
+        <div className="h-1.5 bg-gradient-to-r from-primary to-primary/70" style={{ width: `${weeklyPercent}%` }} />
         <CardContent className="p-6">
           <div className="flex items-center justify-between gap-2 mb-4">
             <span className="text-xl font-semibold">Weekly Progress</span>
-            <Badge variant={weeklyPercent === 100 ? "default" : "secondary"} className={weeklyPercent === 100 ? "bg-gradient-to-r from-violet-500 to-purple-500" : ""}>
+            <Badge variant={weeklyPercent === 100 ? "default" : "secondary"} className={weeklyPercent === 100 ? "bg-gradient-to-r from-primary to-primary/70" : ""}>
               {totalCompleted}/{totalScheduled} completed
             </Badge>
           </div>
@@ -926,7 +929,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
       <Card>
         <CardContent className="p-5">
           <h3 className="font-semibold text-sm mb-5 flex items-center gap-2">
-            <CalendarCheck className="w-4 h-4 text-violet-500" />
+            <CalendarCheck className="w-4 h-4 text-primary" />
             Day by Day
           </h3>
           <div className="grid grid-cols-7 gap-2">
@@ -941,13 +944,13 @@ function WeeklyView({ habits }: { habits: any[] }) {
                 <span className="text-xs text-muted-foreground font-medium">{day.dayLetter}</span>
                 <div className={cn(
                   "w-11 h-11 mx-auto mt-1.5 rounded-full flex items-center justify-center text-sm font-bold transition-all",
-                  day.isToday && "ring-2 ring-violet-500 ring-offset-2 ring-offset-background",
+                  day.isToday && "ring-2 ring-primary ring-offset-2 ring-offset-background",
                   day.allComplete
-                    ? "bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/20"
+                    ? "bg-gradient-to-br from-primary to-primary/70 text-white shadow-md shadow-primary/20"
                     : day.isFuture
                       ? "bg-muted/30 text-muted-foreground/50"
                       : day.completed > 0
-                        ? "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50"
+                        ? "bg-primary/15 dark:bg-primary/25 text-primary border border-primary/20 dark:border-primary/30"
                         : day.total > 0
                           ? "bg-red-50 dark:bg-red-950/20 text-red-400 border border-red-200/30 dark:border-red-800/30"
                           : "bg-muted/30 text-muted-foreground/50"
@@ -968,7 +971,7 @@ function WeeklyView({ habits }: { habits: any[] }) {
       {habitWeeklyStats.length > 0 && (
         <div className="space-y-3">
           <h3 className="font-semibold flex items-center gap-2">
-            <Target className="w-4 h-4 text-violet-500" />
+            <Target className="w-4 h-4 text-primary" />
             Habit Breakdown
           </h3>
           {habitWeeklyStats
@@ -978,20 +981,20 @@ function WeeklyView({ habits }: { habits: any[] }) {
               return (
                 <motion.div key={habit.id} initial={{ opacity: 0, x: -10, y: 5 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ delay: i * 0.08, type: "spring", stiffness: 200 }}>
                   <Link href={`/habit/${habit.id}?date=${format(new Date(), "yyyy-MM-dd")}`}>
-                    <Card className="hover:border-violet-300/50 hover:shadow-md transition-all cursor-pointer">
+                    <Card className="hover:border-primary/30 hover:shadow-md transition-all cursor-pointer">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between gap-3 mb-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className={cn(
                               "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                               pct === 100
-                                ? "bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/20"
-                                : "bg-violet-50 dark:bg-violet-950/30"
+                                ? "bg-gradient-to-br from-primary to-primary/70 text-white shadow-md shadow-primary/20"
+                                : "bg-primary/10 dark:bg-primary/20"
                             )}>
                               {pct === 100 ? (
                                 <CheckCircle2 className="w-5 h-5" />
                               ) : (
-                                <span className="text-sm font-bold text-violet-500">{pct}%</span>
+                                <span className="text-sm font-bold text-primary">{pct}%</span>
                               )}
                             </div>
                             <div className="min-w-0">
