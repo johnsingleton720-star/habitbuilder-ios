@@ -17,6 +17,35 @@ interface NativeEmailAuthProps {
   onSocialAuth: (provider: "apple" | "google") => void;
 }
 
+const SESSION_KEY_SOCIAL_FAILED = "habitbuilder_social_auth_failed";
+const SESSION_KEY_GOOGLE_CANCEL_COUNT = "habitbuilder_google_cancel_count";
+
+function getSessionFlag(key: string): boolean {
+  try { return sessionStorage.getItem(key) === "true"; } catch { return false; }
+}
+
+function setSessionFlag(key: string, value: boolean) {
+  try { sessionStorage.setItem(key, value ? "true" : "false"); } catch {}
+}
+
+function getGoogleCancelCount(): number {
+  try { return parseInt(sessionStorage.getItem(SESSION_KEY_GOOGLE_CANCEL_COUNT) || "0", 10) || 0; } catch { return 0; }
+}
+
+function incrementGoogleCancelCount(): number {
+  const next = getGoogleCancelCount() + 1;
+  try { sessionStorage.setItem(SESSION_KEY_GOOGLE_CANCEL_COUNT, String(next)); } catch {}
+  return next;
+}
+
+function isAppleError1000(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes("error 1000") || lower.includes("authorizationerror") || lower.includes("authorization error");
+}
+
+const APPLE_ERROR_1000_MESSAGE =
+  "Apple Sign-In couldn't connect. Please check:\n• You're signed into iCloud (Settings → tap your name)\n• Your device has a passcode set\n• You're running iOS 15 or later\n\nOr sign up with email below — it only takes a moment.";
+
 export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps) {
   const [mode, setMode] = useState<AuthMode>("signup");
   const [email, setEmail] = useState("");
@@ -30,7 +59,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [forgotSent, setForgotSent] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(true);
   const [googleFailed, setGoogleFailed] = useState(false);
-  const [socialAuthFailed, setSocialAuthFailed] = useState(false);
+  const [socialAuthFailed, setSocialAuthFailed] = useState(() => getSessionFlag(SESSION_KEY_SOCIAL_FAILED));
   const { toast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,7 +83,16 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         setAppleAvailable(false);
       });
     }
+
+    if (getSessionFlag(SESSION_KEY_SOCIAL_FAILED)) {
+      scrollToEmail();
+    }
   }, []);
+
+  const markSocialFailed = () => {
+    setSocialAuthFailed(true);
+    setSessionFlag(SESSION_KEY_SOCIAL_FAILED, true);
+  };
 
   const scrollToEmail = () => {
     setTimeout(() => {
@@ -78,7 +116,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (!Capacitor.isPluginAvailable("AppleSignIn")) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: "plugin_not_available" });
         setAppleAvailable(false);
-        setSocialAuthFailed(true);
+        markSocialFailed();
         setError("Apple Sign-In isn't available on this version. Please use your email below to sign up — it only takes a moment.");
         setAppleLoading(false);
         scrollToEmail();
@@ -125,10 +163,16 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         setAppleLoading(false);
         return;
       }
-      trackFunnelEvent("auth_signup_failed", { method: "apple", error: err?.message || "unknown" });
+      const errMsg = err?.message || "unknown";
+      trackFunnelEvent("auth_signup_failed", { method: "apple", error: errMsg });
       setAppleAvailable(false);
-      setSocialAuthFailed(true);
-      setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
+      markSocialFailed();
+
+      if (isAppleError1000(errMsg)) {
+        setError(APPLE_ERROR_1000_MESSAGE);
+      } else {
+        setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
+      }
       setAppleLoading(false);
       scrollToEmail();
     }
@@ -154,13 +198,21 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       }
 
       if (result.error === "cancelled") {
+        const count = incrementGoogleCancelCount();
+        trackFunnelEvent("auth_google_cancelled", { count: String(count) });
+        if (count >= 2) {
+          setGoogleFailed(true);
+          markSocialFailed();
+          setError("Google sign-in doesn't seem to be working on this device. Please use your email below — it only takes a moment.");
+          scrollToEmail();
+        }
         setGoogleLoading(false);
         return;
       }
 
       trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
       setGoogleFailed(true);
-      setSocialAuthFailed(true);
+      markSocialFailed();
       const fallbackMsg = appleAvailable
         ? "Google sign-in didn't work. Try Apple Sign-In, or use your email below."
         : "Google sign-in didn't work. Please use your email below — it only takes a moment.";
@@ -168,12 +220,20 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       scrollToEmail();
     } catch (e: any) {
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
+        const count = incrementGoogleCancelCount();
+        trackFunnelEvent("auth_google_cancelled", { count: String(count) });
+        if (count >= 2) {
+          setGoogleFailed(true);
+          markSocialFailed();
+          setError("Google sign-in doesn't seem to be working on this device. Please use your email below — it only takes a moment.");
+          scrollToEmail();
+        }
         setGoogleLoading(false);
         return;
       }
       trackFunnelEvent("auth_signup_failed", { method: "google", error: e?.message || "unknown" });
       setGoogleFailed(true);
-      setSocialAuthFailed(true);
+      markSocialFailed();
       const fallbackMsg = appleAvailable
         ? "Google sign-in failed. Try Apple Sign-In, or use your email below."
         : "Google sign-in failed. Please use your email below — it only takes a moment.";
@@ -257,6 +317,15 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setForgotSent(false);
   };
 
+  const resetSocialAuth = () => {
+    setSocialAuthFailed(false);
+    setGoogleFailed(false);
+    setAppleAvailable(true);
+    setError("");
+    setSessionFlag(SESSION_KEY_SOCIAL_FAILED, false);
+    try { sessionStorage.removeItem(SESSION_KEY_GOOGLE_CANCEL_COUNT); } catch {}
+  };
+
   const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
   const showEmailProminent = socialAuthFailed;
 
@@ -297,7 +366,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
           {error && (
             <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 mb-4" data-testid="text-auth-error">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-destructive whitespace-pre-line">{error}</p>
             </div>
           )}
 
@@ -491,7 +560,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
           {socialAuthFailed && !showSocialButtons && mode !== "forgot" && (
             <div className="text-center mt-4">
               <button
-                onClick={() => { setSocialAuthFailed(false); setGoogleFailed(false); setAppleAvailable(true); setError(""); }}
+                onClick={resetSocialAuth}
                 className="text-xs text-muted-foreground underline"
                 data-testid="button-retry-social"
               >
