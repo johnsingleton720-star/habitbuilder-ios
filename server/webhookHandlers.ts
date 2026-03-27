@@ -16,7 +16,11 @@ export class WebhookHandlers {
     }
 
     const sync = await getStripeSync();
-    await sync.processWebhook(payload, signature);
+    try {
+      await sync.processWebhook(payload, signature);
+    } catch (syncError: any) {
+      console.error('Stripe sync processWebhook error (non-fatal):', syncError?.message || syncError);
+    }
 
     const stripe = await getUncachableStripeClient();
     const event = stripe.webhooks.constructEvent(

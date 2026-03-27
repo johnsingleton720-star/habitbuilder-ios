@@ -3565,18 +3565,52 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         return res.json({ hasSubscription: false });
       }
 
-      const subscriptions = await stripe.subscriptions.list({
-        customer: stripeCustomerId,
-        limit: 5,
-        expand: ['data.items.data.price.product'],
-      });
+      let activeSub: any = null;
 
-      const activeSub = subscriptions.data.find(
-        (s: any) => s.status === 'active' || s.status === 'trialing'
-      );
+      if (user.subscriptionId) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(user.subscriptionId, {
+            expand: ['items.data.price.product'],
+          });
+          if (sub.status === 'active' || sub.status === 'trialing') {
+            activeSub = sub;
+          }
+        } catch (e: any) {
+          console.log(`Stored subscriptionId ${user.subscriptionId} lookup failed:`, e?.message);
+        }
+      }
+
+      if (!activeSub) {
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          limit: 5,
+          status: 'active',
+        });
+        const found = subscriptions.data[0];
+        if (!found) {
+          const trialSubs = await stripe.subscriptions.list({
+            customer: stripeCustomerId,
+            limit: 5,
+            status: 'trialing',
+          });
+          if (trialSubs.data[0]) {
+            activeSub = await stripe.subscriptions.retrieve(trialSubs.data[0].id, {
+              expand: ['items.data.price.product'],
+            });
+          }
+        } else {
+          activeSub = await stripe.subscriptions.retrieve(found.id, {
+            expand: ['items.data.price.product'],
+          });
+        }
+      }
 
       if (!activeSub) {
         return res.json({ hasSubscription: false });
+      }
+
+      if (user.subscriptionId !== activeSub.id) {
+        await db.update(users).set({ subscriptionId: activeSub.id }).where(eq(users.id, user.id));
       }
 
       const item = activeSub.items.data[0];
