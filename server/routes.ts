@@ -5654,16 +5654,11 @@ REQUIREMENTS:
         });
       }
 
-      // Calculate current streak (use spread to avoid mutating original array)
-      let currentStreak = 0;
-      const sortedPlans = [...dailyPlans].sort((a, b) => b.date.localeCompare(a.date));
-      for (const plan of sortedPlans) {
-        if (plan.completed) {
-          currentStreak++;
-        } else if (plan.date <= date) {
-          break;
-        }
-      }
+      const currentStreak = calcSimpleStreak(
+        dailyPlans,
+        date,
+        (habit.schedule as any)?.days
+      );
 
       // Detect streak break
       const oldStreak = habit.currentStreak || 0;
@@ -5887,15 +5882,11 @@ REQUIREMENTS:
       const removedDuration = removedPlan.timeSpent || 0;
       dailyPlans.splice(todayIndex, 1);
 
-      let currentStreak = 0;
-      const sortedPlans = [...dailyPlans].sort((a: any, b: any) => b.date.localeCompare(a.date));
-      for (const plan of sortedPlans) {
-        if (plan.completed) {
-          currentStreak++;
-        } else if (plan.date <= todayStr) {
-          break;
-        }
-      }
+      const currentStreak = calcSimpleStreak(
+        dailyPlans,
+        todayStr,
+        (habit.schedule as any)?.days
+      );
 
       const progress = [...(habit.progress || [])];
       const lastProgressIdx = progress.length - 1;

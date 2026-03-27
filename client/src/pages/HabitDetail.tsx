@@ -1457,8 +1457,8 @@ export default function HabitDetail() {
                 </div>
               )}
 
-              {/* Current Day Tasks */}
-              {currentPlan && (
+              {/* Current Day Tasks - hidden when plan is done/expired */}
+              {currentPlan && !isPlanDone && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
@@ -1501,7 +1501,7 @@ export default function HabitDetail() {
                     })()}
                   </div>
 
-                  {!isSelectedDayPast && !isPlanDone && currentPlan.tasks.length > 0 && (
+                  {!isSelectedDayPast && currentPlan.tasks.length > 0 && (
                     <p className="text-xs text-muted-foreground" data-testid="text-task-guidance-hint">
                       {isFreeUser
                         ? "Tap Start above to begin your guided session"
