@@ -4,6 +4,15 @@ import { eq, and, isNotNull, or, gte } from "drizzle-orm";
 import { sendDailyReminderEmail, sendWeeklyDigestEmail, sendPaidWeeklyDigestEmail } from "./email";
 import { sendPushToUser } from "./pushNotifications";
 
+function getSafeUserName(user: { firstName?: string | null; email?: string | null }): string {
+  if (user.firstName) return user.firstName;
+  if (user.email && !user.email.includes("privaterelay.appleid.com")) {
+    const local = user.email.split("@")[0].replace(/[^a-zA-Z]/g, "");
+    if (local.length > 2) return local.charAt(0).toUpperCase() + local.slice(1, 12);
+  }
+  return "";
+}
+
 function getUserLocalTime(timezone: string | null): { hour: number; minute: number; dayOfWeek: number; dateStr: string; dayName: string } {
   const tz = timezone || "America/Chicago";
   try {
@@ -94,7 +103,7 @@ async function processDailyReminders() {
         if (u.email && u.dailyReminderEnabled !== false) {
           await sendDailyReminderEmail({
             toEmail: u.email,
-            userName: u.firstName || "",
+            userName: getSafeUserName(u),
             todayTasks: todayTasks.slice(0, 5),
             currentStreak: maxStreak,
           });
@@ -199,7 +208,7 @@ async function processWeeklyDigests() {
         if (!isPaidUser) {
           await sendWeeklyDigestEmail({
             toEmail: u.email,
-            userName: u.firstName || "",
+            userName: getSafeUserName(u),
             weekStats: {
               habitsWorkedOn: userHabits.length,
               sessionsCompleted: progressEntries,
@@ -343,7 +352,7 @@ async function processWeeklyDigests() {
 
           await sendPaidWeeklyDigestEmail({
             toEmail: u.email,
-            userName: u.firstName || "",
+            userName: getSafeUserName(u),
             tier: isPremium ? "premium" : "pro",
             weekDateRange: `${weekDates[0]} to ${weekDates[6]}`,
             overallCompletion: completionRate,

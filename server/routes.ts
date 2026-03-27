@@ -432,7 +432,11 @@ export async function registerRoutes(
           console.error("Native token exchange login error:", err);
           return res.status(500).json({ error: "Session creation failed" });
         }
-        await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
+        try {
+          await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.token, token));
+        } catch (delErr) {
+          console.error("Token cleanup error (non-fatal):", delErr);
+        }
         req.session.save((saveErr) => {
           if (saveErr) console.error("Session save error:", saveErr);
           res.json({ success: true, user });
