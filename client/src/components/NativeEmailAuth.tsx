@@ -39,8 +39,7 @@ function incrementGoogleCancelCount(): number {
 }
 
 function isAppleError1000(message: string): boolean {
-  const lower = message.toLowerCase();
-  return lower.includes("error 1000") || lower.includes("authorizationerror") || lower.includes("authorization error");
+  return /error\s*1000/i.test(message);
 }
 
 const APPLE_ERROR_1000_MESSAGE =
@@ -322,8 +321,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setGoogleFailed(false);
     setAppleAvailable(true);
     setError("");
-    setSessionFlag(SESSION_KEY_SOCIAL_FAILED, false);
-    try { sessionStorage.removeItem(SESSION_KEY_GOOGLE_CANCEL_COUNT); } catch {}
   };
 
   const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
