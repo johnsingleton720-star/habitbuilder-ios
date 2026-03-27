@@ -120,6 +120,7 @@ function Router() {
   const [welcomeHubCheckedUserId, setWelcomeHubCheckedUserId] = useState<string | null>(null);
   const [triggerTourAfterHub, setTriggerTourAfterHub] = useState(false);
   const [triggerCreateHabit, setTriggerCreateHabit] = useState(false);
+  const [presignupHandoffDone, setPresignupHandoffDone] = useState(!localStorage.getItem("presignup_data"));
   
   useTracking();
   usePushNotifications();
@@ -162,7 +163,10 @@ function Router() {
   useEffect(() => {
     if (!user) return;
     const stored = localStorage.getItem("presignup_data");
-    if (!stored) return;
+    if (!stored) {
+      if (!presignupHandoffDone) setPresignupHandoffDone(true);
+      return;
+    }
 
     if ((window as any).__presignupHandoffInProgress) return;
     (window as any).__presignupHandoffInProgress = true;
@@ -214,17 +218,18 @@ function Router() {
         });
       } finally {
         (window as any).__presignupHandoffInProgress = false;
+        setPresignupHandoffDone(true);
       }
     })();
   }, [user, toast]);
 
   useEffect(() => {
-    if (!user?.id || isAuthLoading || isPaymentLoading) return;
+    if (!user?.id || isAuthLoading || isPaymentLoading || !presignupHandoffDone) return;
     if (welcomeHubCheckedUserId === user.id) return;
     setWelcomeHubCheckedUserId(user.id);
     if (!shouldShowWelcomeHub(user)) return;
     setShowWelcomeHub(true);
-  }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId]);
+  }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId, presignupHandoffDone]);
 
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);
