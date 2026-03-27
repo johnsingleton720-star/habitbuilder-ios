@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
-import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, User, Sparkles } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Eye, EyeOff, User, Sparkles, AlertTriangle } from "lucide-react";
 import { SiApple, SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -29,7 +29,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(true);
+  const [googleFailed, setGoogleFailed] = useState(false);
+  const [socialAuthFailed, setSocialAuthFailed] = useState(false);
   const { toast } = useToast();
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const presignupHabit = useMemo(() => {
     try {
@@ -53,6 +56,13 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     }
   }, []);
 
+  const scrollToEmail = () => {
+    setTimeout(() => {
+      emailInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      emailInputRef.current?.focus();
+    }, 300);
+  };
+
   const handleAppleNativeSignIn = async () => {
     trackFunnelEvent("auth_apple_tapped");
     if (!isNative() || !isIOS()) {
@@ -68,8 +78,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (!Capacitor.isPluginAvailable("AppleSignIn")) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: "plugin_not_available" });
         setAppleAvailable(false);
-        setError("Apple Sign-In isn't available right now. Please use Google or enter your email below.");
+        setSocialAuthFailed(true);
+        setError("Apple Sign-In isn't available on this version. Please use your email below to sign up — it only takes a moment.");
         setAppleLoading(false);
+        scrollToEmail();
         return;
       }
 
@@ -78,7 +90,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
       if (!result.identityToken) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: "no_identity_token" });
-        setError("Apple Sign-In didn't complete. Please try Google or enter your email below.");
+        setError("Apple Sign-In didn't complete. Please try again or use your email below.");
         setAppleLoading(false);
         return;
       }
@@ -100,7 +112,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
       if (!res.ok) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: data.error || "server_error" });
-        setError(data.error || "Apple Sign-In failed. Please try Google or enter your email below.");
+        setError(data.error || "Apple Sign-In failed. Please use your email below instead.");
         setAppleLoading(false);
         return;
       }
@@ -114,8 +126,11 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
       trackFunnelEvent("auth_signup_failed", { method: "apple", error: err?.message || "unknown" });
-      setError("Apple Sign-In failed. Please try Google or enter your email below.");
+      setAppleAvailable(false);
+      setSocialAuthFailed(true);
+      setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
       setAppleLoading(false);
+      scrollToEmail();
     }
   };
 
@@ -144,20 +159,26 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       }
 
       trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
+      setGoogleFailed(true);
+      setSocialAuthFailed(true);
       const fallbackMsg = appleAvailable
-        ? "Google sign-in didn't complete. Please use Apple Sign-In or enter your email instead."
-        : "Google sign-in didn't complete. Please enter your email below to sign up.";
+        ? "Google sign-in didn't work. Try Apple Sign-In, or use your email below."
+        : "Google sign-in didn't work. Please use your email below — it only takes a moment.";
       setError(fallbackMsg);
+      scrollToEmail();
     } catch (e: any) {
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
         setGoogleLoading(false);
         return;
       }
       trackFunnelEvent("auth_signup_failed", { method: "google", error: e?.message || "unknown" });
+      setGoogleFailed(true);
+      setSocialAuthFailed(true);
       const fallbackMsg = appleAvailable
-        ? "Google sign-in failed. Please use Apple Sign-In or enter your email instead."
-        : "Google sign-in failed. Please enter your email below to sign up.";
+        ? "Google sign-in failed. Try Apple Sign-In, or use your email below."
+        : "Google sign-in failed. Please use your email below — it only takes a moment.";
       setError(fallbackMsg);
+      scrollToEmail();
     } finally {
       setGoogleLoading(false);
     }
@@ -236,6 +257,9 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setForgotSent(false);
   };
 
+  const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
+  const showEmailProminent = socialAuthFailed;
+
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col safe-top safe-bottom" data-testid="native-email-auth-screen">
       <div className="flex items-center p-4">
@@ -270,7 +294,14 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             </div>
           )}
 
-          {mode !== "forgot" && (
+          {error && (
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 mb-4" data-testid="text-auth-error">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          {showSocialButtons && (
             <div className="space-y-3 mb-6">
               {appleAvailable && (
                 <button
@@ -287,30 +318,42 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                   Continue with Apple
                 </button>
               )}
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading || appleLoading || loading}
-                className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
-                data-testid="button-auth-google"
-              >
-                {googleLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <SiGoogle className="w-4 h-4" />
-                )}
-                Continue with Google
-              </button>
+              {!googleFailed && (
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={googleLoading || appleLoading || loading}
+                  className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
+                  data-testid="button-auth-google"
+                >
+                  {googleLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <SiGoogle className="w-4 h-4" />
+                  )}
+                  Continue with Google
+                </button>
+              )}
               <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
                 {appleAvailable ? "Opens secure sign-in, then brings you right back" : "Sign in with Google or use your email below"}
               </p>
             </div>
           )}
 
-          {mode !== "forgot" && (
+          {showSocialButtons && (
             <div className="relative flex items-center my-6">
               <div className="flex-1 border-t" />
               <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">or</span>
               <div className="flex-1 border-t" />
+            </div>
+          )}
+
+          {showEmailProminent && mode !== "forgot" && (
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-2">
+                <Mail className="w-4 h-4" />
+                Sign up with email instead
+              </div>
+              <p className="text-xs text-muted-foreground">Quick and easy — just enter your details below</p>
             </div>
           )}
 
@@ -352,6 +395,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 <div className="relative mt-1.5">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
+                    ref={emailInputRef}
                     id="email"
                     type="email"
                     placeholder="you@example.com"
@@ -359,7 +403,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                     onChange={(e) => { setEmail(e.target.value); setError(""); }}
                     required
                     autoComplete="email"
-                    className="pl-10"
+                    className={`pl-10 ${showEmailProminent ? "ring-2 ring-primary/50" : ""}`}
                     data-testid="input-auth-email"
                   />
                 </div>
@@ -394,13 +438,12 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 </div>
               )}
 
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 rounded-lg p-3" data-testid="text-auth-error">
-                  {error}
-                </p>
-              )}
-
-              <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading || appleLoading || googleLoading} data-testid="button-auth-submit">
+              <Button
+                type="submit"
+                className={`w-full h-12 text-base font-semibold ${showEmailProminent ? "animate-pulse-once" : ""}`}
+                disabled={loading || appleLoading || googleLoading}
+                data-testid="button-auth-submit"
+              >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : mode === "signup" ? (
@@ -442,6 +485,18 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                   </button>
                 </p>
               )}
+            </div>
+          )}
+
+          {socialAuthFailed && !showSocialButtons && mode !== "forgot" && (
+            <div className="text-center mt-4">
+              <button
+                onClick={() => { setSocialAuthFailed(false); setGoogleFailed(false); setAppleAvailable(true); setError(""); }}
+                className="text-xs text-muted-foreground underline"
+                data-testid="button-retry-social"
+              >
+                Try social sign-in again
+              </button>
             </div>
           )}
 

@@ -14,6 +14,10 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
   if (isNative()) {
     if (isIOS()) {
       try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isPluginAvailable("AuthSession")) {
+          return { success: false, error: "auth_plugin_unavailable" };
+        }
         const { AuthSession } = await import('capacitor-auth-session');
         const result = await AuthSession.start({
           url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete',
@@ -27,12 +31,7 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
             const { apiRequest } = await import('@/lib/queryClient');
             const exchangeRes = await apiRequest('POST', '/api/auth/exchange-token', { token });
             if (!exchangeRes.ok) {
-              try {
-                const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
-                trackFunnelEvent("auth_google_webview_fallback", { reason: 'token_exchange_failed' });
-              } catch {}
-              window.location.href = "/api/login";
-              return { success: true };
+              return { success: false, error: "token_exchange_failed" };
             }
             try {
               const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
@@ -42,29 +41,14 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
             window.location.href = '/';
             return { success: true };
           }
-          try {
-            const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
-            trackFunnelEvent("auth_google_webview_fallback", { reason: 'no_token_in_callback' });
-          } catch {}
-          window.location.href = "/api/login";
-          return { success: true };
+          return { success: false, error: "no_token_in_callback" };
         }
-        try {
-          const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
-          trackFunnelEvent("auth_google_webview_fallback", { reason: 'unexpected_callback_url' });
-        } catch {}
-        window.location.href = "/api/login";
-        return { success: true };
+        return { success: false, error: "unexpected_callback" };
       } catch (e: any) {
         if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) {
           return { success: false, error: 'cancelled' };
         }
-        try {
-          const { trackFunnelEvent } = await import('@/hooks/use-funnel-tracking');
-          trackFunnelEvent("auth_google_webview_fallback", { reason: e?.message || 'auth_session_failed' });
-        } catch {}
-        window.location.href = "/api/login";
-        return { success: true };
+        return { success: false, error: e?.message || 'auth_session_failed' };
       }
     }
     try {
