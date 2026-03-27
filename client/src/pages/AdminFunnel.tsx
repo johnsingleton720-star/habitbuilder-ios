@@ -1,10 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, TrendingDown, Users, Smartphone, Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, TrendingDown, Users, Smartphone, Globe, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FunnelStep {
   eventName: string;
@@ -56,6 +59,22 @@ const FUNNEL_ORDER = [
 export default function AdminFunnel() {
   usePageTitle("Conversion Funnel");
   const [range, setRange] = useState("7d");
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const cleanupMutation = useMutation({
+    mutationFn: async (body: { sessionIds?: string[]; adminUserId?: string }) => {
+      const res = await apiRequest("POST", "/api/admin/funnel/cleanup", body);
+      return res.json();
+    },
+    onSuccess: (data: { deleted: number }) => {
+      toast({ title: `Cleaned up ${data.deleted} test events` });
+      qc.invalidateQueries({ queryKey: ["/api/admin/funnel"] });
+    },
+    onError: () => {
+      toast({ title: "Cleanup failed", variant: "destructive" });
+    },
+  });
 
   const { data, isLoading } = useQuery<FunnelData>({
     queryKey: ["/api/admin/funnel", range],
@@ -106,6 +125,37 @@ export default function AdminFunnel() {
               <SelectItem value="90d">90 days</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={cleanupMutation.isPending}
+            data-testid="button-cleanup-admin"
+            onClick={() => {
+              if (confirm("Remove all funnel events from your admin/test sessions? This cannot be undone.")) {
+                cleanupMutation.mutate({ adminUserId: "53886343" });
+              }
+            }}
+          >
+            {cleanupMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+            Clean Admin Data
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={cleanupMutation.isPending}
+            data-testid="button-cleanup-deleted"
+            onClick={() => {
+              if (confirm("Remove all funnel events from deleted test account (53887655)? This cannot be undone.")) {
+                cleanupMutation.mutate({ adminUserId: "53887655" });
+              }
+            }}
+          >
+            {cleanupMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+            Clean Test Account
+          </Button>
         </div>
 
         {isLoading ? (
