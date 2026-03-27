@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { DailyPlan, ProgressEntry, Habit } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { AchievementsDisplay } from "@/components/AchievementsDisplay";
+import { useQuery } from "@tanstack/react-query";
 
 type ViewType = "today" | "yesterday" | "total" | "streak" | "weekly";
 
@@ -385,9 +386,57 @@ export default function ProgressPage() {
           )
         )}
 
-        <AchievementsDisplay />
+        <XpLevelSummary />
+        <AchievementsDisplay compact />
       </div>
     </div>
+  );
+}
+
+function XpLevelSummary() {
+  const { data: stats } = useQuery<{
+    xpPoints: number;
+    level: number;
+    levelTitle: string;
+    xpToNextLevel: number;
+    levelProgress: number;
+    streakMultiplier: number;
+    streakMultiplierLabel: string;
+  }>({
+    queryKey: ["/api/gamification/stats"],
+    staleTime: 2 * 60 * 1000,
+  });
+
+  if (!stats) return null;
+
+  return (
+    <Card className="border-primary/20 dark:border-primary/30 overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-primary/20">
+            {stats.level}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">{stats.levelTitle}</span>
+                {stats.streakMultiplier > 1 && (
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                    <Zap className="w-3 h-3 mr-0.5" />
+                    {stats.streakMultiplierLabel}
+                  </Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">{stats.xpPoints} XP</span>
+            </div>
+            <Progress value={stats.levelProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.xpToNextLevel} XP to Level {stats.level + 1}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
