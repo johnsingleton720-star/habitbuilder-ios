@@ -170,6 +170,7 @@ function Router() {
 
     if ((window as any).__presignupHandoffInProgress) return;
     (window as any).__presignupHandoffInProgress = true;
+    if (presignupHandoffDone) setPresignupHandoffDone(false);
 
     (async () => {
       try {
