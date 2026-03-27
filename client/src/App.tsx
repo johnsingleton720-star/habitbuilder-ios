@@ -187,6 +187,9 @@ function Router() {
           queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
           queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          if (window.location.pathname !== "/") {
+            navigate("/");
+          }
           const isSimple = presignupData.trackingMode === "simple";
           toast({
             title: isSimple ? "Your habit is ready!" : "Your plan is saved!",
@@ -318,7 +321,7 @@ function Router() {
     <>
     {showWelcomeHub && <WelcomeHub onDismiss={handleWelcomeHubDismiss} />}
     {updateAvailable && <VersionUpdateBanner />}
-    {user && isNative() && isIOS() && !showWelcomeHub && <IOSNotificationPrompt userId={user.id} />}
+    {user && isNative() && isIOS() && !showWelcomeHub && presignupHandoffDone && welcomeHubCheckedUserId === String(user.id) && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
       <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} triggerCreateHabit={triggerCreateHabit} onCreateHabitTriggered={() => setTriggerCreateHabit(false)} /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
