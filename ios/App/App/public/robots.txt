@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /templates
+Allow: /blog
+Allow: /blog/
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /habit/
+Disallow: /account
+Disallow: /analytics
+Disallow: /progress
+Disallow: /messages
+Disallow: /accountability
+
+Sitemap: https://habitbuilder.pro/sitemap.xml
