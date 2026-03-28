@@ -359,6 +359,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setGoogleFailed(false);
     setAppleAvailable(true);
     setError("");
+    setSessionFlag(SESSION_KEY_SOCIAL_FAILED, false);
   };
 
   const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
