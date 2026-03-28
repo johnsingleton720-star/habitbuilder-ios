@@ -71,15 +71,29 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     } catch { return null; }
   }, []);
 
+  const isNativeIOS = isNative() && isIOS();
+
   useEffect(() => {
     trackFunnelEvent("auth_screen_shown", { mode });
-    if (isNative() && isIOS()) {
+
+    if (isNativeIOS) {
       import("@capacitor/core").then(({ Capacitor }) => {
-        if (!Capacitor.isPluginAvailable("AppleSignIn")) {
-          setAppleAvailable(false);
-        }
+        const appleOk = Capacitor.isPluginAvailable("AppleSignIn");
+        const googleOk = Capacitor.isPluginAvailable("AuthSession");
+        if (!appleOk) setAppleAvailable(false);
+        if (!googleOk) setGoogleFailed(true);
+        trackFunnelEvent("auth_methods_available", {
+          apple: appleOk ? "yes" : "no",
+          google: googleOk ? "yes" : "no",
+          platform: "ios_native",
+        });
       }).catch(() => {
         setAppleAvailable(false);
+        trackFunnelEvent("auth_methods_available", {
+          apple: "error",
+          google: "unknown",
+          platform: "ios_native",
+        });
       });
     }
 
@@ -209,6 +223,26 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
 
+      if (result.error === "auth_timeout") {
+        trackFunnelEvent("auth_google_timeout", { method: "google" });
+        setGoogleFailed(true);
+        markSocialFailed();
+        setError("Google sign-in took too long to respond. This usually means it can't connect on this device.\n\nPlease use your email below — it's quick and reliable.");
+        scrollToEmail();
+        setGoogleLoading(false);
+        return;
+      }
+
+      if (result.error === "auth_plugin_unavailable") {
+        trackFunnelEvent("auth_signup_failed", { method: "google", error: "plugin_not_available" });
+        setGoogleFailed(true);
+        markSocialFailed();
+        setError("Google sign-in isn't available on this version. Please use your email below — it only takes a moment.");
+        scrollToEmail();
+        setGoogleLoading(false);
+        return;
+      }
+
       trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
       setGoogleFailed(true);
       markSocialFailed();
@@ -324,7 +358,176 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   };
 
   const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
-  const showEmailProminent = socialAuthFailed;
+  const showEmailProminent = socialAuthFailed || isNativeIOS;
+  const hasSocialOptions = (appleAvailable || !googleFailed) && showSocialButtons;
+
+  const emailFormBlock = (
+    <>
+      {showEmailProminent && mode !== "forgot" && !isNativeIOS && (
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-2">
+            <Mail className="w-4 h-4" />
+            Sign up with email instead
+          </div>
+          <p className="text-xs text-muted-foreground">Quick and easy — just enter your details below</p>
+        </div>
+      )}
+
+      {mode === "forgot" && forgotSent ? (
+        <div className="text-center py-8" data-testid="forgot-password-sent">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold mb-2">Check your email</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            If an account exists for <strong>{email}</strong>, we've sent a password reset link.
+          </p>
+          <Button onClick={() => switchMode("login")} variant="outline" className="w-full" data-testid="button-back-to-login">
+            Back to sign in
+          </Button>
+        </div>
+      ) : (
+        <form onSubmit={mode === "forgot" ? handleForgotPassword : handleEmailAuth} className="space-y-4">
+          {mode === "signup" && (
+            <div>
+              <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
+              <div className="relative mt-1.5">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-auth-firstname"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+            <div className="relative mt-1.5">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                ref={emailInputRef}
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                required
+                autoComplete="email"
+                className={`pl-10 ${showEmailProminent ? "ring-2 ring-primary/50" : ""}`}
+                data-testid="input-auth-email"
+              />
+            </div>
+          </div>
+
+          {mode !== "forgot" && (
+            <div>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <div className="relative mt-1.5">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  required
+                  minLength={8}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  className="pl-10 pr-10"
+                  data-testid="input-auth-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  data-testid="button-toggle-password"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            className={`w-full h-12 text-base font-semibold ${showEmailProminent ? "animate-pulse-once" : ""}`}
+            disabled={loading || appleLoading || googleLoading}
+            data-testid="button-auth-submit"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : mode === "signup" ? (
+              "Create Account"
+            ) : mode === "login" ? (
+              "Sign In"
+            ) : (
+              "Send Reset Link"
+            )}
+          </Button>
+
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => switchMode("forgot")}
+              className="w-full text-sm text-primary font-medium py-2"
+              data-testid="button-forgot-password"
+            >
+              Forgot your password?
+            </button>
+          )}
+        </form>
+      )}
+    </>
+  );
+
+  const socialButtonsBlock = hasSocialOptions ? (
+    <div className="space-y-3">
+      {appleAvailable && (
+        <button
+          onClick={handleAppleNativeSignIn}
+          disabled={appleLoading || googleLoading || loading}
+          className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
+          data-testid="button-auth-apple"
+        >
+          {appleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <SiApple className="w-5 h-5" />
+          )}
+          Continue with Apple
+        </button>
+      )}
+      {!googleFailed && (
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading || appleLoading || loading}
+          className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
+          data-testid="button-auth-google"
+        >
+          {googleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <SiGoogle className="w-4 h-4" />
+          )}
+          Continue with Google
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  const dividerBlock = (label: string) => (
+    <div className="relative flex items-center my-6">
+      <div className="flex-1 border-t" />
+      <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
+      <div className="flex-1 border-t" />
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col safe-top safe-bottom" data-testid="native-email-auth-screen">
@@ -344,7 +547,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
               {mode === "forgot" && "Reset password"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && "Start building better habits today"}
+              {mode === "signup" && (isNativeIOS ? "Enter your email to get started — it takes 30 seconds" : "Start building better habits today")}
               {mode === "login" && "Sign in to continue your journey"}
               {mode === "forgot" && "We'll send you a link to reset it"}
             </p>
@@ -367,171 +570,31 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             </div>
           )}
 
-          {showSocialButtons && (
-            <div className="space-y-3 mb-6">
-              {appleAvailable && (
-                <button
-                  onClick={handleAppleNativeSignIn}
-                  disabled={appleLoading || googleLoading || loading}
-                  className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
-                  data-testid="button-auth-apple"
-                >
-                  {appleLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <SiApple className="w-5 h-5" />
-                  )}
-                  Continue with Apple
-                </button>
+          {isNativeIOS ? (
+            <>
+              {emailFormBlock}
+              {socialButtonsBlock && mode !== "forgot" && (
+                <>
+                  {dividerBlock("or continue with")}
+                  {socialButtonsBlock}
+                </>
               )}
-              {!googleFailed && (
-                <button
-                  onClick={handleGoogleSignIn}
-                  disabled={googleLoading || appleLoading || loading}
-                  className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
-                  data-testid="button-auth-google"
-                >
-                  {googleLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <SiGoogle className="w-4 h-4" />
-                  )}
-                  Continue with Google
-                </button>
-              )}
-              <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
-                {appleAvailable ? "Opens secure sign-in, then brings you right back" : "Sign in with Google or use your email below"}
-              </p>
-            </div>
-          )}
-
-          {showSocialButtons && (
-            <div className="relative flex items-center my-6">
-              <div className="flex-1 border-t" />
-              <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">or</span>
-              <div className="flex-1 border-t" />
-            </div>
-          )}
-
-          {showEmailProminent && mode !== "forgot" && (
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-2">
-                <Mail className="w-4 h-4" />
-                Sign up with email instead
-              </div>
-              <p className="text-xs text-muted-foreground">Quick and easy — just enter your details below</p>
-            </div>
-          )}
-
-          {mode === "forgot" && forgotSent ? (
-            <div className="text-center py-8" data-testid="forgot-password-sent">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-lg font-semibold mb-2">Check your email</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                If an account exists for <strong>{email}</strong>, we've sent a password reset link.
-              </p>
-              <Button onClick={() => switchMode("login")} variant="outline" className="w-full" data-testid="button-back-to-login">
-                Back to sign in
-              </Button>
-            </div>
+            </>
           ) : (
-            <form onSubmit={mode === "forgot" ? handleForgotPassword : handleEmailAuth} className="space-y-4">
-              {mode === "signup" && (
-                <div>
-                  <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
-                  <div className="relative mt-1.5">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="firstName"
-                      type="text"
-                      placeholder="Your first name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-auth-firstname"
-                    />
+            <>
+              {showSocialButtons && (
+                <>
+                  <div className="space-y-3 mb-6">
+                    {socialButtonsBlock}
+                    <p className="text-xs text-muted-foreground text-center mt-2" data-testid="text-social-auth-note">
+                      {appleAvailable ? "Opens secure sign-in, then brings you right back" : "Sign in with Google or use your email below"}
+                    </p>
                   </div>
-                </div>
+                  {dividerBlock("or")}
+                </>
               )}
-
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <div className="relative mt-1.5">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    ref={emailInputRef}
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                    required
-                    autoComplete="email"
-                    className={`pl-10 ${showEmailProminent ? "ring-2 ring-primary/50" : ""}`}
-                    data-testid="input-auth-email"
-                  />
-                </div>
-              </div>
-
-              {mode !== "forgot" && (
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                  <div className="relative mt-1.5">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                      required
-                      minLength={8}
-                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                      className="pl-10 pr-10"
-                      data-testid="input-auth-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      data-testid="button-toggle-password"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className={`w-full h-12 text-base font-semibold ${showEmailProminent ? "animate-pulse-once" : ""}`}
-                disabled={loading || appleLoading || googleLoading}
-                data-testid="button-auth-submit"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : mode === "signup" ? (
-                  "Create Account"
-                ) : mode === "login" ? (
-                  "Sign In"
-                ) : (
-                  "Send Reset Link"
-                )}
-              </Button>
-
-              {mode === "login" && (
-                <button
-                  type="button"
-                  onClick={() => switchMode("forgot")}
-                  className="w-full text-sm text-primary font-medium py-2"
-                  data-testid="button-forgot-password"
-                >
-                  Forgot your password?
-                </button>
-              )}
-            </form>
+              {emailFormBlock}
+            </>
           )}
 
           {mode !== "forgot" && (
