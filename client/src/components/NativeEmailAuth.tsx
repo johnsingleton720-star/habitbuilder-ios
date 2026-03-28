@@ -141,8 +141,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
       if (!result.identityToken) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: "no_identity_token" });
-        setError("Apple Sign-In didn't complete. Please try again or use your email below.");
+        markSocialFailed();
+        setError("Apple Sign-In didn't complete. Please use your email below — it only takes a moment.");
         setAppleLoading(false);
+        scrollToEmail();
         return;
       }
 
@@ -163,8 +165,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
       if (!res.ok) {
         trackFunnelEvent("auth_signup_failed", { method: "apple", error: data.error || "server_error" });
+        markSocialFailed();
         setError(data.error || "Apple Sign-In failed. Please use your email below instead.");
         setAppleLoading(false);
+        scrollToEmail();
         return;
       }
 
@@ -567,6 +571,18 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 mb-4" data-testid="text-auth-error">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <p className="text-sm text-destructive whitespace-pre-line">{error}</p>
+            </div>
+          )}
+
+          {socialAuthFailed && mode !== "forgot" && (
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 mb-4" data-testid="having-trouble-tip">
+              <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Having trouble signing in?</p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  Email signup is the most reliable option — it takes about 30 seconds. Just enter your details below and you're all set.
+                </p>
+              </div>
             </div>
           )}
 
