@@ -23,7 +23,7 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
         const result = await AuthSession.start({
           url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete',
           callbackUrlScheme: 'habitbuilder',
-          preferEphemeralSession: false,
+          preferEphemeralSession: true,
         });
 
         if (result.url && result.url.startsWith('habitbuilder://auth')) {

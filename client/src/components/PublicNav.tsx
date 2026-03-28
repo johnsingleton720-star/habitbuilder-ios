@@ -23,7 +23,7 @@ async function openAuthFlow() {
         const result = await AuthSession.start({
           url: `${AUTH_BASE_URL}/api/login?returnTo=/api/auth/native-complete`,
           callbackUrlScheme: 'habitbuilder',
-          preferEphemeralSession: false,
+          preferEphemeralSession: true,
         });
         if (result.url && result.url.startsWith('habitbuilder://auth')) {
           const params = new URL(result.url.replace('habitbuilder://', 'https://placeholder/'));
