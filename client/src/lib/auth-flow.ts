@@ -20,25 +20,11 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
         }
         const { AuthSession } = await import('capacitor-auth-session');
 
-        const GOOGLE_AUTH_TIMEOUT_MS = 15000;
-        let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-        const authPromise = AuthSession.start({
+        const result = await AuthSession.start({
           url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete',
           callbackUrlScheme: 'habitbuilder',
           preferEphemeralSession: false,
         });
-
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error('auth_timeout')), GOOGLE_AUTH_TIMEOUT_MS);
-        });
-
-        let result;
-        try {
-          result = await Promise.race([authPromise, timeoutPromise]);
-        } finally {
-          if (timeoutId !== null) clearTimeout(timeoutId);
-        }
 
         if (result.url && result.url.startsWith('habitbuilder://auth')) {
           const params = new URL(result.url.replace('habitbuilder://', 'https://placeholder/'));
@@ -63,9 +49,6 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
       } catch (e: any) {
         if (e?.message?.includes('cancelled') || e?.message?.includes('cancel')) {
           return { success: false, error: 'cancelled' };
-        }
-        if (e?.message === 'auth_timeout') {
-          return { success: false, error: 'auth_timeout' };
         }
         return { success: false, error: e?.message || 'auth_session_failed' };
       }

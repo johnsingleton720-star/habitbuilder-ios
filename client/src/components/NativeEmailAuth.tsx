@@ -227,16 +227,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
 
-      if (result.error === "auth_timeout") {
-        trackFunnelEvent("auth_google_timeout", { method: "google" });
-        setGoogleFailed(true);
-        markSocialFailed();
-        setError("Google sign-in took too long to respond. This usually means it can't connect on this device.\n\nPlease use your email below — it's quick and reliable.");
-        scrollToEmail();
-        setGoogleLoading(false);
-        return;
-      }
-
       if (result.error === "auth_plugin_unavailable") {
         trackFunnelEvent("auth_signup_failed", { method: "google", error: "plugin_not_available" });
         setGoogleFailed(true);
