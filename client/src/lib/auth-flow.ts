@@ -26,7 +26,7 @@ export async function openAuthFlow(): Promise<{ success: boolean; error?: string
         const authPromise = AuthSession.start({
           url: 'https://habitbuilder.pro/api/login?returnTo=/api/auth/native-complete',
           callbackUrlScheme: 'habitbuilder',
-          preferEphemeralSession: true,
+          preferEphemeralSession: false,
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {

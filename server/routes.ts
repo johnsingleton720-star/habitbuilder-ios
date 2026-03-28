@@ -335,65 +335,7 @@ export async function registerRoutes(
     const [userRow] = await db.select({ createdAt: users.createdAt }).from(users).where(eq(users.id, userId)).limit(1);
     const isNewUser = userRow && (Date.now() - new Date(userRow.createdAt as any).getTime() < 120000);
     const deepLink = `habitbuilder://auth?token=${token}&isNewUser=${isNewUser ? 'true' : 'false'}`;
-    res.send(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign In Complete</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f1a12;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 24px;
-    }
-    .card {
-      text-align: center;
-      max-width: 320px;
-      width: 100%;
-    }
-    .icon { font-size: 48px; margin-bottom: 16px; }
-    h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    p { font-size: 15px; color: #9ca3af; margin-bottom: 32px; line-height: 1.5; }
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 18px 24px;
-      background: #4ade80;
-      color: #0f1a12;
-      font-size: 17px;
-      font-weight: 700;
-      border: none;
-      border-radius: 14px;
-      text-decoration: none;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn:active { background: #22c55e; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="icon">✅</div>
-    <h1>Sign-in successful!</h1>
-    <p>Tap the button below to return to HabitBuilder and complete sign-in.</p>
-    <a class="btn" href="${deepLink}">Return to HabitBuilder</a>
-  </div>
-  <script>
-    (function() {
-      var link = "${deepLink}";
-      window.location.href = link;
-      setTimeout(function() { window.location.href = link; }, 300);
-    })();
-  </script>
-</body>
-</html>`);
+    res.redirect(deepLink);
   });
 
   app.post("/api/auth/exchange-token", async (req, res) => {
