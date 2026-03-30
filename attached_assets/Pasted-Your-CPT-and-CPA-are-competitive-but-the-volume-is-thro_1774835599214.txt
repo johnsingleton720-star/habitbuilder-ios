@@ -1,0 +1,41 @@
+Your CPT and CPA are competitive, but the volume is throttled by the terrible TTR and CR. Apple’s auction rewards relevance: low TTR tells the system “this ad isn’t very appealing for the searches it’s matching,” so it shows you less and bids conservatively. ￼ ￼
+3. Root Causes (Why You’re Getting These Numbers)
+•  Low TTR (1.73%): Your ad is appearing for semi-relevant or low-intent searches (Search Match is doing its job too broadly). New apps with few reviews (you have only 3 five-star) and fresh screenshots/icon lose taps to established competitors. Common in habit trackers — users see “HabitBuilder.pro” and think “generic” or “not proven.”
+•  Low CR (19%): Taps reach the App Store page, but people bounce. Possible reasons: screenshots don’t scream “7-day Premium trial + AI coach,” onboarding doesn’t deliver an instant win, or the free tier feels too limited.
+•  Under-spending: Maximize Conversions needs ~5 installs per day to learn and bid aggressively. You averaged ~1.3 installs/day. The $1–$4 target you’ve used previously is too restrictive for the current relevance score → algorithm stays in “safe mode.” ￼ ￼
+•  Countries + newness: Hong Kong and smaller markets have lower search volume. US/UK competition is high for “habit tracker” terms.
+•  Subscription reality: Even if you got 84 installs earlier (your previous $354 run), zero trial starts means the funnel (not the ads) is the real leak. This week’s 9 installs just confirm the same pattern at lower volume.
+Edge-case nuance: With only 9 installs, you’re still in the early learning phase. Apple gives more leeway after 30–50 conversions.
+4. Should You Switch to $2 CPA + $30 Budget? (Short Answer: No)
+That would make volume even lower. Your current $4-ish CPA is already delivering installs profitably on paper (if the funnel were fixed). Dropping the target to $2 would further throttle bids, and $30 is still too low for the learning threshold at that aggressiveness. You need more data to iterate the funnel, not less.
+5. Exact Action Plan (Do These in Order — Start Today)
+Priority 1 (Today – 24 hrs): Fix the leaks before touching bids
+1.  Download the Search Terms report (Campaign → All Keywords → Search Terms tab). This is the goldmine Apple gives you for free. Look for:
+	•  High-spend / low-CR terms → add as negative keywords.
+	•  High-CR terms → add as exact-match in a new Manual Bidding campaign.
+2.  ASO quick wins for TTR:
+	•  Update icon/screenshots/preview video to emphasize “AI coach + 7-day free Premium trial.”
+	•  Add more reviews (push in-app prompts after first habit creation).
+	•  Test a Custom Product Page (CPP) linked from ads showing trial value.
+3.  Funnel audit (this fixes the “nobody subscribed” problem):
+	•  Create a test Apple ID, install via a simulated search, and time every step. Where do people drop?
+	•  Make the first AI habit creation one-tap and visible immediately.
+Priority 2 (Within 48 hrs): Relaunch / tweak the campaign
+•  Keep Maximize Conversions for now (perfect for discovery on a 19-day-old app).
+•  Raise target CPA to $5.50–$6.50 (gives the AI room to bid higher on good queries while still profitable).
+•  Raise daily budget to $60–$80 (hits the 5–10 installs/day learning threshold).
+•  Add a parallel Manual Bidding campaign (after you have search terms):
+	•  Exact-match only on winners from the report.
+	•  Aggressive CPT bids ($2–$3 on branded/high-intent).
+	•  Campaign-level negatives so the two don’t overlap.
+•  Country tweak: Duplicate the campaign and test US/UK/Canada only first (higher volume, but more competitive). Pause Hong Kong if it’s dragging metrics.
+Priority 3 (Ongoing): Measurement
+•  Turn on SKAdNetwork or a free MMP to track trial starts and first paid conversion (Apple Ads only reports installs).
+•  Check the Recommendations page in Apple Ads dashboard every few days — it will literally tell you if budget/target is limiting delivery.
+Bottom Line + Expected Outcome
+Your data makes perfect sense: low relevance → low TTR/CR → low spend → low volume → no chance to see subscriptions. The $4.81 CPA is not the enemy — it’s actually decent. Fix TTR/CR first (ASO + funnel), raise the target CPA/budget slightly, and run the hybrid setup. Most successful habit-tracker launches in 2025–2026 followed exactly this path: start broad with Maximize, harvest search terms, then layer manual control.
+You should see:
+•  Spend closer to the new daily budget within 3–5 days.
+•  TTR climbing toward 5%+ and CR toward 35%+.
+•  Enough installs to finally test the 7-day trial properly.
+Share the Search Terms report (or a screenshot of the top 20 rows) and I’ll give you the exact negative-keyword list and bid recommendations tailored to HabitBuilder.pro. Same for MedStack once it has a few days of data. You’re super close — this is normal launch math for subscription apps, and the data you just shared gives us the precise levers to pull. Let’s turn that $43 into revenue.
