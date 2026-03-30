@@ -60,11 +60,11 @@ workflows:
           npm run build
       - name: Set app version
         script: |
-          sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.5"/' package.json
-          echo "App version set to 1.2.5 in package.json"
+          sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.6"/' package.json
+          echo "App version set to 1.2.6 in package.json"
           grep '"version"' package.json
-          sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '1.2.5'/" capacitor.config.ts
-          echo "App version set to 1.2.5 in capacitor.config.ts"
+          sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '1.2.6'/" capacitor.config.ts
+          echo "App version set to 1.2.6 in capacitor.config.ts"
           grep "version" capacitor.config.ts
       - name: Add iOS platform
         script: npx cap add ios || true
@@ -135,22 +135,22 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
           echo "=== Deployment targets after fix ==="
           grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
-      - name: Set iOS version to 1.2.5
+      - name: Set iOS version to 1.2.6
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.5" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.6" App/Info.plist
           ruby << 'VERSIONRUBY'
           require 'xcodeproj'
           project = Xcodeproj::Project.open('App.xcodeproj')
           project.targets.each do |target|
             next unless target.name == 'App'
             target.build_configurations.each do |config|
-              config.build_settings['MARKETING_VERSION'] = '1.2.5'
-              puts "Set MARKETING_VERSION = 1.2.5 for #{config.name}"
+              config.build_settings['MARKETING_VERSION'] = '1.2.6'
+              puts "Set MARKETING_VERSION = 1.2.6 for #{config.name}"
             end
           end
           project.save
-          puts "Xcode project saved with version 1.2.5"
+          puts "Xcode project saved with version 1.2.6"
           VERSIONRUBY
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
@@ -347,9 +347,9 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.5" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.5" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.6" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.6" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.5/g' App.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.6/g' App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
