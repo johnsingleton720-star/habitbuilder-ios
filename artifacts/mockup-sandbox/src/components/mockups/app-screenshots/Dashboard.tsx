@@ -1,130 +1,99 @@
 
-import { Home, Leaf, Wrench, BarChart3, Settings, Check, Crown, Zap, Flame } from "lucide-react";
+const C = { bg: "#eef4f1", card: "#fff", primary: "#1a7a50", text: "#0d2318", muted: "#56736a", border: "#c5dbd2", secondary: "#d4ece4", pLight: "#e8f5ef" };
 
-// Exact light theme colors from client/src/index.css
-const BG = "#eef4f1";       // hsl(160 15% 95%)
-const CARD = "#ffffff";
-const PRIMARY = "#1a7a50";  // hsl(164 80% 32%) rich emerald
-const TEXT = "#0d2318";     // hsl(164 45% 12%)
-const MUTED = "#56736a";    // hsl(164 25% 38%)
-const BORDER = "#c5dbd2";   // hsl(164 22% 82%)
-const SECONDARY = "#d4ece4";// hsl(162 35% 86%)
-const PRIMARYLIGHT = "#e8f5ef"; // primary/10
+const Nav = ({ active }: { active: number }) => (
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 76, background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", paddingBottom: 8 }}>
+    {["🏠","🌿","🔧","📊","⚙️"].map((icon, i) => (
+      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <span style={{ fontSize: 20 }}>{icon}</span>
+        <span style={{ fontSize: 10, color: i === active ? C.primary : C.muted, fontWeight: i === active ? 700 : 400 }}>{["Home","Habits","Tools","Progress","Account"][i]}</span>
+      </div>
+    ))}
+  </div>
+);
 
-function StatusBar() {
+export default function Dashboard() {
+  const habits = [
+    { emoji: "🧘", title: "Morning Meditation", streak: 12, pct: 70, color: "#7c3aed", pastel: "#f5f0ff" },
+    { emoji: "🏃", title: "Daily Run", streak: 5, pct: 40, color: "#ef4444", pastel: "#fff5f5" },
+    { emoji: "📚", title: "Read 30 Minutes", streak: 21, pct: 90, color: "#2563eb", pastel: "#eff6ff" },
+  ];
+
   return (
-    <div style={{ background: CARD, color: TEXT }} className="flex justify-between items-center px-5 pt-3 pb-1">
-      <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15 }}>9:41</span>
-      <div className="flex gap-1.5 items-center">
-        <div className="flex gap-[2px] items-end h-3">
-          {[3, 5, 7, 9].map((h, i) => (
-            <div key={i} style={{ width: 3, height: h, background: i < 3 ? TEXT : BORDER, borderRadius: 1 }} />
-          ))}
-        </div>
-        <div style={{ width: 18, height: 10, border: `1.5px solid ${TEXT}`, borderRadius: 2, padding: "1px", display: "flex", alignItems: "center" }}>
-          <div style={{ width: "70%", height: "100%", background: TEXT, borderRadius: 1 }} />
+    <div style={{ width: 390, height: 844, background: C.bg, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: "hidden", position: "relative" }}>
+      {/* Status bar */}
+      <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>9:41</span>
+        <span style={{ fontSize: 12, color: C.text }}>5G 🔋</span>
+      </div>
+      {/* Header */}
+      <div style={{ padding: "0 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 800, color: C.primary }}>HabitBuilder</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 20, padding: "4px 10px" }}>
+            <span style={{ fontSize: 12 }}>🔥</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#c2410c" }}>12d</span>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.secondary, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👤</div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function BottomNav({ active }: { active: string }) {
-  const items = [
-    { label: "Dashboard", icon: Home, id: "home" },
-    { label: "Habits", icon: Leaf, id: "habits" },
-    { label: "Tools", icon: Wrench, id: "tools" },
-    { label: "Progress", icon: BarChart3, id: "progress" },
-    { label: "Account", icon: Settings, id: "account" },
-  ];
-  return (
-    <div style={{ background: CARD, borderTop: `1px solid ${BORDER}`, boxShadow: "0 -1px 8px rgba(0,0,0,0.06)" }}
-      className="flex justify-around items-center pt-2 pb-5 px-2">
-      {items.map(({ label, icon: Icon, id }) => {
-        const isActive = id === active;
-        return (
-          <div key={id} className="flex flex-col items-center gap-0.5" style={{ color: isActive ? PRIMARY : MUTED }}>
-            <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
-            <span style={{ fontSize: 10, fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: isActive ? 600 : 400 }}>{label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-export function Dashboard() {
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  const done = [true, true, true, true, true, false, false];
-  const habits = [
-    { emoji: "🧘", title: "Morning Meditation", streak: 47, done: true },
-    { emoji: "📚", title: "Read 30 Minutes", streak: 32, done: true },
-    { emoji: "🏃", title: "Evening Run", streak: 19, done: false },
-  ];
-
-  return (
-    <div style={{ width: 390, height: 844, background: BG, fontFamily: "Plus Jakarta Sans, sans-serif", color: TEXT, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <StatusBar />
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px 8px" }}>
-
-        {/* Trial Banner */}
-        <div style={{ background: PRIMARYLIGHT, border: `1px solid ${PRIMARY}30`, borderRadius: 12, padding: "8px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div className="flex items-center gap-2">
-            <Crown size={14} style={{ color: "#d97706" }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Premium Trial — 6 days left</span>
-          </div>
-          <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 700 }}>Upgrade →</span>
-        </div>
-
-        {/* Hero Card */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 16, marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-          <div className="flex items-center gap-3 mb-3">
-            <div style={{ width: 50, height: 50, borderRadius: "50%", background: PRIMARYLIGHT, border: `2px solid ${PRIMARY}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🌿</div>
-            <div>
-              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17, color: TEXT }}>Good morning, Alex</div>
-              <div style={{ fontSize: 12, color: MUTED }}>You're on a 47-day streak 🔥</div>
-            </div>
-          </div>
-          <div className="flex gap-2 mb-3">
-            {[{ label: "Streak", value: "47🔥" }, { label: "Level", value: "12⚡" }, { label: "XP", value: "2,840" }].map((s) => (
-              <div key={s.label} style={{ flex: 1, background: BG, borderRadius: 10, padding: "7px 4px", textAlign: "center", border: `1px solid ${BORDER}` }}>
-                <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 15, color: PRIMARY }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: MUTED }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-          {/* Week dots */}
-          <div className="flex justify-between">
-            {days.map((d, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: done[i] ? PRIMARY : SECONDARY, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {done[i] ? <Check size={14} color="white" strokeWidth={3} /> : <span style={{ fontSize: 11, color: MUTED }}></span>}
+      <div style={{ padding: "0 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Week strip */}
+        <div style={{ background: C.card, borderRadius: 14, padding: "10px 16px", border: `1px solid ${C.border}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {["M","T","W","T","F","S","S"].map((d, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>{d}</span>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < 3 ? C.primary : i === 3 ? C.pLight : "transparent", border: `1.5px solid ${i <= 3 ? C.primary : C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {i < 3 && <span style={{ fontSize: 11, color: "white" }}>✓</span>}
+                  {i === 3 && <span style={{ fontSize: 9, fontWeight: 700, color: C.primary }}>30</span>}
                 </div>
-                <span style={{ fontSize: 10, color: done[i] ? TEXT : MUTED, fontWeight: done[i] ? 600 : 400 }}>{d}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Today's Habits */}
-        <div className="flex justify-between items-center mb-3">
-          <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: TEXT }}>Today's Habits</span>
-          <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 600 }}>2 / 3 done</span>
+        {/* Hero card */}
+        <div style={{ background: `linear-gradient(135deg, ${C.primary}, #15a05a)`, borderRadius: 20, padding: "14px 16px" }}>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginBottom: 10 }}>Great momentum — 3 habits today. Keep it up!</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[["1","Done"],["3","Today"],["33%","Rate"]].map(([n, l]) => (
+              <div key={l} style={{ flex: 1, background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "white", fontFamily: "'Outfit', sans-serif" }}>{n}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>{l}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Section label */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 4, height: 14, borderRadius: 2, background: C.primary }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.12em" }}>Today</span>
+        </div>
+
+        {/* Habit Cards */}
         {habits.map((h, i) => (
-          <div key={i} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: PRIMARYLIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{h.emoji}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: TEXT }}>{h.title}</div>
-              <div style={{ fontSize: 11, color: MUTED }}>🔥 {h.streak} day streak</div>
-            </div>
-            <div style={{ width: 30, height: 30, borderRadius: "50%", background: h.done ? PRIMARY : "transparent", border: h.done ? "none" : `2px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {h.done && <Check size={13} color="white" strokeWidth={3} />}
+          <div key={i} style={{ background: h.pastel, borderRadius: 20, padding: "16px 18px", border: `2px solid ${h.color}22`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 4, borderRadius: "0 3px 3px 0", background: h.color }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{h.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 2 }}>{h.title}</div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 11, color: "#c2410c", fontWeight: 600 }}>🔥 {h.streak}d streak</span>
+                  <span style={{ fontSize: 11, color: h.color, fontWeight: 700 }}>Start →</span>
+                </div>
+                <div style={{ height: 4, background: "rgba(0,0,0,0.08)", borderRadius: 2, overflow: "hidden", marginTop: 6 }}>
+                  <div style={{ width: `${h.pct}%`, height: "100%", background: h.color, borderRadius: 2 }} />
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </div>
-      <BottomNav active="home" />
+      <Nav active={0} />
     </div>
   );
 }

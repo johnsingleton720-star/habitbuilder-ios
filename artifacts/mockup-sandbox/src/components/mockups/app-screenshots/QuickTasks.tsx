@@ -1,106 +1,112 @@
 
-import { Home, Leaf, Wrench, BarChart3, Settings, Plus, Check, X } from "lucide-react";
+const C = { bg: "#eef4f1", card: "#fff", primary: "#1a7a50", text: "#0d2318", muted: "#56736a", border: "#c5dbd2", pLight: "#e8f5ef", secondary: "#d4ece4" };
 
-const BG = "#eef4f1";
-const CARD = "#ffffff";
-const PRIMARY = "#1a7a50";
-const TEXT = "#0d2318";
-const MUTED = "#56736a";
-const BORDER = "#c5dbd2";
-const SECONDARY = "#d4ece4";
-const PRIMARYLIGHT = "#e8f5ef";
-
-function StatusBar() {
-  return (
-    <div style={{ background: CARD, color: TEXT }} className="flex justify-between items-center px-5 pt-3 pb-1">
-      <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15 }}>9:41</span>
-      <div style={{ width: 18, height: 10, border: `1.5px solid ${TEXT}`, borderRadius: 2, padding: "1px", display: "flex", alignItems: "center" }}>
-        <div style={{ width: "70%", height: "100%", background: TEXT, borderRadius: 1 }} />
+const Nav = ({ active }: { active: number }) => (
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 76, background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", paddingBottom: 8 }}>
+    {["🏠","🌿","🔧","📊","⚙️"].map((icon, i) => (
+      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <span style={{ fontSize: 20 }}>{icon}</span>
+        <span style={{ fontSize: 10, color: i === active ? C.primary : C.muted, fontWeight: i === active ? 700 : 400 }}>{["Home","Habits","Tools","Progress","Account"][i]}</span>
       </div>
-    </div>
-  );
-}
+    ))}
+  </div>
+);
 
-function BottomNav() {
-  const items = [
-    { label: "Dashboard", icon: Home, id: "home" },
-    { label: "Habits", icon: Leaf, id: "habits" },
-    { label: "Tools", icon: Wrench, id: "tools" },
-    { label: "Progress", icon: BarChart3, id: "progress" },
-    { label: "Account", icon: Settings, id: "account" },
+export default function QuickTasks() {
+  const tasks = [
+    { done: true, text: "Buy journal notebook", priority: "low" },
+    { done: true, text: "Schedule doctor check-up", priority: "high" },
+    { done: false, text: "Call mum this evening", priority: "medium" },
+    { done: false, text: "Prepare tomorrow's lunch", priority: "low" },
+    { done: false, text: "Review weekly goals", priority: "high" },
+    { done: false, text: "Declutter desk space", priority: "low" },
+    { done: false, text: "Renew gym membership", priority: "medium" },
   ];
+
+  const priorityColor: Record<string, string> = { high: "#ef4444", medium: "#f59e0b", low: "#6b7280" };
+
   return (
-    <div style={{ background: CARD, borderTop: `1px solid ${BORDER}`, boxShadow: "0 -1px 8px rgba(0,0,0,0.06)" }}
-      className="flex justify-around items-center pt-2 pb-5 px-2">
-      {items.map(({ label, icon: Icon, id }) => (
-        <div key={id} className="flex flex-col items-center gap-0.5" style={{ color: id === "home" ? PRIMARY : MUTED }}>
-          <Icon size={22} strokeWidth={id === "home" ? 2.2 : 1.8} />
-          <span style={{ fontSize: 10, fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: id === "home" ? 600 : 400 }}>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+    <div style={{ width: 390, height: 844, background: C.bg, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: "hidden", position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* Status bar */}
+      <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", flexShrink: 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>9:41</span>
+        <span style={{ fontSize: 12, color: C.text }}>5G 🔋</span>
+      </div>
 
-const tasks = [
-  { text: "Buy groceries", done: true },
-  { text: "Call dentist to reschedule", done: true },
-  { text: "Review project proposal", done: true },
-  { text: "Finish quarterly report", done: false },
-  { text: "Book flights for June trip", done: false },
-  { text: "Reply to client emails", done: false },
-  { text: "Set up monthly savings transfer", done: false },
-  { text: "Order birthday gift for Sarah", done: false },
-];
-
-export function QuickTasks() {
-  const done = tasks.filter(t => t.done).length;
-  const pct = Math.round((done / tasks.length) * 100);
-  return (
-    <div style={{ width: 390, height: 844, background: BG, fontFamily: "Plus Jakarta Sans, sans-serif", color: TEXT, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <StatusBar />
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px" }}>
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 22, color: TEXT }}>Quick Tasks</div>
-            <div style={{ fontSize: 13, color: MUTED }}>{done} of {tasks.length} done today</div>
+      {/* Header */}
+      <div style={{ padding: "0 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 800, color: C.primary }}>HabitBuilder</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 20, padding: "4px 10px" }}>
+            <span style={{ fontSize: 12 }}>🔥</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#c2410c" }}>12d</span>
           </div>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: PRIMARY, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Plus size={20} color="white" strokeWidth={2.5} />
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <div className="flex justify-between items-center mb-2">
-            <span style={{ fontSize: 13, color: MUTED }}>Today's progress</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: PRIMARY }}>{pct}%</span>
-          </div>
-          <div style={{ height: 7, background: SECONDARY, borderRadius: 4 }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: PRIMARY, borderRadius: 4 }} />
-          </div>
-        </div>
-
-        {/* Task list */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-          {tasks.map((t, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderBottom: i < tasks.length - 1 ? `1px solid ${BORDER}` : "none", background: t.done ? "#fafffe" : CARD }}>
-              <div style={{ width: 24, height: 24, borderRadius: "50%", background: t.done ? PRIMARY : "transparent", border: t.done ? "none" : `2px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {t.done && <Check size={12} color="white" strokeWidth={3} />}
-              </div>
-              <span style={{ flex: 1, fontSize: 14, color: t.done ? MUTED : TEXT, textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
-              <X size={15} style={{ color: BORDER, flexShrink: 0 }} />
-            </div>
-          ))}
-        </div>
-
-        {/* Motivational card */}
-        <div style={{ background: PRIMARYLIGHT, border: `1px solid ${PRIMARY}25`, borderRadius: 14, padding: 14, marginTop: 14, textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>⚡</div>
-          <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6 }}>3 tasks done! <span style={{ color: TEXT, fontWeight: 600 }}>You're building momentum.</span> Each small win compounds over time.</p>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.secondary, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👤</div>
         </div>
       </div>
-      <BottomNav />
+
+      <div style={{ flex: 1, overflowY: "hidden", padding: "0 14px 80px" }}>
+        {/* Daily quote */}
+        <div style={{ background: C.card, borderRadius: 16, padding: "12px 14px", marginBottom: 10, border: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 11, color: C.muted, fontStyle: "italic", lineHeight: 1.5 }}>"Small daily improvements over time lead to stunning results."</div>
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 4, textAlign: "right" }}>— Robin Sharma</div>
+        </div>
+
+        {/* Section label */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 4, height: 14, borderRadius: 2, background: C.primary }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.12em" }}>Quick Tasks</span>
+        </div>
+
+        {/* Quick tasks card */}
+        <div style={{ background: C.card, borderRadius: 18, border: `1px solid ${C.border}`, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: 12 }}>
+          {/* Card header */}
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 16 }}>✅</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: C.text }}>My Tasks</span>
+              <div style={{ background: C.secondary, borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700, color: C.primary }}>2 done</div>
+            </div>
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "white" }}>+</div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ padding: "8px 16px", background: C.pLight, borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: C.muted }}>2 of 7 completed</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.primary }}>29%</span>
+            </div>
+            <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ width: "29%", height: "100%", background: C.primary, borderRadius: 2 }} />
+            </div>
+          </div>
+
+          {/* Task list */}
+          <div>
+            {tasks.map((t, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: i < tasks.length - 1 ? `1px solid ${C.border}` : "none", background: t.done ? `${C.pLight}80` : "white" }}>
+                <div style={{ width: 22, height: 22, borderRadius: 7, background: t.done ? C.primary : "transparent", border: `2px solid ${t.done ? C.primary : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {t.done && <span style={{ fontSize: 12, color: "white" }}>✓</span>}
+                </div>
+                <span style={{ flex: 1, fontSize: 13, color: t.done ? C.muted : C.text, textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: priorityColor[t.priority], flexShrink: 0 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mood check */}
+        <div style={{ background: C.card, borderRadius: 16, padding: "12px 14px", border: `1px solid ${C.border}`, marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 8 }}>How's your energy today?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["😄","😊","😐","😔","😢"].map((e, i) => (
+              <div key={i} style={{ flex: 1, height: 36, borderRadius: 10, background: i === 1 ? C.pLight : C.bg, border: `1.5px solid ${i === 1 ? C.primary : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{e}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Nav active={0} />
     </div>
   );
 }

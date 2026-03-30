@@ -1,119 +1,105 @@
 
-import { Home, Leaf, Wrench, BarChart3, Settings, Zap, Lock } from "lucide-react";
+const C = { bg: "#eef4f1", card: "#fff", primary: "#1a7a50", text: "#0d2318", muted: "#56736a", border: "#c5dbd2", pLight: "#e8f5ef", secondary: "#d4ece4" };
 
-const BG = "#eef4f1";
-const CARD = "#ffffff";
-const PRIMARY = "#1a7a50";
-const TEXT = "#0d2318";
-const MUTED = "#56736a";
-const BORDER = "#c5dbd2";
-const SECONDARY = "#d4ece4";
-const PRIMARYLIGHT = "#e8f5ef";
-
-function StatusBar() {
-  return (
-    <div style={{ background: CARD, color: TEXT }} className="flex justify-between items-center px-5 pt-3 pb-1">
-      <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15 }}>9:41</span>
-      <div style={{ width: 18, height: 10, border: `1.5px solid ${TEXT}`, borderRadius: 2, padding: "1px", display: "flex", alignItems: "center" }}>
-        <div style={{ width: "70%", height: "100%", background: TEXT, borderRadius: 1 }} />
+const Nav = ({ active }: { active: number }) => (
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 76, background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", paddingBottom: 8 }}>
+    {["🏠","🌿","🔧","📊","⚙️"].map((icon, i) => (
+      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <span style={{ fontSize: 20 }}>{icon}</span>
+        <span style={{ fontSize: 10, color: i === active ? C.primary : C.muted, fontWeight: i === active ? 700 : 400 }}>{["Home","Habits","Tools","Progress","Account"][i]}</span>
       </div>
-    </div>
-  );
-}
+    ))}
+  </div>
+);
 
-function BottomNav() {
-  const items = [
-    { label: "Dashboard", icon: Home, id: "home" },
-    { label: "Habits", icon: Leaf, id: "habits" },
-    { label: "Tools", icon: Wrench, id: "tools" },
-    { label: "Progress", icon: BarChart3, id: "progress" },
-    { label: "Account", icon: Settings, id: "account" },
+export default function Achievements() {
+  const viewTabs = ["Today","Yesterday","Weekly","Streaks","All-Time"];
+  const badges = [
+    { emoji: "🔥", title: "Week Warrior", desc: "7-day streak achieved", xp: 100, earned: true, color: "#f97316" },
+    { emoji: "⚡", title: "Speed Demon", desc: "Complete 5 tasks in one day", xp: 75, earned: true, color: "#eab308" },
+    { emoji: "🧘", title: "Zen Master", desc: "10 meditation sessions", xp: 150, earned: true, color: "#7c3aed" },
+    { emoji: "🏆", title: "Month Strong", desc: "30-day streak", xp: 500, earned: false, color: "#c2410c" },
+    { emoji: "📚", title: "Knowledge Seeker", desc: "Read for 20 consecutive days", xp: 250, earned: false, color: "#2563eb" },
+    { emoji: "⭐", title: "Perfect Week", desc: "100% completion for 7 days", xp: 200, earned: false, color: "#16a34a" },
   ];
+
   return (
-    <div style={{ background: CARD, borderTop: `1px solid ${BORDER}`, boxShadow: "0 -1px 8px rgba(0,0,0,0.06)" }}
-      className="flex justify-around items-center pt-2 pb-5 px-2">
-      {items.map(({ label, icon: Icon, id }) => (
-        <div key={id} className="flex flex-col items-center gap-0.5" style={{ color: id === "progress" ? PRIMARY : MUTED }}>
-          <Icon size={22} strokeWidth={id === "progress" ? 2.2 : 1.8} />
-          <span style={{ fontSize: 10, fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: id === "progress" ? 600 : 400 }}>{label}</span>
+    <div style={{ width: 390, height: 844, background: C.bg, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: "hidden", position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* Status bar */}
+      <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", flexShrink: 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>9:41</span>
+        <span style={{ fontSize: 12, color: C.text }}>5G 🔋</span>
+      </div>
+
+      {/* Header */}
+      <div style={{ padding: "0 16px 12px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
+          <span style={{ fontSize: 18, color: C.muted }}>←</span>
+          <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 20, fontWeight: 800, color: C.text }}>Progress</div>
         </div>
-      ))}
-    </div>
-  );
-}
+        <div style={{ fontSize: 12, color: C.muted }}>Monday, March 30, 2026</div>
+      </div>
 
-const earned = [
-  { emoji: "🔥", label: "47-Day Warrior", color: "#d97706", bg: "#fef3c7", featured: true },
-  { emoji: "🌅", label: "Early Riser", color: "#2563eb", bg: "#dbeafe" },
-  { emoji: "👑", label: "Consistency King", color: PRIMARY, bg: PRIMARYLIGHT },
-  { emoji: "🧘", label: "Mindful Master", color: "#7c3aed", bg: "#ede9fe" },
-  { emoji: "🤖", label: "AI Partner", color: PRIMARY, bg: PRIMARYLIGHT },
-  { emoji: "🎯", label: "Goal Crusher", color: "#dc2626", bg: "#fee2e2" },
-];
-const locked = ["100-Day Legend", "Speed Reader", "Ironman"];
-
-export function Achievements() {
-  const xp = 2840, xpMax = 3000;
-  const pct = Math.round((xp / xpMax) * 100);
-  return (
-    <div style={{ width: 390, height: 844, background: BG, fontFamily: "Plus Jakarta Sans, sans-serif", color: TEXT, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <StatusBar />
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px" }}>
-        <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 22, color: TEXT, marginBottom: 2 }}>Achievements</div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>6 badges earned · Level 12</div>
-
-        {/* Featured badge */}
-        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 20, padding: 20, marginBottom: 14, textAlign: "center", boxShadow: "0 2px 8px rgba(217,119,6,0.1)" }}>
-          <div style={{ fontSize: 60, marginBottom: 6 }}>🔥</div>
-          <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 18, color: TEXT, marginBottom: 2 }}>47-Day Warrior</div>
-          <div style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>Longest streak achievement</div>
-        </div>
-
-        {/* Level/XP */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 16, marginBottom: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-          <div className="flex justify-between items-center mb-2">
-            <div>
-              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 18, color: TEXT }}>Level 12</div>
-              <div style={{ fontSize: 12, color: MUTED }}>Habit Champion</div>
-            </div>
-            <div style={{ background: PRIMARYLIGHT, borderRadius: 10, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
-              <Zap size={14} style={{ color: PRIMARY }} />
-              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, color: PRIMARY, fontSize: 15 }}>2,840 XP</span>
-            </div>
+      {/* XP card */}
+      <div style={{ margin: "0 14px 12px", background: `linear-gradient(135deg, ${C.primary}, #15a05a)`, borderRadius: 20, padding: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Total XP Earned</div>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 36, fontWeight: 800, color: "white" }}>1,240</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>Level 4 · Habit Builder</div>
           </div>
-          <div className="flex justify-between items-center mb-1.5">
-            <span style={{ fontSize: 11, color: MUTED }}>Progress to Level 13</span>
-            <span style={{ fontSize: 11, color: MUTED }}>{pct}%</span>
-          </div>
-          <div style={{ height: 7, background: SECONDARY, borderRadius: 5 }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: PRIMARY, borderRadius: 5 }} />
-          </div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>160 XP until Level 13</div>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>⚡</div>
         </div>
-
-        {/* Badge grid */}
-        <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 15, color: TEXT, marginBottom: 10 }}>Badges Earned</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 14 }}>
-          {earned.map((b, i) => (
-            <div key={i} style={{ background: b.bg, border: `1px solid ${b.color}30`, borderRadius: 14, padding: "14px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 28, marginBottom: 4 }}>{b.emoji}</div>
-              <div style={{ fontSize: 10, color: b.color, fontWeight: 700, lineHeight: 1.3 }}>{b.label}</div>
-            </div>
-          ))}
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>Next level: 1,500 XP</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.9)", fontWeight: 700 }}>83%</span>
+          </div>
+          <div style={{ height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ width: "83%", height: "100%", background: "white", borderRadius: 3 }} />
+          </div>
         </div>
+      </div>
 
-        {/* Locked */}
-        <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 15, color: TEXT, marginBottom: 10 }}>Coming Up</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {locked.map((b, i) => (
-            <div key={i} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "14px 8px", textAlign: "center", opacity: 0.55 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Lock size={22} style={{ color: MUTED }} /></div>
-              <div style={{ fontSize: 10, color: MUTED, fontWeight: 600, lineHeight: 1.3 }}>{b}</div>
+      {/* Tab bar */}
+      <div style={{ display: "flex", gap: 6, padding: "0 14px 10px", flexShrink: 0 }}>
+        {viewTabs.map((t, i) => (
+          <div key={i} style={{ padding: "6px 10px", borderRadius: 16, background: i === 3 ? C.primary : C.card, border: `1px solid ${i === 3 ? C.primary : C.border}`, fontSize: 11, fontWeight: i === 3 ? 700 : 400, color: i === 3 ? "white" : C.muted, whiteSpace: "nowrap" }}>{t}</div>
+        ))}
+      </div>
+
+      {/* Streaks section */}
+      <div style={{ padding: "0 14px 10px", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[["🔥","12d","Current"],["🏆","21d","Best Ever"],["📅","67","Days Active"]].map(([icon, val, label]) => (
+            <div key={label} style={{ flex: 1, background: C.card, borderRadius: 14, padding: "12px 8px", border: `1px solid ${C.border}`, textAlign: "center" }}>
+              <div style={{ fontSize: 18 }}>{icon}</div>
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 20, fontWeight: 800, color: C.text }}>{val}</div>
+              <div style={{ fontSize: 10, color: C.muted }}>{label}</div>
             </div>
           ))}
         </div>
       </div>
-      <BottomNav />
+
+      {/* Achievement badges label */}
+      <div style={{ padding: "0 14px 8px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ width: 4, height: 14, borderRadius: 2, background: C.primary }} />
+        <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>Achievements</span>
+        <span style={{ fontSize: 11, color: C.muted, marginLeft: "auto" }}>3 of 6 earned</span>
+      </div>
+
+      {/* Badge grid */}
+      <div style={{ padding: "0 14px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {badges.map((b, i) => (
+          <div key={i} style={{ background: b.earned ? C.card : `${C.bg}`, borderRadius: 16, padding: "12px 8px", border: `1.5px solid ${b.earned ? b.color + "44" : C.border}`, textAlign: "center", opacity: b.earned ? 1 : 0.55 }}>
+            <div style={{ fontSize: 28, marginBottom: 4, filter: b.earned ? "none" : "grayscale(100%)" }}>{b.emoji}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: b.earned ? C.text : C.muted, lineHeight: 1.3 }}>{b.title}</div>
+            <div style={{ fontSize: 10, color: b.earned ? b.color : C.muted, fontWeight: 600, marginTop: 3 }}>+{b.xp} XP</div>
+          </div>
+        ))}
+      </div>
+
+      <Nav active={3} />
     </div>
   );
 }
