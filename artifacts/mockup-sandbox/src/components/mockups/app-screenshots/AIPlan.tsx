@@ -1,19 +1,21 @@
 
-import { Home, Leaf, Wrench, BarChart3, Settings, ArrowLeft, Check, ChevronRight, Sparkles } from "lucide-react";
+import { Home, Leaf, Wrench, BarChart3, Settings, ArrowLeft, Check, Sparkles } from "lucide-react";
 
-const BG = "#0b1a13";
-const CARD = "#152d20";
-const PRIMARY = "#34d399";
-const TEXT = "#edf3f0";
-const MUTED = "#7fb39e";
-const BORDER = "#1e3d2a";
+const BG = "#eef4f1";
+const CARD = "#ffffff";
+const PRIMARY = "#1a7a50";
+const TEXT = "#0d2318";
+const MUTED = "#56736a";
+const BORDER = "#c5dbd2";
+const SECONDARY = "#d4ece4";
+const PRIMARYLIGHT = "#e8f5ef";
 
 function StatusBar() {
   return (
-    <div style={{ background: BG, color: TEXT }} className="flex justify-between items-center px-6 pt-3 pb-1 text-sm font-semibold">
-      <span style={{ fontFamily: "Outfit, sans-serif" }}>9:41</span>
-      <div style={{ width: 22, height: 11, border: `1.5px solid ${TEXT}`, borderRadius: 2, padding: "1px 1px", display: "flex", alignItems: "center" }}>
-        <div style={{ width: "75%", height: "100%", background: TEXT, borderRadius: 1 }} />
+    <div style={{ background: CARD, color: TEXT }} className="flex justify-between items-center px-5 pt-3 pb-1">
+      <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15 }}>9:41</span>
+      <div style={{ width: 18, height: 10, border: `1.5px solid ${TEXT}`, borderRadius: 2, padding: "1px", display: "flex", alignItems: "center" }}>
+        <div style={{ width: "70%", height: "100%", background: TEXT, borderRadius: 1 }} />
       </div>
     </div>
   );
@@ -28,11 +30,12 @@ function BottomNav() {
     { label: "Account", icon: Settings, id: "account" },
   ];
   return (
-    <div style={{ background: CARD, borderTop: `1px solid ${BORDER}` }} className="flex justify-around items-center pt-2 pb-5 px-2">
+    <div style={{ background: CARD, borderTop: `1px solid ${BORDER}`, boxShadow: "0 -1px 8px rgba(0,0,0,0.06)" }}
+      className="flex justify-around items-center pt-2 pb-5 px-2">
       {items.map(({ label, icon: Icon, id }) => (
         <div key={id} className="flex flex-col items-center gap-0.5" style={{ color: id === "habits" ? PRIMARY : MUTED }}>
           <Icon size={22} strokeWidth={id === "habits" ? 2.2 : 1.8} />
-          <span className="text-[10px]" style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: id === "habits" ? 600 : 400 }}>{label}</span>
+          <span style={{ fontSize: 10, fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: id === "habits" ? 600 : 400 }}>{label}</span>
         </div>
       ))}
     </div>
@@ -47,16 +50,12 @@ const days = [
 ];
 
 export function AIPlan() {
-  const completedTasks = 5;
-  const totalTasks = 12;
-  const pct = Math.round((completedTasks / totalTasks) * 100);
-
+  const pct = 42;
   return (
     <div style={{ width: 390, height: 844, background: BG, fontFamily: "Plus Jakarta Sans, sans-serif", color: TEXT, overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <StatusBar />
-
       {/* Header */}
-      <div style={{ padding: "10px 16px 12px", background: CARD, borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ background: CARD, borderBottom: `1px solid ${BORDER}`, padding: "10px 16px 12px" }}>
         <div className="flex items-center gap-2 mb-3">
           <ArrowLeft size={20} style={{ color: MUTED }} />
           <div style={{ flex: 1 }}>
@@ -67,33 +66,30 @@ export function AIPlan() {
             </div>
           </div>
         </div>
-        {/* Progress */}
-        <div style={{ background: "#0f2218", borderRadius: 10, padding: "8px 12px" }}>
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "8px 12px" }}>
           <div className="flex justify-between items-center mb-1.5">
             <span style={{ fontSize: 12, color: MUTED }}>Weekly progress</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: PRIMARY }}>{pct}%</span>
           </div>
-          <div style={{ height: 6, background: BORDER, borderRadius: 4 }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${PRIMARY} 0%, #60a5fa 100%)`, borderRadius: 4 }} />
+          <div style={{ height: 6, background: SECONDARY, borderRadius: 4 }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: PRIMARY, borderRadius: 4 }} />
           </div>
         </div>
       </div>
-
-      {/* Days */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
         {days.map((d, di) => (
           <div key={di} style={{ marginBottom: 12 }}>
             <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 14, color: di < 2 ? PRIMARY : MUTED, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{d.day}</span>
-              {di < 2 && <span style={{ background: PRIMARY + "20", color: PRIMARY, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Complete ✓</span>}
+              {di < 2 && <span style={{ background: PRIMARYLIGHT, color: PRIMARY, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Complete ✓</span>}
             </div>
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               {d.tasks.map((t, ti) => (
-                <div key={ti} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: ti < d.tasks.length - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: t.done ? PRIMARY : BORDER, border: t.done ? "none" : `2px solid ${MUTED}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {t.done && <Check size={12} color="#0b1a13" strokeWidth={3} />}
+                <div key={ti} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderBottom: ti < d.tasks.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: t.done ? PRIMARY : "transparent", border: t.done ? "none" : `2px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {t.done && <Check size={11} color="white" strokeWidth={3} />}
                   </div>
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>{t.emoji}</span>
+                  <span style={{ fontSize: 15, flexShrink: 0 }}>{t.emoji}</span>
                   <span style={{ fontSize: 13, color: t.done ? MUTED : TEXT, textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
                 </div>
               ))}
@@ -101,7 +97,6 @@ export function AIPlan() {
           </div>
         ))}
       </div>
-
       <BottomNav />
     </div>
   );
