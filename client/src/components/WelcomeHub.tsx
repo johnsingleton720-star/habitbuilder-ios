@@ -74,7 +74,7 @@ const PREMIUM_FEATURES = [
 
 export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
   const { user } = useAuth();
-  const { trialDaysRemaining } = useSubscription();
+  const { isPro } = useSubscription();
   const [step, setStep] = useState<"welcome" | "features">("welcome");
 
   const presignupHabitId = localStorage.getItem("presignup_habit_id");
@@ -229,25 +229,25 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
                 className="bg-gradient-to-br from-primary/5 via-emerald-500/5 to-primary/5 dark:from-primary/10 dark:via-emerald-500/10 dark:to-primary/10 border border-primary/20 rounded-2xl p-5"
-                data-testid="card-trial-welcome"
+                data-testid="card-features-welcome"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Crown className="w-5 h-5 text-primary" />
+                    <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-foreground text-sm">
-                      {trialDaysRemaining} days of Premium — free
+                      {isPro ? "Your plan is active" : "Start building habits"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      No credit card needed
+                      {isPro ? "All features unlocked" : "Create your first habit below"}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { icon: Brain, text: "AI Coaching" },
-                    { icon: Flame, text: "Unlimited Habits" },
+                    { icon: Flame, text: "Habit Streaks" },
                     { icon: Zap, text: "Focus Timer" },
                     { icon: Target, text: "Goals & More" },
                   ].map((item, i) => (
@@ -257,13 +257,6 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={() => setStep("features")}
-                  className="mt-3 text-xs text-primary font-medium hover:underline"
-                  data-testid="button-see-all-features"
-                >
-                  See all Premium features →
-                </button>
               </motion.div>
 
               <motion.div

@@ -89,6 +89,7 @@ import Goals from "@/pages/Goals";
 import DailyPlanner from "@/pages/DailyPlanner";
 import SignedOut from "@/pages/SignedOut";
 import ResetPassword from "@/pages/ResetPassword";
+import TrialOffer from "@/pages/TrialOffer";
 
 function VersionUpdateBanner() {
   return (
@@ -304,6 +305,10 @@ function Router() {
 
   if (!user.tosAcceptedAt) {
     return <TermsOfServiceGate />;
+  }
+
+  if (!user.isAdmin && !user.hasPaid && !user.trialOfferShown && !user.trialEndsAt) {
+    return <TrialOffer />;
   }
 
   if (isPaymentLoading) {

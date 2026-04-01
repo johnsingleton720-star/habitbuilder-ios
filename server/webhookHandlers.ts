@@ -61,6 +61,8 @@ export class WebhookHandlers {
           updateData.stripeCustomerId = session.customer;
         }
         
+        updateData.trialOfferShown = true;
+
         await db
           .update(users)
           .set(updateData)

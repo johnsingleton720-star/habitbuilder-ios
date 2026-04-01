@@ -412,7 +412,6 @@ export async function registerRoutes(
       const hash = await bcrypt.hash(String(password), 12);
       const userId = crypto.randomUUID();
       const isOwner = emailLower === OWNER_EMAIL;
-      const trialEndsAt = isOwner ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       const [newUser] = await db.insert(users).values({
         id: userId,
         email: emailLower,
@@ -421,7 +420,6 @@ export async function registerRoutes(
         passwordHash: hash,
         authProvider: "email",
         ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
-        ...(trialEndsAt && { trialEndsAt }),
       }).returning();
       const expiresAtSeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
       const sessionUser = {
@@ -531,7 +529,6 @@ export async function registerRoutes(
         isNewUser = true;
         const userId = crypto.randomUUID();
         const isOwner = userEmail === OWNER_EMAIL;
-        const trialEndsAt = isOwner ? undefined : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         [finalUser] = await db.insert(users).values({
           id: userId,
           email: userEmail || null,
@@ -540,7 +537,6 @@ export async function registerRoutes(
           appleUserId: appleSub,
           authProvider: "apple",
           ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
-          ...(trialEndsAt && { trialEndsAt }),
         }).returning();
       }
 
@@ -3146,6 +3142,74 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     } catch (error) {
       console.error("Checkout error:", error);
       res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/checkout/trial", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userEmail = req.user!.claims.email;
+      const tier = (req.body.tier === 'premium') ? 'premium' : 'pro';
+
+      const stripe = await getUncachableStripeClient();
+      const baseUrl = `https://${PRIMARY_DOMAIN}`;
+
+      const products = await stripe.products.list({ active: true, limit: 100 });
+      const productName = tier === 'premium' ? 'Habit Builder Premium' : 'Habit Builder Pro';
+      const product = products.data.find((p: any) => p.name === productName);
+      if (!product) {
+        return res.status(400).json({ error: `Product not found: ${productName}` });
+      }
+
+      const prices = await stripe.prices.list({ product: product.id, active: true });
+      const monthlyPrice = prices.data.find((p: any) => p.recurring?.interval === 'month');
+      if (!monthlyPrice) {
+        return res.status(400).json({ error: 'Monthly price not found' });
+      }
+
+      let customerId: string | undefined;
+      const [existingUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (existingUser?.stripeCustomerId) {
+        customerId = existingUser.stripeCustomerId;
+      } else if (userEmail) {
+        const customer = await stripe.customers.create({ email: userEmail, metadata: { userId } });
+        customerId = customer.id;
+        await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, userId));
+      }
+
+      const metadata = { userId, tier, billingInterval: 'month' };
+
+      const session = await stripe.checkout.sessions.create({
+        line_items: [{ price: monthlyPrice.id, quantity: 1 }],
+        mode: 'subscription',
+        success_url: `${baseUrl}/?payment=success&tier=${encodeURIComponent(tier)}`,
+        cancel_url: `${baseUrl}/trial-offer?cancelled=true`,
+        customer: customerId,
+        allow_promotion_codes: false,
+        locale: 'auto',
+        metadata,
+        subscription_data: {
+          trial_period_days: 7,
+          metadata,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Trial checkout error:", error);
+      res.status(500).json({ error: "Failed to create trial checkout session" });
+    }
+  });
+
+  app.post("/api/user/decline-trial", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await db.update(users).set({ trialOfferShown: true }).where(eq(users.id, userId));
+      paymentStatusCache.delete(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Decline trial error:", error);
+      res.status(500).json({ error: "Failed to decline trial" });
     }
   });
 
