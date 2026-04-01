@@ -3185,6 +3185,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         success_url: `${baseUrl}/?payment=success&tier=${encodeURIComponent(tier)}`,
         cancel_url: `${baseUrl}/trial-offer?cancelled=true`,
         customer: customerId,
+        payment_method_collection: 'always',
         allow_promotion_codes: false,
         locale: 'auto',
         metadata,

@@ -45,13 +45,34 @@ export class WebhookHandlers {
         const billingInterval = session.metadata?.billingInterval || 'month';
         const isFoundingMember = session.metadata?.isFoundingMember === 'true';
         
+        const isTrialCheckout = !!(session.subscription);
+        let trialEndDate: Date | undefined;
+        if (isTrialCheckout && session.subscription) {
+          try {
+            const stripe = await getUncachableStripeClient();
+            const sub = await stripe.subscriptions.retrieve(session.subscription);
+            if (sub.status === 'trialing' && sub.trial_end) {
+              trialEndDate = new Date(sub.trial_end * 1000);
+            }
+          } catch (subErr) {
+            console.warn('Could not fetch subscription for trialEndsAt:', subErr);
+            trialEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+          }
+        }
+
         const updateData: any = { 
           hasPaid: true,
           subscriptionTier: tier,
           subscriptionStatus: 'active',
           billingInterval,
           isFoundingMember,
+          trialOfferShown: true,
         };
+
+        if (trialEndDate) {
+          updateData.trialEndsAt = trialEndDate;
+          updateData.subscriptionStatus = 'trialing';
+        }
         
         if (session.subscription) {
           updateData.subscriptionId = session.subscription;
@@ -60,8 +81,6 @@ export class WebhookHandlers {
         if (session.customer) {
           updateData.stripeCustomerId = session.customer;
         }
-        
-        updateData.trialOfferShown = true;
 
         await db
           .update(users)
