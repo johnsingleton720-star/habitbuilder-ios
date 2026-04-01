@@ -3275,6 +3275,7 @@ SAFETY: Never generate harmful, violent, or explicit content.`
           subscriptionTier: tier,
           hasPaid: true,
           subscriptionStatus: 'active',
+          trialOfferShown: true,
         }).where(eq(users.id, userId));
         paymentStatusCache.delete(userId);
 
