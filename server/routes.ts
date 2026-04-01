@@ -968,6 +968,9 @@ export async function registerRoutes(
       const userId = req.user!.claims.sub;
 
       await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+      await db.delete(nativeAuthTokens).where(eq(nativeAuthTokens.userId, userId));
+      await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+      await db.delete(dailyChallenges).where(eq(dailyChallenges.userId, userId));
       await db.delete(coachMessages).where(
         sql`chat_id IN (SELECT id FROM coach_chats WHERE user_id = ${userId})`
       );
@@ -981,17 +984,26 @@ export async function registerRoutes(
       await db.delete(commentLikes).where(eq(commentLikes.userId, userId));
       await db.delete(postLikes).where(eq(postLikes.userId, userId));
       await db.delete(profileLikes).where(eq(profileLikes.likedByUserId, userId));
+      await db.delete(profileLikes).where(eq(profileLikes.profileUserId, userId));
       await db.delete(forumComments).where(eq(forumComments.userId, userId));
       await db.delete(forumPosts).where(eq(forumPosts.userId, userId));
       await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
       await db.delete(moodEntries).where(eq(moodEntries.userId, userId));
       await db.delete(quickTasks).where(eq(quickTasks.userId, userId));
+      await db.delete(journalEntries).where(eq(journalEntries.userId, userId));
       await db.delete(userAchievements).where(eq(userAchievements.userId, userId));
       await db.delete(progressReports).where(eq(progressReports.userId, userId));
       await db.delete(accountabilityPartners).where(
         sql`user_id = ${userId} OR partner_user_id = ${userId}`
       );
+      await db.delete(userCommitments).where(eq(userCommitments.userId, userId));
+      await db.delete(dailyPlannerEntries).where(eq(dailyPlannerEntries.userId, userId));
+      await db.delete(goalMilestones).where(eq(goalMilestones.userId, userId));
+      await db.delete(goals).where(eq(goals.userId, userId));
+      await db.delete(habitStacks).where(eq(habitStacks.userId, userId));
       await db.delete(userTemplates).where(eq(userTemplates.userId, userId));
+      await db.delete(habitReminders).where(eq(habitReminders.userId, userId));
+      await db.delete(focusSessions).where(eq(focusSessions.userId, userId));
       await db.delete(habits).where(eq(habits.userId, userId));
       await db.delete(feedback).where(eq(feedback.userId, userId));
       await db.delete(pageViews).where(eq(pageViews.userId, userId));
