@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ const PREMIUM_EXTRAS = [
 export default function TrialOffer() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [selectedTier, setSelectedTier] = useState<"pro" | "premium">("pro");
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [isStartingIAP, setIsStartingIAP] = useState(false);
@@ -100,9 +102,11 @@ export default function TrialOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      navigate("/");
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      navigate("/");
     },
   });
 

@@ -228,6 +228,24 @@ function Router() {
     })();
   }, [user, toast]);
 
+  // Only new users see TrialOffer. All users who existed before this feature was deployed
+  // were backfilled with trialOfferShown=true in the database, so they are never targeted.
+  // presignupHandoffDone ensures we don't interrupt the pre-signup onboarding handoff.
+  const needsTrialOffer = !!(
+    user?.tosAcceptedAt &&
+    !user?.isAdmin &&
+    !user?.hasPaid &&
+    !user?.trialOfferShown &&
+    !user?.trialEndsAt &&
+    presignupHandoffDone
+  );
+
+  useEffect(() => {
+    if (!needsTrialOffer) return;
+    if (location === '/trial-offer') return;
+    navigate('/trial-offer');
+  }, [needsTrialOffer, location]);
+
   useEffect(() => {
     if (!user?.id || isAuthLoading || isPaymentLoading || !presignupHandoffDone) return;
     if (welcomeHubCheckedUserId === user.id) return;
@@ -307,8 +325,12 @@ function Router() {
     return <TermsOfServiceGate />;
   }
 
-  if (!user.isAdmin && !user.hasPaid && !user.trialOfferShown && !user.trialEndsAt) {
-    return <TrialOffer />;
+  if (needsTrialOffer && location !== '/trial-offer') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loader-trial-redirect" />
+      </div>
+    );
   }
 
   if (isPaymentLoading) {
@@ -354,6 +376,7 @@ function Router() {
       <Route path="/planner"><PageTransition><DailyPlanner /></PageTransition></Route>
       <Route path="/resources"><PageTransition><Resources /></PageTransition></Route>
       <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
+      <Route path="/trial-offer"><PageTransition><TrialOffer /></PageTransition></Route>
       <Route><PageTransition><NotFound /></PageTransition></Route>
     </Switch>
     </>
