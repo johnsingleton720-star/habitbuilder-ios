@@ -56,6 +56,16 @@ async function backfillProgressEntries() {
 async function runStartupMigrations() {
   try {
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_funnel_viewer boolean DEFAULT false`);
+    // Add trial_offer_shown column (idempotent)
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_offer_shown boolean DEFAULT false`);
+    // Backfill: all users who existed before the card-required trial feature (2026-04-01)
+    // get trial_offer_shown=true so they are never shown the new paywall gate.
+    await db.execute(sql`
+      UPDATE users
+      SET trial_offer_shown = true
+      WHERE trial_offer_shown = false
+        AND created_at < '2026-04-01 00:00:00+00'
+    `);
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);

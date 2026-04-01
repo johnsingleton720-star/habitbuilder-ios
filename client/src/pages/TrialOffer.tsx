@@ -120,13 +120,22 @@ export default function TrialOffer() {
             ? APPLE_PRODUCT_IDS.premium_monthly
             : APPLE_PRODUCT_IDS.pro_monthly;
         const success = await purchaseProduct(productId);
-        if (!success) {
+        if (success) {
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          navigate("/");
+        } else {
           toast({
             title: "Purchase failed",
             description: "Unable to complete purchase. Please try again.",
             variant: "destructive",
           });
         }
+      } catch (err) {
+        toast({
+          title: "Purchase error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsStartingIAP(false);
       }
