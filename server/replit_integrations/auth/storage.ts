@@ -30,17 +30,12 @@ class AuthStorage implements IAuthStorage {
       signupGclid: utmData.gclid || null,
     } : {};
     
-    const trialFields = !existingUser && !isOwner ? {
-      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    } : {};
-    
     const [user] = await db
       .insert(users)
       .values({
         ...userData,
         ...(isOwner && { isAdmin: true, hasPaid: true, subscriptionTier: "premium" }),
         ...utmFields,
-        ...trialFields,
       })
       .onConflictDoUpdate({
         target: users.id,
