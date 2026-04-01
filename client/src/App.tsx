@@ -122,6 +122,12 @@ function Router() {
   const [triggerTourAfterHub, setTriggerTourAfterHub] = useState(false);
   const [triggerCreateHabit, setTriggerCreateHabit] = useState(false);
   const [presignupHandoffDone, setPresignupHandoffDone] = useState(!localStorage.getItem("presignup_data"));
+  // True while we're waiting for Stripe webhook to update user state after checkout redirect.
+  // Suppresses the needsTrialOffer redirect so the user isn't bounced back to /trial-offer.
+  const [isWaitingForPayment, setIsWaitingForPayment] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('payment') === 'success';
+  });
   
   useTracking();
   usePushNotifications();
@@ -160,6 +166,25 @@ function Router() {
       window.history.replaceState({}, '', '/');
     }
   }, [toast]);
+
+  // Poll /api/auth/user until Stripe webhook updates hasPaid/trialEndsAt, then release the gate.
+  // Prevents new-trial users from being re-redirected to /trial-offer after Stripe checkout returns.
+  useEffect(() => {
+    if (!isWaitingForPayment) return;
+    let attempts = 0;
+    const maxAttempts = 15; // up to 30 seconds
+    const interval = setInterval(async () => {
+      attempts++;
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/user'] });
+      const userData = queryClient.getQueryData<any>(['/api/auth/user']);
+      if (userData?.hasPaid || userData?.trialEndsAt || attempts >= maxAttempts) {
+        setIsWaitingForPayment(false);
+        clearInterval(interval);
+      }
+    }, 2000);
+    queryClient.refetchQueries({ queryKey: ['/api/auth/user'] });
+    return () => clearInterval(interval);
+  }, [isWaitingForPayment]);
 
   useEffect(() => {
     if (!user) return;
@@ -229,9 +254,12 @@ function Router() {
   }, [user, toast]);
 
   // Only new users see TrialOffer. All users who existed before this feature was deployed
-  // were backfilled with trialOfferShown=true in the database, so they are never targeted.
-  // presignupHandoffDone ensures we don't interrupt the pre-signup onboarding handoff.
+  // were backfilled with trialOfferShown=true in server/index.ts startup migration, so they
+  // are never targeted. presignupHandoffDone ensures we don't interrupt the pre-signup
+  // onboarding handoff. isWaitingForPayment suppresses the redirect while polling for
+  // Stripe webhook confirmation after checkout returns.
   const needsTrialOffer = !!(
+    !isWaitingForPayment &&
     user?.tosAcceptedAt &&
     !user?.isAdmin &&
     !user?.hasPaid &&
