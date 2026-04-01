@@ -316,15 +316,15 @@ export default function TrialOffer() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-decline-go-back">
-              Go back
+            <AlertDialogCancel data-testid="button-decline-start-trial">
+              Start Trial
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeclineConfirm}
               className="bg-muted text-foreground hover:bg-muted/80"
               data-testid="button-decline-confirm"
             >
-              Yes, stay on free
+              No Thanks
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

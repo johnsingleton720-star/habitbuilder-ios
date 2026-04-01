@@ -364,7 +364,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                   </h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Everything unlocked for {trialDaysRemaining} days. No credit card required.
+                  Everything you need to build lasting habits.
                 </p>
               </div>
 
