@@ -90,6 +90,7 @@ import DailyPlanner from "@/pages/DailyPlanner";
 import SignedOut from "@/pages/SignedOut";
 import ResetPassword from "@/pages/ResetPassword";
 import TrialOffer from "@/pages/TrialOffer";
+import AppGuide from "@/pages/AppGuide";
 
 function VersionUpdateBanner() {
   return (
@@ -405,6 +406,7 @@ function Router() {
       <Route path="/resources"><PageTransition><Resources /></PageTransition></Route>
       <Route path="/paywall"><PageTransition><Paywall /></PageTransition></Route>
       <Route path="/trial-offer"><PageTransition><TrialOffer /></PageTransition></Route>
+      <Route path="/guide"><PageTransition><AppGuide /></PageTransition></Route>
       <Route><PageTransition><NotFound /></PageTransition></Route>
     </Switch>
     </>

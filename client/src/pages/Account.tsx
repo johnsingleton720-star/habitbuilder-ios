@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, ArrowRight, Bell, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone, HelpCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BookOpen, Camera, Check, Crown, LogOut, Mail, Shield, Calendar, Sparkles, CreditCard, Loader2, ExternalLink, MessageSquare, Settings, BarChart3, Users, Eye, TrendingUp, XCircle, RefreshCw, ArrowUpDown, AlertTriangle, Globe, Pencil, X, Star, Trash2, Smartphone, HelpCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -1111,6 +1111,16 @@ export default function Account() {
                 <HelpCircle className="w-4 h-4" />
                 Take a Tour
               </Button>
+              <Link href="/guide">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  data-testid="button-app-guide"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  App Guide
+                </Button>
+              </Link>
               {user?.isAdmin && (
                 <>
                   <Link href="/admin/feedback">
