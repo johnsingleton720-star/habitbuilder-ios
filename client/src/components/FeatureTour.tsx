@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout, BookOpen, Timer, MessageSquare, Flag, Play, Star } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -74,6 +74,48 @@ const ALL_STEPS: TourStep[] = [
     position: "top",
     mobileOnly: true,
   },
+  {
+    selector: "",
+    title: "Guided Sessions",
+    description: "When you open any habit, you can start a Guided Session — the AI walks you through each task one step at a time, keeping you focused and on track. It's like having a personal coach in your pocket.",
+    icon: <Play className="w-5 h-5 text-emerald-500" />,
+    position: "bottom",
+  },
+  {
+    selector: '[data-testid="card-journal-link"]',
+    title: "Daily Journal",
+    description: "Write a quick journal entry each day to reflect on your progress, process your thoughts, and give your AI coach more context for better coaching. Your entries are always private.",
+    icon: <BookOpen className="w-5 h-5 text-indigo-500" />,
+    position: "top",
+  },
+  {
+    selector: '[data-testid="card-focus-timer-link"]',
+    title: "Focus Timer",
+    description: "Use the built-in focus timer to work in distraction-free sessions. Great for habit tasks that need concentration — study, writing, deep work, or anything that benefits from full attention.",
+    icon: <Timer className="w-5 h-5 text-amber-500" />,
+    position: "top",
+  },
+  {
+    selector: '[data-testid="card-goals-link"]',
+    title: "Goals & Milestones",
+    description: "Set bigger targets that your habits feed into — like running a 5K or reading 12 books this year. Goals give your daily habits a bigger meaning and let you celebrate meaningful wins.",
+    icon: <Flag className="w-5 h-5 text-rose-500" />,
+    position: "top",
+  },
+  {
+    selector: '[data-tour="user-menu-trigger"]',
+    title: "AI Coach Chat",
+    description: "Tap your profile picture and open Coach Chat to have a real conversation with your AI coach. Ask it anything — why a habit matters, how to stay motivated, or what to focus on next.",
+    icon: <MessageSquare className="w-5 h-5 text-violet-500" />,
+    position: "bottom",
+  },
+  {
+    selector: "",
+    title: "You're All Set!",
+    description: "That's the tour! Whenever you want a full breakdown of every feature, open Account settings and tap 'App Guide'. Everything you share with your AI coach stays private — it's only used to personalise your experience.",
+    icon: <Star className="w-5 h-5 text-amber-500" />,
+    position: "bottom",
+  },
 ];
 
 const TOUR_STORAGE_KEY = "featureTourCompleted";
@@ -103,7 +145,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
 
   const positionTooltip = useCallback(() => {
     if (!step) return;
-    const el = document.querySelector(step.selector);
+    const el = step.selector ? document.querySelector(step.selector) : null;
     if (el) {
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
@@ -114,7 +156,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
 
   const scrollToElement = useCallback(() => {
     if (!step) return;
-    const el = document.querySelector(step.selector);
+    const el = step.selector ? document.querySelector(step.selector) : null;
     if (el) {
       const rect = el.getBoundingClientRect();
       const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
