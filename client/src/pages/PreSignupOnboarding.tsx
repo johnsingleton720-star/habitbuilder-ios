@@ -285,7 +285,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     {[
                       { icon: Sparkles, text: "AI builds your daily action plan" },
                       { icon: TrendingUp, text: "Guided sessions keep you on track" },
-                      { icon: Star, text: "7-day free premium trial included" },
+                      { icon: Star, text: "7-day free trial included" },
                     ].map((item, i) => (
                       <div key={i} className="flex items-center gap-3 py-1.5">
                         <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
@@ -601,12 +601,12 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     className="w-full gap-2 h-14 rounded-xl text-base"
                     data-testid="button-presignup-save-simple"
                   >
-                    Start My 7-Day Free Premium Trial
+                    Start My 7-Day Free Trial
                     <ArrowRight className="w-5 h-5" />
                   </Button>
 
                   <p className="w-full text-center text-sm text-muted-foreground" data-testid="text-presignup-simple-trial-info">
-                    Sign up free — get 7 days of all Premium features
+                    Sign up free — choose Pro or Premium, free for 7 days
                   </p>
                 </div>
               </motion.div>
@@ -861,12 +861,12 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                     className="w-full gap-2 h-14 rounded-xl text-base"
                     data-testid="button-presignup-save"
                   >
-                    Start My 7-Day Free Premium Trial
+                    Start My 7-Day Free Trial
                     <ArrowRight className="w-5 h-5" />
                   </Button>
 
                   <p className="w-full text-center text-sm text-muted-foreground" data-testid="text-presignup-trial-info">
-                    Sign up free — get 7 days of all Premium features + your AI plan saved
+                    Sign up free — choose Pro or Premium, free for 7 days + your AI plan saved
                   </p>
                 </div>
               </motion.div>

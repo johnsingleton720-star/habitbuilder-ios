@@ -101,10 +101,16 @@ export default function TrialOffer() {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.setQueryData(["/api/auth/user"], (old: any) =>
+        old ? { ...old, trialOfferShown: true } : old
+      );
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       navigate("/");
     },
     onError: () => {
+      queryClient.setQueryData(["/api/auth/user"], (old: any) =>
+        old ? { ...old, trialOfferShown: true } : old
+      );
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       navigate("/");
     },

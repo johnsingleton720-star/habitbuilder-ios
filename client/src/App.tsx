@@ -375,7 +375,7 @@ function Router() {
 
   return (
     <>
-    {showWelcomeHub && <WelcomeHub onDismiss={handleWelcomeHubDismiss} />}
+    {showWelcomeHub && !needsTrialOffer && <WelcomeHub onDismiss={handleWelcomeHubDismiss} />}
     {updateAvailable && <VersionUpdateBanner />}
     {user && isNative() && isIOS() && !showWelcomeHub && presignupHandoffDone && welcomeHubCheckedUserId === String(user.id) && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
