@@ -60,6 +60,8 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [appleAvailable, setAppleAvailable] = useState(true);
   const [googleFailed, setGoogleFailed] = useState(false);
   const [socialAuthFailed, setSocialAuthFailed] = useState(() => getSessionFlag(SESSION_KEY_SOCIAL_FAILED));
+  const [appleError1000, setAppleError1000] = useState(false);
+  const [appleHasAttempted, setAppleHasAttempted] = useState(false);
   const { toast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
   const googleNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,6 +146,8 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     }
 
     setAppleLoading(true);
+    setAppleHasAttempted(true);
+    setAppleError1000(false);
     setError("");
 
     try {
@@ -208,12 +212,12 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       markSocialFailed();
 
       if (isAppleError1000(errMsg)) {
-        setError(APPLE_ERROR_1000_MESSAGE);
+        setAppleError1000(true);
       } else {
         setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
       }
-      setAppleLoading(false);
       scrollToEmail();
+      setAppleLoading(false);
     }
   };
 
@@ -363,6 +367,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setError("");
+    setAppleError1000(false);
     setForgotSent(false);
   };
 
@@ -433,7 +438,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                onChange={(e) => { setEmail(e.target.value); setError(""); setAppleError1000(false); }}
                 required
                 autoComplete="email"
                 className={`pl-10 ${showEmailProminent ? "ring-2 ring-primary/50" : ""}`}
@@ -506,19 +511,26 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const socialButtonsBlock = hasSocialOptions ? (
     <div className="space-y-3">
       {appleAvailable && (
-        <button
-          onClick={handleAppleNativeSignIn}
-          disabled={appleLoading || googleLoading || loading}
-          className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
-          data-testid="button-auth-apple"
-        >
-          {appleLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <SiApple className="w-5 h-5" />
+        <div>
+          <button
+            onClick={handleAppleNativeSignIn}
+            disabled={appleLoading || googleLoading || loading}
+            className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
+            data-testid="button-auth-apple"
+          >
+            {appleLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <SiApple className="w-5 h-5" />
+            )}
+            Continue with Apple
+          </button>
+          {isNativeIOS && !appleHasAttempted && (
+            <p className="text-center text-xs text-muted-foreground mt-1.5" data-testid="text-apple-icloud-hint">
+              Requires iCloud to be signed in on your device
+            </p>
           )}
-          Continue with Apple
-        </button>
+        </div>
       )}
       {!googleFailed && (
         <div>
@@ -591,6 +603,27 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
                 <p className="text-sm font-semibold text-foreground">Your plan for "{presignupHabit}" is ready</p>
                 <p className="text-xs text-muted-foreground">Sign up to save it and start your free trial</p>
               </div>
+            </div>
+          )}
+
+          {appleError1000 && (
+            <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-4 mb-4" data-testid="card-apple-error-1000">
+              <div className="flex items-start gap-3 mb-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Apple Sign In needs iCloud active</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    Your device isn't fully set up for Apple Sign In. Make sure you're signed into iCloud in Settings and your device has a passcode.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setAppleError1000(false); scrollToEmail(); }}
+                className="w-full py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors"
+                data-testid="button-apple-error-use-email"
+              >
+                Sign up with email instead →
+              </button>
             </div>
           )}
 
