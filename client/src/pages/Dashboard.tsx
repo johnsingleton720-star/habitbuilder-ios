@@ -94,6 +94,7 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
@@ -109,6 +110,7 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
       toast({ title: "Check-in removed" });
