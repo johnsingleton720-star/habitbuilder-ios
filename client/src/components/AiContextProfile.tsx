@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface ProfileData {
   chronotype: string;
@@ -15,7 +17,6 @@ interface ProfileData {
   energyLevels: string;
   peakFocusTime: string;
   scheduleUnpredictable: string;
-  idealWeek: string;
   anythingElse: string;
 }
 
@@ -26,7 +27,6 @@ const BLANK: ProfileData = {
   energyLevels: "",
   peakFocusTime: "",
   scheduleUnpredictable: "",
-  idealWeek: "",
   anythingElse: "",
 };
 
@@ -67,6 +67,22 @@ export function AiContextProfile() {
   const set = (key: keyof ProfileData, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const energyOptions = [
+    { value: "high", label: "High — consistently energetic" },
+    { value: "moderate", label: "Moderate — steady" },
+    { value: "variable", label: "Variable — good days and tough days" },
+    { value: "low", label: "Low — often tired" },
+  ];
+
+  const peakOptions = [
+    { value: "early_morning", label: "Before 7am" },
+    { value: "morning", label: "Morning (7am–noon)" },
+    { value: "afternoon", label: "Afternoon (noon–5pm)" },
+    { value: "evening", label: "Evening (5pm–9pm)" },
+    { value: "late_night", label: "Late night" },
+    { value: "no_clear", label: "No clear peak" },
+  ];
+
   return (
     <Card data-testid="card-ai-context-profile">
       <CardHeader
@@ -89,7 +105,7 @@ export function AiContextProfile() {
       </CardHeader>
 
       {isOpen && (
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-6">
           <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/15 px-3 py-2.5">
             <Lock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -102,9 +118,9 @@ export function AiContextProfile() {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-6">
 
-              <div className="space-y-1.5" data-testid="field-chronotype">
+              <div className="space-y-2" data-testid="field-chronotype">
                 <p className="text-sm font-medium">Are you more of a morning person or a night owl?</p>
                 <Select value={form.chronotype} onValueChange={(v) => set("chronotype", v)}>
                   <SelectTrigger data-testid="select-chronotype">
@@ -122,7 +138,7 @@ export function AiContextProfile() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-weekly-hours">
+              <div className="space-y-2" data-testid="field-weekly-hours">
                 <p className="text-sm font-medium">Roughly how many hours a week do you work or study?</p>
                 <Select value={form.weeklyHours} onValueChange={(v) => set("weeklyHours", v)}>
                   <SelectTrigger data-testid="select-weekly-hours">
@@ -138,7 +154,7 @@ export function AiContextProfile() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-past-obstacles">
+              <div className="space-y-2" data-testid="field-past-obstacles">
                 <p className="text-sm font-medium">What has made it hardest to stick to habits in the past?</p>
                 <Select value={form.pastObstacles} onValueChange={(v) => set("pastObstacles", v)}>
                   <SelectTrigger data-testid="select-past-obstacles">
@@ -157,41 +173,45 @@ export function AiContextProfile() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-energy-levels">
+              <div className="space-y-2" data-testid="field-energy-levels">
                 <p className="text-sm font-medium">How would you describe your current energy levels day-to-day?</p>
-                <Select value={form.energyLevels} onValueChange={(v) => set("energyLevels", v)}>
-                  <SelectTrigger data-testid="select-energy-levels">
-                    <SelectValue placeholder="Choose one…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="high">High — consistently energetic</SelectItem>
-                    <SelectItem value="moderate">Moderate — steady through the day</SelectItem>
-                    <SelectItem value="variable">Variable — good days and tough days</SelectItem>
-                    <SelectItem value="low">Low — often tired or drained</SelectItem>
-                    <SelectItem value="morning_peak">High in the morning, drops later</SelectItem>
-                    <SelectItem value="afternoon_peak">Low in the morning, peaks in the afternoon</SelectItem>
-                  </SelectContent>
-                </Select>
+                <RadioGroup
+                  value={form.energyLevels}
+                  onValueChange={(v) => set("energyLevels", v)}
+                  className="grid grid-cols-1 gap-2"
+                  data-testid="radio-energy-levels"
+                >
+                  {energyOptions.map((opt) => (
+                    <div key={opt.value} className="flex items-center gap-2.5">
+                      <RadioGroupItem value={opt.value} id={`energy-${opt.value}`} />
+                      <Label htmlFor={`energy-${opt.value}`} className="text-sm font-normal cursor-pointer">
+                        {opt.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-peak-focus">
+              <div className="space-y-2" data-testid="field-peak-focus">
                 <p className="text-sm font-medium">What time of day do you feel most focused and productive?</p>
-                <Select value={form.peakFocusTime} onValueChange={(v) => set("peakFocusTime", v)}>
-                  <SelectTrigger data-testid="select-peak-focus">
-                    <SelectValue placeholder="Choose one…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="early_morning">Early morning (before 7am)</SelectItem>
-                    <SelectItem value="morning">Morning (7am–noon)</SelectItem>
-                    <SelectItem value="afternoon">Afternoon (noon–5pm)</SelectItem>
-                    <SelectItem value="evening">Evening (5pm–9pm)</SelectItem>
-                    <SelectItem value="late_night">Late night (after 9pm)</SelectItem>
-                    <SelectItem value="no_clear">No clear peak</SelectItem>
-                  </SelectContent>
-                </Select>
+                <RadioGroup
+                  value={form.peakFocusTime}
+                  onValueChange={(v) => set("peakFocusTime", v)}
+                  className="grid grid-cols-2 gap-2"
+                  data-testid="radio-peak-focus"
+                >
+                  {peakOptions.map((opt) => (
+                    <div key={opt.value} className="flex items-center gap-2">
+                      <RadioGroupItem value={opt.value} id={`peak-${opt.value}`} />
+                      <Label htmlFor={`peak-${opt.value}`} className="text-sm font-normal cursor-pointer leading-tight">
+                        {opt.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-schedule-unpredictable">
+              <div className="space-y-2" data-testid="field-schedule-unpredictable">
                 <p className="text-sm font-medium">Do you have regular commitments that make your schedule unpredictable?</p>
                 <Select value={form.scheduleUnpredictable} onValueChange={(v) => set("scheduleUnpredictable", v)}>
                   <SelectTrigger data-testid="select-schedule-unpredictable">
@@ -208,23 +228,10 @@ export function AiContextProfile() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5" data-testid="field-ideal-week">
-                <p className="text-sm font-medium">What does your ideal habit-building week look like?</p>
-                <Textarea
-                  placeholder="e.g. Short sessions every morning before work, with weekends a bit more flexible…"
-                  value={form.idealWeek}
-                  onChange={(e) => set("idealWeek", e.target.value)}
-                  maxLength={500}
-                  rows={3}
-                  className="resize-none text-sm"
-                  data-testid="textarea-ideal-week"
-                />
-              </div>
-
-              <div className="space-y-1.5" data-testid="field-anything-else">
+              <div className="space-y-2" data-testid="field-anything-else">
                 <p className="text-sm font-medium">Is there anything else you'd like your AI coach to know about you?</p>
                 <Textarea
-                  placeholder="e.g. I have ADHD so I need very small steps. I travel for work one week a month…"
+                  placeholder="e.g. I have ADHD so I need very small steps. I travel for work one week a month. I want sessions to stay under 15 minutes…"
                   value={form.anythingElse}
                   onChange={(e) => set("anythingElse", e.target.value)}
                   maxLength={1000}
