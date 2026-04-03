@@ -240,7 +240,7 @@ export default function AdminFunnel() {
                         </div>
                         {isFailureStep && breakdown.length > 0 && (
                           <div className="pl-1 pt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {breakdown.map(([key, count]) => (
+                            {breakdown.sort(([a], [b]) => a.localeCompare(b)).map(([key, count]) => (
                               <span key={key} className="text-xs text-muted-foreground tabular-nums">
                                 {key} ×{count}
                               </span>

@@ -9793,7 +9793,7 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         count: sql<number>`count(*)`,
       })
         .from(funnelEvents)
-        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${funnelEvents.eventName} = 'auth_signup_failed'`)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${funnelEvents.eventName} = 'auth_signup_failed' AND ${returningSessionFilter}`)
         .groupBy(funnelEvents.metadata)
         .orderBy(sql`count(*) desc`);
 
