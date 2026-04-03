@@ -95,12 +95,9 @@ const features: FeatureSection[] = [
   },
   {
     icon: Users,
-    title: "Community Forum",
-    description: "Connect with other people building habits, share wins, ask questions, and support others. Reading about someone else's progress on a similar goal can be surprisingly motivating. Pro members can read; Premium members can post and message.",
-    link: "/community",
-    linkLabel: "Open Community",
-    badge: "Pro+",
-    comingSoon: false,
+    title: "Community",
+    description: "Connect with other people building habits, share wins, ask questions, and support others. Reading about someone else's progress on a similar goal can be surprisingly motivating. Pro members will have read-only access; Premium members will be able to post, comment, and message. Launching soon.",
+    comingSoon: true,
   },
   {
     icon: UserCircle,
