@@ -421,6 +421,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                         }`}
                         onClick={() => {
                           setData({ ...data, habitTitle: habit.name, customHabit: "" });
+                          setTimeout(() => setStep(3), 300);
                         }}
                         data-testid={`card-habit-${habit.name.toLowerCase().replace(/\s+/g, "-")}`}
                       >
@@ -449,15 +450,16 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                   />
                 </div>
 
-                <Button
-                  onClick={() => setStep(3)}
-                  disabled={!selectedHabit}
-                  className="w-full gap-2 h-12 rounded-xl"
-                  data-testid="button-presignup-habit-continue"
-                >
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+                {data.customHabit.trim() && !data.habitTitle && (
+                  <Button
+                    onClick={() => setStep(3)}
+                    className="w-full gap-2 h-12 rounded-xl"
+                    data-testid="button-presignup-habit-continue"
+                  >
+                    Continue
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                )}
               </motion.div>
             )}
 
