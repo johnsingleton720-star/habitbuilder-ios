@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers, Star, Flame } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, ChevronRight, Clock, Sparkles, Target, Zap, Play, Sun, Sunrise, Moon, Layers, Star, Flame, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

@@ -33,7 +33,9 @@ export type FunnelEventName =
   | "auth_google_timeout"
   | "auth_google_cancelled"
   | "auth_methods_available"
-  | "first_habit_created";
+  | "first_habit_created"
+  | "welcome_hub_shown"
+  | "welcome_hub_action";
 
 export function trackFunnelEvent(
   eventName: FunnelEventName,

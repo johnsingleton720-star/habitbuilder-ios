@@ -62,7 +62,7 @@ function getApnsJwt(): string {
     { algorithm: "ES256", header: { alg: "ES256", kid: APNS_KEY_ID! } }
   );
   apnsJwtIssuedAt = now;
-  return apnsJwtToken;
+  return apnsJwtToken!;
 }
 
 async function sendApnsNotification(
