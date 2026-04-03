@@ -42,9 +42,6 @@ function isAppleError1000(message: string): boolean {
   return /error\s*1000/i.test(message);
 }
 
-const APPLE_ERROR_1000_MESSAGE =
-  "Apple Sign-In couldn't connect. Please check:\n• You're signed into iCloud (Settings → tap your name)\n• Your device has a passcode set\n• You're running iOS 15 or later\n\nOr sign up with email below — it only takes a moment.";
-
 export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps) {
   const [mode, setMode] = useState<AuthMode>("signup");
   const [email, setEmail] = useState("");
@@ -215,8 +212,8 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         setAppleError1000(true);
       } else {
         setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
+        scrollToEmail();
       }
-      scrollToEmail();
       setAppleLoading(false);
     }
   };
@@ -606,27 +603,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             </div>
           )}
 
-          {appleError1000 && (
-            <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-4 mb-4" data-testid="card-apple-error-1000">
-              <div className="flex items-start gap-3 mb-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Apple Sign In needs iCloud active</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                    Your device isn't fully set up for Apple Sign In. Make sure you're signed into iCloud in Settings and your device has a passcode.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => { setAppleError1000(false); scrollToEmail(); }}
-                className="w-full py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors"
-                data-testid="button-apple-error-use-email"
-              >
-                Sign up with email instead →
-              </button>
-            </div>
-          )}
-
           {error && (
             <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 mb-4" data-testid="text-auth-error">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
@@ -649,7 +625,30 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
           {isNativeIOS ? (
             <>
               {emailFormBlock}
-              {socialButtonsBlock && mode !== "forgot" && (
+              {appleError1000 && mode !== "forgot" && (
+                <>
+                  {dividerBlock("or continue with")}
+                  <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-4" data-testid="card-apple-error-1000">
+                    <div className="flex items-start gap-3 mb-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Apple Sign In needs iCloud active</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                          Your device isn't fully set up for Apple Sign In. Make sure you're signed into iCloud in Settings and your device has a passcode.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setAppleError1000(false); scrollToEmail(); }}
+                      className="w-full py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors"
+                      data-testid="button-apple-error-use-email"
+                    >
+                      Sign up with email instead →
+                    </button>
+                  </div>
+                </>
+              )}
+              {!appleError1000 && socialButtonsBlock && mode !== "forgot" && (
                 <>
                   {dividerBlock("or continue with")}
                   {socialButtonsBlock}
