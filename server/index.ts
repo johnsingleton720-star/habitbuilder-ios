@@ -66,6 +66,17 @@ async function runStartupMigrations() {
       WHERE trial_offer_shown = false
         AND created_at < '2026-04-01 00:00:00+00'
     `);
+    // Add welcome_hub_seen column (server-side tracking replaces unreliable localStorage)
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS welcome_hub_seen boolean DEFAULT false`);
+    // Backfill: all users created before the WelcomeHub launch (2026-03-26) or who are
+    // existing users that have already been onboarded — mark as seen so they don't get
+    // the welcome screen unexpectedly. Only brand-new signups (after 2026-04-03) will see it.
+    await db.execute(sql`
+      UPDATE users
+      SET welcome_hub_seen = true
+      WHERE welcome_hub_seen = false
+        AND created_at < '2026-04-03 00:00:00+00'
+    `);
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);

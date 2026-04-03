@@ -23,31 +23,20 @@ import {
   Star,
 } from "lucide-react";
 
-const WELCOME_HUB_KEY = "welcome_hub_seen";
-
-export function getWelcomeHubKey(userId: string) {
-  return `${WELCOME_HUB_KEY}_${userId}`;
-}
-
-export function hasSeenWelcomeHub(userId: string): boolean {
-  return localStorage.getItem(getWelcomeHubKey(userId)) === "true";
-}
-
-function markWelcomeHubSeen(userId: string) {
-  localStorage.setItem(getWelcomeHubKey(userId), "true");
-}
-
-const WELCOME_HUB_LAUNCH_DATE = new Date("2026-03-26T00:00:00Z");
-
-export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin" | "createdAt"> | null): boolean {
+export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin" | "welcomeHubSeen"> | null): boolean {
   if (!user?.id) return false;
   if (user.isAdmin) return false;
-  if (hasSeenWelcomeHub(user.id)) return false;
-  if (user.createdAt) {
-    const createdAt = new Date(user.createdAt);
-    if (createdAt < WELCOME_HUB_LAUNCH_DATE) return false;
-  }
+  if (user.welcomeHubSeen) return false;
   return true;
+}
+
+async function markWelcomeHubSeen() {
+  try {
+    await apiRequest("POST", "/api/user/welcome-hub-seen");
+    queryClient.setQueryData(["/api/auth/user"], (old: any) =>
+      old ? { ...old, welcomeHubSeen: true } : old
+    );
+  } catch {}
 }
 
 interface HabitSummary {
@@ -77,15 +66,20 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
   const { isPro } = useSubscription();
   const [step, setStep] = useState<"welcome" | "features">("welcome");
 
-  const presignupHabitId = localStorage.getItem("presignup_habit_id");
+  const storedPresignupHabitId = localStorage.getItem("presignup_habit_id");
 
   const { data: habits } = useQuery<HabitSummary[]>({
     queryKey: ["/api/habits/summary"],
     enabled: !!user,
   });
 
-  const presignupHabit = presignupHabitId && habits
-    ? habits.find((h) => h.id === Number(presignupHabitId))
+  // Find the AI-plan presignup habit: first try the stored ID, then fall back to
+  // the single AI-plan habit if there's exactly one (reliable for fresh signups
+  // where localStorage may have been cleared by a prior navigation bug).
+  const aiPlanHabits = habits?.filter(h => h.trackingMode !== "simple") ?? [];
+  const presignupHabit = habits
+    ? (storedPresignupHabitId && habits.find(h => h.id === Number(storedPresignupHabitId)))
+      || (aiPlanHabits.length === 1 ? aiPlanHabits[0] : null)
     : null;
 
   const hasExistingHabit = habits && habits.length > 0;
@@ -103,7 +97,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
 
   const handleStartInterview = async () => {
     if (!user || !presignupHabit) return;
-    markWelcomeHubSeen(user.id);
+    markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", {
       action: "start_interview",
       habitId: presignupHabit.id,
@@ -119,7 +113,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
 
   const handleKeepPlan = () => {
     if (!user || !presignupHabit) return;
-    markWelcomeHubSeen(user.id);
+    markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", {
       action: "keep_plan",
       habitId: presignupHabit.id,
@@ -130,7 +124,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
 
   const handleStartHabit = () => {
     if (!user) return;
-    markWelcomeHubSeen(user.id);
+    markWelcomeHubSeen();
     if (hasExistingHabit) {
       trackFunnelEvent("welcome_hub_action", { action: "go_to_habits" });
       onDismiss("explore");
@@ -148,14 +142,14 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
 
   const handleShowMeAround = () => {
     if (!user) return;
-    markWelcomeHubSeen(user.id);
+    markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", { action: "tour" });
     onDismiss("tour");
   };
 
   const handleExplore = () => {
     if (!user) return;
-    markWelcomeHubSeen(user.id);
+    markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", { action: "explore" });
     onDismiss("explore");
   };

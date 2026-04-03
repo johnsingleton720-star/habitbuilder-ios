@@ -3226,6 +3226,17 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     }
   });
 
+  app.post("/api/user/welcome-hub-seen", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await db.update(users).set({ welcomeHubSeen: true }).where(eq(users.id, userId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Welcome hub seen error:", error);
+      res.status(500).json({ error: "Failed to update" });
+    }
+  });
+
   app.post("/api/apple/validate-receipt", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

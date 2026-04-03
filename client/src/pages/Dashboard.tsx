@@ -18,7 +18,6 @@ import { HabitStacks } from "@/components/HabitStacks";
 import { NewUserFeedback } from "@/components/NewUserFeedback";
 import { DashboardHeroCard } from "@/components/DashboardHeroCard";
 import { FeatureTour, TOUR_STORAGE_KEY } from "@/components/FeatureTour";
-import { hasSeenWelcomeHub } from "@/components/WelcomeHub";
 import { DowngradeHabitPicker } from "@/components/DowngradeHabitPicker";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, User as UserIcon, Settings, Moon, Sun, BarChart3, Users, Smartphone, MessageSquare, Sparkles, ArrowRight, Crown, ChevronDown, ChevronUp, Minimize2, BookOpen, Check, Target, Zap, X, Timer, Heart, Calendar, Lock, TrendingDown, TrendingUp, Loader2, Flame, Star, MoreVertical, Edit, Trash2, Layers, Home, AlertTriangle } from "lucide-react";
@@ -161,7 +160,7 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
 
   useEffect(() => {
     if (!user?.id || isLoading) return;
-    const welcomeHubActive = !hasSeenWelcomeHub(String(user.id));
+    const welcomeHubActive = !user.welcomeHubSeen;
     if (welcomeHubActive) return;
 
     const interviewKey = `interview_offer_shown_${user.id}`;
