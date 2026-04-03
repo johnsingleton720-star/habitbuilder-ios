@@ -56,7 +56,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [forgotSent, setForgotSent] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(true);
   const [googleFailed, setGoogleFailed] = useState(false);
-  const [socialAuthFailed, setSocialAuthFailed] = useState(() => getSessionFlag(SESSION_KEY_SOCIAL_FAILED));
+  const [socialAuthFailed, setSocialAuthFailed] = useState(false);
   const [appleError1000, setAppleError1000] = useState(false);
   const [appleHasAttempted, setAppleHasAttempted] = useState(false);
   const { toast } = useToast();
@@ -240,10 +240,8 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (result.error === "cancelled") {
         const count = incrementGoogleCancelCount();
         trackFunnelEvent("auth_google_cancelled", { count: String(count) });
-        if (count >= 1) {
-          setGoogleFailed(true);
-          markSocialFailed();
-          setError("Google sign-in was cancelled. You can use your email below instead — it only takes a moment.");
+        if (count >= 2) {
+          setError("Google sign-in was cancelled. Tap the button again or use your email below.");
           scrollToEmail();
         }
         setGoogleLoading(false);
@@ -272,10 +270,8 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
         const count = incrementGoogleCancelCount();
         trackFunnelEvent("auth_google_cancelled", { count: String(count) });
-        if (count >= 1) {
-          setGoogleFailed(true);
-          markSocialFailed();
-          setError("Google sign-in was cancelled. You can use your email below instead — it only takes a moment.");
+        if (count >= 2) {
+          setError("Google sign-in was cancelled. Tap the button again or use your email below.");
           scrollToEmail();
         }
         setGoogleLoading(false);
