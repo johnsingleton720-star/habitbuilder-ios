@@ -9788,7 +9788,27 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         .from(funnelEvents)
         .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${funnelEvents.eventName} = 'auth_signup_success' AND ${funnelEvents.userId} IS NOT NULL`);
 
-      res.json({ steps, byDay, byPlatform, newRegistrations: newSignups[0]?.count || 0 });
+      const failureRows = await db.select({
+        metadata: funnelEvents.metadata,
+        count: sql<number>`count(*)`,
+      })
+        .from(funnelEvents)
+        .where(sql`${funnelEvents.createdAt} >= ${startDate} AND ${funnelEvents.eventName} = 'auth_signup_failed'`)
+        .groupBy(funnelEvents.metadata)
+        .orderBy(sql`count(*) desc`);
+
+      const failureBreakdown: Record<string, number> = {};
+      for (const row of failureRows) {
+        try {
+          const meta = row.metadata ? JSON.parse(row.metadata) : {};
+          const key = [meta.method, meta.error].filter(Boolean).join(": ") || "unknown";
+          failureBreakdown[key] = (failureBreakdown[key] || 0) + Number(row.count);
+        } catch {
+          failureBreakdown["unknown"] = (failureBreakdown["unknown"] || 0) + Number(row.count);
+        }
+      }
+
+      res.json({ steps, byDay, byPlatform, newRegistrations: newSignups[0]?.count || 0, failureBreakdown });
     } catch (error) {
       console.error("Error fetching funnel data:", error);
       res.status(500).json({ error: "Failed to fetch funnel data" });

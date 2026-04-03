@@ -32,6 +32,7 @@ interface FunnelData {
   byDay: FunnelByDay[];
   byPlatform: FunnelByPlatform[];
   newRegistrations: number;
+  failureBreakdown: Record<string, number>;
 }
 
 const FUNNEL_ORDER = [
@@ -215,6 +216,8 @@ export default function AdminFunnel() {
                     const prevSessions = i > 0 ? orderedSteps[i - 1].uniqueSessions : step.uniqueSessions;
                     const dropoff = prevSessions > 0 ? Math.round(((prevSessions - step.uniqueSessions) / prevSessions) * 100) : 0;
                     const barWidth = Math.max((step.uniqueSessions / maxSessions) * 100, 2);
+                    const isFailureStep = step.key === "auth_signup_failed";
+                    const breakdown = isFailureStep && data?.failureBreakdown ? Object.entries(data.failureBreakdown) : [];
 
                     return (
                       <div key={step.key} className="space-y-1" data-testid={`funnel-step-${step.key}`}>
@@ -235,6 +238,15 @@ export default function AdminFunnel() {
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
+                        {isFailureStep && breakdown.length > 0 && (
+                          <div className="pl-1 pt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {breakdown.map(([key, count]) => (
+                              <span key={key} className="text-xs text-muted-foreground tabular-nums">
+                                {key} ×{count}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })

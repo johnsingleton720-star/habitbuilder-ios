@@ -54,6 +54,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [loading, setLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleSlowNudge, setGoogleSlowNudge] = useState(false);
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(true);
@@ -61,6 +62,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [socialAuthFailed, setSocialAuthFailed] = useState(() => getSessionFlag(SESSION_KEY_SOCIAL_FAILED));
   const { toast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const googleNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const presignupHabit = useMemo(() => {
     try {
@@ -101,6 +103,26 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       scrollToEmail();
     }
   }, []);
+
+  useEffect(() => {
+    if (googleLoading) {
+      setGoogleSlowNudge(false);
+      googleNudgeTimerRef.current = setTimeout(() => {
+        setGoogleSlowNudge(true);
+      }, 8000);
+    } else {
+      if (googleNudgeTimerRef.current) {
+        clearTimeout(googleNudgeTimerRef.current);
+        googleNudgeTimerRef.current = null;
+      }
+      setGoogleSlowNudge(false);
+    }
+    return () => {
+      if (googleNudgeTimerRef.current) {
+        clearTimeout(googleNudgeTimerRef.current);
+      }
+    };
+  }, [googleLoading]);
 
   const markSocialFailed = () => {
     setSocialAuthFailed(true);
@@ -217,10 +239,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (result.error === "cancelled") {
         const count = incrementGoogleCancelCount();
         trackFunnelEvent("auth_google_cancelled", { count: String(count) });
-        if (count >= 2) {
+        if (count >= 1) {
           setGoogleFailed(true);
           markSocialFailed();
-          setError("Google sign-in doesn't seem to be working on this device. Please use your email below — it only takes a moment.");
+          setError("Google sign-in was cancelled. You can use your email below instead — it only takes a moment.");
           scrollToEmail();
         }
         setGoogleLoading(false);
@@ -249,10 +271,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
         const count = incrementGoogleCancelCount();
         trackFunnelEvent("auth_google_cancelled", { count: String(count) });
-        if (count >= 2) {
+        if (count >= 1) {
           setGoogleFailed(true);
           markSocialFailed();
-          setError("Google sign-in doesn't seem to be working on this device. Please use your email below — it only takes a moment.");
+          setError("Google sign-in was cancelled. You can use your email below instead — it only takes a moment.");
           scrollToEmail();
         }
         setGoogleLoading(false);
@@ -499,19 +521,33 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         </button>
       )}
       {!googleFailed && (
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={googleLoading || appleLoading || loading}
-          className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
-          data-testid="button-auth-google"
-        >
-          {googleLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <SiGoogle className="w-4 h-4" />
+        <div>
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || appleLoading || loading}
+            className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border font-semibold text-sm disabled:opacity-70"
+            data-testid="button-auth-google"
+          >
+            {googleLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <SiGoogle className="w-4 h-4" />
+            )}
+            Continue with Google
+          </button>
+          {googleSlowNudge && (
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Taking too long?{" "}
+              <button
+                className="text-primary underline underline-offset-2"
+                onClick={() => { scrollToEmail(); }}
+                data-testid="button-auth-google-slow-nudge"
+              >
+                Use email instead
+              </button>
+            </p>
           )}
-          Continue with Google
-        </button>
+        </div>
       )}
     </div>
   ) : null;
