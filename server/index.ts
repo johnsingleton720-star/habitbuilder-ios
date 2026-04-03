@@ -77,6 +77,8 @@ async function runStartupMigrations() {
       WHERE welcome_hub_seen = false
         AND created_at < '2026-04-03 00:00:00+00'
     `);
+    // Add ai_context_profile column for the private AI coaching profile ("About Me")
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);

@@ -102,8 +102,9 @@ const features: FeatureSection[] = [
   {
     icon: UserCircle,
     title: "AI Profile (About Me)",
-    description: "A private profile you fill in once — your work style, biggest challenges, personal values, and anything else relevant to your goals. The AI reads this when building your plan and coaching you, so advice never feels one-size-fits-all. Coming soon.",
-    comingSoon: true,
+    description: "A private questionnaire you fill in once — your chronotype, energy levels, past obstacles, and anything else relevant to your goals. The AI will use this context when building plans and coaching you, so advice never feels one-size-fits-all. Find it in Account settings.",
+    link: "/account",
+    linkLabel: "Open Account settings",
   },
 ];
 

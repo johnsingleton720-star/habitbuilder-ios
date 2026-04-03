@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { AiContextProfile } from "@/components/AiContextProfile";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentStatus } from "@/hooks/use-payment";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -1080,6 +1081,14 @@ export default function Account() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+        >
+          <AiContextProfile />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
         >
           <Card>
             <CardHeader>

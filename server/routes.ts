@@ -3237,6 +3237,33 @@ SAFETY: Never generate harmful, violent, or explicit content.`
     }
   });
 
+  app.get("/api/user/ai-context", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [user] = await db.select({ aiContextProfile: users.aiContextProfile }).from(users).where(eq(users.id, userId)).limit(1);
+      res.json({ profile: user?.aiContextProfile ?? null });
+    } catch (error) {
+      console.error("AI context get error:", error);
+      res.status(500).json({ error: "Failed to fetch AI context profile" });
+    }
+  });
+
+  app.post("/api/user/ai-context", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const profileSchema = z.record(z.string(), z.string().max(1000));
+      const parsed = profileSchema.safeParse(req.body.profile);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid profile data" });
+      }
+      await db.update(users).set({ aiContextProfile: parsed.data }).where(eq(users.id, userId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("AI context save error:", error);
+      res.status(500).json({ error: "Failed to save AI context profile" });
+    }
+  });
+
   app.post("/api/apple/validate-receipt", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user!.claims.sub;

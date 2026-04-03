@@ -103,7 +103,9 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   authProvider: varchar("auth_provider").default("replit"),
   appleUserId: varchar("apple_user_id"),
-  
+
+  aiContextProfile: jsonb("ai_context_profile").$type<Record<string, string>>(),
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
