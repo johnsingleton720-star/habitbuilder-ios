@@ -4287,8 +4287,14 @@ Return JSON:
     }
   }
 
+  // Always-on reward policy injected into every AI prompt, even when no user profile exists.
+  // By design: this ensures the AI never falls back to generic self-affirmation rewards for any user.
   const GLOBAL_REWARD_RULE = `\nREWARD RULE: When the cue-routine-reward loop calls for a reward step, always suggest a specific tangible reward (e.g. a favourite snack, 10 minutes of a leisure activity, a short break doing something enjoyable) — never a vague self-affirmation like "acknowledge your effort," "be proud of yourself," or "give yourself a pat on the back."`;
 
+  // Returns a compact AI prompt block that includes the user's coaching profile (if set) and the reward rule.
+  // When no profile exists: returns just GLOBAL_REWARD_RULE (tangible reward enforcement still applies).
+  // When profile exists: returns USER PROFILE block + personalised reward instruction referencing their stated rewards.
+  // Error path: safely returns GLOBAL_REWARD_RULE so the reward rule is always enforced.
   async function formatAiContextBlock(userId: string): Promise<string> {
     try {
       const user = await storage.getUser(userId);
