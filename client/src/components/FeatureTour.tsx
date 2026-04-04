@@ -150,7 +150,6 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -175,8 +174,8 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     }
   }, []);
 
-  const playStepAudio = useCallback((stepIndex: number, interacted: boolean, isMuted: boolean) => {
-    if (isMuted || !interacted) return;
+  const playStepAudio = useCallback((stepIndex: number, isMuted: boolean) => {
+    if (isMuted) return;
     const audioIndexInAll = ALL_STEPS.indexOf(steps[stepIndex]);
     if (audioIndexInAll < 0) return;
     const src = `/tour-audio/step-${audioIndexInAll + 1}.mp3`;
@@ -242,17 +241,14 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
 
   useEffect(() => {
     if (!isVisible) return;
-    if (hasInteracted) {
-      playStepAudio(currentStep, true, muted);
-    }
-  }, [currentStep, isVisible, hasInteracted, muted, playStepAudio]);
+    playStepAudio(currentStep, muted);
+  }, [currentStep, isVisible, muted, playStepAudio]);
 
   useEffect(() => {
     return () => stopAudio();
   }, [stopAudio]);
 
   const advanceAndPlay = (nextStep: number) => {
-    setHasInteracted(true);
     stopAudio();
     setCurrentStep(nextStep);
   };
