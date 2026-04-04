@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout, BookOpen, Timer, MessageSquare, Flag, Play, Star } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout, BookOpen, Timer, MessageSquare, Flag, Play, Star, User } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -125,6 +125,13 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     selector: "",
+    title: "About Me — Your AI Profile",
+    description: "Head to Account and scroll to 'About Me — AI Coaching Profile'. Fill it in once and the AI will tailor every plan, check-in, and reward to fit your real life.",
+    icon: <User className="w-5 h-5 text-primary" />,
+    position: "bottom",
+  },
+  {
+    selector: "",
     title: "You're All Set!",
     description: "That's the tour! For a full feature reference, open Account > App Guide. Everything you share is private and only used to personalise your coaching.",
     icon: <Star className="w-5 h-5 text-amber-500" />,
@@ -233,13 +240,22 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
       }
     : null;
 
+  const tooltipWidth = Math.min(320, window.innerWidth - 32);
+
   const getTooltipPosition = (): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = { width: tooltipWidth, maxWidth: `calc(100vw - 32px)` };
+
     if (!targetRect) {
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+      return {
+        ...baseStyle,
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: tooltipWidth,
+      };
     }
 
-    const tooltipWidth = Math.min(320, window.innerWidth - 32);
-    const tooltipEstimatedHeight = 140;
+    const tooltipEstimatedHeight = 160;
     const centerX = targetRect.left + targetRect.width / 2;
     const effectiveBottom = spotlightStyle
       ? spotlightStyle.top + spotlightStyle.height
@@ -249,35 +265,28 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
 
     const spaceBelow = window.innerHeight - effectiveBottom - padding - 12;
-    const spaceAbove = (targetRect.top - padding - 12);
+    const spaceAbove = targetRect.top - padding - 12;
+
+    const below = { ...baseStyle, top: effectiveBottom + padding + 12, left: leftPos };
+    const above = { ...baseStyle, bottom: window.innerHeight - (targetRect.top - padding - 12), left: leftPos };
+    const fallback = { ...baseStyle, bottom: 80, left: leftPos };
 
     switch (step.position) {
-      case "bottom": {
-        if (spaceBelow >= tooltipEstimatedHeight) {
-          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
-        }
-        if (spaceAbove >= tooltipEstimatedHeight) {
-          return { bottom: window.innerHeight - (targetRect.top - padding - 12), left: leftPos, width: tooltipWidth };
-        }
-        return { bottom: 80, left: leftPos, width: tooltipWidth };
-      }
-      case "top": {
-        if (spaceAbove >= tooltipEstimatedHeight) {
-          return { bottom: window.innerHeight - (targetRect.top - padding - 12), left: leftPos, width: tooltipWidth };
-        }
-        if (spaceBelow >= tooltipEstimatedHeight) {
-          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
-        }
-        return { bottom: 80, left: leftPos, width: tooltipWidth };
-      }
-      default: {
-        if (spaceBelow >= tooltipEstimatedHeight) {
-          return { top: effectiveBottom + padding + 12, left: leftPos, width: tooltipWidth };
-        }
-        return { bottom: 80, left: leftPos, width: tooltipWidth };
-      }
+      case "bottom":
+        if (spaceBelow >= tooltipEstimatedHeight) return below;
+        if (spaceAbove >= tooltipEstimatedHeight) return above;
+        return fallback;
+      case "top":
+        if (spaceAbove >= tooltipEstimatedHeight) return above;
+        if (spaceBelow >= tooltipEstimatedHeight) return below;
+        return fallback;
+      default:
+        if (spaceBelow >= tooltipEstimatedHeight) return below;
+        return fallback;
     }
   };
+
+  const progressPct = ((currentStep + 1) / steps.length) * 100;
 
   return (
     <div
@@ -354,22 +363,21 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              {steps.map((_, i) => (
+          {/* Progress bar + navigation */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                 <div
-                  key={i}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    i === currentStep ? "bg-primary" : i < currentStep ? "bg-primary/40" : "bg-muted-foreground/20"
-                  }`}
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
                 />
-              ))}
-              <span className="text-xs text-muted-foreground ml-1">
-                {currentStep + 1} of {steps.length}
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                {currentStep + 1} / {steps.length}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-end gap-1.5">
               {currentStep > 0 && (
                 <Button
                   variant="ghost"

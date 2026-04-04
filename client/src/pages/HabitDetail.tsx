@@ -475,7 +475,7 @@ export default function HabitDetail() {
       if (todayPlan) {
         setSelectedDay(today);
       } else {
-        const futurePlan = scheduledPlans.find(p => isFuture(parseISO(p.date)));
+        const futurePlan = scheduledPlans.find(p => p.date >= today);
         if (futurePlan) {
           setSelectedDay(futurePlan.date);
         } else {

@@ -5088,8 +5088,8 @@ REQUIREMENTS:
       const dailyPlans = (habit.dailyPlans || []) as any[];
       const todayStr = getUserToday(user?.timezone);
 
-      const pastPlans = dailyPlans.filter((p: any) => p.date <= todayStr);
-      const futurePlans = dailyPlans.filter((p: any) => p.date > todayStr);
+      const pastPlans = dailyPlans.filter((p: any) => p.date < todayStr);
+      const futurePlans = dailyPlans.filter((p: any) => p.date >= todayStr);
 
       const completedDays = pastPlans.filter((p: any) =>
         p.completed || (p.tasks.length > 0 && p.tasks.every((t: any) => t.completed))
