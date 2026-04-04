@@ -843,9 +843,9 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           </div>
                         </CardHeader>
                         <CardContent className="pt-4">
-                          <pre className="text-sm whitespace-pre-wrap font-mono bg-muted/50 p-4 rounded-lg border overflow-x-auto max-h-40">
-                            {saved.content}
-                          </pre>
+                          <div className="bg-muted/50 p-4 rounded-lg border">
+                            <CollapsibleText text={saved.content} lines={6} mono />
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
@@ -985,9 +985,9 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                       </div>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <pre className="text-sm whitespace-pre-wrap font-mono bg-muted/50 p-4 rounded-lg border overflow-x-auto max-h-60">
-                        {template.content}
-                      </pre>
+                      <div className="bg-muted/50 p-4 rounded-lg border">
+                        <CollapsibleText text={template.content} lines={8} mono />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

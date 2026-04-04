@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, Lightbulb, Loader2, Brain, AlertCircle, Crown, Lock } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Timer, Play, Pause, Plus, Clock, Target, PartyPopper, ChevronRight, ChevronDown, ChevronUp, Lightbulb, Loader2, Brain, AlertCircle, Crown, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -81,6 +81,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
   
   // Session summary state
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
+  const [showSummaryDetails, setShowSummaryDetails] = useState(false);
   const [showEndEarlyConfirm, setShowEndEarlyConfirm] = useState(false);
   const [sessionLimitReached, setSessionLimitReached] = useState(false);
   
@@ -807,49 +808,78 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                         </div>
                       ) : sessionSummary ? (
                         <div className="space-y-3">
-                          <CollapsibleText text={sessionSummary.summary} className="text-sm text-foreground" />
-                          
-                          {sessionSummary.insights && sessionSummary.insights.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Insights</p>
-                              <ul className="space-y-1.5">
-                                {sessionSummary.insights.map((insight, i) => (
-                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                    <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
-                                    {insight}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                          {/* Summary is always visible */}
+                          <p className="text-sm text-foreground">{sessionSummary.summary}</p>
+
+                          {/* Single toggle for all detail sections */}
+                          {(sessionSummary.insights?.length > 0 || sessionSummary.performanceTips?.length > 0 || sessionSummary.nextSteps?.length > 0) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto py-0.5 px-1 text-xs text-muted-foreground hover:text-foreground gap-1"
+                              onClick={() => setShowSummaryDetails(v => !v)}
+                              data-testid="button-toggle-summary-details"
+                            >
+                              {showSummaryDetails ? (
+                                <><ChevronUp className="w-3 h-3" />Hide insights & next steps</>
+                              ) : (
+                                <><ChevronDown className="w-3 h-3" />Show insights & next steps</>
+                              )}
+                            </Button>
                           )}
 
-                          {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
-                              <ul className="space-y-1.5">
-                                {sessionSummary.performanceTips.map((tip, i) => (
-                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                    <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                                    {tip}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                          {/* Detail sections behind the toggle */}
+                          <div
+                            style={{
+                              maxHeight: showSummaryDetails ? "2000px" : "0px",
+                              overflow: "hidden",
+                              transition: "max-height 0.35s ease-in-out",
+                            }}
+                          >
+                            <div className="space-y-3 pt-1">
+                              {sessionSummary.insights && sessionSummary.insights.length > 0 && (
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Key Insights</p>
+                                  <ul className="space-y-1.5">
+                                    {sessionSummary.insights.map((insight, i) => (
+                                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                        <Lightbulb className="w-3 h-3 text-amber-500 mt-1 flex-shrink-0" />
+                                        {insight}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
 
-                          {sessionSummary.nextSteps && sessionSummary.nextSteps.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Steps</p>
-                              <ul className="space-y-1.5">
-                                {sessionSummary.nextSteps.map((step, i) => (
-                                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                    <ArrowRight className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                                    {step}
-                                  </li>
-                                ))}
-                              </ul>
+                              {sessionSummary.performanceTips && sessionSummary.performanceTips.length > 0 && (
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Performance Tips</p>
+                                  <ul className="space-y-1.5">
+                                    {sessionSummary.performanceTips.map((tip, i) => (
+                                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                        <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                        {tip}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {sessionSummary.nextSteps && sessionSummary.nextSteps.length > 0 && (
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Steps</p>
+                                  <ul className="space-y-1.5">
+                                    {sessionSummary.nextSteps.map((step, i) => (
+                                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                        <ArrowRight className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                                        {step}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                           
                           <div className="pt-2 border-t">
                             <p className="text-sm italic text-primary">{sessionSummary.encouragement}</p>
