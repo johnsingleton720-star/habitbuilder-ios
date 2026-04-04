@@ -17,6 +17,7 @@ interface ProfileData {
   energyLevels: string;
   peakFocusTime: string;
   scheduleUnpredictable: string;
+  personalRewards: string;
   anythingElse: string;
 }
 
@@ -27,6 +28,7 @@ const BLANK: ProfileData = {
   energyLevels: "",
   peakFocusTime: "",
   scheduleUnpredictable: "",
+  personalRewards: "",
   anythingElse: "",
 };
 
@@ -226,6 +228,22 @@ export function AiContextProfile() {
                     <SelectItem value="carer">Caring responsibilities that can change daily</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2" data-testid="field-personal-rewards">
+                <p className="text-sm font-medium">What rewards or treats motivate you?</p>
+                <p className="text-xs text-muted-foreground">
+                  The AI will use these when designing your reward steps — instead of generic suggestions.
+                </p>
+                <Textarea
+                  placeholder="e.g. a piece of dark chocolate, 10 minutes on social media, a coffee, watching one episode of my favourite show…"
+                  value={form.personalRewards}
+                  onChange={(e) => set("personalRewards", e.target.value)}
+                  maxLength={500}
+                  rows={3}
+                  className="resize-none text-sm"
+                  data-testid="textarea-personal-rewards"
+                />
               </div>
 
               <div className="space-y-2" data-testid="field-anything-else">

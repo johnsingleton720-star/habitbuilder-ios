@@ -4285,6 +4285,83 @@ Return JSON:
     }
   }
 
+  async function formatAiContextBlock(userId: string): Promise<string> {
+    try {
+      const user = await storage.getUser(userId);
+      const profile = user?.aiContextProfile as Record<string, string> | null | undefined;
+      if (!profile) return "";
+      const filled = Object.keys(profile).filter(k => profile[k] && profile[k].trim());
+      if (filled.length === 0) return "";
+
+      const chronotypeMap: Record<string, string> = {
+        early_bird: "early bird (sharpest before 9am)",
+        morning: "morning person (best before midday)",
+        midday: "midday person (hits stride around noon)",
+        afternoon: "afternoon person (warms up after lunch)",
+        evening: "evening person (comes alive after 6pm)",
+        night_owl: "night owl (best work done late at night)",
+        varies: "variable",
+      };
+      const energyMap: Record<string, string> = {
+        high: "high — consistently energetic",
+        moderate: "moderate — steady",
+        variable: "variable — good days and tough days",
+        low: "low — often tired",
+      };
+      const peakMap: Record<string, string> = {
+        early_morning: "before 7am",
+        morning: "morning (7am–noon)",
+        afternoon: "afternoon (noon–5pm)",
+        evening: "evening (5pm–9pm)",
+        late_night: "late night",
+        no_clear: "no clear peak",
+      };
+      const scheduleMap: Record<string, string> = {
+        very_consistent: "very consistent",
+        mostly_consistent: "mostly consistent",
+        somewhat_variable: "somewhat variable",
+        very_variable: "very variable",
+        shift_work: "shift work / irregular hours",
+        carer: "caring responsibilities (can change daily)",
+      };
+      const obstacleMap: Record<string, string> = {
+        motivation: "losing motivation after the first week",
+        time: "not enough time",
+        forgot: "forgetting",
+        all_or_nothing: "all-or-nothing thinking",
+        stress: "life disruptions (stress, illness, travel)",
+        boring: "habits feeling boring or like a chore",
+        too_hard: "plans being too ambitious",
+        other: "other",
+      };
+      const hoursMap: Record<string, string> = {
+        under_20: "under 20",
+        "20_30": "20–30",
+        "30_40": "30–40",
+        "40_50": "40–50",
+        over_50: "over 50",
+      };
+
+      const lines: string[] = [];
+      if (profile.chronotype) lines.push(`- Chronotype: ${chronotypeMap[profile.chronotype] || profile.chronotype}`);
+      if (profile.weeklyHours) lines.push(`- Weekly work/study hours: ${hoursMap[profile.weeklyHours] || profile.weeklyHours}`);
+      if (profile.energyLevels) lines.push(`- Energy: ${energyMap[profile.energyLevels] || profile.energyLevels}`);
+      if (profile.peakFocusTime) lines.push(`- Peak focus: ${peakMap[profile.peakFocusTime] || profile.peakFocusTime}`);
+      if (profile.scheduleUnpredictable) lines.push(`- Schedule: ${scheduleMap[profile.scheduleUnpredictable] || profile.scheduleUnpredictable}`);
+      if (profile.pastObstacles) lines.push(`- Biggest past obstacle: ${obstacleMap[profile.pastObstacles] || profile.pastObstacles}`);
+      if (profile.personalRewards) lines.push(`- Personal rewards they enjoy: ${profile.personalRewards.trim()}`);
+      if (profile.anythingElse) lines.push(`- Additional context: ${profile.anythingElse.trim()}`);
+
+      if (lines.length === 0) return "";
+
+      return `\n\nUSER PROFILE (personalise all coaching, tasks, and reward suggestions using this):
+${lines.join("\n")}
+REWARD INSTRUCTION: When the cue-routine-reward loop calls for a reward step, use the user's stated personal rewards above by name if available. If none are listed, suggest a specific tangible reward (a favourite snack, a short break, a small enjoyable activity) — never a vague self-affirmation like "acknowledge your effort" or "be proud of yourself."`;
+    } catch {
+      return "";
+    }
+  }
+
   // Generate personalized action plan based on questionnaire answers
   app.post("/api/habits/:id/generate-plan", isAuthenticated, async (req: any, res) => {
     try {
@@ -4315,12 +4392,13 @@ Return JSON:
       endDate.setDate(endDate.getDate() + daysCount - 1);
 
       const moodJournalContext = await buildMoodJournalContext(userId);
+      const aiContextBlock = await formatAiContextBlock(userId);
 
       // Build context from questionnaire
       const contextSummary = questions
         .filter((q: any) => q.answer)
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
-        .join("\n\n") + moodJournalContext;
+        .join("\n\n") + moodJournalContext + aiContextBlock;
 
       let fixedDailyPlans: any[];
 
@@ -4694,11 +4772,12 @@ REQUIREMENTS:
       endDate.setDate(endDate.getDate() + daysCount - 1);
 
       const moodJournalContext = await buildMoodJournalContext(userId);
+      const aiContextBlock = await formatAiContextBlock(userId);
 
       const contextSummary = questions
         .filter((q: any) => q.answer)
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
-        .join("\n\n") + moodJournalContext;
+        .join("\n\n") + moodJournalContext + aiContextBlock;
 
       let fixedDailyPlans: any[];
 
@@ -5070,9 +5149,11 @@ REQUIREMENTS:
 
       const remainingDaysCount = futurePlans.length;
       const completedDaysList = completedDays.map((p: any) => p.date);
+      const aiContextBlock = await formatAiContextBlock(userId);
 
       const prompt = `The user is struggling with their habit plan for "${habit.title}" and needs an adjusted plan.
 ${habit.goal ? `Goal: ${habit.goal}` : ""}
+${aiContextBlock}
 
 Original interview answers:
 ${interviewContext}
@@ -6014,8 +6095,10 @@ REQUIREMENTS:
         `Task ${i + 1} (${n.task}): ${n.note}`
       ).join('\n');
 
-      const prompt = `You are an expert habit coach providing detailed session analytics. The user just completed a habit session for "${habitTitle}". 
+      const aiContextBlock = await formatAiContextBlock(userId);
 
+      const prompt = `You are an expert habit coach providing detailed session analytics. The user just completed a habit session for "${habitTitle}".
+${aiContextBlock}
 Session stats:
 - Completed ${tasksCompleted} of ${totalTasks} tasks (${totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0}% completion rate)
 - Time spent: ${timeSpent} minutes
@@ -6268,8 +6351,10 @@ CRITICAL RULES:
       const totalDays = dailyPlans.length;
       const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
       const currentStreak = habit.currentStreak || 0;
+      const aiContextBlock = await formatAiContextBlock(userId);
 
       const prompt = `You are a supportive, encouraging AI habit coach. The user is working on: "${habit.title}"
+${aiContextBlock}
 
 Their progress:
 - Completed ${completedDays} of ${totalDays} days (${completionRate}% completion)
@@ -6350,10 +6435,12 @@ Return JSON:
       const totalDays = dailyPlans.length;
       const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
 
+      const aiContextBlock = await formatAiContextBlock(userId);
+
       const systemPrompt = `You are a supportive, encouraging AI habit coach having a conversation with a user about their habit: "${habit.title}".
 Their progress: ${completedDays}/${totalDays} days completed (${completionRate}%), streak: ${habit.currentStreak || 0} days.
 ${habit.aiContext ? `About them: ${habit.aiContext}` : ''}
-
+${aiContextBlock}
 Keep responses warm, personal, concise (under 100 words), and actionable. Reference their specific habit and situation.
 Never mention specific third-party apps, brands, or services by name.
 SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit sexual content.
@@ -10271,10 +10358,12 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         ? `\n\nUser's current habits: ${userHabits.map(h => `${h.title} (${h.trackingMode === "simple" ? "simple tracking" : "AI plan"}, streak: ${h.currentStreak || 0} days, total time: ${h.totalTimeSpent || 0} minutes)`).join(", ")}`
         : "";
 
+      const aiContextBlock = await formatAiContextBlock(userId);
+
       const aiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
         {
           role: "system",
-          content: `You are a warm, encouraging habit coach inside the Habit Builder app. Your role is to help users build, maintain, and improve their habits. Be conversational, empathetic, and practical. Keep responses concise (2-4 paragraphs max). Ask follow-up questions to understand the user better. Offer specific, actionable advice tailored to their situation. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. When suggesting tools, recommend features within the Habit Builder app (like action plans, guided sessions, templates, streaks, etc.). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit content.${habitContext}`
+          content: `You are a warm, encouraging habit coach inside the Habit Builder app. Your role is to help users build, maintain, and improve their habits. Be conversational, empathetic, and practical. Keep responses concise (2-4 paragraphs max). Ask follow-up questions to understand the user better. Offer specific, actionable advice tailored to their situation. Never mention specific third-party apps, brands, or services by name — use generic descriptions instead. When suggesting tools, recommend features within the Habit Builder app (like action plans, guided sessions, templates, streaks, etc.). SAFETY: Never generate content promoting violence, illegal activities, exploitation of minors, self-harm, or explicit content.${habitContext}${aiContextBlock}`
         },
         ...previousMessages.map(m => ({
           role: m.role as "user" | "assistant",
