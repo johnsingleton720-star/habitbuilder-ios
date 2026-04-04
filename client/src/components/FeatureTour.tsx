@@ -151,6 +151,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [muted, setMuted] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { tier } = useSubscription();
@@ -191,7 +192,8 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     }).catch((err: DOMException) => {
       if (err.name === "NotAllowedError") {
         setAutoplayBlocked(true);
-        setMuted(true);
+        // Do NOT set muted — user hasn't chosen to mute.
+        // Audio will retry automatically on the next user navigation click.
       }
     });
   }, [steps]);
@@ -241,14 +243,18 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
 
   useEffect(() => {
     if (!isVisible) return;
+    // If autoplay was blocked on step 0, wait until the user has clicked Next/Back
+    // (which provides a user gesture that unlocks audio for the session).
+    if (autoplayBlocked && !hasUserInteracted) return;
     playStepAudio(currentStep, muted);
-  }, [currentStep, isVisible, muted, playStepAudio]);
+  }, [currentStep, isVisible, muted, playStepAudio, autoplayBlocked, hasUserInteracted]);
 
   useEffect(() => {
     return () => stopAudio();
   }, [stopAudio]);
 
   const advanceAndPlay = (nextStep: number) => {
+    setHasUserInteracted(true);
     stopAudio();
     setCurrentStep(nextStep);
   };
@@ -281,6 +287,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
       stopAudio();
     } else {
       setAutoplayBlocked(false);
+      setHasUserInteracted(true);
     }
     // unmute: useEffect re-runs with muted=false and plays current step audio
   };
