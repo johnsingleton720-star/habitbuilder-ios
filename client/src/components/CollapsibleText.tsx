@@ -4,7 +4,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CollapsibleTextProps {
-  text: string;
+  text?: string;
+  children?: React.ReactNode;
   lines?: number;
   className?: string;
   preWrap?: boolean;
@@ -15,6 +16,7 @@ const LINE_HEIGHT_PX = 26;
 
 export function CollapsibleText({
   text,
+  children,
   lines = 3,
   className,
   preWrap = true,
@@ -29,7 +31,19 @@ export function CollapsibleText({
     const el = containerRef.current;
     if (!el) return;
     setIsClamped(el.scrollHeight > el.clientHeight + 2);
-  }, [text, lines]);
+  }, [text, children, lines]);
+
+  const content = children ?? (
+    <p
+      className={cn(
+        preWrap ? "whitespace-pre-wrap" : undefined,
+        mono ? "font-mono text-sm" : undefined,
+        "leading-relaxed",
+      )}
+    >
+      {text}
+    </p>
+  );
 
   return (
     <div className={cn("space-y-0.5", className)}>
@@ -41,15 +55,7 @@ export function CollapsibleText({
           transition: "max-height 0.3s ease-in-out",
         }}
       >
-        <p
-          className={cn(
-            preWrap ? "whitespace-pre-wrap" : undefined,
-            mono ? "font-mono text-sm" : undefined,
-            "leading-relaxed",
-          )}
-        >
-          {text}
-        </p>
+        {content}
       </div>
       {isClamped && (
         <Button

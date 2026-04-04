@@ -598,7 +598,7 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
                       )}
                     >
                       {msg.role === "assistant" ? (
-                        <CollapsibleText text={msg.content} threshold={300} className="text-sm" />
+                        <CollapsibleText text={msg.content} lines={4} className="text-sm" />
                       ) : (
                         msg.content
                       )}

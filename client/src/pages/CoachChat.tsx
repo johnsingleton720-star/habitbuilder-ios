@@ -322,7 +322,7 @@ export default function CoachChatPage() {
                             </div>
                           )}
                           {msg.role === "assistant" ? (
-                            <CollapsibleText text={msg.content} threshold={320} className="text-sm" />
+                            <CollapsibleText text={msg.content} lines={4} className="text-sm" />
                           ) : (
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           )}

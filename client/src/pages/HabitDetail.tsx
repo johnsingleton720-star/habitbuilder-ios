@@ -1577,6 +1577,7 @@ export default function HabitDetail() {
                                       ) : (
                                         <CollapsibleText
                                           text={task.description}
+                                          lines={2}
                                           className="text-base text-muted-foreground mt-1"
                                         />
                                       )

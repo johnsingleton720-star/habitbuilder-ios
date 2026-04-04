@@ -665,7 +665,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           <span className="text-sm font-bold text-primary-foreground">{index + 1}</span>
                         </div>
                         <div className="flex-1">
-                          <CollapsibleText text={example} threshold={300} className="text-sm" />
+                          <CollapsibleText text={example} lines={4} className="text-sm" />
                         </div>
                       </div>
                     </CardContent>
@@ -687,7 +687,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                         <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                         </div>
-                        <CollapsibleText text={tip} threshold={300} className="text-sm" />
+                        <CollapsibleText text={tip} lines={4} className="text-sm" />
                       </div>
                     </CardContent>
                   </Card>
