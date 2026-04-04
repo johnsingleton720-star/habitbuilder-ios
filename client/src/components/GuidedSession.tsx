@@ -196,6 +196,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       setTaskTimeElapsed(0);
       setTaskTimerStartTime(null);
       setSessionSummary(null);
+      setShowSummaryDetails(false);
       setShowEndEarlyConfirm(false);
       setGuidanceModalOpen(false);
       setSessionLimitReached(false);
