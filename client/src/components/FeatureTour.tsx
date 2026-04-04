@@ -414,9 +414,9 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
           <div className="absolute top-2 left-2">
             <button
               onClick={toggleMute}
-              className={`p-1 rounded-full hover:bg-muted transition-colors ${autoplayBlocked && muted ? "text-amber-500" : "text-muted-foreground"}`}
+              className={`p-1 rounded-full hover:bg-muted transition-colors ${autoplayBlocked && !hasUserInteracted ? "text-amber-500" : "text-muted-foreground"}`}
               data-testid="button-tour-mute"
-              title={autoplayBlocked && muted ? "Tap to enable narration" : muted ? "Unmute narration" : "Mute narration"}
+              title={autoplayBlocked && !hasUserInteracted ? "Narration blocked — tap Next or this icon to enable" : muted ? "Unmute narration" : "Mute narration"}
             >
               {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
