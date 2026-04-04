@@ -1,3 +1,10 @@
+/**
+ * One-time script to generate voice narration audio for the feature tour.
+ * Uses the Replit AI Integrations OpenAI proxy, which supports gpt-audio
+ * (the /audio/speech endpoint is not available through the proxy).
+ * Run: npx tsx scripts/generate-tour-audio.ts
+ * Output: client/public/tour-audio/step-{1..17}.mp3
+ */
 import OpenAI from "openai";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -7,7 +14,26 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-const narrations = [
+interface GptAudioRequestBody {
+  model: string;
+  modalities: string[];
+  audio: { voice: string; format: string };
+  messages: Array<{ role: string; content: string }>;
+}
+
+interface GptAudioMessageContent {
+  audio?: { data: string };
+}
+
+interface GptAudioChoice {
+  message: GptAudioMessageContent;
+}
+
+interface GptAudioResponse {
+  choices: GptAudioChoice[];
+}
+
+const narrations: string[] = [
   // Step 1: Your Progress at a Glance
   "Welcome to Habit Builder! This card at the top is your personal scoreboard. It shows your level, XP points, and current streak — all the momentum you're building day by day.",
 
@@ -60,11 +86,10 @@ const narrations = [
   "And that's the tour! You're all set to start building. For a full feature guide, find App Guide in your Account settings. Everything you share here is completely private — it's just here to make your coaching better. Good luck!",
 ];
 
-async function generateAudio(text: string, stepIndex: number): Promise<void> {
-  const stepNum = stepIndex + 1;
+async function generateAudio(text: string, stepNum: number): Promise<void> {
   console.log(`Generating step ${stepNum}/${narrations.length}: "${text.slice(0, 60)}..."`);
 
-  const response = await openai.chat.completions.create({
+  const requestBody: GptAudioRequestBody = {
     model: "gpt-audio",
     modalities: ["text", "audio"],
     audio: { voice: "nova", format: "mp3" },
@@ -73,16 +98,15 @@ async function generateAudio(text: string, stepIndex: number): Promise<void> {
         role: "system",
         content: "You are a warm, welcoming app guide with a calm and encouraging voice. Speak the text naturally and clearly, exactly as written.",
       },
-      {
-        role: "user",
-        content: text,
-      },
+      { role: "user", content: text },
     ],
-  } as any);
+  };
 
-  const audioData = (response.choices[0]?.message as any)?.audio?.data;
+  const rawResponse = await (openai.chat.completions.create as (body: GptAudioRequestBody) => Promise<GptAudioResponse>)(requestBody);
+
+  const audioData = rawResponse.choices[0]?.message?.audio?.data;
   if (!audioData) {
-    throw new Error(`No audio data for step ${stepNum}`);
+    throw new Error(`No audio data returned for step ${stepNum}`);
   }
 
   const buffer = Buffer.from(audioData, "base64");
@@ -91,21 +115,21 @@ async function generateAudio(text: string, stepIndex: number): Promise<void> {
   console.log(`  ✓ Saved step-${stepNum}.mp3 (${Math.round(buffer.length / 1024)}KB)`);
 }
 
-async function main() {
+async function main(): Promise<void> {
   mkdirSync(join("client", "public", "tour-audio"), { recursive: true });
-  console.log(`Generating ${narrations.length} tour audio clips with nova voice...\n`);
+  console.log(`Generating ${narrations.length} tour audio clips (nova voice, mp3)...\n`);
 
   for (let i = 0; i < narrations.length; i++) {
-    await generateAudio(narrations[i], i);
+    await generateAudio(narrations[i], i + 1);
     if (i < narrations.length - 1) {
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise<void>(r => setTimeout(r, 300));
     }
   }
 
-  console.log(`\nDone! All ${narrations.length} clips generated in client/public/tour-audio/`);
+  console.log(`\nDone! All ${narrations.length} clips saved to client/public/tour-audio/`);
 }
 
-main().catch(err => {
+main().catch((err: Error) => {
   console.error("Error:", err.message);
   process.exit(1);
 });

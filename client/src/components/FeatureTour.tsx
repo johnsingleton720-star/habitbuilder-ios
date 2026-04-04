@@ -151,6 +151,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [muted, setMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { tier } = useSubscription();
@@ -186,7 +187,14 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     audioRef.current.pause();
     audioRef.current.currentTime = 0;
     audioRef.current.src = src;
-    audioRef.current.play().catch(() => {});
+    audioRef.current.play().then(() => {
+      setAutoplayBlocked(false);
+    }).catch((err: DOMException) => {
+      if (err.name === "NotAllowedError") {
+        setAutoplayBlocked(true);
+        setMuted(true);
+      }
+    });
   }, [steps]);
 
   const positionTooltip = useCallback(() => {
@@ -275,8 +283,10 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     setMuted(newMuted);
     if (newMuted) {
       stopAudio();
+    } else {
+      setAutoplayBlocked(false);
     }
-    // unmute: useEffect re-runs with muted=false and plays audio
+    // unmute: useEffect re-runs with muted=false and plays current step audio
   };
 
   if (!isVisible || !step) return null;
@@ -401,9 +411,9 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
           <div className="absolute top-2 left-2">
             <button
               onClick={toggleMute}
-              className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+              className={`p-1 rounded-full hover:bg-muted transition-colors ${autoplayBlocked && muted ? "text-amber-500" : "text-muted-foreground"}`}
               data-testid="button-tour-mute"
-              title={muted ? "Unmute narration" : "Mute narration"}
+              title={autoplayBlocked && muted ? "Tap to enable narration" : muted ? "Unmute narration" : "Mute narration"}
             >
               {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
