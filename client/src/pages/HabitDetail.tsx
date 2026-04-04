@@ -28,6 +28,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { FirstCompletionCelebration, useFirstCompletionCelebration } from "@/components/FirstCompletionCelebration";
+import { CollapsibleText } from "@/components/CollapsibleText";
 
 function RecentlyAdjustedBanner({ habitId, summary }: { habitId: number; summary: string | null }) {
   const [dismissed, setDismissed] = useState(false);
@@ -1574,9 +1575,10 @@ export default function HabitDetail() {
                                           </div>
                                         </div>
                                       ) : (
-                                        <p className="text-base text-muted-foreground mt-1 whitespace-pre-line">
-                                          {task.description}
-                                        </p>
+                                        <CollapsibleText
+                                          text={task.description}
+                                          className="text-base text-muted-foreground mt-1"
+                                        />
                                       )
                                     )}
                                   </div>

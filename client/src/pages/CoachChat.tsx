@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CoachChat as CoachChatType, CoachMessage } from "@shared/schema";
+import { CollapsibleText } from "@/components/CollapsibleText";
 
 interface CoachUsage {
   used: number;
@@ -320,7 +321,11 @@ export default function CoachChatPage() {
                               <span className="text-xs font-medium text-primary">Coach</span>
                             </div>
                           )}
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          {msg.role === "assistant" ? (
+                            <CollapsibleText text={msg.content} threshold={320} className="text-sm" />
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          )}
                           {msg.createdAt && (
                             <p className={`text-xs mt-1.5 ${msg.role === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

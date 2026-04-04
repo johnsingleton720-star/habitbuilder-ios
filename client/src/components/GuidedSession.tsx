@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import type { Habit, DailyPlan, RoutineTask } from "@shared/schema";
 import { TaskGuidanceModal } from "./TaskGuidanceModal";
 import { VoiceNote } from "./VoiceNote";
+import { CollapsibleText } from "./CollapsibleText";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import { UpgradePrompt, SessionLimitReached } from "./UpgradePrompt";
@@ -492,7 +493,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-4 space-y-3">
                   <h3 className="font-semibold text-lg">{currentTask.title}</h3>
-                  <p className="text-muted-foreground whitespace-pre-line">{currentTask.description}</p>
+                  <CollapsibleText text={currentTask.description} className="text-muted-foreground" />
                   {isFreeUser ? (
                     <Link href="/paywall">
                       <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 rounded-lg p-3 border border-amber-200/60 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors" data-testid="prompt-unlock-resources">
@@ -806,7 +807,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
                         </div>
                       ) : sessionSummary ? (
                         <div className="space-y-3">
-                          <p className="text-sm text-foreground">{sessionSummary.summary}</p>
+                          <CollapsibleText text={sessionSummary.summary} className="text-sm text-foreground" />
                           
                           {sessionSummary.insights && sessionSummary.insights.length > 0 && (
                             <div className="space-y-1.5">

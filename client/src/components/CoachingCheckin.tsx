@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { CollapsibleText } from "./CollapsibleText";
 
 interface CoachingCheckinProps {
   habitId: number;
@@ -596,7 +597,11 @@ export function CoachingCheckin({ habitId, habitTitle }: CoachingCheckinProps) {
                           : "bg-muted"
                       )}
                     >
-                      {msg.content}
+                      {msg.role === "assistant" ? (
+                        <CollapsibleText text={msg.content} threshold={300} className="text-sm" />
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                     {msg.role === "user" && (
                       <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">

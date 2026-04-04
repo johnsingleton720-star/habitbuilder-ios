@@ -43,6 +43,7 @@ import { jsPDF } from "jspdf";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Crown, Lock } from "lucide-react";
+import { CollapsibleText } from "./CollapsibleText";
 
 const LOADING_MESSAGES = [
   "Searching for expert tips...",
@@ -664,7 +665,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                           <span className="text-sm font-bold text-primary-foreground">{index + 1}</span>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed" data-testid={`text-example-${index}`}>{example}</p>
+                          <CollapsibleText text={example} threshold={300} className="text-sm" />
                         </div>
                       </div>
                     </CardContent>
@@ -686,7 +687,7 @@ export function TaskGuidanceModal({ habitId, task, habitTitle, open, onOpenChang
                         <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                         </div>
-                        <p className="text-sm leading-relaxed" data-testid={`text-tip-${index}`}>{tip}</p>
+                        <CollapsibleText text={tip} threshold={300} className="text-sm" />
                       </div>
                     </CardContent>
                   </Card>
