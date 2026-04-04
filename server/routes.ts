@@ -4287,13 +4287,17 @@ Return JSON:
     }
   }
 
+  const GLOBAL_REWARD_RULE = `\nREWARD RULE: When the cue-routine-reward loop calls for a reward step, always suggest a specific tangible reward (e.g. a favourite snack, 10 minutes of a leisure activity, a short break doing something enjoyable) — never a vague self-affirmation like "acknowledge your effort," "be proud of yourself," or "give yourself a pat on the back."`;
+
   async function formatAiContextBlock(userId: string): Promise<string> {
     try {
       const user = await storage.getUser(userId);
       const profile = user?.aiContextProfile as Record<string, string> | null | undefined;
-      if (!profile) return "";
-      const filled = Object.keys(profile).filter(k => profile[k] && profile[k].trim());
-      if (filled.length === 0) return "";
+      const hasProfile = profile && Object.keys(profile).some(k => profile[k] && profile[k].trim());
+
+      if (!hasProfile) {
+        return GLOBAL_REWARD_RULE;
+      }
 
       const chronotypeMap: Record<string, string> = {
         early_bird: "early bird (sharpest before 9am)",
@@ -4345,22 +4349,24 @@ Return JSON:
       };
 
       const lines: string[] = [];
-      if (profile.chronotype) lines.push(`- Chronotype: ${chronotypeMap[profile.chronotype] || profile.chronotype}`);
-      if (profile.weeklyHours) lines.push(`- Weekly work/study hours: ${hoursMap[profile.weeklyHours] || profile.weeklyHours}`);
-      if (profile.energyLevels) lines.push(`- Energy: ${energyMap[profile.energyLevels] || profile.energyLevels}`);
-      if (profile.peakFocusTime) lines.push(`- Peak focus: ${peakMap[profile.peakFocusTime] || profile.peakFocusTime}`);
-      if (profile.scheduleUnpredictable) lines.push(`- Schedule: ${scheduleMap[profile.scheduleUnpredictable] || profile.scheduleUnpredictable}`);
-      if (profile.pastObstacles) lines.push(`- Biggest past obstacle: ${obstacleMap[profile.pastObstacles] || profile.pastObstacles}`);
-      if (profile.personalRewards) lines.push(`- Personal rewards they enjoy: ${profile.personalRewards.trim()}`);
-      if (profile.anythingElse) lines.push(`- Additional context: ${profile.anythingElse.trim()}`);
+      if (profile!.chronotype) lines.push(`- Chronotype: ${chronotypeMap[profile!.chronotype] || profile!.chronotype}`);
+      if (profile!.weeklyHours) lines.push(`- Weekly work/study hours: ${hoursMap[profile!.weeklyHours] || profile!.weeklyHours}`);
+      if (profile!.energyLevels) lines.push(`- Energy: ${energyMap[profile!.energyLevels] || profile!.energyLevels}`);
+      if (profile!.peakFocusTime) lines.push(`- Peak focus: ${peakMap[profile!.peakFocusTime] || profile!.peakFocusTime}`);
+      if (profile!.scheduleUnpredictable) lines.push(`- Schedule: ${scheduleMap[profile!.scheduleUnpredictable] || profile!.scheduleUnpredictable}`);
+      if (profile!.pastObstacles) lines.push(`- Biggest past obstacle: ${obstacleMap[profile!.pastObstacles] || profile!.pastObstacles}`);
+      if (profile!.personalRewards) lines.push(`- Personal rewards they enjoy: ${profile!.personalRewards.trim()}`);
+      if (profile!.anythingElse) lines.push(`- Additional context: ${profile!.anythingElse.trim()}`);
 
-      if (lines.length === 0) return "";
+      const rewardInstruction = profile!.personalRewards
+        ? `REWARD RULE: When the cue-routine-reward loop calls for a reward step, use the user's stated personal rewards above by name (e.g. "${profile!.personalRewards.trim().split(/[,;]/)[0].trim()}"). If none fit the context, suggest a different specific tangible reward — never a vague self-affirmation like "acknowledge your effort" or "be proud of yourself."`
+        : GLOBAL_REWARD_RULE;
 
       return `\n\nUSER PROFILE (personalise all coaching, tasks, and reward suggestions using this):
 ${lines.join("\n")}
-REWARD INSTRUCTION: When the cue-routine-reward loop calls for a reward step, use the user's stated personal rewards above by name if available. If none are listed, suggest a specific tangible reward (a favourite snack, a short break, a small enjoyable activity) — never a vague self-affirmation like "acknowledge your effort" or "be proud of yourself."`;
+${rewardInstruction}`;
     } catch {
-      return "";
+      return GLOBAL_REWARD_RULE;
     }
   }
 
