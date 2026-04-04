@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout, BookOpen, Timer, MessageSquare, Flag, Play, Star, User } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, BarChart3, Target, Zap, Heart, Navigation, Layout, BookOpen, Timer, MessageSquare, Flag, Play, Star, User, Volume2, VolumeX } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -149,7 +149,10 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { tier } = useSubscription();
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -163,6 +166,28 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
   });
 
   const step = steps[currentStep];
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, []);
+
+  const playStepAudio = useCallback((stepIndex: number, interacted: boolean, isMuted: boolean) => {
+    if (isMuted || !interacted) return;
+    const audioIndexInAll = ALL_STEPS.indexOf(steps[stepIndex]);
+    if (audioIndexInAll < 0) return;
+    const src = `/tour-audio/step-${audioIndexInAll + 1}.mp3`;
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    audioRef.current.src = src;
+    audioRef.current.play().catch(() => {});
+  }, [steps]);
 
   const positionTooltip = useCallback(() => {
     if (!step) return;
@@ -207,9 +232,26 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
     };
   }, [currentStep, isVisible, scrollToElement, positionTooltip]);
 
+  useEffect(() => {
+    if (!isVisible) return;
+    if (hasInteracted) {
+      playStepAudio(currentStep, true, muted);
+    }
+  }, [currentStep, isVisible, hasInteracted, muted, playStepAudio]);
+
+  useEffect(() => {
+    return () => stopAudio();
+  }, [stopAudio]);
+
+  const advanceAndPlay = (nextStep: number) => {
+    setHasInteracted(true);
+    stopAudio();
+    setCurrentStep(nextStep);
+  };
+
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      advanceAndPlay(currentStep + 1);
     } else {
       handleComplete();
     }
@@ -217,14 +259,24 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
 
   const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      advanceAndPlay(currentStep - 1);
     }
   };
 
   const handleComplete = () => {
+    stopAudio();
     localStorage.setItem(TOUR_STORAGE_KEY, "true");
     setIsVisible(false);
     onComplete();
+  };
+
+  const toggleMute = () => {
+    const newMuted = !muted;
+    setMuted(newMuted);
+    if (newMuted) {
+      stopAudio();
+    }
+    // unmute: useEffect re-runs with muted=false and plays audio
   };
 
   if (!isVisible || !step) return null;
@@ -255,7 +307,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
       };
     }
 
-    const tooltipEstimatedHeight = 160;
+    const tooltipEstimatedHeight = 170;
     const centerX = targetRect.left + targetRect.width / 2;
     const effectiveBottom = spotlightStyle
       ? spotlightStyle.top + spotlightStyle.height
@@ -345,6 +397,17 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
           style={getTooltipPosition()}
           data-testid="feature-tour-tooltip"
         >
+          {/* Top row: mute toggle (left) + close (right) */}
+          <div className="absolute top-2 left-2">
+            <button
+              onClick={toggleMute}
+              className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+              data-testid="button-tour-mute"
+              title={muted ? "Unmute narration" : "Mute narration"}
+            >
+              {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+          </div>
           <button
             onClick={handleComplete}
             className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted text-muted-foreground"
@@ -353,7 +416,8 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-start gap-3 mb-3 pr-6">
+          {/* Step content */}
+          <div className="flex items-start gap-3 mb-3 px-7">
             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               {step.icon}
             </div>
