@@ -2440,11 +2440,13 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         habitIdMap[h.title.toLowerCase()] = h.id;
       });
 
+      const aiContextBlock = await formatAiContextBlock(userId);
+
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: `You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow DESIGNED FOR REAL BEHAVIOR CHANGE.
+          content: `You are an expert behavioral psychologist and habit coach trained in evidence-based behavior design methodology, the 4 Laws of Behavior Change, and the cue-routine-reward habit loop model. Generate a UNIFIED daily routine plan that combines all habits into one deeply guided, coaching-driven flow DESIGNED FOR REAL BEHAVIOR CHANGE.${aiContextBlock}
 
 Your unified routines must apply these behavior science principles:
 - HABIT STACKING: Each habit in the sequence should serve as the CUE for the next habit. The completion of one activity naturally triggers the start of the next.
@@ -5312,10 +5314,11 @@ REQUIREMENTS:
       newEndDate.setDate(newEndDate.getDate() + daysCount - 1);
 
       const questions = (habit.questions || []) as any[];
+      const aiContextBlock = await formatAiContextBlock(userId);
       const contextSummary = questions
         .filter((q: any) => q.answer)
         .map((q: any) => `Q: ${q.question}\nA: ${q.answer}`)
-        .join("\n\n");
+        .join("\n\n") + aiContextBlock;
 
       const completedDays = existingPlans.filter((p: any) => p.completed).length;
       const totalDays = existingPlans.length;
