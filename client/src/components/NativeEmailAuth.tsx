@@ -274,7 +274,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       setGoogleHardFailCount(newHardCount);
       if (newHardCount >= 2) {
         setGoogleFailed(true);
-        markSocialFailed();
       } else {
         const retryMsg = appleAvailable
           ? "Google sign-in didn't work. Tap again or try Apple Sign-In above."
@@ -298,7 +297,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       setGoogleHardFailCount(newHardCount);
       if (newHardCount >= 2) {
         setGoogleFailed(true);
-        markSocialFailed();
       } else {
         const retryMsg = appleAvailable
           ? "Google sign-in failed. Tap again or try Apple Sign-In above."
