@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Clock, ArrowRight, Sparkles, Flame, Zap, CheckCircle2 } from "lucide-react";
+import { Crown, Clock, ArrowRight, Sparkles, X } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 
@@ -79,27 +79,24 @@ export function TrialBanner() {
                     {timeLabel}
                   </Badge>
                 </div>
-                {isUrgent && hasUsageData ? (
+                {isUrgent ? (
                   <div className="mt-1.5">
-                    <p className="text-xs text-muted-foreground" data-testid="text-trial-usage">
-                      You've completed {tasksCompleted} task{tasksCompleted !== 1 ? 's' : ''} and earned {gamStats!.xpPoints.toLocaleString()} XP with Premium.
+                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1" data-testid="text-trial-loss-framing">
+                      When it ends, you'll lose access to:
                     </p>
-                    <div className="flex gap-3 mt-1.5">
-                      {tasksCompleted > 0 && (
-                        <span className="flex items-center gap-1 text-[11px] text-primary font-medium">
-                          <CheckCircle2 className="w-3 h-3" />{tasksCompleted} done
+                    <div className="space-y-0.5">
+                      {[
+                        "Unlimited habits",
+                        "AI coaching sessions",
+                        "Advanced analytics",
+                        "Voice input",
+                        "Accountability partners",
+                        "Coaching check-ins",
+                      ].map((feature) => (
+                        <span key={feature} className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <X className="w-3 h-3 text-red-400 flex-shrink-0" />{feature}
                         </span>
-                      )}
-                      {(gamStats!.xpPoints || 0) > 0 && (
-                        <span className="flex items-center gap-1 text-[11px] text-primary font-medium">
-                          <Zap className="w-3 h-3" />{gamStats!.xpPoints.toLocaleString()} XP
-                        </span>
-                      )}
-                      {(gamStats!.maxStreak || 0) > 0 && (
-                        <span className="flex items-center gap-1 text-[11px] text-orange-500 font-medium">
-                          <Flame className="w-3 h-3" />{gamStats!.maxStreak}d streak
-                        </span>
-                      )}
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -109,9 +106,16 @@ export function TrialBanner() {
                 )}
               </div>
               <Link href="/paywall">
-                <Button size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-trial-upgrade">
+                <Button
+                  size="sm"
+                  className="gap-1.5 flex-shrink-0"
+                  variant={isUrgent ? "default" : "outline"}
+                  data-testid="button-trial-upgrade"
+                >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Subscribe</span>
+                  <span className="hidden sm:inline">
+                    {isUrgent ? "Keep Premium" : "Subscribe"}
+                  </span>
                 </Button>
               </Link>
             </div>

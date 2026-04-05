@@ -35,8 +35,10 @@ import type { DailyPlan, TrackedItem, TrackedValue } from "@shared/schema";
 import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useAuth } from "@/hooks/use-auth";
 import { LockedFeature } from "./UpgradePrompt";
 import { Crown, Lock } from "lucide-react";
+import { PostSetupTrialNudge, usePostSetupTrialNudge } from "./PostSetupTrialNudge";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -164,10 +166,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const deleteHabit = useDeleteHabit();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSession, setShowSession] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id);
   const [simpleCheckinExpanded, setSimpleCheckinExpanded] = useState(false);
   const [simpleCheckinQuantity, setSimpleCheckinQuantity] = useState("");
   const [simpleCheckinLabel, setSimpleCheckinLabel] = useState("");
@@ -829,10 +833,14 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
           onOpenChange={setShowSetupWizard}
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+            triggerNudge();
             setLocation(`/habit/${habit.id}`);
           }}
         />
       )}
+
+      {/* Post-setup trial awareness nudge */}
+      <PostSetupTrialNudge open={nudgeOpen} onClose={handleNudgeClose} />
 
       {/* Guided Session Dialog */}
       {habit.setupComplete && (

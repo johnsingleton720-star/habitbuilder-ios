@@ -38,6 +38,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Habit, HabitTemplate, HabitStack, DailyPlan } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useAppReview } from "@/hooks/use-app-review";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAppTheme } from "@/components/ThemeSelector";
@@ -132,6 +133,7 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
 
   useAppTheme();
   const firstCompletion = useFirstCompletionCelebration(user?.id);
+  useAppReview(user?.id, habits);
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
     if (!dismissedAt) return false;

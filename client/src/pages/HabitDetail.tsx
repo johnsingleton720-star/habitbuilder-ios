@@ -29,6 +29,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { FirstCompletionCelebration, useFirstCompletionCelebration } from "@/components/FirstCompletionCelebration";
 import { CollapsibleText } from "@/components/CollapsibleText";
+import { PostSetupTrialNudge, usePostSetupTrialNudge } from "@/components/PostSetupTrialNudge";
 
 function RecentlyAdjustedBanner({ habitId, summary }: { habitId: number; summary: string | null }) {
   const [dismissed, setDismissed] = useState(false);
@@ -238,6 +239,7 @@ export default function HabitDetail() {
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [setupWizardRestartMode, setSetupWizardRestartMode] = useState(false);
+  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id);
   const [sessionOpen, setSessionOpen] = useState(false);
 
   useEffect(() => {
@@ -2009,14 +2011,19 @@ export default function HabitDetail() {
             if (!open) setSetupWizardRestartMode(false);
           }}
           onComplete={() => {
+            const wasRestart = setupWizardRestartMode;
             setSetupWizardRestartMode(false);
             queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
             queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
             queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+            if (!wasRestart) triggerNudge();
           }}
           restartMode={setupWizardRestartMode}
         />
       )}
+
+      {/* Post-setup trial awareness nudge */}
+      <PostSetupTrialNudge open={nudgeOpen} onClose={handleNudgeClose} />
 
       {/* Guided Session */}
       {habit && currentPlan && (
