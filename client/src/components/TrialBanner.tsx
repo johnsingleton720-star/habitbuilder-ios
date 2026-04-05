@@ -109,12 +109,11 @@ export function TrialBanner() {
                 <Button
                   size="sm"
                   className="gap-1.5 flex-shrink-0"
-                  variant={isUrgent ? "default" : "outline"}
                   data-testid="button-trial-upgrade"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span className="text-xs">
-                    {isUrgent ? "Keep Premium" : "Subscribe"}
+                    {isUrgent ? "Keep Premium — subscribe now" : "Subscribe"}
                   </span>
                 </Button>
               </Link>

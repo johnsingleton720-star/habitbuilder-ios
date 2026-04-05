@@ -1,0 +1,30 @@
+{
+  "name": "capacitor-app-review",
+  "version": "1.0.0",
+  "description": "Capacitor plugin for requesting native App Store / Play Store reviews on iOS and Android",
+  "main": "dist/esm/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "ios/",
+    "src/",
+    "CapacitorAppReview.podspec"
+  ],
+  "keywords": ["capacitor", "plugin", "native", "ios", "app-review"],
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=7.0.0"
+  }
+}

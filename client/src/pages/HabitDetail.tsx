@@ -253,6 +253,14 @@ export default function HabitDetail() {
     window.addEventListener('auto-start-session', handler);
     return () => window.removeEventListener('auto-start-session', handler);
   }, [habitId]);
+
+  useEffect(() => {
+    const flag = `setupJustCompleted_${habitId}`;
+    if (localStorage.getItem(flag)) {
+      localStorage.removeItem(flag);
+      triggerNudge();
+    }
+  }, [habitId]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");

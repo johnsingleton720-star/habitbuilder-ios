@@ -38,7 +38,6 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
 import { LockedFeature } from "./UpgradePrompt";
 import { Crown, Lock } from "lucide-react";
-import { PostSetupTrialNudge, usePostSetupTrialNudge } from "./PostSetupTrialNudge";
 
 interface HabitCardProps {
   habit: HabitResponse;
@@ -179,8 +178,7 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const { toast } = useToast();
-  const { features, isFreeUser, isInTrial } = useSubscription();
-  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id, user?.hasPaid ?? undefined, isInTrial);
+  const { features, isFreeUser } = useSubscription();
 
   const isSimpleMode = habit.trackingMode === "simple";
   const habitTrackedItems = (habit.trackedItems || []) as TrackedItem[];
@@ -833,14 +831,12 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
           onOpenChange={setShowSetupWizard}
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-            triggerNudge();
+            localStorage.setItem(`setupJustCompleted_${habit.id}`, "1");
             setLocation(`/habit/${habit.id}`);
           }}
         />
       )}
 
-      {/* Post-setup trial awareness nudge */}
-      <PostSetupTrialNudge open={nudgeOpen} onClose={handleNudgeClose} />
 
       {/* Guided Session Dialog */}
       {habit.setupComplete && (
