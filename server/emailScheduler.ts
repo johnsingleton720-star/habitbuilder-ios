@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { users, habits, quickTasks, goalMilestones, goals, moodEntries, journalEntries, userAchievements } from "@shared/schema";
-import { eq, and, isNotNull, or, gte } from "drizzle-orm";
+import { eq, and, isNotNull, isNull, or, gte, lte } from "drizzle-orm";
 import { sendDailyReminderEmail, sendWeeklyDigestEmail, sendPaidWeeklyDigestEmail } from "./email";
 import { sendPushToUser } from "./pushNotifications";
 
@@ -837,6 +837,52 @@ async function processPlanCompletionAlerts() {
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
+async function processTrialNudges() {
+  try {
+    const now = new Date();
+    const eighteenHoursAgo = new Date(now.getTime() - 18 * 60 * 60 * 1000);
+    const thirtyHoursAgo = new Date(now.getTime() - 30 * 60 * 60 * 1000);
+
+    const eligibleUsers = await db.query.users.findMany({
+      where: and(
+        eq(users.trialOfferShown, true),
+        or(eq(users.hasPaid, false), isNull(users.hasPaid)),
+        isNull(users.trialNudgeSentAt),
+        eq(users.isAdmin, false),
+        eq(users.pushNotificationsEnabled, true),
+        gte(users.createdAt, thirtyHoursAgo),
+        lte(users.createdAt, eighteenHoursAgo),
+      ),
+    });
+
+    if (eligibleUsers.length === 0) return;
+
+    let pushed = 0;
+    for (const u of eligibleUsers) {
+      try {
+        await sendPushToUser(u.id, {
+          title: "Your habit plan is still waiting 🌱",
+          body: "Start your 7-day free trial to unlock your AI plan and track your progress.",
+          url: "/trial-offer",
+          tag: "trial-nudge",
+        });
+        await db.update(users).set({ trialNudgeSentAt: now }).where(eq(users.id, u.id));
+        pushed++;
+        console.log(`[Scheduler] Trial nudge push sent to user ${u.id}`);
+      } catch (err) {
+        console.error(`[Scheduler] Failed trial nudge for user ${u.id}:`, err);
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (pushed > 0) {
+      console.log(`[Scheduler] Trial nudges: ${pushed} push sent`);
+    }
+  } catch (error) {
+    console.error("[Scheduler] Error processing trial nudges:", error);
+  }
+}
+
 function runAllSchedulerTasks() {
   processDailyReminders();
   processWeeklyDigests();
@@ -847,6 +893,7 @@ function runAllSchedulerTasks() {
   processGoalMilestones();
   processPlanAdjustmentAlerts();
   processPlanCompletionAlerts();
+  processTrialNudges();
 }
 
 export function startEmailScheduler() {

@@ -98,6 +98,7 @@ export const users = pgTable("users", {
   billingInterval: varchar("billing_interval"),
   isFoundingMember: boolean("is_founding_member").default(false),
   trialOfferShown: boolean("trial_offer_shown").default(false),
+  trialNudgeSentAt: timestamp("trial_nudge_sent_at"),
   welcomeHubSeen: boolean("welcome_hub_seen").default(false),
 
   passwordHash: varchar("password_hash"),
