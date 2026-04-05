@@ -766,7 +766,9 @@ export default function HabitDetail() {
                     {!isFreeUser && (
                       <p className="text-xs text-primary/80 mt-2 font-medium">
                         Extend your plan and the AI picks up exactly where you left off
-                        {habit.ultimateGoal ? " — continuing toward your goal." : ", building on your progress."}
+                        {habit.ultimateGoal
+                          ? ` — continuing toward: "${habit.ultimateGoal.length > 80 ? habit.ultimateGoal.slice(0, 77) + "…" : habit.ultimateGoal}"`
+                          : ", building on your current progress."}
                       </p>
                     )}
                   </div>

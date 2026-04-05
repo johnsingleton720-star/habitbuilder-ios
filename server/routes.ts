@@ -5361,11 +5361,17 @@ REQUIREMENTS:
       const completedDays = existingPlans.filter((p: any) => p.completed).length;
       const totalDays = existingPlans.length;
 
-      // Extract the last week's task descriptions to give the AI context on the user's current level
+      // Extract the last week's task details to give the AI context on ending intensity level
       const lastWeekPlans = existingPlans.slice(-7);
       const lastWeekSummary = lastWeekPlans
         .filter((p: any) => p.tasks && p.tasks.length > 0)
-        .map((p: any) => `- ${p.focus || p.date}: ${p.tasks.map((t: any) => t.title).join(", ")}`)
+        .map((p: any) =>
+          `- ${p.focus || p.date}:\n` +
+          p.tasks.map((t: any) => {
+            const desc = t.description ? ` (${t.description})` : "";
+            return `    • ${t.title}${desc}`;
+          }).join("\n")
+        )
         .join("\n");
 
       const prompt = `Create a CONTINUATION plan for the habit: "${habit.title}"
@@ -5379,7 +5385,7 @@ ${contextSummary}
 
 Previous plan context: ${habit.aiContext || "No additional context"}
 The user completed ${completedDays} out of ${totalDays} days in their previous plan.
-${lastWeekSummary ? `\nWhat the user was doing in the final week of their last plan:\n${lastWeekSummary}` : ""}
+${lastWeekSummary ? `\nExact tasks and descriptions from the user's final week — use this to gauge their current intensity and continue from exactly this level:\n${lastWeekSummary}` : ""}
 
 Based on their completion rate (${completedDays}/${totalDays} days = ${Math.round((completedDays/totalDays)*100)}%):
 ${completedDays >= totalDays * 0.8 ? `- HIGH CONSISTENCY: They're ready to increase intensity by 25-50%. Challenge them with deeper practice, longer durations, or more complex variations. Reinforce their identity: "You've proven you're someone who does this consistently." Push meaningfully toward their ultimate destination.` : completedDays >= totalDays * 0.5 ? `- MODERATE CONSISTENCY: Maintain current difficulty but add variety to prevent boredom. Focus on obstacle planning — identify what caused missed days and build "if-then" contingency plans. Small step up in intensity toward the ultimate goal.` : `- BUILDING CONSISTENCY: They're still establishing the routine. Keep tasks at the same or slightly easier level. Focus on making the habit more automatic — simplify the cue, reduce friction further, and strengthen the reward. Address what's getting in the way before increasing load.`}
