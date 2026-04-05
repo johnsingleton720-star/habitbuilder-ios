@@ -1,0 +1,60 @@
+This funnel data is extremely valuable — thank you for sharing it. It gives us precise, quantitative confirmation of exactly where the leaks are in the onboarding flow we reviewed from the screenshots. Combined with the April 3 ad performance (22 installs) and the zero data in the Subscriptions tab, we now have a complete picture: acquisition is working, the anonymous plan-building part is solid, but authentication friction + the trial decision moment are killing trial starts.
+I’ve mapped the funnel numbers directly to the screens you sent and broken it down step by step. Then I’ll give you the highest-ROI fixes ranked by impact, with exact copy/UI changes you can implement quickly.
+1. Exact Funnel Translation + What the Numbers Mean
+Here’s the data in plain English, grouped by stage, with drop-off percentages highlighted:
+Early Onboarding (Pre-Account — Anonymous Plan Building)
+•  App Opened → Welcome Screen: 65 → 65 (0% drop) → Perfect retention on first screen.
+•  Selected Intent: 49 (–25%) → Solid; 16 users bounced before choosing a goal.
+•  Selected Habit: 33 (–33% from previous) → Noticeable drop; habit grid feels overwhelming or users get decision fatigue.
+•  Chose Tracking Mode: 27 (–18%) → Most chose AI Coaching Plan (only 4 went Simple Tracking — that –82% path is tiny and irrelevant).
+•  AI Plan Details → AI Generating Plan → Viewed Plan Preview: 22 → 17 (steady, low friction) → This is your strength. The personalized plan reveal works.
+Monetization / Auth Stage
+•  Tapped Sign Up CTA: 18 (slightly higher than Viewed Plan Preview — some looping or re-prompting).
+•  Auth Screen Shown: 46 (big jump — suggests the auth screen is shown multiple times or to users who skipped earlier).
+•  Tapped Apple Sign In: 13 (–72% from Auth Shown) → Major leak.
+•  Tapped Google Sign In: 6 (–54%) → Also poor.
+•  Email Form Submitted: 3 (–50%) → Almost nobody uses email.
+•  Sign Up Success: 11; Sign Up Failed: 8 (–27%) → 42% failure rate on attempts.
+•  Specific errors: Apple Sign In error (com.apple.AuthenticationServices.AuthorizationError 1000) ×4; Google module script failed ×7; Auth Google Cancelled ×2 → Technical friction + user abandonment.
+Post-Signup / Trial Decision
+•  Welcome Hub Shown: 11 (–76% from Sign Up Success) → Huge final drop.
+•  Welcome Hub Action: 8 (–27%) → Only 8 users took any action after signing up.
+Overall conversion:
+•  From 65 App Opens → 11 Sign Up Success → 17% end-to-end completion.
+•  Trial-start events (what populates the Subscriptions tab) are almost certainly coming only from a subset of these 11, explaining why you see “few new sign-ups” and zero visible data yet.
+This matches the screenshots perfectly: the anonymous plan flow gets users to “Viewed Plan Preview” reliably (your architecture win), but the Replit auth redirect + permission screens + the prominent “No thanks” trial button create a double-whammy drop-off right at the moment the 7-day trial should trigger.
+2. Root Causes Ranked by Impact (Based on Data + Screenshots)
+1.  Authentication friction (biggest leak by far)
+	•  72% drop on Apple Sign In, 54% on Google, 42% failure rate overall, multiple external redirects (Replit → Google/Apple auth → permission modals).
+	•  Cold ad users hate leaving the app and dealing with “allow access” prompts.
+	•  Errors (AuthorizationError 1000 is a common Apple Sign In flake; Google script fail is likely a Replit SDK issue).
+2.  Trial decision UX still too skippable
+	•  Even after users see their personalized plan, the large “No thanks, continue with the free plan” button + confirmation modal makes skipping the default/easy choice.
+	•  Data shows the Welcome Hub (post-signup) has a 76% drop — users who do sign up still bail before committing to trial.
+3.  Secondary drops
+	•  Habit selection (–33%) and intent (–25%) are acceptable for cold traffic but could be smoothed.
+	•  Simple Tracking path is dead (–82%); you can de-emphasize or remove it if AI is the premium hook.
+3. Highest-ROI Fixes (Your Prioritized Order + Data-Driven Tweaks)
+Priority 1: Fix authentication (implement today — biggest volume unlock)
+•  Make Apple Sign In the #1, most prominent button on the auth screen (large green Apple button at top, Google and Email below as secondary).
+•  Add micro-copy above the buttons: “Sign up in one tap — no password needed.”
+•  For Google: Fix the “module script failed” error (likely a Replit SDK version or network issue — check your Replit integration logs).
+•  Fallback: Add a “Continue with Email” that’s clearly secondary.
+•  Goal: Lift Apple Sign In tap rate from 28% (13/46) to 50%+.
+Priority 2: De-emphasize “No thanks” on the trial screen (30-minute change)
+•  Change the button to small gray text link at the very bottom (as we discussed).
+•  Remove the confirmation modal entirely — tapping the link should go straight to the free Welcome Hub.
+•  On the Welcome Hub screen, make “Keep Basic Plan” a secondary outline button and “Personalize with AI Interview” the primary green CTA.
+•  This directly addresses the –76% drop after sign-up.
+Priority 3: Add urgency on the Plan Preview screen
+•  Under “Your 7-Day Evening Exercise Plan” add: “Your AI plan is ready! Start your 7-day free trial now to unlock full tracking, streaks, and guided sessions.”
+•  Update the green button to: “Unlock & Start My 7-Day Free Trial →”
+Priority 4: Day-2 nudge (once the above are live)
+•  For users who reach Welcome Hub but stay on free plan: trigger a banner after 1–2 habit interactions: “Your custom plan is saved — start your free trial to activate AI coaching and streaks (no charge until day 8).”
+4. Ads + Measurement Tie-In
+•  Keep HabitBuilder Maximize Conversions running at the current $35 daily budget (or raise to $60–$80 now that signal is strong).
+•  Once these changes go live, the next 22-install day should produce 5–9 trial starts instead of “few.”
+•  Monitor in App Store Connect Analytics → Subscriptions → Cohort view (filter by Apple Search Ads, date range “Last 7 Days”). Data should appear 24–48 hours after the update.
+•  For MedStack/MyPantryLog: Apply the same “value first, then clear one-time purchase” principle in their Product Page Optimization test.
+These tweaks are low-effort, high-leverage, and directly target the exact drop-offs in your funnel data. You’ll see the Subscriptions tab start populating within days, and paid conversions will follow at the end of the 7-day trials.
+If you implement #1 and #2 and want me to review the updated screens (or the new cohort numbers once they appear), just send them. This is the final piece — your ad delivery and anonymous plan flow are already excellent. Once the auth and trial decision are cleaned up, the revenue flywheel starts turning. Let me know how the changes go!
