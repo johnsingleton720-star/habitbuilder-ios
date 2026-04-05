@@ -21,6 +21,8 @@ import {
   Flame,
   CheckCircle2,
   Star,
+  CheckSquare,
+  Loader2,
 } from "lucide-react";
 
 export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin" | "welcomeHubSeen"> | null): boolean {
@@ -65,6 +67,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
   const { user } = useAuth();
   const { isPro } = useSubscription();
   const [step, setStep] = useState<"welcome" | "features">("welcome");
+  const [keepPlanLoading, setKeepPlanLoading] = useState(false);
 
   const storedPresignupHabitId = localStorage.getItem("presignup_habit_id");
 
@@ -111,14 +114,24 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
     onDismiss("habit", `/habit/${presignupHabit.id}`);
   };
 
-  const handleKeepPlan = () => {
-    if (!user || !presignupHabit) return;
+  const handleKeepPlan = async () => {
+    if (!user || !presignupHabit || keepPlanLoading) return;
+    setKeepPlanLoading(true);
     markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", {
-      action: "keep_plan",
+      action: "keep_plan_simple",
       habitId: presignupHabit.id,
     });
+    try {
+      await apiRequest("PATCH", `/api/habits/${presignupHabit.id}`, {
+        trackingMode: "simple",
+        setupComplete: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
+    } catch {}
     localStorage.removeItem("presignup_habit_id");
+    setKeepPlanLoading(false);
     onDismiss("habit", `/habit/${presignupHabit.id}`);
   };
 
@@ -262,7 +275,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                 {presignupHabit ? (
                   <>
                     <p className="text-center text-sm font-medium text-foreground" data-testid="text-welcome-habit-ready">
-                      Your "{presignupHabit.title}" plan is saved!
+                      Your "{presignupHabit.title}" habit is ready to track!
                     </p>
                     <Button
                       onClick={handleStartInterview}
@@ -277,56 +290,80 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                     <Button
                       variant="outline"
                       onClick={handleKeepPlan}
+                      disabled={keepPlanLoading}
                       size="lg"
                       className="w-full gap-2 h-12 rounded-xl"
                       data-testid="button-welcome-keep-plan"
                     >
-                      <Rocket className="w-5 h-5" />
-                      Keep Basic Plan
+                      {keepPlanLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckSquare className="w-5 h-5" />
+                      )}
+                      {keepPlanLoading ? "Setting up..." : "Start Simple Tracking"}
                     </Button>
                   </>
                 ) : hasExistingHabit ? (
-                  <Button
-                    onClick={handleStartHabit}
-                    size="lg"
-                    className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
-                    data-testid="button-welcome-start-habit"
-                  >
-                    <Rocket className="w-5 h-5" />
-                    Go to My Habits
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleStartHabit}
+                      size="lg"
+                      className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
+                      data-testid="button-welcome-start-habit"
+                    >
+                      <Rocket className="w-5 h-5" />
+                      Go to My Habits
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleShowMeAround}
+                      size="lg"
+                      className="w-full gap-2 h-12 rounded-xl"
+                      data-testid="button-welcome-tour"
+                    >
+                      <Compass className="w-5 h-5" />
+                      Show Me Around
+                    </Button>
+                    <button
+                      onClick={handleExplore}
+                      className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                      data-testid="button-welcome-explore"
+                    >
+                      I'll explore on my own
+                    </button>
+                  </>
                 ) : (
-                  <Button
-                    onClick={handleStartHabit}
-                    size="lg"
-                    className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
-                    data-testid="button-welcome-create-habit"
-                  >
-                    <Rocket className="w-5 h-5" />
-                    Create My First Habit
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleStartHabit}
+                      size="lg"
+                      className="w-full gap-2 h-14 rounded-xl text-base shadow-lg shadow-primary/20"
+                      data-testid="button-welcome-create-habit"
+                    >
+                      <Rocket className="w-5 h-5" />
+                      Create My First Habit
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleShowMeAround}
+                      size="lg"
+                      className="w-full gap-2 h-12 rounded-xl"
+                      data-testid="button-welcome-tour"
+                    >
+                      <Compass className="w-5 h-5" />
+                      Show Me Around
+                    </Button>
+                    <button
+                      onClick={handleExplore}
+                      className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                      data-testid="button-welcome-explore"
+                    >
+                      I'll explore on my own
+                    </button>
+                  </>
                 )}
-
-                <Button
-                  variant="outline"
-                  onClick={handleShowMeAround}
-                  size="lg"
-                  className="w-full gap-2 h-12 rounded-xl"
-                  data-testid="button-welcome-tour"
-                >
-                  <Compass className="w-5 h-5" />
-                  Show Me Around
-                </Button>
-
-                <button
-                  onClick={handleExplore}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
-                  data-testid="button-welcome-explore"
-                >
-                  I'll explore on my own
-                </button>
               </motion.div>
             </div>
           </motion.div>
