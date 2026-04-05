@@ -3,7 +3,12 @@ import Capacitor
 import StoreKit
 
 @objc(AppReviewPlugin)
-public class AppReviewPlugin: CAPPlugin {
+public class AppReviewPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "AppReviewPlugin"
+    public let jsName = "AppReview"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "requestReview", returnType: CAPPluginReturnPromise)
+    ]
 
     @objc func requestReview(_ call: CAPPluginCall) {
         DispatchQueue.main.async {

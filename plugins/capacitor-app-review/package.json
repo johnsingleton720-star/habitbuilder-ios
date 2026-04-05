@@ -15,13 +15,17 @@
   "files": [
     "dist/",
     "ios/",
+    "android/",
     "src/",
     "CapacitorAppReview.podspec"
   ],
-  "keywords": ["capacitor", "plugin", "native", "ios", "app-review"],
+  "keywords": ["capacitor", "plugin", "native", "ios", "android", "app-review"],
   "capacitor": {
     "ios": {
       "src": "ios"
+    },
+    "android": {
+      "src": "android"
     }
   },
   "peerDependencies": {
