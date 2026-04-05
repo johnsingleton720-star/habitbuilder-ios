@@ -382,9 +382,9 @@ export default function HabitDetail() {
   const simpleCheckinMutation = useMutation({
     mutationFn: async (body: { duration?: number; rating?: number; notes?: string; quantity?: number; quantityLabel?: string }) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, body);
-      return res.json();
+      return res.json() as Promise<{ success: boolean; currentStreak?: number }>;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
@@ -396,6 +396,9 @@ export default function HabitDetail() {
       toast({ title: "Checked in!", description: "Great job keeping up the habit!" });
       if (!firstCompletion.hasBeenCelebrated()) {
         firstCompletion.triggerIfFirst(25);
+      }
+      if (data?.currentStreak) {
+        triggerAppReviewIfEligible(user?.id, data.currentStreak);
       }
     },
     onError: () => {
