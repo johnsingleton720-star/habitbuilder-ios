@@ -35,7 +35,6 @@ import type { DailyPlan, TrackedItem, TrackedValue } from "@shared/schema";
 import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useAuth } from "@/hooks/use-auth";
 import { LockedFeature } from "./UpgradePrompt";
 import { Crown, Lock } from "lucide-react";
 
@@ -165,7 +164,6 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const deleteHabit = useDeleteHabit();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSession, setShowSession] = useState(false);

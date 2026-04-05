@@ -255,12 +255,12 @@ export default function HabitDetail() {
   }, [habitId]);
 
   useEffect(() => {
+    if (!user?.id) return;
     const flag = `setupJustCompleted_${habitId}`;
-    if (localStorage.getItem(flag)) {
-      localStorage.removeItem(flag);
-      triggerNudge();
-    }
-  }, [habitId]);
+    if (!localStorage.getItem(flag)) return;
+    localStorage.removeItem(flag);
+    triggerNudge();
+  }, [habitId, user?.id, habitDetailIsInTrial]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");

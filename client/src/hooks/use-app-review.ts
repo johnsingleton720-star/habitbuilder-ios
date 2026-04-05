@@ -1,4 +1,4 @@
-import { AppReview } from "../../../plugins/capacitor-app-review/src/index";
+import { AppReview } from "capacitor-app-review";
 import { isNative } from "@/lib/platform";
 
 const STORAGE_KEY_PREFIX = "reviewPromptShown_";
