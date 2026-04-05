@@ -847,6 +847,7 @@ async function processTrialNudges() {
       where: and(
         eq(users.trialOfferShown, true),
         or(eq(users.hasPaid, false), isNull(users.hasPaid)),
+        isNull(users.subscriptionId),
         isNull(users.trialNudgeSentAt),
         eq(users.isAdmin, false),
         eq(users.pushNotificationsEnabled, true),
@@ -861,8 +862,8 @@ async function processTrialNudges() {
     for (const u of eligibleUsers) {
       try {
         await sendPushToUser(u.id, {
-          title: "Your habit plan is still waiting 🌱",
-          body: "Start your 7-day free trial to unlock your AI plan and track your progress.",
+          title: "Your AI plan is ready",
+          body: "Start your free trial before it expires from this device. 🌱",
           url: "/trial-offer",
           tag: "trial-nudge",
         });
