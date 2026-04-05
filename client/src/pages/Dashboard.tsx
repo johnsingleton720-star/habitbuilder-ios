@@ -38,7 +38,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Habit, HabitTemplate, HabitStack, DailyPlan } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useAppReview } from "@/hooks/use-app-review";
+import { triggerAppReviewIfEligible } from "@/hooks/use-app-review";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAppTheme } from "@/components/ThemeSelector";
@@ -91,9 +91,9 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
   const queryClient = useQueryClient();
   const simpleCheckin = useMutation({
     mutationFn: async (habitId: number) => {
-      return await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, {});
+      return await apiRequest("POST", `/api/habits/${habitId}/simple-checkin`, {}).then(r => r.json()) as { success: boolean; currentStreak?: number };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
@@ -102,6 +102,9 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
       toast({ title: "Checked in!" });
       if (!firstCompletion.hasBeenCelebrated()) {
         firstCompletion.triggerIfFirst(25);
+      }
+      if (data?.currentStreak) {
+        triggerAppReviewIfEligible(user?.id, data.currentStreak);
       }
     },
   });
@@ -133,7 +136,6 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
 
   useAppTheme();
   const firstCompletion = useFirstCompletionCelebration(user?.id);
-  useAppReview(user?.id, habits);
   const [levelUpDismissed, setLevelUpDismissed] = useState(() => {
     const dismissedAt = localStorage.getItem('levelUpBannerDismissed');
     if (!dismissedAt) return false;

@@ -1,42 +1,29 @@
-import { useEffect, useRef } from "react";
+import { registerPlugin } from "@capacitor/core";
 import { isNative } from "@/lib/platform";
+
+interface AppReviewPlugin {
+  requestReview(): Promise<void>;
+}
+
+const AppReview = registerPlugin<AppReviewPlugin>("AppReview");
 
 const STORAGE_KEY_PREFIX = "reviewPromptShown_";
 
-async function requestNativeReview(): Promise<void> {
+export async function triggerAppReviewIfEligible(
+  userId: string | undefined,
+  currentStreak: number
+): Promise<void> {
+  if (!userId || !isNative()) return;
+  if (currentStreak < 3) return;
+
+  const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
+  if (localStorage.getItem(storageKey)) return;
+
+  localStorage.setItem(storageKey, "1");
+
   try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (!Capacitor.isNativePlatform()) return;
-
-    // Try calling the AppReview plugin if it's registered in the native layer.
-    // This works when @capacitor-community/app-review is installed in the iOS/Android project.
-    // Silently no-ops if the plugin isn't present (future iOS build will activate it).
-    const plugins = (Capacitor as any).Plugins;
-    if (plugins?.AppReview?.requestReview) {
-      await plugins.AppReview.requestReview();
-    }
+    await AppReview.requestReview();
   } catch {
-    // Silently ignore if plugin not available
+    // Silently ignore if plugin is not installed in the native build
   }
-}
-
-export function useAppReview(userId: string | undefined, habits: any[] | undefined) {
-  const hasTriggered = useRef(false);
-
-  useEffect(() => {
-    if (!userId || !habits || !isNative()) return;
-    if (hasTriggered.current) return;
-
-    const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
-    if (localStorage.getItem(storageKey)) return;
-
-    const hasThreeDayStreak = habits.some(
-      (h) => !h.archived && (h.currentStreak || 0) >= 3
-    );
-    if (!hasThreeDayStreak) return;
-
-    hasTriggered.current = true;
-    localStorage.setItem(storageKey, "1");
-    requestNativeReview();
-  }, [userId, habits]);
 }

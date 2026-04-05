@@ -30,6 +30,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { FirstCompletionCelebration, useFirstCompletionCelebration } from "@/components/FirstCompletionCelebration";
 import { CollapsibleText } from "@/components/CollapsibleText";
 import { PostSetupTrialNudge, usePostSetupTrialNudge } from "@/components/PostSetupTrialNudge";
+import { triggerAppReviewIfEligible } from "@/hooks/use-app-review";
 
 function RecentlyAdjustedBanner({ habitId, summary }: { habitId: number; summary: string | null }) {
   const [dismissed, setDismissed] = useState(false);
@@ -228,7 +229,7 @@ export default function HabitDetail() {
   const [, params] = useRoute("/habit/:id");
   const habitId = Number(params?.id);
   const queryClient = useQueryClient();
-  const { features, isFreeUser } = useSubscription();
+  const { features, isFreeUser, isInTrial: habitDetailIsInTrial } = useSubscription();
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const firstCompletion = useFirstCompletionCelebration(user?.id);
@@ -239,7 +240,7 @@ export default function HabitDetail() {
   
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [setupWizardRestartMode, setSetupWizardRestartMode] = useState(false);
-  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id);
+  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id, user?.hasPaid ?? undefined, habitDetailIsInTrial);
   const [sessionOpen, setSessionOpen] = useState(false);
 
   useEffect(() => {
@@ -437,16 +438,21 @@ export default function HabitDetail() {
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, completed, skipped, notes, timeSpent }: { taskId: string; completed?: boolean; skipped?: boolean; notes?: string; timeSpent?: number }) => {
       const res = await apiRequest("PATCH", `/api/habits/${habitId}/tasks/${taskId}`, { completed, skipped, notes, timeSpent });
-      return res.json();
+      return res.json() as Promise<{ success: boolean; currentStreak?: number }>;
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
-      if (variables.completed && !firstCompletion.hasBeenCelebrated()) {
-        firstCompletion.triggerIfFirst(25);
+      if (variables.completed) {
+        if (!firstCompletion.hasBeenCelebrated()) {
+          firstCompletion.triggerIfFirst(25);
+        }
+        if (data?.currentStreak) {
+          triggerAppReviewIfEligible(user?.id, data.currentStreak);
+        }
       }
     },
     onError: () => {

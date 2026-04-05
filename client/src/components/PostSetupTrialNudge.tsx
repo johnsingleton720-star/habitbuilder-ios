@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
 import {
   Crown,
   Brain,
@@ -21,26 +20,10 @@ import {
 import { Link } from "wouter";
 
 const PREMIUM_FEATURES = [
-  {
-    icon: Brain,
-    label: "Unlimited AI coaching sessions",
-    color: "text-violet-500",
-  },
-  {
-    icon: BarChart3,
-    label: "Advanced analytics & AI insights",
-    color: "text-blue-500",
-  },
-  {
-    icon: Users,
-    label: "Accountability partners",
-    color: "text-green-500",
-  },
-  {
-    icon: Mic,
-    label: "Voice input for coaching replies",
-    color: "text-orange-500",
-  },
+  { icon: Brain,     label: "Unlimited AI coaching sessions",    color: "text-violet-500" },
+  { icon: BarChart3, label: "Advanced analytics & AI insights",  color: "text-blue-500"   },
+  { icon: Users,     label: "Accountability partners",           color: "text-green-500"  },
+  { icon: Mic,       label: "Voice input for coaching replies",  color: "text-orange-500" },
 ];
 
 interface PostSetupTrialNudgeProps {
@@ -49,10 +32,10 @@ interface PostSetupTrialNudgeProps {
 }
 
 export function PostSetupTrialNudge({ open, onClose }: PostSetupTrialNudgeProps) {
-  const { isInTrial, trialDaysRemaining, isFreeUser } = useSubscription();
+  const { isFreeUser, isInTrial } = useSubscription();
   const { user } = useAuth();
 
-  if (!user || user.isAdmin || user.hasPaid) return null;
+  if (!user || user.isAdmin || user.hasPaid || isInTrial || !isFreeUser) return null;
 
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -68,14 +51,10 @@ export function PostSetupTrialNudge({ open, onClose }: PostSetupTrialNudgeProps)
             </div>
           </div>
           <SheetTitle className="text-center text-xl font-display">
-            {isInTrial
-              ? `Your Premium trial is active — ${trialDaysRemaining} days left`
-              : "Unlock your full plan with Premium"}
+            Your AI plan is ready — unlock it fully
           </SheetTitle>
           <p className="text-center text-sm text-muted-foreground mt-1">
-            {isInTrial
-              ? "You're exploring all Premium features free. Here's what you have access to right now:"
-              : "Start a 7-day free trial and unlock everything that makes your AI plan shine."}
+            Start a 7-day Premium trial free and get everything that makes your AI plan shine:
           </p>
         </SheetHeader>
 
@@ -92,28 +71,19 @@ export function PostSetupTrialNudge({ open, onClose }: PostSetupTrialNudgeProps)
           ))}
         </div>
 
-        {isInTrial ? (
-          <Link href="/paywall" onClick={onClose}>
-            <Button className="w-full gap-2" size="lg" data-testid="button-trial-nudge-subscribe">
-              <Sparkles className="w-4 h-4" />
-              Subscribe to keep Premium
-            </Button>
-          </Link>
-        ) : (
-          <Link href="/paywall" onClick={onClose}>
-            <Button className="w-full gap-2" size="lg" data-testid="button-trial-nudge-start">
-              <Sparkles className="w-4 h-4" />
-              Start my free 7-day trial
-            </Button>
-          </Link>
-        )}
+        <Link href="/paywall" onClick={onClose}>
+          <Button className="w-full gap-2" size="lg" data-testid="button-trial-nudge-start">
+            <Sparkles className="w-4 h-4" />
+            Start my free 7-day trial
+          </Button>
+        </Link>
 
         <button
           onClick={onClose}
           className="w-full mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
           data-testid="button-trial-nudge-dismiss"
         >
-          {isInTrial ? "Got it, keep exploring" : "Maybe later"}
+          Maybe later
         </button>
       </SheetContent>
     </Sheet>
@@ -122,16 +92,14 @@ export function PostSetupTrialNudge({ open, onClose }: PostSetupTrialNudgeProps)
 
 const STORAGE_KEY_PREFIX = "trialAwarenessNudgeShown_";
 
-export function usePostSetupTrialNudge(userId: string | undefined) {
-  const [shouldShow, setShouldShow] = useState(false);
+export function usePostSetupTrialNudge(userId: string | undefined, hasPaid: boolean | undefined, isInTrial: boolean) {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
 
   const storageKey = userId ? `${STORAGE_KEY_PREFIX}${userId}` : null;
 
   const triggerNudge = () => {
     if (!storageKey) return;
-    if (!user || user.isAdmin || user.hasPaid) return;
+    if (hasPaid || isInTrial) return;
     if (localStorage.getItem(storageKey)) return;
     setIsOpen(true);
   };

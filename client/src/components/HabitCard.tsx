@@ -171,7 +171,6 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSession, setShowSession] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
-  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id);
   const [simpleCheckinExpanded, setSimpleCheckinExpanded] = useState(false);
   const [simpleCheckinQuantity, setSimpleCheckinQuantity] = useState("");
   const [simpleCheckinLabel, setSimpleCheckinLabel] = useState("");
@@ -180,7 +179,8 @@ export const HabitCard = forwardRef<HTMLDivElement, HabitCardProps>(function Hab
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const { toast } = useToast();
-  const { features, isFreeUser } = useSubscription();
+  const { features, isFreeUser, isInTrial } = useSubscription();
+  const { isOpen: nudgeOpen, triggerNudge, handleClose: handleNudgeClose } = usePostSetupTrialNudge(user?.id, user?.hasPaid ?? undefined, isInTrial);
 
   const isSimpleMode = habit.trackingMode === "simple";
   const habitTrackedItems = (habit.trackedItems || []) as TrackedItem[];

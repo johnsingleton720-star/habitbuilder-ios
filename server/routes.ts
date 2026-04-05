@@ -5746,7 +5746,7 @@ REQUIREMENTS:
         await checkAndAwardAchievements(userId);
       }
 
-      res.json({ success: true });
+      res.json({ success: true, currentStreak });
     } catch (error) {
       console.error("Error updating task:", error);
       res.status(500).json({ error: "Failed to update task" });
