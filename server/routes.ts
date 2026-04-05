@@ -1968,23 +1968,31 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
         });
       } else if (plan && plan.day1Tasks && Array.isArray(plan.day1Tasks)) {
         const todayDate = getUserToday(user?.timezone || clientTimezone);
-        const dailyPlans = [{
-          date: todayDate,
+        const tasks = plan.day1Tasks.map((t: any, i: number) => ({
+          title: t.task || `Task ${i + 1}`,
+          description: t.task || "",
+          duration: parseInt(t.duration) || 10,
           completed: false,
-          tasks: plan.day1Tasks.map((t: any, i: number) => ({
-            id: `presignup-task-${i + 1}`,
-            title: t.task || `Task ${i + 1}`,
-            description: t.task || "",
-            duration: parseInt(t.duration) || 10,
+          xp: 25,
+        }));
+        const baseDate = new Date(todayDate + "T12:00:00");
+        const dailyPlans = Array.from({ length: 7 }, (_, day) => {
+          const d = new Date(baseDate);
+          d.setDate(d.getDate() + day);
+          const dateStr = d.toISOString().split("T")[0];
+          return {
+            date: dateStr,
             completed: false,
-            xp: 25,
-          })),
-        }];
+            tasks: tasks.map((t, i) => ({ ...t, id: `presignup-d${day + 1}-task-${i + 1}` })),
+          };
+        });
+        const planEndDate = dailyPlans[dailyPlans.length - 1].date;
 
         await storage.updateHabit(habit.id, userId, {
           dailyPlans: dailyPlans as any,
           setupComplete: true,
           planStartDate: todayDate,
+          planEndDate,
         });
       }
 

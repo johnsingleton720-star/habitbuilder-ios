@@ -54,11 +54,12 @@ interface BrokenStreakInfo {
 interface DashboardProps {
   triggerTour?: boolean;
   onTourTriggered?: () => void;
+  onTourComplete?: () => void;
   triggerCreateHabit?: boolean;
   onCreateHabitTriggered?: () => void;
 }
 
-export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateHabit, onCreateHabitTriggered }: DashboardProps = {}) {
+export default function Dashboard({ triggerTour, onTourTriggered, onTourComplete, triggerCreateHabit, onCreateHabitTriggered }: DashboardProps = {}) {
   usePageTitle("Dashboard", "Your personal habit coaching dashboard. Track progress, complete guided sessions, earn XP, and stay on top of your daily habits.");
   const { user, logout } = useAuth();
   const { data: habits, isLoading } = useHabitsSummary();
@@ -1605,6 +1606,7 @@ export default function Dashboard({ triggerTour, onTourTriggered, triggerCreateH
           apiRequest("PATCH", "/api/user/tour").then(() => {
             queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           }).catch(() => {});
+          onTourComplete?.();
         }} />
       )}
 

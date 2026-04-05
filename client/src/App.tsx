@@ -121,6 +121,7 @@ function Router() {
   const [showWelcomeHub, setShowWelcomeHub] = useState(false);
   const [welcomeHubCheckedUserId, setWelcomeHubCheckedUserId] = useState<string | null>(null);
   const [triggerTourAfterHub, setTriggerTourAfterHub] = useState(false);
+  const [tourNavigationTarget, setTourNavigationTarget] = useState<string | null>(null);
   const [triggerCreateHabit, setTriggerCreateHabit] = useState(false);
   const [presignupHandoffDone, setPresignupHandoffDone] = useState(!localStorage.getItem("presignup_data"));
   // True while we're waiting for Stripe webhook to update user state after checkout redirect.
@@ -286,11 +287,20 @@ function Router() {
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);
     if (action === "tour") {
+      if (navigationTarget) setTourNavigationTarget(navigationTarget);
       setTimeout(() => setTriggerTourAfterHub(true), 300);
     } else if (action === "habit" && navigationTarget) {
       setTimeout(() => navigate(navigationTarget), 100);
     } else if (action === "habit" && !navigationTarget) {
       setTriggerCreateHabit(true);
+    }
+  };
+
+  const handleTourComplete = () => {
+    if (tourNavigationTarget) {
+      const target = tourNavigationTarget;
+      setTourNavigationTarget(null);
+      setTimeout(() => navigate(target), 200);
     }
   };
 
@@ -380,7 +390,7 @@ function Router() {
     {updateAvailable && <VersionUpdateBanner />}
     {user && isNative() && isIOS() && !showWelcomeHub && presignupHandoffDone && welcomeHubCheckedUserId === String(user.id) && <IOSNotificationPrompt userId={user.id} />}
     <Switch>
-      <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} triggerCreateHabit={triggerCreateHabit} onCreateHabitTriggered={() => setTriggerCreateHabit(false)} /></PageTransition></Route>
+      <Route path="/"><PageTransition><Dashboard triggerTour={triggerTourAfterHub} onTourTriggered={() => setTriggerTourAfterHub(false)} onTourComplete={handleTourComplete} triggerCreateHabit={triggerCreateHabit} onCreateHabitTriggered={() => setTriggerCreateHabit(false)} /></PageTransition></Route>
       <Route path="/habit/:id">{(params) => <PageTransition><HabitDetail /></PageTransition>}</Route>
       <Route path="/stack/:id">{(params) => <PageTransition><StackDetail /></PageTransition>}</Route>
       <Route path="/progress/:view">{(params) => <PageTransition><Progress /></PageTransition>}</Route>

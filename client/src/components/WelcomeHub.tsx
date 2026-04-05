@@ -21,8 +21,6 @@ import {
   Flame,
   CheckCircle2,
   Star,
-  CheckSquare,
-  Loader2,
 } from "lucide-react";
 
 export function shouldShowWelcomeHub(user: Pick<User, "id" | "isAdmin" | "welcomeHubSeen"> | null): boolean {
@@ -67,7 +65,6 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
   const { user } = useAuth();
   const { isPro } = useSubscription();
   const [step, setStep] = useState<"welcome" | "features">("welcome");
-  const [keepPlanLoading, setKeepPlanLoading] = useState(false);
 
   const storedPresignupHabitId = localStorage.getItem("presignup_habit_id");
 
@@ -111,35 +108,18 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
     } catch {}
     localStorage.removeItem("presignup_habit_id");
-    onDismiss("habit", `/habit/${presignupHabit.id}`);
+    onDismiss("tour", `/habit/${presignupHabit.id}`);
   };
 
-  const handleKeepPlan = async () => {
-    if (!user || !presignupHabit || keepPlanLoading) return;
-    setKeepPlanLoading(true);
+  const handleKeepPlan = () => {
+    if (!user || !presignupHabit) return;
     markWelcomeHubSeen();
     trackFunnelEvent("welcome_hub_action", {
-      action: "keep_plan_simple",
+      action: "keep_ai_plan",
       habitId: presignupHabit.id,
     });
-    try {
-      const res = await apiRequest("PATCH", `/api/habits/${presignupHabit.id}`, {
-        trackingMode: "simple",
-        setupComplete: true,
-      });
-      if (!res.ok) throw new Error("Failed to set up simple tracking");
-      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
-      localStorage.removeItem("presignup_habit_id");
-      setKeepPlanLoading(false);
-      onDismiss("habit", `/habit/${presignupHabit.id}`);
-    } catch {
-      trackFunnelEvent("welcome_hub_action", {
-        action: "keep_plan_simple_failed",
-        habitId: presignupHabit.id,
-      });
-      setKeepPlanLoading(false);
-    }
+    localStorage.removeItem("presignup_habit_id");
+    onDismiss("tour", `/habit/${presignupHabit.id}`);
   };
 
   const handleStartHabit = () => {
@@ -282,7 +262,7 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                 {presignupHabit ? (
                   <>
                     <p className="text-center text-sm font-medium text-foreground" data-testid="text-welcome-habit-ready">
-                      Your "{presignupHabit.title}" habit is ready to track!
+                      Your "{presignupHabit.title}" habit is ready to go!
                     </p>
                     <Button
                       onClick={handleStartInterview}
@@ -297,17 +277,12 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
                     <Button
                       variant="outline"
                       onClick={handleKeepPlan}
-                      disabled={keepPlanLoading}
                       size="lg"
                       className="w-full gap-2 h-12 rounded-xl"
                       data-testid="button-welcome-keep-plan"
                     >
-                      {keepPlanLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckSquare className="w-5 h-5" />
-                      )}
-                      {keepPlanLoading ? "Setting up..." : "Start Simple Tracking"}
+                      <ArrowRight className="w-4 h-4" />
+                      Keep My AI Plan
                     </Button>
                   </>
                 ) : hasExistingHabit ? (
