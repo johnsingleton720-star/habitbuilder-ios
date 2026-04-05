@@ -123,16 +123,23 @@ export function WelcomeHub({ onDismiss }: WelcomeHubProps) {
       habitId: presignupHabit.id,
     });
     try {
-      await apiRequest("PATCH", `/api/habits/${presignupHabit.id}`, {
+      const res = await apiRequest("PATCH", `/api/habits/${presignupHabit.id}`, {
         trackingMode: "simple",
         setupComplete: true,
       });
+      if (!res.ok) throw new Error("Failed to set up simple tracking");
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
-    } catch {}
-    localStorage.removeItem("presignup_habit_id");
-    setKeepPlanLoading(false);
-    onDismiss("habit", `/habit/${presignupHabit.id}`);
+      localStorage.removeItem("presignup_habit_id");
+      setKeepPlanLoading(false);
+      onDismiss("habit", `/habit/${presignupHabit.id}`);
+    } catch {
+      trackFunnelEvent("welcome_hub_action", {
+        action: "keep_plan_simple_failed",
+        habitId: presignupHabit.id,
+      });
+      setKeepPlanLoading(false);
+    }
   };
 
   const handleStartHabit = () => {
