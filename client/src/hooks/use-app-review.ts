@@ -13,10 +13,9 @@ export async function triggerAppReviewIfEligible(
   const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
   if (localStorage.getItem(storageKey)) return;
 
-  localStorage.setItem(storageKey, "1");
-
   try {
     await AppReview.requestReview();
+    localStorage.setItem(storageKey, "1");
   } catch {
   }
 }

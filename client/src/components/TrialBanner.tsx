@@ -56,7 +56,6 @@ export function TrialBanner() {
         ? hoursRemaining <= 24 ? `${hoursRemaining} hours left` : "1 day left"
         : `${hoursRemaining} hours left`;
 
-    const hasUsageData = gamStats && (tasksCompleted > 0 || (gamStats.xpPoints || 0) > 0);
     const isUrgent = trialDaysRemaining <= 3;
 
     return (
