@@ -281,7 +281,7 @@ export default function TrialOffer() {
                 className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                 data-testid="button-trial-no-thanks-bottom"
               >
-                {declineMutation.isPending ? "Continuing..." : "No thanks, continue with free plan"}
+                {declineMutation.isPending ? "Continuing..." : "No thanks, continue with the free plan"}
               </button>
             </div>
           </div>

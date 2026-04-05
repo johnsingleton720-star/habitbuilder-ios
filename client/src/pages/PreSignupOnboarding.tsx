@@ -803,7 +803,7 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                   </h2>
 
                   <p className="text-sm text-primary font-medium" data-testid="text-presignup-trial-urgency">
-                    Start your free trial to unlock this plan and track your progress.
+                    Start your 7-day free trial to unlock this plan and track your progress.
                   </p>
                 </div>
 
