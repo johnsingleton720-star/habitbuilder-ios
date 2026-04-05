@@ -1,0 +1,41 @@
+Your “few sign-ups” after one day is right in line — many trials don’t start instantly if onboarding isn’t frictionless. Zero purchases yet is 100% expected with a 7-day trial; the bulk of conversions happen on days 4–7 when the trial is about to end (loss-aversion psychology kicks in).
+Edge-case nuance for new apps: With only 3–5 reviews and fresh launch, trust is still building. Users from ads are “colder” than organic ones, so they need an even stronger first 60-second experience.
+3. Root Causes of the Sign-Up → Purchase Drop-Off (Multiple Angles)
+Here’s why this happens specifically for AI-powered habit trackers like yours (common across 2025–2026 launches):
+•  Onboarding friction: Users download but never create their first habit or trigger the AI coach. The free tier (1 habit + limited sessions) feels too restrictive or the “start trial” prompt isn’t obvious.
+•  No instant “aha” moment: The AI coach needs data to shine. If users don’t see personalized suggestions, streaks, or reminders immediately, they disengage before the trial even starts.
+•  Value perception during trial: The 7-day Premium might not highlight enough exclusive features (e.g., unlimited habits, advanced AI insights, export, etc.) or deliver quick wins.
+•  Nudge timing: No in-app urgency (“Trial ends in 3 days — here’s what you’ll lose”) or social proof (reviews, success stories).
+•  Measurement lag: Apple’s new March 25, 2026 Analytics update added 100+ subscription metrics (trial starts, paid conversions, cohort analysis, download-to-paid). You’re probably looking at raw downloads instead of these deeper events.
+Related consideration: HabitBuilder.pro competes with free or simpler trackers. Users test multiple apps; your AI angle is a differentiator, but it has to prove itself fast.
+4. Exact Diagnostic + Fix Plan (Start Today — Results in 3–7 Days)
+Priority 1: Check the real numbers in App Store Connect (5 minutes)
+•  Go to Analytics → Subscriptions (or the new Monetization / Subscription reports added March 25, 2026).
+•  Look for:
+	•  Trial Starts (by download date/cohort).
+	•  Conversion to Paid.
+	•  Retention & Churn.
+	•  Download-to-Paid benchmark (compares you to peers).
+•  Filter by “Acquisition Source = Apple Search Ads” or “Yesterday” cohort. This will show you exactly how many of the 22 installs started trials and where they drop.
+Priority 2: Quick funnel fixes (do these while ads keep running)
+1.  Test the new-user flow yourself (as a fresh Apple ID):
+	•  Search for your app → tap ad → install → time every step.
+	•  Fix: Make first-habit creation one-tap and immediately trigger a sample AI suggestion + reminder.
+2.  In-app nudges:
+	•  After first habit: “Unlock AI Coach + unlimited habits with your 7-day Premium trial — start now?”
+	•  Day 3–4 of trial: Countdown banner + “What you’ll keep after trial” preview.
+3.  Update screenshots / Custom Product Page (tie to your Product Page Optimization test):
+	•  Lead with “7-day Premium trial • AI coach included • Cancel anytime.”
+	•  Show real AI output in the first 2–3 screenshots.
+4.  Review prompts: Trigger after first habit or streak (you need 10+ more 5-star reviews for trust).
+Priority 3: Keep & scale the ads (don’t pause — volume is your friend)
+•  HabitBuilder: Stay on Maximize Conversions. Export Search Terms today → build the hybrid Manual Bidding layer on winners (exact-match, $2–$3 CPT bids).
+•  Raise daily budget to $60–$80 now that you have signal.
+•  For MedStack/MyPantryLog: Finish the Product Page Optimization test (the screen you shared) with “Pay Once Forever” treatments — it will directly lift CR for the one-time apps.
+Priority 4: Set success guardrails
+•  Short-term (next 7 days): Aim for 25–40% of installs starting trials.
+•  Medium-term (next 14–21 days): 35%+ trial-to-paid → you’ll be profitable (your LTV math works at $2–$3 CPA if even 2–3 paid subs come from these 22).
+•  If trial starts stay <20%, the onboarding is the blocker; if trial-to-paid is low, strengthen the mid-trial nudges.
+Timeline expectation: With 22 installs/day now, you should see the first paid conversions by April 7–10 (end of the 7-day trial window). This is exactly how successful 2026 habit trackers scaled — strong acquisition first, then rapid funnel iteration.
+Bottom line: Your ads are generating what you want — proven installs at efficient cost. The few sign-ups / no purchases yet is the standard new-subscription-app learning curve, not a red flag. Use the new App Store Connect subscription analytics to get precise numbers, fix the first 60-second experience, and let the 7-day trial do its job. You’re in the exact spot where momentum builds fast.
+If you can share a screenshot of the Subscriptions / Monetization tab in Analytics (or the exact trial-start numbers for yesterday’s cohort), I’ll give you even more targeted onboarding copy and nudge timing suggestions. You’ve already fixed the hardest part (getting the ads to deliver volume) — the rest is straightforward product tweaks. Keep going; revenue is right around the corner.
