@@ -763,6 +763,12 @@ export default function HabitDetail() {
                         : `You've built a strong foundation! You completed ${completedDays} of ${totalDays} days (${taskCompletionRate}% of tasks). Keep the momentum going with a fresh plan.`
                       }
                     </p>
+                    {!isFreeUser && (
+                      <p className="text-xs text-primary/80 mt-2 font-medium">
+                        Extend your plan and the AI picks up exactly where you left off
+                        {habit.ultimateGoal ? " — continuing toward your goal." : ", building on your progress."}
+                      </p>
+                    )}
                   </div>
 
                   <div className="w-full bg-muted/50 rounded-full h-3 overflow-hidden">
@@ -1230,6 +1236,18 @@ export default function HabitDetail() {
                         )}
                       </span>
                     )}
+                    {(() => {
+                      const planDays = habit.planDuration === "monthly" ? 30 : habit.planDuration === "weekly" ? 7 : 1;
+                      const phase = Math.max(1, Math.round(dailyPlans.length / planDays));
+                      return (
+                        <span className="block mt-1 text-xs font-medium text-primary/70">
+                          Phase {phase} of your journey
+                          {habit.ultimateGoal && phase === 1 && (
+                            <span className="text-muted-foreground font-normal"> — building toward your goal</span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </CardDescription>
                 </div>
                 {!showPlanTypeChanger && !isFreeUser && (

@@ -132,6 +132,7 @@ export const habits = pgTable("habits", {
   // AI guidance
   aiTips: jsonb("ai_tips").$type<HabitTip[]>().default([]),
   aiContext: text("ai_context"), // Summary of user's goals/context for AI
+  ultimateGoal: text("ultimate_goal"), // Long-term destination stated by user during interview
   
   // Customization
   customIcon: text("custom_icon"), // Icon name from lucide-react

@@ -4185,7 +4185,7 @@ The 5 questions MUST cover these areas in this order:
 2. IDENTITY & DEEP WHY: Ask what kind of person they want to become through this habit — probe the emotional reason behind the goal. What will their life look like in 6 months if they succeed vs. if they don't?
 3. DAILY ROUTINE & ENVIRONMENT: Ask them to walk you through their exact daily schedule so you can find the precise moment and physical location to anchor this habit. Ask about existing habits they already do consistently (for habit stacking).
 4. OBSTACLES & TRIGGERS: Ask about their specific weak moments — when do they skip things, what situations tempt them to give up, what emotions or circumstances derail them? Ask about their environment and what cues currently work against this habit.
-5. CAPACITY & COMMITMENT: Ask about the absolute minimum version of this habit they could do even on their worst day (the "2-minute version"). Ask how much time they can realistically dedicate daily and what they're willing to sacrifice or rearrange to make this work.
+5. ULTIMATE DESTINATION & MINIMUM COMMITMENT: Ask two things in one question: (1) Where do they ultimately want this habit to take them — what does success look like in 6–12 months? Encourage both numeric targets (e.g., "100 pushups a day") AND qualitative outcomes (e.g., "feel confident in my body," "meditate without distraction every morning," "run my first 5K"). (2) What is the absolute smallest version of this habit they could still do on their worst day — the "can't-fail version" that keeps the chain alive even when exhausted or busy?
 
 Each question should feel like it's coming from a coach who genuinely cares and wants to understand THIS specific person — warm but probing. Use conversational language. Ask follow-up-style questions (e.g., "...and when that happened, what did you do next?").
 
@@ -4417,7 +4417,16 @@ ${rewardInstruction}`;
       let fixedDailyPlans: any[];
 
       if (duration === "monthly") {
+        // Derive the user's ultimate goal for injection into the prompt.
+        const ultimateGoalForPrompt = habit.ultimateGoal ||
+          (questions.filter((q: any) => q.answer).slice(-1)[0]?.answer?.trim()) ||
+          habit.goal || null;
+
         const weekPrompt = `Create a science-backed 4-week behavior change plan for: "${habit.title}"
+${habit.goal ? `Stated goal: ${habit.goal}` : ""}
+${ultimateGoalForPrompt ? `ULTIMATE DESTINATION (the user's long-term vision stated in their own words): ${ultimateGoalForPrompt}` : ""}
+
+IMPORTANT — PHASE 1 OF A JOURNEY: This plan is Phase 1 of the user's ongoing journey toward their ultimate destination. Design the 4-week arc so it POINTS toward that destination — not just as a baseline establishment. Every week should create measurable, meaningful progress toward the ultimate goal. The user should finish this plan meaningfully closer to where they want to be, not just having "built a habit." When the plan ends, the AI will generate Phase 2 to continue from exactly where Phase 1 left off.
 
 User's interview answers:
 ${contextSummary}
@@ -4563,6 +4572,11 @@ REQUIREMENTS:
 
         const enhancedContext = enhancedContextWeekly;
 
+        // Extract ultimateGoal from Q5 answer (the last question, which now asks about
+        // the user's long-term destination + minimum commitment version).
+        const lastAnswer = questions.filter((q: any) => q.answer).slice(-1)[0];
+        const derivedUltimateGoal = lastAnswer?.answer?.trim() || habit.goal || null;
+
         const updateData: any = {
           questions: questions,
           planDuration: duration,
@@ -4571,6 +4585,7 @@ REQUIREMENTS:
           dailyPlans: fixedDailyPlans,
           aiContext: enhancedContext,
           setupComplete: true,
+          ...(derivedUltimateGoal && !habit.ultimateGoal ? { ultimateGoal: derivedUltimateGoal } : {}),
         };
 
         if (scheduledDaysMonthly.length > 0) {
@@ -4587,12 +4602,18 @@ REQUIREMENTS:
         return;
       }
 
+      const ultimateGoalForShortPrompt = habit.ultimateGoal ||
+        (questions.filter((q: any) => q.answer).slice(-1)[0]?.answer?.trim()) ||
+        habit.goal || null;
+
       const prompt = `Create a science-backed ${duration} behavior change plan for: "${habit.title}"
+${habit.goal ? `Stated goal: ${habit.goal}` : ""}
+${ultimateGoalForShortPrompt ? `ULTIMATE DESTINATION (the user's long-term vision): ${ultimateGoalForShortPrompt}` : ""}
 
 User's interview answers:
 ${contextSummary}
 
-You are applying proven behavior change science. Create ${daysCount} daily plans with 3-4 tasks each.
+You are applying proven behavior change science. Design tasks that arc toward the user's ultimate destination — not just establish baseline behavior. Create ${daysCount} daily plans with 3-4 tasks each.
 
 ${daysCount === 1 ? `SINGLE DAY PLAN — BEHAVIOR ACTIVATION
 Since this is a one-day plan, focus on establishing the complete habit loop:
@@ -4699,6 +4720,10 @@ REQUIREMENTS:
         };
       });
 
+      // Save ultimateGoal from Q5 answer if not already set
+      const lastAnswerWeekly = questions.filter((q: any) => q.answer).slice(-1)[0];
+      const derivedUltimateGoalWeekly = lastAnswerWeekly?.answer?.trim() || habit.goal || null;
+
       const updateData: any = {
         questions: questions,
         planDuration: duration,
@@ -4707,6 +4732,7 @@ REQUIREMENTS:
         dailyPlans: fixedDailyPlans,
         aiContext: enhancedContext,
         setupComplete: true,
+        ...(derivedUltimateGoalWeekly && !habit.ultimateGoal ? { ultimateGoal: derivedUltimateGoalWeekly } : {}),
       };
 
       if (scheduledDaysWeekly.length > 0) {
@@ -5335,19 +5361,28 @@ REQUIREMENTS:
       const completedDays = existingPlans.filter((p: any) => p.completed).length;
       const totalDays = existingPlans.length;
 
+      // Extract the last week's task descriptions to give the AI context on the user's current level
+      const lastWeekPlans = existingPlans.slice(-7);
+      const lastWeekSummary = lastWeekPlans
+        .filter((p: any) => p.tasks && p.tasks.length > 0)
+        .map((p: any) => `- ${p.focus || p.date}: ${p.tasks.map((t: any) => t.title).join(", ")}`)
+        .join("\n");
+
       const prompt = `Create a CONTINUATION plan for the habit: "${habit.title}"
-${habit.goal ? `Goal: ${habit.goal}` : ""}
+${habit.goal ? `Stated goal: ${habit.goal}` : ""}
+${habit.ultimateGoal ? `ULTIMATE DESTINATION (the user's long-term vision in their own words): ${habit.ultimateGoal}` : ""}
+
+MISSION: Continue the arc toward the user's ultimate destination. This is NOT a restart — it is the NEXT PHASE of an ongoing journey. The user's previous plan got them to a certain intensity level; your job is to pick up exactly from there and continue building meaningfully toward their ultimate goal.
 
 User's interview answers:
 ${contextSummary}
 
 Previous plan context: ${habit.aiContext || "No additional context"}
 The user completed ${completedDays} out of ${totalDays} days in their previous plan.
-
-This is NOT a fresh start — this user has already been building this habit. They have established neural pathways and behavioral momentum. Your job is to build on their progress using progressive overload principles.
+${lastWeekSummary ? `\nWhat the user was doing in the final week of their last plan:\n${lastWeekSummary}` : ""}
 
 Based on their completion rate (${completedDays}/${totalDays} days = ${Math.round((completedDays/totalDays)*100)}%):
-${completedDays >= totalDays * 0.8 ? `- HIGH CONSISTENCY: They're ready to increase intensity by 25-50%. Challenge them with deeper practice, longer durations, or more complex variations. Reinforce their identity: "You've proven you're someone who does this consistently."` : completedDays >= totalDays * 0.5 ? `- MODERATE CONSISTENCY: Maintain current difficulty but add variety to prevent boredom. Focus on obstacle planning — identify what caused missed days and build "if-then" contingency plans. Don't increase intensity yet.` : `- BUILDING CONSISTENCY: They're still establishing the routine. Keep tasks at the same or slightly easier level. Focus on making the habit more automatic — simplify the cue, reduce friction further, and strengthen the reward. Address what's getting in the way.`}
+${completedDays >= totalDays * 0.8 ? `- HIGH CONSISTENCY: They're ready to increase intensity by 25-50%. Challenge them with deeper practice, longer durations, or more complex variations. Reinforce their identity: "You've proven you're someone who does this consistently." Push meaningfully toward their ultimate destination.` : completedDays >= totalDays * 0.5 ? `- MODERATE CONSISTENCY: Maintain current difficulty but add variety to prevent boredom. Focus on obstacle planning — identify what caused missed days and build "if-then" contingency plans. Small step up in intensity toward the ultimate goal.` : `- BUILDING CONSISTENCY: They're still establishing the routine. Keep tasks at the same or slightly easier level. Focus on making the habit more automatic — simplify the cue, reduce friction further, and strengthen the reward. Address what's getting in the way before increasing load.`}
 
 Create ${daysCount} new daily plans continuing from day ${totalDays + 1}.
 
