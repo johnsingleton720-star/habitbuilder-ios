@@ -1321,6 +1321,12 @@ export default function HabitDetail() {
                     for (let i = 0; i < dailyPlans.length; i += 7) {
                       weeks.push(dailyPlans.slice(i, i + 7));
                     }
+                    // Build a display-only sequential rank so "Day 1" always means
+                    // the first scheduled workout, not a calendar offset from plan start.
+                    const scheduledDayRank = new Map<string, number>();
+                    [...dailyPlans]
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .forEach((p, i) => scheduledDayRank.set(p.date, i + 1));
                     const selectedWeekIndex = weeks.findIndex(week =>
                       week.some(p => p.date === selectedDay)
                     );
@@ -1393,7 +1399,7 @@ export default function HabitDetail() {
                                 )}
                                 data-testid={`day-selector-${plan.dayNumber || index + 1}`}
                               >
-                                <p className="text-sm opacity-70">Day {plan.dayNumber || index + 1}</p>
+                                <p className="text-sm opacity-70">Day {scheduledDayRank.get(plan.date) ?? plan.dayNumber ?? index + 1}</p>
                                 <p className="font-semibold text-sm">{format(planDate, "MMM d")}</p>
                                 {isDayCompleted ? (
                                   <CheckCircle2 className={cn("w-3 h-3 mx-auto mt-0.5", isSelected ? "text-primary-foreground" : "text-primary")} />
