@@ -3,16 +3,6 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +21,6 @@ import {
   BookOpen,
   BarChart2,
   Shield,
-  X,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -57,7 +46,6 @@ export default function TrialOffer() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [selectedTier, setSelectedTier] = useState<"pro" | "premium">("pro");
-  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [isStartingIAP, setIsStartingIAP] = useState(false);
 
   useEffect(() => {
@@ -150,11 +138,6 @@ export default function TrialOffer() {
     trialMutation.mutate(selectedTier);
   };
 
-  const handleDeclineConfirm = () => {
-    declineMutation.mutate();
-    setShowDeclineDialog(false);
-  };
-
   const isLoading = trialMutation.isPending || isStartingIAP;
   const proPrice = "$6";
   const premiumPrice = "$15";
@@ -165,13 +148,6 @@ export default function TrialOffer() {
       <div className="w-full max-w-lg px-5 py-6 flex flex-col min-h-screen">
         <div className="flex items-center justify-between mb-8">
           <Logo size="sm" />
-          <button
-            onClick={() => setShowDeclineDialog(true)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            data-testid="button-trial-no-thanks-top"
-          >
-            No thanks
-          </button>
         </div>
 
         <motion.div
@@ -298,43 +274,19 @@ export default function TrialOffer() {
                 : "Secure payment via Stripe. No charge for 7 days. Cancel anytime."}
             </p>
 
-            <button
-              onClick={() => setShowDeclineDialog(true)}
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
-              data-testid="button-trial-no-thanks-bottom"
-            >
-              No thanks, continue with the free plan
-            </button>
+            <div className="text-center pt-1">
+              <button
+                onClick={() => declineMutation.mutate()}
+                disabled={declineMutation.isPending}
+                className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                data-testid="button-trial-no-thanks-bottom"
+              >
+                {declineMutation.isPending ? "Continuing..." : "No thanks, continue with free plan"}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
-
-      <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
-        <AlertDialogContent data-testid="dialog-decline-trial">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <X className="w-5 h-5 text-muted-foreground" />
-              Continue without a trial?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You'll be limited to 1 habit and basic features on the free plan. You can
-              upgrade anytime from your account settings.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-decline-start-trial">
-              Start Trial
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeclineConfirm}
-              className="bg-muted text-foreground hover:bg-muted/80"
-              data-testid="button-decline-confirm"
-            >
-              No Thanks
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

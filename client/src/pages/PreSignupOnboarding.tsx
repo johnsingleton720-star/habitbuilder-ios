@@ -801,6 +801,10 @@ export default function PreSignupOnboarding({ onLogin }: { onLogin: () => void }
                   <h2 className="text-2xl font-display font-bold text-foreground" data-testid="text-presignup-plan-title">
                     {plan.title || `Your 7-Day ${selectedHabit} Plan`}
                   </h2>
+
+                  <p className="text-sm text-primary font-medium" data-testid="text-presignup-trial-urgency">
+                    Start your free trial to unlock this plan and track your progress.
+                  </p>
                 </div>
 
                 <Card className="p-4 space-y-3 bg-muted/30">
