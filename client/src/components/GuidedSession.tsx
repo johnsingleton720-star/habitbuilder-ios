@@ -19,6 +19,8 @@ import { VoiceNote } from "./VoiceNote";
 import { CollapsibleText } from "./CollapsibleText";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { triggerAppReviewIfEligible } from "@/hooks/use-app-review";
 import { UpgradePrompt, SessionLimitReached } from "./UpgradePrompt";
 
 interface NextInStackInfo {
@@ -86,6 +88,7 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
   const [sessionLimitReached, setSessionLimitReached] = useState(false);
   
   const { features, isFreeUser } = useSubscription();
+  const { user } = useAuth();
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queryClient = useQueryClient();
@@ -100,14 +103,17 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, completed, notes, timeSpent }: { taskId: string; completed?: boolean; notes?: string; timeSpent?: number }) => {
       const res = await apiRequest("PATCH", `/api/habits/${habit.id}/tasks/${taskId}`, { completed, notes, timeSpent });
-      return res.json();
+      return res.json() as Promise<{ success: boolean; currentStreak?: number }>;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      if (variables.completed && data?.currentStreak) {
+        triggerAppReviewIfEligible(user?.id, data.currentStreak);
+      }
     },
     onError: () => {
       toast({ title: "Failed to update task", variant: "destructive" });
@@ -128,9 +134,9 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
         notes: "",
         mood: "good",
       });
-      return res.json();
+      return res.json() as Promise<{ success: boolean; currentStreak?: number }>;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits", habit.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/summary"] });
@@ -138,6 +144,9 @@ export function GuidedSession({ habit, open, onOpenChange, nextInStack, onStartN
       queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/comprehensive"] });
+      if (data?.currentStreak) {
+        triggerAppReviewIfEligible(user?.id, data.currentStreak);
+      }
     },
     onError: (error: any) => {
       const msg = error?.message || '';
