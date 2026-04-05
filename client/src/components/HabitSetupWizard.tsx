@@ -301,6 +301,14 @@ export function HabitSetupWizard({ habit, open, onOpenChange, onComplete, restar
                   </>
                 )}
               </Button>
+
+              <button
+                onClick={() => setPhase("duration")}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                data-testid="button-skip-interview"
+              >
+                Skip questions, just create a basic plan →
+              </button>
             </motion.div>
           )}
 

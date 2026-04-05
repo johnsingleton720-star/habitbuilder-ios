@@ -422,6 +422,24 @@ export default function HabitDetail() {
     },
   });
 
+  const convertToSimpleMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/habits/${habitId}`, {
+        trackingMode: "simple",
+        setupComplete: true,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", habitId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Switched to simple tracking", description: "You can now check in daily with a single tap." });
+    },
+    onError: () => {
+      toast({ title: "Failed to switch mode", variant: "destructive" });
+    },
+  });
+
   const extendPlanMutation = useMutation({
     mutationFn: async (duration: string) => {
       const res = await apiRequest("POST", `/api/habits/${habitId}/extend-plan`, { duration });
@@ -726,16 +744,26 @@ export default function HabitDetail() {
         {/* Setup Not Complete Message */}
         {!habit.setupComplete && !isSimpleMode && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-6 text-center">
-              <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-bold mb-2">Let's personalize your journey</h3>
-              <p className="text-muted-foreground mb-4">
-                Answer a few questions to create your personalized action plan.
-              </p>
-              <Button onClick={() => setSetupWizardOpen(true)} className="gap-2" data-testid="button-setup-habit">
+            <CardContent className="p-6 text-center space-y-4">
+              <Sparkles className="w-12 h-12 text-primary mx-auto" />
+              <div>
+                <h3 className="text-lg font-bold mb-1">Create your action plan</h3>
+                <p className="text-sm text-muted-foreground">
+                  Answer a few quick questions and we'll generate a personalized daily plan for your habit.
+                </p>
+              </div>
+              <Button onClick={() => setSetupWizardOpen(true)} className="w-full gap-2" data-testid="button-setup-habit">
                 <Sparkles className="w-4 h-4" />
-                Start Setup
+                Create My Plan
               </Button>
+              <button
+                onClick={() => convertToSimpleMutation.mutate()}
+                disabled={convertToSimpleMutation.isPending}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                data-testid="button-switch-simple-mode"
+              >
+                {convertToSimpleMutation.isPending ? "Switching..." : "Just track daily without a plan →"}
+              </button>
             </CardContent>
           </Card>
         )}

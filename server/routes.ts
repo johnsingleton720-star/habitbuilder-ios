@@ -2036,6 +2036,30 @@ SAFETY: Never generate content promoting violence, illegal activities, exploitat
     }
   });
 
+  // Convert an AI-plan habit to simple tracking mode (no plan needed)
+  app.patch("/api/habits/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const habitId = Number(req.params.id);
+      const { trackingMode, setupComplete } = req.body;
+
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Habit not found" });
+      }
+
+      const updates: Record<string, any> = {};
+      if (trackingMode !== undefined) updates.trackingMode = trackingMode;
+      if (setupComplete !== undefined) updates.setupComplete = setupComplete;
+
+      const updated = await storage.updateHabit(habitId, userId, updates);
+      res.json(updated);
+    } catch (err) {
+      console.error("PATCH /api/habits/:id error:", err);
+      res.status(500).json({ error: "Failed to update habit" });
+    }
+  });
+
   app.delete(api.habits.delete.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user!.claims.sub;
     const habitId = Number(req.params.id);
