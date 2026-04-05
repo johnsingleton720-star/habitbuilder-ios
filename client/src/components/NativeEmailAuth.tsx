@@ -56,8 +56,10 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [forgotSent, setForgotSent] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(true);
   const [googleFailed, setGoogleFailed] = useState(false);
+  const [googleHardFailCount, setGoogleHardFailCount] = useState(0);
   const [socialAuthFailed, setSocialAuthFailed] = useState(false);
   const [appleError1000, setAppleError1000] = useState(false);
+  const [appleError1000RetryCount, setAppleError1000RetryCount] = useState(0);
   const [appleHasAttempted, setAppleHasAttempted] = useState(false);
   const { toast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -205,12 +207,21 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       }
       const errMsg = err?.message || "unknown";
       trackFunnelEvent("auth_signup_failed", { method: "apple", error: errMsg });
-      setAppleAvailable(false);
-      markSocialFailed();
 
       if (isAppleError1000(errMsg)) {
+        const newCount = appleError1000RetryCount + 1;
+        setAppleError1000RetryCount(newCount);
         setAppleError1000(true);
+        if (newCount >= 2) {
+          setAppleAvailable(false);
+          setAppleError1000(false);
+          markSocialFailed();
+          setError("Apple Sign In isn't available on this device right now. Please use your email below.");
+          scrollToEmail();
+        }
       } else {
+        setAppleAvailable(false);
+        markSocialFailed();
         setError("Apple Sign-In isn't working right now. Please use your email below — it's quick and easy.");
         scrollToEmail();
       }
@@ -259,12 +270,17 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       }
 
       trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
-      setGoogleFailed(true);
-      markSocialFailed();
-      const fallbackMsg = appleAvailable
-        ? "Google sign-in didn't work. Try Apple Sign-In, or use your email below."
-        : "Google sign-in didn't work. Please use your email below — it only takes a moment.";
-      setError(fallbackMsg);
+      const newHardCount = googleHardFailCount + 1;
+      setGoogleHardFailCount(newHardCount);
+      if (newHardCount >= 2) {
+        setGoogleFailed(true);
+        markSocialFailed();
+      } else {
+        const retryMsg = appleAvailable
+          ? "Google sign-in didn't work. Tap again or try Apple Sign-In above."
+          : "Google sign-in didn't work. Tap again or use your email below.";
+        setError(retryMsg);
+      }
       scrollToEmail();
     } catch (e: any) {
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
@@ -278,12 +294,17 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
         return;
       }
       trackFunnelEvent("auth_signup_failed", { method: "google", error: e?.message || "unknown" });
-      setGoogleFailed(true);
-      markSocialFailed();
-      const fallbackMsg = appleAvailable
-        ? "Google sign-in failed. Try Apple Sign-In, or use your email below."
-        : "Google sign-in failed. Please use your email below — it only takes a moment.";
-      setError(fallbackMsg);
+      const newHardCount = googleHardFailCount + 1;
+      setGoogleHardFailCount(newHardCount);
+      if (newHardCount >= 2) {
+        setGoogleFailed(true);
+        markSocialFailed();
+      } else {
+        const retryMsg = appleAvailable
+          ? "Google sign-in failed. Tap again or try Apple Sign-In above."
+          : "Google sign-in failed. Tap again or use your email below.";
+        setError(retryMsg);
+      }
       scrollToEmail();
     } finally {
       setGoogleLoading(false);
@@ -367,14 +388,17 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const resetSocialAuth = () => {
     setSocialAuthFailed(false);
     setGoogleFailed(false);
+    setGoogleHardFailCount(0);
     setAppleAvailable(true);
+    setAppleError1000(false);
+    setAppleError1000RetryCount(0);
     setError("");
     setSessionFlag(SESSION_KEY_SOCIAL_FAILED, false);
   };
 
   const showSocialButtons = mode !== "forgot" && !socialAuthFailed;
-  const showEmailProminent = socialAuthFailed || isNativeIOS;
   const hasSocialOptions = (appleAvailable || !googleFailed) && showSocialButtons;
+  const showEmailProminent = socialAuthFailed || !hasSocialOptions;
 
   const emailFormBlock = (
     <>
@@ -504,28 +528,64 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const socialButtonsBlock = hasSocialOptions ? (
     <div className="space-y-3">
       {appleAvailable && (
-        <div>
-          <button
-            onClick={handleAppleNativeSignIn}
-            disabled={appleLoading || googleLoading || loading}
-            className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
-            data-testid="button-auth-apple"
-          >
-            {appleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <SiApple className="w-5 h-5" />
+        appleError1000 ? (
+          <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-4" data-testid="card-apple-error-1000">
+            <div className="flex items-start gap-3 mb-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Apple Sign In needs iCloud active</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                  Make sure you're signed into iCloud in Settings and your device has a passcode, then try again.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleAppleNativeSignIn}
+              disabled={appleLoading}
+              className="w-full py-2.5 px-4 rounded-lg bg-foreground text-background text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-70 mb-2"
+              data-testid="button-apple-error-retry"
+            >
+              {appleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <SiApple className="w-4 h-4" />}
+              Try Apple Sign In again
+            </button>
+            <button
+              onClick={() => { setAppleError1000(false); scrollToEmail(); }}
+              className="w-full py-2 px-4 rounded-lg text-sm text-amber-700 dark:text-amber-400 hover:underline transition-colors"
+              data-testid="button-apple-error-use-email"
+            >
+              Sign up with email instead →
+            </button>
+          </div>
+        ) : (
+          <div>
+            <button
+              onClick={handleAppleNativeSignIn}
+              disabled={appleLoading || googleLoading || loading}
+              className="flex items-center justify-center gap-3 w-full p-3.5 rounded-xl border bg-foreground text-background font-semibold text-sm disabled:opacity-70"
+              data-testid="button-auth-apple"
+            >
+              {appleLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <SiApple className="w-5 h-5" />
+              )}
+              Continue with Apple
+            </button>
+            {isNativeIOS && !appleHasAttempted && (
+              <p className="text-center text-xs text-muted-foreground mt-1.5" data-testid="text-apple-icloud-hint">
+                Requires iCloud to be signed in on your device
+              </p>
             )}
-            Continue with Apple
-          </button>
-          {isNativeIOS && !appleHasAttempted && (
-            <p className="text-center text-xs text-muted-foreground mt-1.5" data-testid="text-apple-icloud-hint">
-              Requires iCloud to be signed in on your device
-            </p>
-          )}
-        </div>
+          </div>
+        )
       )}
-      {!googleFailed && (
+      {googleFailed ? (
+        appleAvailable && !socialAuthFailed && (
+          <p className="text-center text-xs text-muted-foreground pt-1" data-testid="text-google-unavailable">
+            Google Sign In unavailable — use Apple or email below.
+          </p>
+        )
+      ) : (
         <div>
           <button
             onClick={handleGoogleSignIn}
@@ -583,7 +643,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
               {mode === "forgot" && "Reset password"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && (isNativeIOS ? "Enter your email to get started — it takes 30 seconds" : "Start building better habits today")}
+              {mode === "signup" && (isNativeIOS ? "Sign up in one tap — no password needed" : "Start building better habits today")}
               {mode === "login" && "Sign in to continue your journey"}
               {mode === "forgot" && "We'll send you a link to reset it"}
             </p>
@@ -594,7 +654,9 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
               <Sparkles className="w-5 h-5 text-primary shrink-0" />
               <div className="text-left">
                 <p className="text-sm font-semibold text-foreground">Your plan for "{presignupHabit}" is ready</p>
-                <p className="text-xs text-muted-foreground">Sign up to save it and start your free trial</p>
+                <p className="text-xs text-muted-foreground">
+                  {isNativeIOS ? "Tap Continue with Apple to save your plan instantly" : "Sign up to save it and start your free trial"}
+                </p>
               </div>
             </div>
           )}
@@ -620,36 +682,13 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
 
           {isNativeIOS ? (
             <>
-              {emailFormBlock}
-              {appleError1000 && mode !== "forgot" && (
+              {socialButtonsBlock && mode !== "forgot" && (
                 <>
-                  {dividerBlock("or continue with")}
-                  <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-4" data-testid="card-apple-error-1000">
-                    <div className="flex items-start gap-3 mb-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Apple Sign In needs iCloud active</p>
-                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                          Your device isn't fully set up for Apple Sign In. Make sure you're signed into iCloud in Settings and your device has a passcode.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => { setAppleError1000(false); scrollToEmail(); }}
-                      className="w-full py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors"
-                      data-testid="button-apple-error-use-email"
-                    >
-                      Sign up with email instead →
-                    </button>
-                  </div>
-                </>
-              )}
-              {!appleError1000 && socialButtonsBlock && mode !== "forgot" && (
-                <>
-                  {dividerBlock("or continue with")}
                   {socialButtonsBlock}
+                  {!socialAuthFailed && dividerBlock("or sign up with email")}
                 </>
               )}
+              {emailFormBlock}
             </>
           ) : (
             <>
