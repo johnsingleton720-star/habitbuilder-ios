@@ -768,6 +768,33 @@ export default function HabitDetail() {
           </Card>
         )}
 
+        {/* No Plan Yet — setup completed but no daily plans were ever generated */}
+        {habit.setupComplete && !isSimpleMode && allDailyPlans.length === 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-6 text-center space-y-4">
+              <Sparkles className="w-12 h-12 text-primary mx-auto" />
+              <div>
+                <h3 className="text-lg font-bold mb-1">Create your action plan</h3>
+                <p className="text-sm text-muted-foreground">
+                  You're all set — now let's build a personalized daily plan to keep you on track.
+                </p>
+              </div>
+              <Button onClick={() => setSetupWizardOpen(true)} className="w-full gap-2" data-testid="button-create-plan-empty">
+                <Sparkles className="w-4 h-4" />
+                Create My Plan
+              </Button>
+              <button
+                onClick={() => convertToSimpleMutation.mutate()}
+                disabled={convertToSimpleMutation.isPending}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                data-testid="button-switch-simple-empty"
+              >
+                {convertToSimpleMutation.isPending ? "Switching..." : "Just track daily without a plan →"}
+              </button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Plan Completed/Expired Banner */}
         {!isSimpleMode && habit.setupComplete && isPlanDone && allDailyPlans.length > 0 && (
           <motion.div
