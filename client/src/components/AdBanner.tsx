@@ -24,7 +24,10 @@ export function AdBanner() {
     try {
       pushed.current = true;
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch {
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.warn("[AdBanner] adsbygoogle.push failed:", err);
+      }
     }
   }, [shouldShow]);
 
