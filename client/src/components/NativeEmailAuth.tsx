@@ -427,33 +427,37 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       ) : (
         <form onSubmit={mode === "forgot" ? handleForgotPassword : handleEmailAuth} className="space-y-4">
           {mode === "signup" && (
-            showNameField ? (
-              <div>
-                <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
-                <div className="relative mt-1.5">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="Your first name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-auth-firstname"
-                    autoFocus
-                  />
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${showNameField ? "max-h-24 opacity-100" : "max-h-7 opacity-100"}`}
+            >
+              {showNameField ? (
+                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                  <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
+                  <div className="relative mt-1.5">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Your first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-auth-firstname"
+                      autoFocus
+                    />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowNameField(true)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors py-0.5"
-                data-testid="button-show-name-field"
-              >
-                + Add your name (optional)
-              </button>
-            )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowNameField(true)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors py-0.5"
+                  data-testid="button-show-name-field"
+                >
+                  + Add your name (optional)
+                </button>
+              )}
+            </div>
           )}
 
           <div>
