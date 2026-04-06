@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { isIOS } from "@/lib/platform";
 import { APPLE_PRODUCT_IDS, purchaseProduct, initializeAppleIAP } from "@/lib/apple-iap";
+import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
 import {
   Crown,
   Sparkles,
@@ -49,8 +50,13 @@ export default function TrialOffer() {
   const [isStartingIAP, setIsStartingIAP] = useState(false);
 
   useEffect(() => {
+    trackFunnelEvent("trial_offer_viewed", { platform: isIOS() ? "ios" : "web" });
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("cancelled") === "true") {
+      trackFunnelEvent("trial_stripe_cancelled");
       toast({
         title: "Trial not started",
         description: "No worries — you can start your free trial anytime.",
@@ -59,8 +65,18 @@ export default function TrialOffer() {
     }
   }, []);
 
+  const markTrialOfferShown = async () => {
+    try {
+      await apiRequest("POST", "/api/user/decline-trial");
+    } catch {}
+    queryClient.setQueryData(["/api/auth/user"], (old: any) =>
+      old ? { ...old, trialOfferShown: true } : old
+    );
+  };
+
   const trialMutation = useMutation({
     mutationFn: async (tier: "pro" | "premium") => {
+      trackFunnelEvent("trial_start_tapped", { tier, method: "stripe" });
       const res = await apiRequest("POST", "/api/checkout/trial", { tier });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -70,10 +86,12 @@ export default function TrialOffer() {
     },
     onSuccess: (data) => {
       if (data.url) {
+        trackFunnelEvent("trial_stripe_redirect", { tier: selectedTier });
         window.location.href = data.url;
       }
     },
     onError: (err: Error) => {
+      trackFunnelEvent("trial_start_failed", { tier: selectedTier, method: "stripe", error: err.message });
       toast({
         title: "Couldn't start trial",
         description: err.message || "Please try again.",
@@ -84,6 +102,7 @@ export default function TrialOffer() {
 
   const declineMutation = useMutation({
     mutationFn: async () => {
+      trackFunnelEvent("trial_offer_declined", { platform: isIOS() ? "ios" : "web" });
       const res = await apiRequest("POST", "/api/user/decline-trial");
       if (!res.ok) throw new Error("Failed");
       return res.json();
@@ -107,6 +126,7 @@ export default function TrialOffer() {
   const handleStartTrial = async () => {
     if (isIOS()) {
       setIsStartingIAP(true);
+      trackFunnelEvent("trial_start_tapped", { tier: selectedTier, method: "apple_iap" });
       try {
         await initializeAppleIAP();
         const productId =
@@ -115,16 +135,20 @@ export default function TrialOffer() {
             : APPLE_PRODUCT_IDS.pro_monthly;
         const success = await purchaseProduct(productId);
         if (success) {
+          trackFunnelEvent("trial_iap_authorized", { tier: selectedTier, productId });
+          await markTrialOfferShown();
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           navigate("/");
         } else {
+          trackFunnelEvent("trial_iap_failed", { tier: selectedTier, productId, reason: "purchase_returned_false" });
           toast({
-            title: "Purchase failed",
-            description: "Unable to complete purchase. Please try again.",
+            title: "Purchase not completed",
+            description: "No charge was made. You can try again or continue with the free plan.",
             variant: "destructive",
           });
         }
-      } catch (err) {
+      } catch (err: any) {
+        trackFunnelEvent("trial_iap_failed", { tier: selectedTier, reason: err?.message || "exception" });
         toast({
           title: "Purchase error",
           description: "Something went wrong. Please try again.",
@@ -142,6 +166,7 @@ export default function TrialOffer() {
   const proPrice = "$6";
   const premiumPrice = "$15";
   const price = selectedTier === "premium" ? premiumPrice : proPrice;
+  const onIOS = isIOS();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 flex flex-col items-center safe-top safe-bottom">
@@ -169,13 +194,15 @@ export default function TrialOffer() {
               Start Your 7-Day Free Trial
             </h1>
             <p className="text-muted-foreground text-sm">
-              Enter your card today — you won't be charged until your trial ends.
+              {onIOS
+                ? "Try everything free for 7 days — you won't be charged until your trial ends."
+                : "Enter your card today — you won't be charged until your trial ends."}
             </p>
           </div>
 
           <div className="flex gap-3 mb-6" data-testid="tier-selector">
             <button
-              onClick={() => setSelectedTier("pro")}
+              onClick={() => { setSelectedTier("pro"); trackFunnelEvent("trial_tier_selected", { tier: "pro" }); }}
               className={`flex-1 rounded-xl border-2 p-4 text-left transition-all ${
                 selectedTier === "pro"
                   ? "border-primary bg-primary/5"
@@ -195,7 +222,7 @@ export default function TrialOffer() {
               </p>
             </button>
             <button
-              onClick={() => setSelectedTier("premium")}
+              onClick={() => { setSelectedTier("premium"); trackFunnelEvent("trial_tier_selected", { tier: "premium" }); }}
               className={`flex-1 rounded-xl border-2 p-4 text-left transition-all ${
                 selectedTier === "premium"
                   ? "border-amber-500 bg-amber-500/5"
@@ -269,7 +296,7 @@ export default function TrialOffer() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              {isIOS()
+              {onIOS
                 ? "Subscription managed through Apple. Cancel anytime in Settings."
                 : "Secure payment via Stripe. No charge for 7 days. Cancel anytime."}
             </p>

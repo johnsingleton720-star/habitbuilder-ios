@@ -54,6 +54,15 @@ const FUNNEL_ORDER = [
   { key: "auth_login_success", label: "Login Success" },
   { key: "auth_signup_failed", label: "Sign Up Failed" },
   { key: "auth_login_failed", label: "Login Failed" },
+  { key: "trial_offer_viewed", label: "Trial Offer Viewed" },
+  { key: "trial_start_tapped", label: "Tapped Start Trial" },
+  { key: "trial_tier_selected", label: "Changed Tier Selection" },
+  { key: "trial_iap_authorized", label: "Apple IAP Authorized" },
+  { key: "trial_iap_failed", label: "Apple IAP Failed" },
+  { key: "trial_stripe_redirect", label: "Stripe Checkout Redirect" },
+  { key: "trial_stripe_cancelled", label: "Stripe Checkout Cancelled" },
+  { key: "trial_start_failed", label: "Trial Start Failed" },
+  { key: "trial_offer_declined", label: "Declined Trial (Free Plan)" },
   { key: "first_habit_created", label: "First Habit Created" },
 ];
 
