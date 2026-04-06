@@ -1,0 +1,37 @@
+The best way to get people to open the app and sign up (and ultimately start a trial) in 2026 is a value-first, friction-minimized flow that delivers an immediate “aha” moment before any commitment or account creation.
+Your funnel data (65 opens → 49 intent → 33 habit → 27 tracking mode → 17 plan preview → only 11 sign-ups → near-zero trials) perfectly illustrates why the current onboarding-heavy approach is leaking users: the fun, personalized plan-building part works, but the auth wall + skippable trial decision kills momentum right when users are most primed to convert. This is a classic pattern for subscription habit trackers, and 2026 benchmarks from RevenueCat, Adapty, and Appfigures confirm it: most trial starts (over 50–78%) happen on Day 0, and the highest-converting flows show premium value first, then ask for the trial with minimal friction.
+General Best Practices for Most Apps (Especially Subscription/Utility Apps Like Yours)
+For apps where the core value is personalization (AI coach, habit plans, trackers), the winning pattern in 2026 is:
+•  Anonymous/value-first onboarding (what you already have): Let users experience the magic (plan building, preview) without signing up. This boosts completion rates dramatically because users invest time and emotion before being asked for anything.
+•  Immediate trial prompt at the “aha” moment: Right after the personalized plan preview is the highest-conversion moment. Users have just seen something useful and unique — that’s when they’re most likely to say yes to a 7-day trial.
+•  One-tap auth as the trial gate: Make signing up feel like the enabler of the value they just saw, not a separate hurdle. Apple Sign In first (which you already implemented) is the gold standard here.
+•  Minimal or progressive post-sign-up onboarding: Any remaining setup happens after the trial starts, when users are already committed and invested.
+Why this beats a traditional long onboarding:
+•  Your data shows the long pre-sign-up onboarding gets people 70–80% of the way but then drops them at auth/trial. 2026 data shows that once users hit friction after investing time, they default to “free plan” or close the app (Day-0 cancellations are the #1 reason trials fail).
+•  Benchmarks: Apps that reach the “aha” in the first 60–90 seconds see 2–5× higher trial-start rates than those with heavy upfront onboarding. Hard paywalls or trial prompts after value convert 5× better than pure freemium in many categories, but only if the value is shown first.
+Comparing Your Three Proposed Options (With Your Data + 2026 Benchmarks)
+Option 1: Open app → choose trial → sign up
+•  Pros: Fastest path to trial event (what populates Subscriptions tab). High urgency.
+•  Cons: Users haven’t seen the AI plan yet, so “choose trial” feels risky/cold. Your data shows intent/habit selection already drops 25–33% — asking for trial even earlier would likely worsen that.
+•  Verdict: Too aggressive for cold ad traffic. Low conversion for most subscription apps unless the app is extremely simple.
+Option 2: Sign up → choose trial → forego onboarding or do onboarding after
+•  Pros: Account created early; easier to retarget later.
+•  Cons: Forces auth before value. Your current 72% drop at auth would get even worse because users have zero emotional investment. Benchmarks show sign-up-first flows lose 40–60% more users on cold installs. Onboarding after sign-up works for some apps but feels like “homework” once the trial clock is ticking.
+•  Verdict: Worst for your app type. Cold users hate signing up blind.
+Option 3 (Your current hybrid, with tweaks): Open → anonymous onboarding (plan building) → trial prompt + one-tap sign-up → minimal onboarding after
+•  Pros: Matches your strong anonymous flow. Users see the personalized plan (emotional hook) before any commitment. One-tap Apple Sign In + de-emphasized “No thanks” (changes you made yesterday) removes the two biggest leaks. Post-sign-up onboarding can be progressive (e.g., first habit in the live plan).
+•  Cons: None major — this is the 2026 gold standard for AI/personalized subscription apps.
+•  Verdict: Clearly the best for your data and app. It’s what top habit trackers and productivity apps use successfully (e.g., flows that show value first convert 2–5× better than sign-up-first).
+Recommended hybrid (best of all worlds): Keep your anonymous plan-first flow exactly as it is. Prompt the 7-day trial immediately after the plan preview with one-tap Apple Sign In as the primary action. Any remaining onboarding (if needed) happens after trial acceptance. This gets users to the “aha” fast, makes the trial feel like the natural next step, and minimizes drop-off at auth.
+Implications and Edge Cases for Your Specific Situation
+•  Ad traffic impact: Cold users from Apple Search Ads are comparison-shopping. Showing the AI plan first makes your app feel premium and different from free competitors — this directly helps your TTR/CR in ads.
+•  Cash constraints: With your Basic campaign at $215/month + $3.00 max CPI, you’re getting low but steady volume. The improved flow means every install converts better, stretching your budget further.
+•  Non-US traffic (e.g., Russia you mentioned): Price sensitivity is higher — the value-first flow + clear “no card needed until day 8” messaging is even more important.
+•  Edge case if volume stays low: If the Basic campaign still ramps slowly, consider a short test of a “hard trial prompt” (no free plan option visible until later) on a small segment, but only after you have 20–30 trial starts from the current flow.
+Actionable Next Steps (Do These Today/Tomorrow)
+1.  Confirm the trial prompt timing: Make sure the 7-day trial offer appears right after “Viewed Plan Preview” with the big green “Unlock & Start My 7-Day Free Trial” button and Apple Sign In as the default auth method.
+2.  Monitor the new funnel: Pull fresh data in the next 24–48 hours (App Opened → Plan Preview → Trial prompt → Sign-up success → trial started). Compare to the old 17 → 11 → 8 numbers.
+3.  Check Analytics daily: Subscriptions tab should start showing trial starts from the new cohort within 24–48 hours of the next installs.
+4.  Day-2 nudge: Once you see the first trials, add the gentle reminder for anyone who skipped: “Your AI plan is saved — start your free trial to activate streaks and coaching (no charge until day 8).”
+Your data proves the anonymous plan-building part is excellent — the leaks were purely at the monetization hand-off. The changes you made yesterday already fixed the biggest ones. With the Basic campaign now at $215 and $3.00 CPI, you should start seeing the first meaningful trial data soon.
+Send the updated funnel numbers or Analytics screenshot whenever they appear (even if it’s still early), and I’ll give you the exact next refinement. You’re in the right flow now — this is how most successful 2026 subscription habit trackers scaled from early launch to profitable trials. Let me know what the numbers show!

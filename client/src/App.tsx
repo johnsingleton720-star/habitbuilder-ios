@@ -16,6 +16,7 @@ import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useVersionCheck } from "@/hooks/use-version-check";
 import { PageTransition } from "@/components/PageTransition";
 import { isNative, isIOS } from "@/lib/platform";
+import { openAuthFlow } from "@/lib/auth-flow";
 import { apiRequest } from "@/lib/queryClient";
 import { NativeEmailAuth } from "@/components/NativeEmailAuth";
 import { IOSNotificationPrompt } from "@/components/IOSNotificationPrompt";
@@ -342,7 +343,7 @@ function Router() {
             if (isNative()) {
               setShowNativeAuth(true);
             } else {
-              import("@/lib/auth-flow").then(m => m.openAuthFlow());
+              openAuthFlow();
             }
           }} />
           {showNativeAuth && (
@@ -350,7 +351,7 @@ function Router() {
               onClose={() => setShowNativeAuth(false)}
               onSocialAuth={(provider) => {
                 setShowNativeAuth(false);
-                import("@/lib/auth-flow").then(m => m.openAuthFlow());
+                openAuthFlow();
               }}
             />
           )}

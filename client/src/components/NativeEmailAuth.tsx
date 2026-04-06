@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { isIOS, isNative } from "@/lib/platform";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
+import { openAuthFlow } from "@/lib/auth-flow";
 
 type AuthMode = "signup" | "login" | "forgot";
 
@@ -242,7 +243,6 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
     setError("");
 
     try {
-      const { openAuthFlow } = await import("@/lib/auth-flow");
       const result = await openAuthFlow();
 
       if (result.success) {
@@ -273,14 +273,11 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       trackFunnelEvent("auth_signup_failed", { method: "google", error: result.error || "unknown" });
       const newHardCount = googleHardFailCount + 1;
       setGoogleHardFailCount(newHardCount);
-      if (newHardCount >= 2) {
-        setGoogleFailed(true);
-      } else {
-        const retryMsg = appleAvailable
-          ? "Google sign-in didn't work. Tap again or try Apple Sign-In above."
-          : "Google sign-in didn't work. Tap again or use your email below.";
-        setError(retryMsg);
-      }
+      setGoogleFailed(true);
+      const failMsg = appleAvailable
+        ? "Google sign-in isn't working right now. Please use Apple Sign-In above or your email below."
+        : "Google sign-in isn't working right now. Please use your email below — it only takes a moment.";
+      setError(failMsg);
       scrollToEmail();
     } catch (e: any) {
       if (e?.message?.includes("cancelled") || e?.message?.includes("cancel")) {
@@ -296,14 +293,11 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       trackFunnelEvent("auth_signup_failed", { method: "google", error: e?.message || "unknown" });
       const newHardCount = googleHardFailCount + 1;
       setGoogleHardFailCount(newHardCount);
-      if (newHardCount >= 2) {
-        setGoogleFailed(true);
-      } else {
-        const retryMsg = appleAvailable
-          ? "Google sign-in failed. Tap again or try Apple Sign-In above."
-          : "Google sign-in failed. Tap again or use your email below.";
-        setError(retryMsg);
-      }
+      setGoogleFailed(true);
+      const failMsg = appleAvailable
+        ? "Google sign-in isn't working right now. Please use Apple Sign-In above or your email below."
+        : "Google sign-in isn't working right now. Please use your email below — it only takes a moment.";
+      setError(failMsg);
       scrollToEmail();
     } finally {
       setGoogleLoading(false);
