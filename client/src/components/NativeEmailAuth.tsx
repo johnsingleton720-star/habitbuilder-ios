@@ -47,6 +47,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [showNameField, setShowNameField] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
@@ -426,21 +427,33 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
       ) : (
         <form onSubmit={mode === "forgot" ? handleForgotPassword : handleEmailAuth} className="space-y-4">
           {mode === "signup" && (
-            <div>
-              <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
-              <div className="relative mt-1.5">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Your first name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-auth-firstname"
-                />
+            showNameField ? (
+              <div>
+                <Label htmlFor="firstName" className="text-sm font-medium">Name (optional)</Label>
+                <div className="relative mt-1.5">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="Your first name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-auth-firstname"
+                    autoFocus
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowNameField(true)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors py-0.5"
+                data-testid="button-show-name-field"
+              >
+                + Add your name (optional)
+              </button>
+            )
           )}
 
           <div>
@@ -636,12 +649,12 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
           <div className="text-center mb-8">
             <div className="mb-4"><Logo /></div>
             <h1 className="text-2xl font-bold font-display mb-1">
-              {mode === "signup" && "Create your account"}
+              {mode === "signup" && "Start your free trial"}
               {mode === "login" && "Welcome back"}
               {mode === "forgot" && "Reset password"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && (isNativeIOS ? "Sign up in one tap — no password needed" : "Start building better habits today")}
+              {mode === "signup" && "Create your account — choose your plan next"}
               {mode === "login" && "Sign in to continue your journey"}
               {mode === "forgot" && "We'll send you a link to reset it"}
             </p>
@@ -653,7 +666,7 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
               <div className="text-left">
                 <p className="text-sm font-semibold text-foreground">Your plan for "{presignupHabit}" is ready</p>
                 <p className="text-xs text-muted-foreground">
-                  {isNativeIOS ? "Tap Continue with Apple to save your plan instantly" : "Sign up to save it and start your free trial"}
+                  {isNativeIOS ? "Save your plan and claim your free trial — takes one tap" : "Save your plan and start your free trial — takes 30 seconds"}
                 </p>
               </div>
             </div>
