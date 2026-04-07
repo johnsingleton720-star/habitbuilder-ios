@@ -159,7 +159,8 @@ function Router() {
         title: "Payment successful!",
         description: "Welcome to HabitBuilder.pro. Start building better habits today!",
       });
-      window.history.replaceState({}, '', '/?post_purchase=true');
+      window.history.replaceState({}, '', '/');
+      setPostPurchasePending(true);
     } else if (payment === 'cancelled') {
       toast({
         title: "Payment cancelled",
@@ -285,23 +286,22 @@ function Router() {
     setShowWelcomeHub(true);
   }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId, presignupHandoffDone]);
 
-  useEffect(() => {
+  const [postPurchasePending, setPostPurchasePending] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("post_purchase") !== "true") return;
-    if (!user?.id || isAuthLoading || !presignupHandoffDone) return;
-    if (!user.hasPaid && !user.trialEndsAt) {
-      window.history.replaceState({}, "", "/");
-      return;
-    }
+    return params.get("post_purchase") === "true";
+  });
+
+  useEffect(() => {
+    if (!postPurchasePending) return;
+    if (!user?.id || isAuthLoading || isPaymentLoading || !presignupHandoffDone) return;
+    if (!user.hasPaid && !user.trialEndsAt) return;
+    setPostPurchasePending(false);
+    window.history.replaceState({}, "", "/");
     const checkHabits = async () => {
       try {
         const res = await fetch("/api/habits/summary", { credentials: "include" });
-        if (!res.ok) {
-          window.history.replaceState({}, "", "/");
-          return;
-        }
+        if (!res.ok) return;
         const habitsData = await res.json();
-        window.history.replaceState({}, "", "/");
         if (!habitsData || habitsData.length === 0) {
           if (!user.welcomeHubSeen) {
             setShowWelcomeHub(true);
@@ -309,12 +309,10 @@ function Router() {
             setTriggerCreateHabit(true);
           }
         }
-      } catch {
-        window.history.replaceState({}, "", "/");
-      }
+      } catch {}
     };
     checkHabits();
-  }, [user?.id, isAuthLoading, presignupHandoffDone]);
+  }, [postPurchasePending, user?.id, user?.hasPaid, user?.trialEndsAt, isAuthLoading, isPaymentLoading, presignupHandoffDone]);
 
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);
