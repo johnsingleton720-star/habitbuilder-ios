@@ -89,7 +89,13 @@ export async function initializeAppleIAP(): Promise<boolean> {
 
           if (receipt) {
             console.log('[IAP] Found receipt, validating on server...');
-            const success = await validateReceiptOnServer(receipt, productId);
+            let success = await validateReceiptOnServer(receipt, productId);
+
+            if (!success) {
+              console.log('[IAP] First validation attempt failed, retrying in 2s...');
+              await new Promise(r => setTimeout(r, 2000));
+              success = await validateReceiptOnServer(receipt, productId);
+            }
 
             if (success) {
               transaction.finish();
@@ -97,10 +103,28 @@ export async function initializeAppleIAP(): Promise<boolean> {
               queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
               console.log('[IAP] User session cache invalidated - tier will update');
             } else {
-              console.warn('[IAP] Server validation failed - transaction NOT finished (will retry on next launch)');
+              console.warn('[IAP] Server validation failed after retry - transaction NOT finished');
+              try {
+                const { toast } = await import('@/hooks/use-toast');
+                toast({
+                  title: "Subscription activation delayed",
+                  description: "Your purchase was successful but activation is taking longer than expected. Please restart the app or contact support.",
+                  variant: "destructive",
+                  duration: 10000,
+                });
+              } catch (e) { /* toast import may fail in some contexts */ }
             }
           } else {
             console.warn('[IAP] No receipt data found in transaction');
+            try {
+              const { toast } = await import('@/hooks/use-toast');
+              toast({
+                title: "Subscription activation issue",
+                description: "Your purchase went through but we couldn't verify it. Please restart the app.",
+                variant: "destructive",
+                duration: 10000,
+              });
+            } catch (e) { /* toast import may fail */ }
           }
         } catch (err) {
           console.error('[IAP] Error processing approved transaction:', err);

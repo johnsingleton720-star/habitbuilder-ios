@@ -305,18 +305,25 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
       }
     : null;
 
-  const tooltipWidth = Math.min(320, window.innerWidth - 32);
+  const screenW = window.innerWidth;
+  const tooltipMargin = 16;
+  const tooltipWidth = Math.min(300, screenW - tooltipMargin * 2);
 
   const getTooltipPosition = (): React.CSSProperties => {
-    const baseStyle: React.CSSProperties = { width: tooltipWidth, maxWidth: `calc(100vw - 32px)` };
+    const baseStyle: React.CSSProperties = {
+      width: tooltipWidth,
+      maxWidth: screenW - tooltipMargin * 2,
+    };
 
     if (!targetRect) {
       return {
         ...baseStyle,
         top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: tooltipWidth,
+        left: tooltipMargin,
+        right: tooltipMargin,
+        width: "auto",
+        maxWidth: screenW - tooltipMargin * 2,
+        transform: "translateY(-50%)",
       };
     }
 
@@ -327,7 +334,7 @@ export function FeatureTour({ onComplete }: FeatureTourProps) {
       : targetRect.bottom;
 
     let leftPos = centerX - tooltipWidth / 2;
-    leftPos = Math.max(16, Math.min(leftPos, window.innerWidth - tooltipWidth - 16));
+    leftPos = Math.max(tooltipMargin, Math.min(leftPos, screenW - tooltipWidth - tooltipMargin));
 
     const spaceBelow = window.innerHeight - effectiveBottom - padding - 12;
     const spaceAbove = targetRect.top - padding - 12;

@@ -3311,7 +3311,8 @@ SAFETY: Never generate harmful, violent, or explicit content.`
 
       const sharedSecret = process.env.APPLE_SHARED_SECRET || '';
       if (!sharedSecret) {
-        console.error("[Apple IAP] APPLE_SHARED_SECRET not configured");
+        console.error("[Apple IAP] CRITICAL: APPLE_SHARED_SECRET not configured - cannot validate receipts");
+        return res.status(500).json({ error: "Server configuration error: receipt validation unavailable", configError: true });
       }
 
       const receiptPayload = JSON.stringify({

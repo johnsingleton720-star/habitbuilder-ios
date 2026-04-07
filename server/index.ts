@@ -77,8 +77,21 @@ async function runStartupMigrations() {
       WHERE welcome_hub_seen = false
         AND created_at < '2026-04-03 00:00:00+00'
     `);
-    // Add ai_context_profile column for the private AI coaching profile ("About Me")
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
+
+    const fixedIapUsers = await db.execute(sql`
+      UPDATE users
+      SET subscription_tier = 'pro',
+          subscription_status = 'active',
+          has_paid = true,
+          trial_offer_shown = true
+      WHERE id = '53887655'
+        AND subscription_tier = 'free'
+    `);
+    if ((fixedIapUsers as any)?.rowCount > 0) {
+      console.log('[Migrations] Fixed stuck IAP user 53887655 -> pro');
+    }
+
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);
