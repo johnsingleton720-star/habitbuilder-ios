@@ -216,22 +216,28 @@ export async function purchaseProduct(productId: string): Promise<PurchaseResult
     console.log('[IAP] Ordering:', orderTarget.id || product.id);
 
     return new Promise((resolve) => {
+      console.log('[IAP] Calling store.order() on:', orderTarget?.id || 'unknown');
       store.order(orderTarget).then(
         (result: any) => {
-          if (result && result.isError) {
+          console.log('[IAP] store.order() resolved with:', typeof result, result === undefined ? 'undefined (=success in v13)' : JSON.stringify(result));
+          if (result === undefined) {
+            console.log('[IAP] Order placed successfully (undefined = success in cordova-plugin-purchase v13)');
+            resolve({ success: true });
+          } else if (result && result.isError) {
             const errCode = result.code?.toString() || 'UNKNOWN';
             const errMsg = result.message || 'Purchase failed';
-            console.error('[IAP] Purchase error:', errCode, errMsg);
+            console.error('[IAP] Purchase error:', errCode, errMsg, 'full result:', JSON.stringify(result));
             resolve({ success: false, error: errMsg, errorCode: errCode });
           } else {
-            console.log('[IAP] Order placed successfully');
+            console.log('[IAP] Order returned non-error, non-undefined result — treating as success:', JSON.stringify(result));
             resolve({ success: true });
           }
         },
         (err: any) => {
           const errMsg = err?.message || err?.toString() || 'Purchase rejected';
-          console.error('[IAP] Purchase rejected:', errMsg);
-          resolve({ success: false, error: errMsg, errorCode: 'REJECTED' });
+          const errCode = err?.code?.toString() || 'REJECTED';
+          console.error('[IAP] Purchase promise rejected:', errCode, errMsg, 'full error:', JSON.stringify(err));
+          resolve({ success: false, error: errMsg, errorCode: errCode });
         }
       );
     });

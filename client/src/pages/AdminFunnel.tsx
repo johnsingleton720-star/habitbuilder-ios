@@ -58,6 +58,7 @@ const FUNNEL_ORDER = [
   { key: "trial_start_tapped", label: "Tapped Start Trial" },
   { key: "trial_tier_selected", label: "Changed Tier Selection" },
   { key: "trial_iap_authorized", label: "Apple IAP Authorized" },
+  { key: "trial_iap_success", label: "Apple IAP Success (Server)" },
   { key: "trial_iap_failed", label: "Apple IAP Failed" },
   { key: "trial_stripe_redirect", label: "Stripe Checkout Redirect" },
   { key: "trial_stripe_cancelled", label: "Stripe Checkout Cancelled" },

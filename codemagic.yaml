@@ -47,6 +47,21 @@ workflows:
             "});\n"
             "export { AppleSignIn };\n"
           )
+          open('plugins/capacitor-apple-sign-in/dist/esm/index.d.ts', 'w').write(
+            "export interface AppleSignInResult {\n"
+            "  user: string;\n"
+            "  identityToken?: string;\n"
+            "  authorizationCode?: string;\n"
+            "  email?: string;\n"
+            "  givenName?: string;\n"
+            "  familyName?: string;\n"
+            "}\n"
+            "export interface AppleSignInPlugin {\n"
+            "  signIn(): Promise<AppleSignInResult>;\n"
+            "}\n"
+            "declare const AppleSignIn: AppleSignInPlugin;\n"
+            "export { AppleSignIn };\n"
+          )
           open('plugins/capacitor-apple-sign-in/dist/esm/web.js', 'w').write(
             "import { WebPlugin } from '@capacitor/core';\n"
             "export class AppleSignInWeb extends WebPlugin {\n"
@@ -55,7 +70,13 @@ workflows:
             "    }\n"
             "}\n"
           )
-          print('Apple Sign In plugin dist files created successfully')
+          open('plugins/capacitor-apple-sign-in/dist/esm/web.d.ts', 'w').write(
+            "import { WebPlugin } from '@capacitor/core';\n"
+            "export declare class AppleSignInWeb extends WebPlugin {\n"
+            "    signIn(): Promise<never>;\n"
+            "}\n"
+          )
+          print('Apple Sign In plugin dist files created successfully (js + d.ts)')
           PYEOF2
           mkdir -p plugins/capacitor-app-review/dist/esm
           python3 << 'PYEOF3'
@@ -77,11 +98,11 @@ workflows:
           npm run build
       - name: Set app version
         script: |
-          sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.7"/' package.json
-          echo "App version set to 1.2.7 in package.json"
+          sed -i '' 's/"version": "[0-9]*\.[0-9]*\.[0-9]*"/"version": "1.2.8"/' package.json
+          echo "App version set to 1.2.8 in package.json"
           grep '"version"' package.json
-          sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '1.2.7'/" capacitor.config.ts
-          echo "App version set to 1.2.7 in capacitor.config.ts"
+          sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '1.2.8'/" capacitor.config.ts
+          echo "App version set to 1.2.8 in capacitor.config.ts"
           grep "version" capacitor.config.ts
       - name: Add iOS platform
         script: npx cap add ios || true
@@ -152,22 +173,22 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' App.xcodeproj/project.pbxproj
           echo "=== Deployment targets after fix ==="
           grep "IPHONEOS_DEPLOYMENT_TARGET" App.xcodeproj/project.pbxproj | sort -u
-      - name: Set iOS version to 1.2.7
+      - name: Set iOS version to 1.2.8
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.7" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.8" App/Info.plist
           ruby << 'VERSIONRUBY'
           require 'xcodeproj'
           project = Xcodeproj::Project.open('App.xcodeproj')
           project.targets.each do |target|
             next unless target.name == 'App'
             target.build_configurations.each do |config|
-              config.build_settings['MARKETING_VERSION'] = '1.2.7'
-              puts "Set MARKETING_VERSION = 1.2.7 for #{config.name}"
+              config.build_settings['MARKETING_VERSION'] = '1.2.8'
+              puts "Set MARKETING_VERSION = 1.2.8 for #{config.name}"
             end
           end
           project.save
-          puts "Xcode project saved with version 1.2.7"
+          puts "Xcode project saved with version 1.2.8"
           VERSIONRUBY
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist
@@ -177,21 +198,24 @@ workflows:
         script: |
           cd ios/App
 
-          # Create entitlements file with push notifications
-          cat > App/App.entitlements << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>aps-environment</key>
-            <string>production</string>
-            <key>com.apple.developer.applesignin</key>
-            <array>
-              <string>Default</string>
-            </array>
-          </dict>
-          </plist>
-          EOF
+          # Create entitlements file (no leading whitespace — heredoc content must start at column 0)
+          cat > App/App.entitlements << 'ENTITLEMENTS_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>aps-environment</key>
+        <string>production</string>
+        <key>com.apple.developer.applesignin</key>
+        <array>
+                <string>Default</string>
+        </array>
+</dict>
+</plist>
+ENTITLEMENTS_EOF
+          echo "=== Generated App.entitlements ==="
+          cat App/App.entitlements
+          echo "=== End entitlements ==="
 
           # Add required push notification delegate methods to AppDelegate.swift
           # Capacitor docs: https://capacitorjs.com/docs/apis/push-notifications#ios
@@ -364,9 +388,9 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.7" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.7" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.8" App/Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.2.8" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
-          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.7/g' App.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.2.8/g' App.xcodeproj/project.pbxproj
           sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
           echo "=== Verify Info.plist ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist

@@ -3365,6 +3365,19 @@ SAFETY: Never generate harmful, violent, or explicit content.`
         paymentStatusCache.delete(userId);
 
         console.log("[Apple IAP] Receipt valid, updated user", userId, "to tier:", tier);
+
+        try {
+          await db.insert(funnelEvents).values({
+            eventName: 'trial_iap_success',
+            sessionId: null,
+            platform: 'ios',
+            metadata: JSON.stringify({ userId, productId, tier }),
+          });
+          console.log("[Apple IAP] Tracked trial_iap_success funnel event for user:", userId);
+        } catch (funnelErr) {
+          console.error("[Apple IAP] Failed to track funnel event:", funnelErr);
+        }
+
         return res.json({ success: true, valid: true, tier });
       }
 

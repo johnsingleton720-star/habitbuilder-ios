@@ -35,7 +35,8 @@ export type FunnelEventName =
   | "auth_methods_available"
   | "first_habit_created"
   | "welcome_hub_shown"
-  | "welcome_hub_action";
+  | "welcome_hub_action"
+  | "trial_iap_success";
 
 export function trackFunnelEvent(
   eventName: FunnelEventName,

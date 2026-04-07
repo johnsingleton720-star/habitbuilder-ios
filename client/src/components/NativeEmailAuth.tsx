@@ -594,6 +594,20 @@ export function NativeEmailAuth({ onClose, onSocialAuth }: NativeEmailAuthProps)
             Google Sign In unavailable — use Apple or email below.
           </p>
         )
+      ) : isNativeIOS ? (
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading || appleLoading || loading}
+          className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          data-testid="button-auth-google"
+        >
+          {googleLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <SiGoogle className="w-3 h-3" />
+          )}
+          Sign in with Google instead
+        </button>
       ) : (
         <div>
           <button
