@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { isNative, isIOS } from "@/lib/platform";
+import { restorePurchases, initializeAppleIAP } from "@/lib/apple-iap";
 import { registerNativePush, registerWebPush } from "@/hooks/use-push-notifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -479,6 +480,46 @@ function TimezoneSettings({ user }: { user: any }) {
   );
 }
 
+function RestorePurchasesButton() {
+  const [restoring, setRestoring] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      await initializeAppleIAP();
+      const restored = await restorePurchases();
+      if (restored) {
+        await new Promise(r => setTimeout(r, 2000));
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+        toast({ title: "Purchases restored", description: "If you have an active subscription, your access has been updated." });
+      } else {
+        toast({ title: "No purchases found", description: "No active subscriptions were found for this Apple ID.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Restore failed", description: "Please try again later.", variant: "destructive" });
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      onClick={handleRestore}
+      disabled={restoring}
+      data-testid="button-restore-purchases"
+    >
+      {restoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+      Restore Purchases
+    </Button>
+  );
+}
+
 export default function Account() {
   usePageTitle("Account", "Manage your HabitBuilder.pro account settings, email preferences, timezone, and subscription.");
   const { user, logout } = useAuth();
@@ -880,17 +921,22 @@ export default function Account() {
                       <p className="text-sm text-muted-foreground mt-0.5">
                         1 habit, 3 sessions/week, limited streak tracking. Upgrade to unlock the full experience.
                       </p>
-                      <Link href="/paywall">
-                        <Button
-                          size="sm"
-                          className="gap-1.5 mt-3"
-                          data-testid="button-account-upgrade"
-                        >
-                          <Crown className="w-3.5 h-3.5" />
-                          See Plans
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Link href="/paywall">
+                          <Button
+                            size="sm"
+                            className="gap-1.5"
+                            data-testid="button-account-upgrade"
+                          >
+                            <Crown className="w-3.5 h-3.5" />
+                            See Plans
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        </Link>
+                        {isIOS() && (
+                          <RestorePurchasesButton />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -79,6 +79,12 @@ async function runStartupMigrations() {
     `);
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
 
+    await db.execute(sql`
+      UPDATE users
+      SET subscription_tier = 'pro', subscription_status = 'active', has_paid = true, trial_offer_shown = true
+      WHERE id = '53887655' AND subscription_tier = 'free'
+    `);
+
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);
