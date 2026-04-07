@@ -288,13 +288,13 @@ function Router() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("post_purchase") !== "true") return;
-    if (!user?.id || isAuthLoading) return;
+    if (!user?.id || isAuthLoading || !presignupHandoffDone) return;
     const checkHabits = async () => {
       try {
         const res = await fetch("/api/habits/summary", { credentials: "include" });
+        window.history.replaceState({}, "", "/");
         if (!res.ok) return;
         const habits = await res.json();
-        window.history.replaceState({}, "", "/");
         if (!habits || habits.length === 0) {
           if (!user.welcomeHubSeen) {
             setShowWelcomeHub(true);
@@ -302,10 +302,12 @@ function Router() {
             setTriggerCreateHabit(true);
           }
         }
-      } catch {}
+      } catch {
+        window.history.replaceState({}, "", "/");
+      }
     };
     checkHabits();
-  }, [user?.id, isAuthLoading]);
+  }, [user?.id, isAuthLoading, presignupHandoffDone]);
 
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);

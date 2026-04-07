@@ -57,7 +57,7 @@ async function backfillProgressEntries() {
 async function sendWelcomeBackEmails() {
   const FLAG_KEY = 'welcome_back_emails_sent_v1';
   const recipients = [
-    { email: 'd8ywchqr5k@privaterelay.appleid.com', name: null },
+    { email: 'd8ywchqr5k@privaterelay.appleid.com', name: 'Евгения' },
     { email: 'shivam.chouksey2023@gmail.com', name: 'Shivam' },
   ];
   const alreadySent = await db.execute(sql`
