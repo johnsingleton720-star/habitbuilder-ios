@@ -289,13 +289,20 @@ function Router() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("post_purchase") !== "true") return;
     if (!user?.id || isAuthLoading || !presignupHandoffDone) return;
+    if (!user.hasPaid && !user.trialEndsAt) {
+      window.history.replaceState({}, "", "/");
+      return;
+    }
     const checkHabits = async () => {
       try {
         const res = await fetch("/api/habits/summary", { credentials: "include" });
+        if (!res.ok) {
+          window.history.replaceState({}, "", "/");
+          return;
+        }
+        const habitsData = await res.json();
         window.history.replaceState({}, "", "/");
-        if (!res.ok) return;
-        const habits = await res.json();
-        if (!habits || habits.length === 0) {
+        if (!habitsData || habitsData.length === 0) {
           if (!user.welcomeHubSeen) {
             setShowWelcomeHub(true);
           } else {

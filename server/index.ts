@@ -9,8 +9,8 @@ import { startEmailScheduler } from './emailScheduler';
 import { injectSeo } from './seoInjector';
 import { db } from './db';
 import { foundingMemberSlots } from '@shared/models/auth';
-import { habits } from '@shared/schema';
-import { sql, eq } from 'drizzle-orm';
+import { habits, funnelEvents } from '@shared/schema';
+import { sql, eq, count } from 'drizzle-orm';
 import { sendEmail } from './email';
 
 async function backfillProgressEntries() {
@@ -55,22 +55,30 @@ async function backfillProgressEntries() {
 }
 
 async function sendWelcomeBackEmails() {
-  const FLAG_KEY = 'welcome_back_emails_sent_v1';
+  const FLAG_PREFIX = 'welcome_back_sent_';
   const recipients = [
     { email: 'd8ywchqr5k@privaterelay.appleid.com', name: 'Евгения' },
     { email: 'shivam.chouksey2023@gmail.com', name: 'Shivam' },
   ];
-  const alreadySent = await db.execute(sql`
-    SELECT COUNT(*)::int as cnt FROM funnel_events WHERE event_name = ${FLAG_KEY}
-  `);
-  const rows = (alreadySent as any).rows || alreadySent;
-  if (Number(rows[0]?.cnt || 0) > 0) {
-    console.log('[Email] Welcome-back emails already sent, skipping');
+  const [legacyFlag] = await db
+    .select({ total: count() })
+    .from(funnelEvents)
+    .where(eq(funnelEvents.eventName, 'welcome_back_emails_sent_v1'));
+  if (legacyFlag.total > 0) {
+    console.log('[Email] Welcome-back emails already sent (legacy flag), skipping');
     return;
   }
   const subject = "We fixed the setup — your habit is waiting!";
-  let allSent = true;
   for (const r of recipients) {
+    const flagKey = FLAG_PREFIX + r.email;
+    const [existing] = await db
+      .select({ total: count() })
+      .from(funnelEvents)
+      .where(eq(funnelEvents.eventName, flagKey));
+    if (existing.total > 0) {
+      console.log(`[Email] Welcome-back already sent to ${r.email}, skipping`);
+      continue;
+    }
     const greeting = r.name ? `Hi ${r.name},` : 'Hi there,';
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
@@ -101,18 +109,16 @@ async function sendWelcomeBackEmails() {
     `;
     try {
       await sendEmail({ to: r.email, subject, html });
+      await db.insert(funnelEvents).values({
+        eventName: flagKey,
+        userId: 'system',
+        platform: 'server',
+        metadata: '{}',
+      });
       console.log(`[Email] Welcome-back email sent to ${r.email}`);
     } catch (err) {
       console.error(`[Email] Failed to send welcome-back email to ${r.email}:`, err);
-      allSent = false;
     }
-  }
-  if (allSent) {
-    await db.execute(sql`
-      INSERT INTO funnel_events (event_name, user_id, platform, metadata, created_at)
-      SELECT ${FLAG_KEY}, 'system', 'server', '{}', NOW()
-      WHERE NOT EXISTS (SELECT 1 FROM funnel_events WHERE event_name = ${FLAG_KEY})
-    `);
   }
 }
 
