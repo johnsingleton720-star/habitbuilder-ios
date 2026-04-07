@@ -385,6 +385,34 @@ ENTITLEMENTS_EOF
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string com.facebook.Facebook" Info.plist 2>/dev/null || true
           echo "=== Registered URL Schemes ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" Info.plist || echo "No URL types found"
+      - name: Verify entitlements and capabilities
+        script: |
+          cd ios/App
+          echo "=== Verifying App.entitlements ==="
+          if [ ! -f "App/App.entitlements" ]; then
+            echo "FATAL: App.entitlements not found!"
+            exit 1
+          fi
+          echo "--- Entitlements file content ---"
+          cat App/App.entitlements
+          echo ""
+          # Verify XML is well-formed (no leading whitespace corruption)
+          if head -1 App/App.entitlements | grep -q '^\s'; then
+            echo "FATAL: Entitlements XML has leading whitespace — plist will be corrupted!"
+            exit 1
+          fi
+          # Verify required capabilities present
+          if ! grep -q "com.apple.developer.applesignin" App/App.entitlements; then
+            echo "FATAL: Apple Sign In entitlement missing!"
+            exit 1
+          fi
+          if ! grep -q "aps-environment" App/App.entitlements; then
+            echo "FATAL: Push Notifications entitlement missing!"
+            exit 1
+          fi
+          echo "--- Xcode project StoreKit framework check ---"
+          grep -c "StoreKit.framework" App.xcodeproj/project.pbxproj && echo "StoreKit framework linked" || echo "WARNING: StoreKit framework not found in project"
+          echo "=== Entitlements verification PASSED ==="
       - name: Set version and build number
         script: |
           cd ios/App
