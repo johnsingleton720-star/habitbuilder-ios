@@ -138,7 +138,7 @@ export default function TrialOffer() {
           trackFunnelEvent("trial_iap_authorized", { tier: selectedTier, productId });
           await markTrialOfferShown();
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-          navigate("/");
+          navigate("/?post_purchase=true");
         } else {
           trackFunnelEvent("trial_iap_failed", {
             tier: selectedTier,

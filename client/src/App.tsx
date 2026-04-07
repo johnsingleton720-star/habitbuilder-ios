@@ -159,7 +159,7 @@ function Router() {
         title: "Payment successful!",
         description: "Welcome to HabitBuilder.pro. Start building better habits today!",
       });
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', '/?post_purchase=true');
     } else if (payment === 'cancelled') {
       toast({
         title: "Payment cancelled",
@@ -284,6 +284,28 @@ function Router() {
     if (!shouldShowWelcomeHub(user)) return;
     setShowWelcomeHub(true);
   }, [user?.id, isAuthLoading, isPaymentLoading, welcomeHubCheckedUserId, presignupHandoffDone]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("post_purchase") !== "true") return;
+    if (!user?.id || isAuthLoading) return;
+    const checkHabits = async () => {
+      try {
+        const res = await fetch("/api/habits/summary", { credentials: "include" });
+        if (!res.ok) return;
+        const habits = await res.json();
+        window.history.replaceState({}, "", "/");
+        if (!habits || habits.length === 0) {
+          if (!user.welcomeHubSeen) {
+            setShowWelcomeHub(true);
+          } else {
+            setTriggerCreateHabit(true);
+          }
+        }
+      } catch {}
+    };
+    checkHabits();
+  }, [user?.id, isAuthLoading]);
 
   const handleWelcomeHubDismiss = (action: "habit" | "tour" | "explore", navigationTarget?: string) => {
     setShowWelcomeHub(false);

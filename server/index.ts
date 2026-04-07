@@ -11,6 +11,7 @@ import { db } from './db';
 import { foundingMemberSlots } from '@shared/models/auth';
 import { habits } from '@shared/schema';
 import { sql, eq } from 'drizzle-orm';
+import { sendEmail } from './email';
 
 async function backfillProgressEntries() {
   try {
@@ -53,6 +54,63 @@ async function backfillProgressEntries() {
   }
 }
 
+async function sendWelcomeBackEmails() {
+  const FLAG_KEY = 'welcome_back_emails_sent_v1';
+  const recipients = [
+    { email: 'd8ywchqr5k@privaterelay.appleid.com', name: null },
+    { email: 'shivam.chouksey2023@gmail.com', name: 'Shivam' },
+  ];
+  const alreadySent = await db.execute(sql`
+    SELECT COUNT(*)::int as cnt FROM funnel_events WHERE event_name = ${FLAG_KEY}
+  `);
+  const rows = (alreadySent as any).rows || alreadySent;
+  if (Number(rows[0]?.cnt || 0) > 0) {
+    console.log('[Email] Welcome-back emails already sent, skipping');
+    return;
+  }
+  await db.execute(sql`
+    INSERT INTO funnel_events (event_name, user_id, platform, metadata, created_at)
+    SELECT ${FLAG_KEY}, 'system', 'server', '{}', NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM funnel_events WHERE event_name = ${FLAG_KEY})
+  `);
+  const subject = "We fixed the setup — your habit is waiting!";
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #0a1628; font-size: 24px; margin: 0;">
+          <span style="color: #0a1628;">Habit</span><span style="color: #059669;">Builder</span><span style="color: #0a1628;">.pro</span>
+        </h1>
+      </div>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi there,</p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        Thank you for signing up for HabitBuilder.pro! We noticed you subscribed but didn't get to set up your first habit — that was our fault. There was a bug in the setup flow that we've now fixed.
+      </p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        <strong>Your Pro subscription is active</strong> and all features are ready for you. Just open the app and you'll be guided to create your first habit right away.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="https://habitbuilder.pro" style="display: inline-block; background-color: #059669; color: white; font-size: 16px; font-weight: 600; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
+          Open HabitBuilder.pro
+        </a>
+      </div>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        We're sorry for the hiccup and truly appreciate your support. If you have any questions, just reply to this email.
+      </p>
+      <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 24px;">
+        — The HabitBuilder Team
+      </p>
+    </div>
+  `;
+  for (const r of recipients) {
+    try {
+      await sendEmail({ to: r.email, subject, html });
+      console.log(`[Email] Welcome-back email sent to ${r.email}`);
+    } catch (err) {
+      console.error(`[Email] Failed to send welcome-back email to ${r.email}:`, err);
+    }
+  }
+}
+
 async function runStartupMigrations() {
   try {
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_funnel_viewer boolean DEFAULT false`);
@@ -79,11 +137,7 @@ async function runStartupMigrations() {
     `);
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
 
-    await db.execute(sql`
-      UPDATE users
-      SET subscription_tier = 'pro', subscription_status = 'active', has_paid = true, trial_offer_shown = true
-      WHERE id = '53887655' AND subscription_tier = 'free'
-    `);
+    sendWelcomeBackEmails().catch(err => console.error('[Email] Welcome-back email error:', err));
 
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
