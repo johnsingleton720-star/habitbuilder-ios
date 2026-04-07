@@ -68,46 +68,51 @@ async function sendWelcomeBackEmails() {
     console.log('[Email] Welcome-back emails already sent, skipping');
     return;
   }
-  await db.execute(sql`
-    INSERT INTO funnel_events (event_name, user_id, platform, metadata, created_at)
-    SELECT ${FLAG_KEY}, 'system', 'server', '{}', NOW()
-    WHERE NOT EXISTS (SELECT 1 FROM funnel_events WHERE event_name = ${FLAG_KEY})
-  `);
   const subject = "We fixed the setup — your habit is waiting!";
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h1 style="color: #0a1628; font-size: 24px; margin: 0;">
-          <span style="color: #0a1628;">Habit</span><span style="color: #059669;">Builder</span><span style="color: #0a1628;">.pro</span>
-        </h1>
-      </div>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi there,</p>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">
-        Thank you for signing up for HabitBuilder.pro! We noticed you subscribed but didn't get to set up your first habit — that was our fault. There was a bug in the setup flow that we've now fixed.
-      </p>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">
-        <strong>Your Pro subscription is active</strong> and all features are ready for you. Just open the app and you'll be guided to create your first habit right away.
-      </p>
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="https://habitbuilder.pro" style="display: inline-block; background-color: #059669; color: white; font-size: 16px; font-weight: 600; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
-          Open HabitBuilder.pro
-        </a>
-      </div>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">
-        We're sorry for the hiccup and truly appreciate your support. If you have any questions, just reply to this email.
-      </p>
-      <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 24px;">
-        — The HabitBuilder Team
-      </p>
-    </div>
-  `;
+  let allSent = true;
   for (const r of recipients) {
+    const greeting = r.name ? `Hi ${r.name},` : 'Hi there,';
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #0a1628; font-size: 24px; margin: 0;">
+            <span style="color: #0a1628;">Habit</span><span style="color: #059669;">Builder</span><span style="color: #0a1628;">.pro</span>
+          </h1>
+        </div>
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">${greeting}</p>
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          Thank you for signing up for HabitBuilder.pro! We noticed you subscribed but didn't get to set up your first habit — that was our fault. There was a bug in the setup flow that we've now fixed.
+        </p>
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          <strong>Your Pro subscription is active</strong> and all features are ready for you. Just open the app and you'll be guided to create your first habit right away.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="https://habitbuilder.pro" style="display: inline-block; background-color: #059669; color: white; font-size: 16px; font-weight: 600; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
+            Open HabitBuilder.pro
+          </a>
+        </div>
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          We're sorry for the hiccup and truly appreciate your support. If you have any questions, just reply to this email.
+        </p>
+        <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 24px;">
+          — The HabitBuilder Team
+        </p>
+      </div>
+    `;
     try {
       await sendEmail({ to: r.email, subject, html });
       console.log(`[Email] Welcome-back email sent to ${r.email}`);
     } catch (err) {
       console.error(`[Email] Failed to send welcome-back email to ${r.email}:`, err);
+      allSent = false;
     }
+  }
+  if (allSent) {
+    await db.execute(sql`
+      INSERT INTO funnel_events (event_name, user_id, platform, metadata, created_at)
+      SELECT ${FLAG_KEY}, 'system', 'server', '{}', NOW()
+      WHERE NOT EXISTS (SELECT 1 FROM funnel_events WHERE event_name = ${FLAG_KEY})
+    `);
   }
 }
 
