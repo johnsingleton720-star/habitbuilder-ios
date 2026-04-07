@@ -198,24 +198,28 @@ workflows:
         script: |
           cd ios/App
 
-          # Create entitlements file (no leading whitespace — heredoc content must start at column 0)
-          cat > App/App.entitlements << 'ENTITLEMENTS_EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-        <key>aps-environment</key>
-        <string>production</string>
-        <key>com.apple.developer.applesignin</key>
-        <array>
-                <string>Default</string>
-        </array>
-</dict>
-</plist>
-ENTITLEMENTS_EOF
-          echo "=== Generated App.entitlements ==="
-          cat App/App.entitlements
-          echo "=== End entitlements ==="
+          # Create entitlements file using Python to avoid YAML heredoc parsing issues
+          python3 << 'ENTITLEMENTS_PY'
+          entitlements = """<?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          \t<key>aps-environment</key>
+          \t<string>production</string>
+          \t<key>com.apple.developer.applesignin</key>
+          \t<array>
+          \t\t<string>Default</string>
+          \t</array>
+          </dict>
+          </plist>"""
+          import textwrap
+          clean = textwrap.dedent(entitlements).strip()
+          with open('App/App.entitlements', 'w') as f:
+              f.write(clean + '\n')
+          print('=== Generated App.entitlements ===')
+          print(clean)
+          print('=== End entitlements ===')
+          ENTITLEMENTS_PY
 
           # Add required push notification delegate methods to AppDelegate.swift
           # Capacitor docs: https://capacitorjs.com/docs/apis/push-notifications#ios
