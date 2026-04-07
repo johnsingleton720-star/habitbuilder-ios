@@ -8,7 +8,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { isIOS } from "@/lib/platform";
-import { APPLE_PRODUCT_IDS, purchaseProduct, initializeAppleIAP } from "@/lib/apple-iap";
+import { APPLE_PRODUCT_IDS, purchaseProduct, initializeAppleIAP, type PurchaseResult } from "@/lib/apple-iap";
 import { trackFunnelEvent } from "@/hooks/use-funnel-tracking";
 import {
   Crown,
@@ -133,22 +133,32 @@ export default function TrialOffer() {
           selectedTier === "premium"
             ? APPLE_PRODUCT_IDS.premium_monthly
             : APPLE_PRODUCT_IDS.pro_monthly;
-        const success = await purchaseProduct(productId);
-        if (success) {
+        const result = await purchaseProduct(productId);
+        if (result.success) {
           trackFunnelEvent("trial_iap_authorized", { tier: selectedTier, productId });
           await markTrialOfferShown();
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           navigate("/");
         } else {
-          trackFunnelEvent("trial_iap_failed", { tier: selectedTier, productId, reason: "purchase_returned_false" });
+          trackFunnelEvent("trial_iap_failed", {
+            tier: selectedTier,
+            productId,
+            reason: result.errorCode || "unknown",
+            error: result.error || "purchase_failed",
+          });
+          const isCancelled = result.errorCode === '6777010' || 
+                              result.errorCode === 'PAYMENT_CANCELLED' || 
+                              (result.error || '').toLowerCase().includes('cancel');
           toast({
-            title: "Purchase not completed",
-            description: "No charge was made. You can try again or continue with the free plan.",
-            variant: "destructive",
+            title: isCancelled ? "Purchase cancelled" : "Purchase not completed",
+            description: isCancelled 
+              ? "No charge was made. Tap the button to try again when you're ready."
+              : `Something went wrong (${result.errorCode || 'unknown'}). Please try again.`,
+            variant: isCancelled ? "default" : "destructive",
           });
         }
       } catch (err: any) {
-        trackFunnelEvent("trial_iap_failed", { tier: selectedTier, reason: err?.message || "exception" });
+        trackFunnelEvent("trial_iap_failed", { tier: selectedTier, reason: "exception", error: err?.message || "unknown" });
         toast({
           title: "Purchase error",
           description: "Something went wrong. Please try again.",

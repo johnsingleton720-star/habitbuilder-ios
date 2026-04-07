@@ -131,62 +131,90 @@ export async function initializeAppleIAP(): Promise<boolean> {
   }
 }
 
-export async function purchaseProduct(productId: string): Promise<boolean> {
+export interface PurchaseResult {
+  success: boolean;
+  error?: string;
+  errorCode?: string;
+}
+
+async function waitForProductReady(store: any, productId: string, maxWait = 5000): Promise<any> {
+  const start = Date.now();
+  while (Date.now() - start < maxWait) {
+    const product = store.get(productId);
+    if (product && (product.offers?.length > 0 || product.title)) {
+      return product;
+    }
+    console.log('[IAP] Waiting for product to load:', productId);
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return store.get(productId);
+}
+
+export async function purchaseProduct(productId: string): Promise<PurchaseResult> {
   if (!isIOS()) {
-    console.error('[IAP] Apple IAP only available on iOS');
-    return false;
+    return { success: false, error: 'not_ios', errorCode: 'NOT_IOS' };
   }
 
   const store = getStore();
   if (!store) {
-    console.warn('[IAP] Apple IAP not available - purchases only work in native iOS app');
-    return false;
+    return { success: false, error: 'IAP plugin not available', errorCode: 'NO_PLUGIN' };
   }
 
   if (!initialized) {
     console.log('[IAP] Store not initialized, initializing now...');
     const ready = await initializeAppleIAP();
     if (!ready) {
-      console.error('[IAP] Failed to initialize store');
-      return false;
+      return { success: false, error: 'Failed to initialize store', errorCode: 'INIT_FAILED' };
     }
   }
 
   try {
     console.log('[IAP] Looking up product:', productId);
-    const product = store.get(productId);
+    const product = await waitForProductReady(store, productId);
     if (!product) {
-      console.error('[IAP] Product not found:', productId);
       const allProducts = store.products;
-      console.error('[IAP] Available products:', allProducts.map((p: any) => p.id));
-      return false;
+      const available = allProducts.map((p: any) => p.id).join(', ');
+      console.error('[IAP] Product not found:', productId, 'Available:', available);
+      return { success: false, error: `Product not found: ${productId}. Available: ${available}`, errorCode: 'PRODUCT_NOT_FOUND' };
     }
 
-    console.log('[IAP] Product found:', product.id, 'offers:', product.offers?.length);
+    console.log('[IAP] Product found:', product.id, 'title:', product.title, 'offers:', product.offers?.length, 'canPurchase:', product.canPurchase);
 
-    const offer = product.offers?.[0] || product;
-    console.log('[IAP] Ordering offer:', offer.id || product.id);
+    if (product.offers && product.offers.length > 0) {
+      console.log('[IAP] Offers detail:', JSON.stringify(product.offers.map((o: any) => ({ id: o.id, phases: o.pricingPhases?.length }))));
+    }
+
+    const offer = product.offers?.[0];
+    if (!offer) {
+      console.warn('[IAP] No offers on product, ordering product directly');
+    }
+    const orderTarget = offer || product;
+    console.log('[IAP] Ordering:', orderTarget.id || product.id);
 
     return new Promise((resolve) => {
-      store.order(offer).then(
+      store.order(orderTarget).then(
         (result: any) => {
           if (result && result.isError) {
-            console.error('[IAP] Purchase error:', result.code, result.message);
-            resolve(false);
+            const errCode = result.code?.toString() || 'UNKNOWN';
+            const errMsg = result.message || 'Purchase failed';
+            console.error('[IAP] Purchase error:', errCode, errMsg);
+            resolve({ success: false, error: errMsg, errorCode: errCode });
           } else {
             console.log('[IAP] Order placed successfully');
-            resolve(true);
+            resolve({ success: true });
           }
         },
         (err: any) => {
-          console.error('[IAP] Purchase rejected:', err);
-          resolve(false);
+          const errMsg = err?.message || err?.toString() || 'Purchase rejected';
+          console.error('[IAP] Purchase rejected:', errMsg);
+          resolve({ success: false, error: errMsg, errorCode: 'REJECTED' });
         }
       );
     });
-  } catch (err) {
-    console.error('[IAP] Purchase exception:', err);
-    return false;
+  } catch (err: any) {
+    const errMsg = err?.message || 'Purchase exception';
+    console.error('[IAP] Purchase exception:', errMsg);
+    return { success: false, error: errMsg, errorCode: 'EXCEPTION' };
   }
 }
 

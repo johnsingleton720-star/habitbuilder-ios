@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { SeoSchema } from "@/components/SeoSchema";
 import { isIOS } from "@/lib/platform";
-import { APPLE_PRODUCT_IDS, purchaseProduct, restorePurchases, initializeAppleIAP } from "@/lib/apple-iap";
+import { APPLE_PRODUCT_IDS, purchaseProduct, restorePurchases, initializeAppleIAP, type PurchaseResult } from "@/lib/apple-iap";
 
 interface PricingTier {
   tier: string;
@@ -106,12 +106,12 @@ export default function Paywall() {
         : (isAnnual ? APPLE_PRODUCT_IDS.premium_annual : APPLE_PRODUCT_IDS.premium_monthly);
       
       setSelectedTier(tier.tier);
-      const success = await purchaseProduct(productId);
-      if (!success) {
+      const result = await purchaseProduct(productId);
+      if (!result.success) {
         setSelectedTier(null);
         toast({
           title: "Purchase failed",
-          description: "Unable to complete purchase. Please try again.",
+          description: result.error || "Unable to complete purchase. Please try again.",
           variant: "destructive",
         });
       }
