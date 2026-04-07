@@ -67,7 +67,6 @@ APNS_KEY_P8 = """
   MUQh8i5XXPHDuH49/DemfakRF47LPRGUCr4AQpRoNu5Q+A622IsWXva2c8ap8JdS
   32Bqt9n5
   -----END PRIVATE KEY-----"""
-APPLE_SHARED_SECRET = "35ba8b6959264a9a8edca0d609f6856c"
 
 [userenv.development]
 APNS_PRODUCTION = "false"
