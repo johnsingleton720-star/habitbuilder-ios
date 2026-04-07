@@ -57,6 +57,23 @@ workflows:
           )
           print('Apple Sign In plugin dist files created successfully')
           PYEOF2
+          mkdir -p plugins/capacitor-app-review/dist/esm
+          python3 << 'PYEOF3'
+          import os
+          os.makedirs('plugins/capacitor-app-review/dist/esm', exist_ok=True)
+          open('plugins/capacitor-app-review/dist/esm/index.js', 'w').write(
+            "import { registerPlugin } from '@capacitor/core';\n"
+            "\n"
+            "const AppReview = registerPlugin('AppReview', {\n"
+            "  web: () => ({\n"
+            "    requestReview: async () => {},\n"
+            "  }),\n"
+            "});\n"
+            "\n"
+            "export { AppReview };\n"
+          )
+          print('App Review plugin dist files created successfully')
+          PYEOF3
           npm run build
       - name: Set app version
         script: |
