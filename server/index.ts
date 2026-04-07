@@ -79,30 +79,6 @@ async function runStartupMigrations() {
     `);
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
 
-    await db.execute(sql`
-      UPDATE users u
-      SET subscription_tier = COALESCE(
-            (SELECT fe.metadata::jsonb->>'tier'
-             FROM funnel_events fe
-             WHERE fe.user_id = u.id
-               AND fe.event_name = 'trial_iap_authorized'
-             ORDER BY fe.created_at DESC LIMIT 1),
-            'pro'),
-          subscription_status = 'active',
-          has_paid = true,
-          trial_offer_shown = true
-      WHERE u.subscription_tier = 'free'
-        AND u.subscription_status IS DISTINCT FROM 'canceled'
-        AND u.id IN (
-          SELECT DISTINCT fe2.user_id
-          FROM funnel_events fe2
-          WHERE fe2.event_name = 'trial_iap_authorized'
-            AND fe2.user_id IS NOT NULL
-            AND fe2.created_at >= '2026-04-07 00:00:00+00'
-            AND fe2.created_at < '2026-04-08 00:00:00+00'
-        )
-    `);
-
     console.log('[Migrations] Startup migrations complete');
   } catch (err) {
     console.error('[Migrations] Startup migration error:', err);
