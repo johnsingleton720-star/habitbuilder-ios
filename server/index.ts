@@ -79,17 +79,30 @@ async function runStartupMigrations() {
     `);
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_context_profile jsonb`);
 
-    const fixedIapUsers = await db.execute(sql`
-      UPDATE users
-      SET subscription_tier = 'pro',
+    const stuckIapUsers = await db.execute(sql`
+      UPDATE users u
+      SET subscription_tier = COALESCE(
+            (SELECT fe.metadata::jsonb->>'tier'
+             FROM funnel_events fe
+             WHERE fe.user_id = u.id
+               AND fe.event_name = 'trial_iap_authorized'
+             ORDER BY fe.created_at DESC LIMIT 1),
+            'pro'),
           subscription_status = 'active',
           has_paid = true,
           trial_offer_shown = true
-      WHERE id = '53887655'
-        AND subscription_tier = 'free'
+      WHERE u.subscription_tier = 'free'
+        AND u.id IN (
+          SELECT DISTINCT fe2.user_id
+          FROM funnel_events fe2
+          WHERE fe2.event_name = 'trial_iap_authorized'
+            AND fe2.user_id IS NOT NULL
+        )
+      RETURNING u.id, u.email
     `);
-    if ((fixedIapUsers as any)?.rowCount > 0) {
-      console.log('[Migrations] Fixed stuck IAP user 53887655 -> pro');
+    const fixedRows = Array.isArray(stuckIapUsers) ? stuckIapUsers : (stuckIapUsers?.rows ?? []);
+    if (fixedRows.length > 0) {
+      console.log(`[Migrations] Fixed ${fixedRows.length} stuck IAP user(s):`, fixedRows.map((r: { email: string }) => r.email).join(', '));
     }
 
     console.log('[Migrations] Startup migrations complete');
